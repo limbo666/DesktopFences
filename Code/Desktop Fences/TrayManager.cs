@@ -1,0 +1,550 @@
+﻿using System;
+using System.Diagnostics;
+using System.Drawing;
+using System.Reflection;
+using System.Windows;
+using System.Windows.Forms;
+using System.Linq; // Added for OfType
+
+namespace Desktop_Fences
+{
+    public class TrayManager
+    {
+        private NotifyIcon _trayIcon;
+
+        public void InitializeTray()
+        {
+            string exePath = Process.GetCurrentProcess().MainModule.FileName;
+            _trayIcon = new NotifyIcon
+            {
+                Icon = Icon.ExtractAssociatedIcon(exePath),
+                Visible = true
+            };
+
+            var trayMenu = new ContextMenuStrip();
+            trayMenu.Items.Add("About", null, (s, e) => ShowAboutForm());
+            trayMenu.Items.Add("-", null) ; //horizontal line
+            trayMenu.Items.Add("Options", null, (s, e) => ShowOptionsForm());
+            trayMenu.Items.Add("Exit", null, (s, e) => System.Windows.Application.Current.Shutdown());
+            _trayIcon.ContextMenuStrip = trayMenu;
+        }
+        //private void ShowOptionsForm()
+        //{
+        //    try
+        //    {
+        //        using (var frmOptions = new Form())
+        //        {
+        //            frmOptions.Text = "Options";
+        //            frmOptions.Size = new System.Drawing.Size(260, 360);
+        //            frmOptions.StartPosition = FormStartPosition.CenterScreen;
+        //            frmOptions.FormBorderStyle = FormBorderStyle.FixedDialog;
+        //            frmOptions.MaximizeBox = false;
+        //            frmOptions.MinimizeBox = false;
+        //            frmOptions.Icon = Icon.ExtractAssociatedIcon(Process.GetCurrentProcess().MainModule.FileName);
+
+        //            var layoutPanel = new TableLayoutPanel
+        //            {
+        //                Dock = DockStyle.Fill,
+        //                ColumnCount = 1,
+        //                AutoSize = true,
+        //                AutoSizeMode = AutoSizeMode.GrowAndShrink,
+        //                Padding = new Padding(10)
+        //            };
+        //            layoutPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
+
+        //            var groupBoxSelections = new GroupBox
+        //            {
+        //                Text = "Selections",
+        //                Dock = DockStyle.Top,
+        //                AutoSize = true,
+        //                AutoSizeMode = AutoSizeMode.GrowAndShrink
+        //            };
+        //            var selectionsLayout = new TableLayoutPanel
+        //            {
+        //                Dock = DockStyle.Fill,
+        //                ColumnCount = 2,
+        //                AutoSize = true,
+        //                AutoSizeMode = AutoSizeMode.GrowAndShrink
+        //            };
+        //            selectionsLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
+        //            selectionsLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
+
+        //            var chkEnableSnap = new CheckBox
+        //            {
+        //                Text = "Enable snap function",
+        //                Dock = DockStyle.Fill,
+        //                AutoSize = true,
+        //                Checked = SettingsManager.IsSnapEnabled
+        //            };
+        //            selectionsLayout.Controls.Add(chkEnableSnap, 0, 0);
+        //            selectionsLayout.SetColumnSpan(chkEnableSnap, 2);
+
+        //            var lblTint = new Label { Text = "Tint", Dock = DockStyle.Fill, AutoSize = true };
+        //            var numTint = new NumericUpDown
+        //            {
+        //                Maximum = 100,
+        //                Minimum = 1,
+        //                Value = SettingsManager.TintValue,
+        //                Dock = DockStyle.Fill
+        //            };
+        //            selectionsLayout.Controls.Add(lblTint, 0, 1);
+        //            selectionsLayout.Controls.Add(numTint, 1, 1);
+
+        //            var lblColor = new Label { Text = "Color", Dock = DockStyle.Fill, AutoSize = true };
+        //            var cmbColor = new ComboBox
+        //            {
+        //                Dock = DockStyle.Fill,
+        //                DropDownStyle = ComboBoxStyle.DropDownList
+        //            };
+        //            cmbColor.Items.AddRange(new string[] { "Gray", "Black", "White", "Green", "Purple", "Yellow", "Red", "Blue" });
+        //            cmbColor.SelectedItem = SettingsManager.SelectedColor;
+        //            selectionsLayout.Controls.Add(lblColor, 0, 2);
+        //            selectionsLayout.Controls.Add(cmbColor, 1, 2);
+
+        //            var chkSingleClickToLaunch = new CheckBox
+        //            {
+        //                Text = "Single Click to Launch",
+        //                Dock = DockStyle.Fill,
+        //                AutoSize = true,
+        //                Checked = SettingsManager.SingleClickToLaunch
+        //            };
+        //            selectionsLayout.Controls.Add(chkSingleClickToLaunch, 0, 3);
+        //            selectionsLayout.SetColumnSpan(chkSingleClickToLaunch, 2);
+
+        //            groupBoxSelections.Controls.Add(selectionsLayout);
+        //            layoutPanel.Controls.Add(groupBoxSelections);
+
+        //            var groupBoxTools = new GroupBox
+        //            {
+        //                Text = "Tools",
+        //                Dock = DockStyle.Top,
+        //                AutoSize = true,
+        //                AutoSizeMode = AutoSizeMode.GrowAndShrink
+        //            };
+        //            var toolsLayout = new TableLayoutPanel
+        //            {
+        //                Dock = DockStyle.Fill,
+        //                ColumnCount = 1,
+        //                AutoSize = true,
+        //                AutoSizeMode = AutoSizeMode.GrowAndShrink
+        //            };
+        //            toolsLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
+
+        //            var chkEnableLog = new CheckBox
+        //            {
+        //                Text = "Enable log",
+        //                Dock = DockStyle.Fill,
+        //                AutoSize = true,
+        //                Checked = SettingsManager.IsLogEnabled
+        //            };
+        //            toolsLayout.Controls.Add(chkEnableLog, 0, 0);
+
+        //            var btnBackup = new Button
+        //            {
+        //                Text = "Backup",
+        //                AutoSize = true,
+        //                Width = 80,
+        //                Height = 30,
+        //                Anchor = AnchorStyles.None
+        //            };
+        //            btnBackup.Click += (s, ev) => BackupManager.BackupData();
+        //            toolsLayout.Controls.Add(btnBackup, 0, 1);
+
+        //            groupBoxTools.Controls.Add(toolsLayout);
+        //            layoutPanel.Controls.Add(groupBoxTools);
+
+        //            var buttonsLayout = new TableLayoutPanel
+        //            {
+        //                Dock = DockStyle.Bottom,
+        //                ColumnCount = 2,
+        //                AutoSize = true,
+        //                AutoSizeMode = AutoSizeMode.GrowAndShrink
+        //            };
+        //            buttonsLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
+        //            buttonsLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
+
+        //            var btnCancel = new Button
+        //            {
+        //                Text = "Cancel",
+        //                AutoSize = true,
+        //                Width = 80,
+        //                Height = 30,
+        //                Anchor = AnchorStyles.Right
+        //            };
+        //            btnCancel.Click += (s, ev) => frmOptions.Close();
+
+        //            var btnSave = new Button
+        //            {
+        //                Text = "Save",
+        //                AutoSize = true,
+        //                Width = 80,
+        //                Height = 30,
+        //                Anchor = AnchorStyles.Right
+        //            };
+        //            btnSave.Click += (s, ev) =>
+        //            {
+        //                SettingsManager.IsSnapEnabled = chkEnableSnap.Checked;
+        //                SettingsManager.TintValue = (int)numTint.Value;
+        //                SettingsManager.SelectedColor = cmbColor.SelectedItem.ToString();
+        //                SettingsManager.IsLogEnabled = chkEnableLog.Checked;
+        //                SettingsManager.SingleClickToLaunch = chkSingleClickToLaunch.Checked;
+
+        //                SettingsManager.SaveSettings();
+        //                // Update FenceManager options and reapply click events
+        //                FenceManager.UpdateOptionsAndClickEvents();
+
+        //                foreach (var fence in System.Windows.Application.Current.Windows.OfType<NonActivatingWindow>())
+        //                {
+        //                    Utility.ApplyTintAndColorToFence(fence);
+        //                }
+
+        //                frmOptions.Close();
+        //            };
+
+        //            buttonsLayout.Controls.Add(btnCancel, 0, 0);
+        //            buttonsLayout.Controls.Add(btnSave, 1, 0);
+        //            layoutPanel.Controls.Add(buttonsLayout);
+
+        //            frmOptions.Controls.Add(layoutPanel);
+        //            frmOptions.ShowDialog();
+        //        }
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        System.Windows.MessageBox.Show($"An error occurred: {ex.Message}", "Error", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+        //    }
+        //}
+        private void ShowOptionsForm()
+        {
+            try
+            {
+                using (var frmOptions = new Form())
+                {
+                    frmOptions.Text = "Options";
+                    frmOptions.Size = new System.Drawing.Size(260, 400); // Increased height to fit new control
+                    frmOptions.StartPosition = FormStartPosition.CenterScreen;
+                    frmOptions.FormBorderStyle = FormBorderStyle.FixedDialog;
+                    frmOptions.MaximizeBox = false;
+                    frmOptions.MinimizeBox = false;
+                    frmOptions.Icon = Icon.ExtractAssociatedIcon(Process.GetCurrentProcess().MainModule.FileName);
+
+                    var layoutPanel = new TableLayoutPanel
+                    {
+                        Dock = DockStyle.Fill,
+                        ColumnCount = 1,
+                        AutoSize = true,
+                        AutoSizeMode = AutoSizeMode.GrowAndShrink,
+                        Padding = new Padding(10)
+                    };
+                    layoutPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
+
+                    var groupBoxSelections = new GroupBox
+                    {
+                        Text = "Selections",
+                        Dock = DockStyle.Top,
+                        AutoSize = true,
+                        AutoSizeMode = AutoSizeMode.GrowAndShrink
+                    };
+                    var selectionsLayout = new TableLayoutPanel
+                    {
+                        Dock = DockStyle.Fill,
+                        ColumnCount = 2,
+                        RowCount = 5, // Increased row count for LaunchEffect
+                        AutoSize = true,
+                        AutoSizeMode = AutoSizeMode.GrowAndShrink
+                    };
+                    selectionsLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
+                    selectionsLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
+
+                    var chkEnableSnap = new CheckBox
+                    {
+                        Text = "Enable snap function",
+                        Dock = DockStyle.Fill,
+                        AutoSize = true,
+                        Checked = SettingsManager.IsSnapEnabled
+                    };
+                    selectionsLayout.Controls.Add(chkEnableSnap, 0, 0);
+                    selectionsLayout.SetColumnSpan(chkEnableSnap, 2);
+
+                    var lblTint = new Label { Text = "Tint", Dock = DockStyle.Fill, AutoSize = true };
+                    var numTint = new NumericUpDown
+                    {
+                        Maximum = 100,
+                        Minimum = 1,
+                        Value = SettingsManager.TintValue,
+                        Dock = DockStyle.Fill
+                    };
+                    selectionsLayout.Controls.Add(lblTint, 0, 1);
+                    selectionsLayout.Controls.Add(numTint, 1, 1);
+
+                    var lblColor = new Label { Text = "Color", Dock = DockStyle.Fill, AutoSize = true };
+                    var cmbColor = new ComboBox
+                    {
+                        Dock = DockStyle.Fill,
+                        DropDownStyle = ComboBoxStyle.DropDownList
+                    };
+                    cmbColor.Items.AddRange(new string[] { "Gray", "Black", "White", "Green", "Purple", "Yellow", "Red", "Blue" });
+                    cmbColor.SelectedItem = SettingsManager.SelectedColor;
+                    selectionsLayout.Controls.Add(lblColor, 0, 2);
+                    selectionsLayout.Controls.Add(cmbColor, 1, 2);
+
+               
+
+                    // Add Launch Effect ComboBox
+                    var lblLaunchEffect = new Label { Text = "Launch Effect", Dock = DockStyle.Fill, AutoSize = true };
+                    var cmbLaunchEffect = new ComboBox
+                    {
+                        Dock = DockStyle.Fill,
+                        DropDownStyle = ComboBoxStyle.DropDownList
+                    };
+                    cmbLaunchEffect.Items.AddRange(new string[] { "Zoom", "Bounce", "FadeOut", "SlideUp", "Rotate", "Agitate" });
+                    cmbLaunchEffect.SelectedIndex = (int)SettingsManager.LaunchEffect; // Enum values match indices
+                    selectionsLayout.Controls.Add(lblLaunchEffect, 0, 3);
+                    selectionsLayout.Controls.Add(cmbLaunchEffect, 1, 3);
+
+                    var chkSingleClickToLaunch = new CheckBox
+                    {
+                        Text = "Single Click to Launch",
+                        Dock = DockStyle.Fill,
+                        AutoSize = true,
+                        Checked = SettingsManager.SingleClickToLaunch
+                    };
+                    selectionsLayout.Controls.Add(chkSingleClickToLaunch, 0, 4);
+                    selectionsLayout.SetColumnSpan(chkSingleClickToLaunch, 2);
+
+
+                    groupBoxSelections.Controls.Add(selectionsLayout);
+                    layoutPanel.Controls.Add(groupBoxSelections);
+
+                    var groupBoxTools = new GroupBox
+                    {
+                        Text = "Tools",
+                        Dock = DockStyle.Top,
+                        AutoSize = true,
+                        AutoSizeMode = AutoSizeMode.GrowAndShrink
+                    };
+                    var toolsLayout = new TableLayoutPanel
+                    {
+                        Dock = DockStyle.Fill,
+                        ColumnCount = 1,
+                        AutoSize = true,
+                        AutoSizeMode = AutoSizeMode.GrowAndShrink
+                    };
+                    toolsLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
+
+                    var chkEnableLog = new CheckBox
+                    {
+                        Text = "Enable log",
+                        Dock = DockStyle.Fill,
+                        AutoSize = true,
+                        Checked = SettingsManager.IsLogEnabled
+                    };
+                    toolsLayout.Controls.Add(chkEnableLog, 0, 0);
+
+                    var btnBackup = new Button
+                    {
+                        Text = "Backup",
+                        AutoSize = true,
+                        Width = 80,
+                        Height = 30,
+                        Anchor = AnchorStyles.None
+                    };
+                    btnBackup.Click += (s, ev) => BackupManager.BackupData();
+                    toolsLayout.Controls.Add(btnBackup, 0, 1);
+
+                    groupBoxTools.Controls.Add(toolsLayout);
+                    layoutPanel.Controls.Add(groupBoxTools);
+
+                    var buttonsLayout = new TableLayoutPanel
+                    {
+                        Dock = DockStyle.Bottom,
+                        ColumnCount = 2,
+                        AutoSize = true,
+                        AutoSizeMode = AutoSizeMode.GrowAndShrink
+                    };
+                    buttonsLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
+                    buttonsLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
+
+                    var btnCancel = new Button
+                    {
+                        Text = "Cancel",
+                        AutoSize = true,
+                        Width = 80,
+                        Height = 30,
+                        Anchor = AnchorStyles.Right
+                    };
+                    btnCancel.Click += (s, ev) => frmOptions.Close();
+
+                    var btnSave = new Button
+                    {
+                        Text = "Save",
+                        AutoSize = true,
+                        Width = 80,
+                        Height = 30,
+                        Anchor = AnchorStyles.Right
+                    };
+                    btnSave.Click += (s, ev) =>
+                    {
+                        SettingsManager.IsSnapEnabled = chkEnableSnap.Checked;
+                        SettingsManager.TintValue = (int)numTint.Value;
+                        SettingsManager.SelectedColor = cmbColor.SelectedItem.ToString();
+                        SettingsManager.IsLogEnabled = chkEnableLog.Checked;
+                        SettingsManager.SingleClickToLaunch = chkSingleClickToLaunch.Checked;
+                        SettingsManager.LaunchEffect = (FenceManager.LaunchEffect)cmbLaunchEffect.SelectedIndex; // Update LaunchEffect
+
+                        SettingsManager.SaveSettings();
+                        FenceManager.UpdateOptionsAndClickEvents();
+
+                        foreach (var fence in System.Windows.Application.Current.Windows.OfType<NonActivatingWindow>())
+                        {
+                            Utility.ApplyTintAndColorToFence(fence);
+                        }
+
+                        frmOptions.Close();
+                    };
+
+                    buttonsLayout.Controls.Add(btnCancel, 0, 0);
+                    buttonsLayout.Controls.Add(btnSave, 1, 0);
+                    layoutPanel.Controls.Add(buttonsLayout);
+
+                    frmOptions.Controls.Add(layoutPanel);
+                    frmOptions.ShowDialog();
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show($"An error occurred: {ex.Message}", "Error", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+            }
+        }
+
+
+        private void ShowAboutForm()
+        {
+            try
+            {
+                using (var frmAbout = new Form())
+                {
+                    frmAbout.Text = "About Desktop Fences +";
+                    frmAbout.Size = new System.Drawing.Size(400, 450);
+                    frmAbout.StartPosition = FormStartPosition.CenterScreen;
+                    frmAbout.FormBorderStyle = FormBorderStyle.FixedDialog;
+                    frmAbout.MaximizeBox = false;
+                    frmAbout.MinimizeBox = false;
+                    frmAbout.Icon = Icon.ExtractAssociatedIcon(Process.GetCurrentProcess().MainModule.FileName);
+
+                    var layoutPanel = new TableLayoutPanel
+                    {
+                        Dock = DockStyle.Fill,
+                        ColumnCount = 1,
+                        RowCount = 7,
+                        AutoSize = true,
+                        AutoSizeMode = AutoSizeMode.GrowAndShrink,
+                        Padding = new Padding(20)
+                    };
+                    layoutPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
+
+                    var pictureBox = new PictureBox
+                    {
+                        Image = Utility.LoadImageFromResources("Desktop_Fences.Resources.logo1.png"),
+                        SizeMode = PictureBoxSizeMode.Zoom,
+                        Dock = DockStyle.Fill,
+                        Height = 100
+                    };
+                    layoutPanel.Controls.Add(pictureBox);
+
+                    var labelTitle = new Label
+                    {
+                        Text = "Desktop Fences +",
+                        Font = new Font("Tahoma", 14, System.Drawing.FontStyle.Bold),
+                        TextAlign = ContentAlignment.MiddleCenter,
+                        Dock = DockStyle.Fill,
+                        AutoSize = true
+                    };
+                    layoutPanel.Controls.Add(labelTitle);
+
+                    var version = Assembly.GetExecutingAssembly().GetName().Version;
+                    var labelVersion = new Label
+                    {
+                        Text = $"ver {version}",
+                        Font = new Font("Tahoma", 10, System.Drawing.FontStyle.Bold),
+                        TextAlign = ContentAlignment.MiddleCenter,
+                        Dock = DockStyle.Fill,
+                        AutoSize = true
+                    };
+                    layoutPanel.Controls.Add(labelVersion);
+
+                    var labelMainText = new Label
+                    {
+                        Text = "Desktop Fences + is an open-source alternative to StarDock's Fences, originally created by HakanKokcu as Birdy Fences.\n\nDesktop fences +, is maintained by Nikos Georgousis, has been enhanced and optimized to give better user experience and stability.\n\n ",
+                        Font = new Font("Tahoma", 10),
+                        TextAlign = ContentAlignment.MiddleCenter,
+                        Dock = DockStyle.Fill,
+                        AutoSize = true
+                    };
+                    layoutPanel.Controls.Add(labelMainText);
+
+                    var horizontalLine = new Label
+                    {
+                        BorderStyle = BorderStyle.Fixed3D,
+                        Height = 2,
+                        Dock = DockStyle.Fill,
+                        Margin = new Padding(10)
+                    };
+                    layoutPanel.Controls.Add(horizontalLine);
+
+                    var labelGitHubText = new Label
+                    {
+                        Text = "Please visit GitHub for news, updates, and bug reports.",
+                        Font = new Font("Tahoma", 9),
+                        TextAlign = ContentAlignment.MiddleCenter,
+                        Dock = DockStyle.Fill,
+                        AutoSize = true
+                    };
+                    layoutPanel.Controls.Add(labelGitHubText);
+
+                    var linkLabelGitHub = new LinkLabel
+                    {
+                        Text = "https://github.com/limbo666/DesktopFences",
+                        Font = new Font("Tahoma", 9),
+                        TextAlign = ContentAlignment.MiddleCenter,
+                        Dock = DockStyle.Fill,
+                        AutoSize = true
+                    };
+                    linkLabelGitHub.LinkClicked += (sender, e) =>
+                    {
+                        try
+                        {
+                            Process.Start(new ProcessStartInfo
+                            {
+                                FileName = "https://github.com/limbo666/DesktopFences",
+                                UseShellExecute = true
+                            });
+                        }
+                        catch (Exception ex)
+                        {
+                            System.Windows.MessageBox.Show($"Error opening GitHub link: {ex.Message}", "Error", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+                        }
+                    };
+                    layoutPanel.Controls.Add(linkLabelGitHub);
+
+                    frmAbout.Controls.Add(layoutPanel);
+                    frmAbout.ShowDialog();
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show($"An error occurred: {ex.Message}", "Error", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+            }
+        }
+
+        public void Dispose()
+        {
+            if (_trayIcon != null)
+            {
+                _trayIcon.Visible = false;
+                _trayIcon.Dispose();
+                _trayIcon = null;
+            }
+        }
+    }
+}
