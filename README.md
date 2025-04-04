@@ -12,10 +12,7 @@ Desktop Fences + creates **virtual fences** on your desktop, allowing you to gro
 -  **Fence JSON File** now placed in the same directory as the executable
 -  **First Fence Line** is created automatically during the first execution
 -  **Program Icon** added (updated in version 1.1)
--  **Error Handling** on:
-  - Move actions
-  - Program execution
-  - Empty or invalid JSON files
+-  **Error Handling** on: Move actions, Program execution, Empty or invalid JSON files
 
 ##  New Functionalities
 -  **Minimal About Screen**
@@ -26,30 +23,18 @@ Desktop Fences + creates **virtual fences** on your desktop, allowing you to gro
 -  **Execution Arguments** of original shortcuts are preserved
 -  **Target Type Detection** with proper error handling
 -  **Visual Effects** on icon click and icon removal
--  **Right-Click Context Menu for Icons** with:
-  - Run as Administrator (when applicable)
-  - Copy Path
-  - Find Target
+-  **Right-Click Context Menu for Icons** with: Run as Administrator (when applicable), Copy Path, Find Target
 -  **Folder Icon Appearance** fixed
 -  **Broken Link Detection** on startup and updated every second
 -  **Automatic JSON Format Updater** for existing fences.json
 -  **Fences No Longer Take Focus** from other windows when clicked
 -  **Fixed Delete Animation** for all icons
--  **Options Window** to:
-  - Enable/disable snap function
-  - Set tint level
-  - Select base color
+-  **Options Window** to: Enable/disable snap function, Set tint level, Select base color
 -  **Options Saved** in `options.json`
 -  **Manual Backup Mechanism**:
   - Saves fences and shortcuts to a `backups` subfolder
 -  **Logging Option** for diagnostics
--  **Selectable Launch Effects**:
-  - Zoom
-  - Bounce
-  - Fadeout
-  - SlideUp
-  - Rotate
-  - Agitate
+-  **Selectable Launch Effects**: Zoom, Bounce, Fadeout, SlideUp, Rotate, Agitate
 -  **Run at Windows Startup** option
 
 ---
