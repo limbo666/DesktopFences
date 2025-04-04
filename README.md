@@ -11,7 +11,7 @@ Desktop Fences + creates **virtual fences** on your desktop, allowing you to gro
 -  **Improved Performance and Stability**
 -  **Fence JSON File** now placed in the same directory as the executable
 -  **First Fence Line** is created automatically during the first execution
--  **Program Icon** added (updated in version 1.1)
+-  **Program Icon** added
 -  **Error Handling** on: Move actions, Program execution, Empty or invalid JSON files
 
 ##  New Functionalities
