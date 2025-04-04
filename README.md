@@ -63,7 +63,7 @@ Simply extract the executable and run it. The necessary configuration files (`fe
 
 ##  License
 
-This project is licensed under the [MIT License](LICENSE).
+This project is licensed under the [MIT License](License.md).
 
 ---
 
