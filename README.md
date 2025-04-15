@@ -28,11 +28,9 @@ Desktop Fences + creates **virtual fences** on your desktop, allowing you to gro
 -  **Broken Link Detection** on startup and updated every second
 -  **Automatic JSON Format Updater** for existing fences.json
 -  **Fences No Longer Take Focus** from other windows when clicked
--  **Fixed Delete Animation** for all icons
 -  **Options Window** to: Enable/disable snap function, Set tint level, Select base color
 -  **Options Saved** in `options.json`
--  **Manual Backup Mechanism**:
-  - Saves fences and shortcuts to a `backups` subfolder
+-  **Manual Backup Mechanism**:  Saves fences and shortcuts to a `backups` subfolder
 -  **Logging Option** for diagnostics
 -  **Selectable Launch Effects**: Zoom, Bounce, Fadeout, SlideUp, Rotate, Agitate
 -  **Run at Windows Startup** option
