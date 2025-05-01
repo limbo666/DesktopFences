@@ -16,6 +16,7 @@ using System.Threading.Tasks;
 using System.Windows.Threading;
 using System.IO;
 using System.Windows.Shapes;
+using System.Windows.Media.Effects;
 
 namespace Desktop_Fences
 {
@@ -36,18 +37,106 @@ namespace Desktop_Fences
                          // Pulse       // Quick scale pulse
             Agitate // Shake back and forth
         }
-        // Temporary variable to select effect for testing
-      //  private static LaunchEffect _currentEffect = LaunchEffect.Agitate; // Default to Zoom for now
 
+        // add here:
+        public static List<dynamic> GetFenceData()
+        {
+            return _fenceData;
+        }
+        private static void Log(string message)
+        {
+            bool isLogEnabled = _options?.IsLogEnabled ?? true;
+            if (isLogEnabled)
+            {
+                string logPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "Desktop_Fences.log");
+                System.IO.File.AppendAllText(logPath, $"{DateTime.Now}: {message}\n");
+            }
+        }
+        private static void UpdateFenceProperty(dynamic fence, string propertyName, string value, string logMessage)
+        {
+            //bool isLogEnabled = _options.IsLogEnabled ?? true;
+            //void Log(string message)
+            //{
+            //    if (isLogEnabled)
+            //    {
+            //        string logPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "Desktop_Fences.log");
+            //        System.IO.File.AppendAllText(logPath, $"{DateTime.Now}: {message}\n");
+            //    }
+            //}
 
+            try
+            {
+                // Get the actual fence object from _fenceData to ensure we're modifying the correct instance
+                int index = _fenceData.FindIndex(f => f.Title == fence.Title.ToString());
+                if (index >= 0)
+                {
+                    // Get the fence from _fenceData
+                    dynamic actualFence = _fenceData[index];
+
+                    // Convert to dictionary safely
+                    IDictionary<string, object> fenceDict = actualFence as IDictionary<string, object> ?? ((JObject)actualFence).ToObject<IDictionary<string, object>>();
+
+                    // Update the property
+                    fenceDict[propertyName] = value;
+
+                    // Update the fence in _fenceData
+                    _fenceData[index] = JObject.FromObject(fenceDict);
+                    SaveFenceData();
+                    FenceManager.Log($"{logMessage} for fence '{fence.Title}'");
+
+                    // Find the window to apply changes
+                    var windows = Application.Current.Windows.OfType<NonActivatingWindow>();
+                    var win = windows.FirstOrDefault(w => w.Title == fence.Title.ToString());
+                    if (win != null)
+                    {
+                        // Apply runtime changes
+                        if (propertyName == "CustomColor")
+                        {
+                            Utility.ApplyTintAndColorToFence(win, string.IsNullOrEmpty(value) ? _options.SelectedColor : value);
+                            FenceManager.Log($"Applied color '{value ?? "Default"}' to fence '{fence.Title}' at runtime");
+                        }
+
+                        // Update context menu checkmarks
+                        if (win.ContextMenu != null)
+                        {
+                            var customizeMenu = win.ContextMenu.Items.OfType<MenuItem>().FirstOrDefault(m => m.Header.ToString() == "Customize");
+                            if (customizeMenu != null)
+                            {
+                                var submenu = propertyName == "CustomColor"
+                                    ? customizeMenu.Items.OfType<MenuItem>().FirstOrDefault(m => m.Header.ToString() == "Color")
+                                    : customizeMenu.Items.OfType<MenuItem>().FirstOrDefault(m => m.Header.ToString() == "Launch Effect");
+                                if (submenu != null)
+                                {
+                                    foreach (MenuItem item in submenu.Items)
+                                    {
+                                        item.IsChecked = item.Tag?.ToString() == value || (value == null && item.Header.ToString() == "Default");
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    else
+                    {
+                        FenceManager.Log($"Failed to find window for fence '{fence.Title}' to apply {propertyName}");
+                    }
+                }
+                else
+                {
+                    FenceManager.Log($"Failed to find fence '{fence.Title}' in _fenceData for {propertyName} update");
+                }
+            }
+            catch (Exception ex)
+            {
+                FenceManager.Log($"Error updating {propertyName} for fence '{fence.Title}': {ex.Message}");
+            }
+        }
+
+        // end of replacement
         public static void LoadAndCreateFences(TargetChecker targetChecker)
         {
             string exePath = Assembly.GetEntryAssembly().Location;
             string exeDir = System.IO.Path.GetDirectoryName(exePath);
             _jsonFilePath = System.IO.Path.Combine(exeDir, "fences.json");
-           // string optionsPath = System.IO.Path.Combine(exeDir, "options.json");
-
-
 
             SettingsManager.LoadSettings();
             _options = new
@@ -57,21 +146,8 @@ namespace Desktop_Fences
                 SelectedColor = SettingsManager.SelectedColor,
                 IsLogEnabled = SettingsManager.IsLogEnabled,
                 singleClickToLaunch = SettingsManager.SingleClickToLaunch,
-                LaunchEffect = SettingsManager.LaunchEffect // Default to Zoom
-                // LaunchEffect = SettingsManager.LaunchEffect ?? LaunchEffect.Zoom // Default to Zoom if not set
+                LaunchEffect = SettingsManager.LaunchEffect
             };
-         
-
-            //if (System.IO.File.Exists(optionsPath))
-            //{
-            //    string optionsContent = System.IO.File.ReadAllText(optionsPath);
-            //    _options = JsonConvert.DeserializeObject<dynamic>(optionsContent);
-            //}
-            //else
-            //{
-            //    _options = new { IsSnapEnabled = true, TintValue = 70, SelectedColor = "Purple", IsLogEnabled = true, singleClickToLaunch = true };
-            //    System.IO.File.WriteAllText(optionsPath, JsonConvert.SerializeObject(_options, Formatting.Indented));
-            //}
 
             if (System.IO.File.Exists(_jsonFilePath))
             {
@@ -96,17 +172,38 @@ namespace Desktop_Fences
             {
                 InitializeDefaultFence();
             }
+            // Sanitize Portal Fences with missing target folders
+            var invalidFences = new List<dynamic>();
+            foreach (dynamic fence in _fenceData.ToList()) // Use ToList to avoid collection modification issues
+            {
+                if (fence.ItemsType?.ToString() == "Portal")
+                {
+                    string targetPath = fence.Path?.ToString();
+                    if (string.IsNullOrEmpty(targetPath) || !System.IO.Directory.Exists(targetPath))
+                    {
+                        invalidFences.Add(fence);
+                        FenceManager.Log($"Marked Portal Fence '{fence.Title}' for removal due to missing target folder: {targetPath ?? "null"}");
+                    }
+                }
+            }
 
+            // Remove invalid fences and save
+            if (invalidFences.Any())
+            {
+                foreach (var fence in invalidFences)
+                {
+                    _fenceData.Remove(fence);
+                    FenceManager.Log($"Removed Portal Fence '{fence.Title}' from _fenceData");
+                }
+                SaveFenceData();
+                FenceManager.Log($"Saved updated fences.json after removing {invalidFences.Count} invalid Portal Fences");
+            }
             foreach (dynamic fence in _fenceData)
             {
                 CreateFence(fence, targetChecker);
             }
-
-            foreach (var fence in Application.Current.Windows.OfType<NonActivatingWindow>())
-            {
-                Utility.ApplyTintAndColorToFence(fence);
-            }
         }
+       
 
         private static void InitializeDefaultFence()
         {
@@ -114,38 +211,127 @@ namespace Desktop_Fences
             System.IO.File.WriteAllText(_jsonFilePath, defaultJson);
             _fenceData = JsonConvert.DeserializeObject<List<dynamic>>(defaultJson);
         }
-
         private static void MigrateLegacyJson()
         {
-            foreach (var fence in _fenceData)
+            //bool isLogEnabled = _options?.IsLogEnabled ?? true;
+            //void Log(string message)
+            //{
+            //    if (isLogEnabled)
+            //    {
+            //        string logPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "Desktop_Fences.log");
+            //        System.IO.File.AppendAllText(logPath, $"{DateTime.Now}: {message}\n");
+            //    }
+            //}
+
+            try
             {
-                if (fence.ItemsType?.ToString() == "Portal")
+                bool jsonModified = false;
+                var validColors = new HashSet<string> { "Red", "Green", "Blue", "White", "Gray", "Black", "Purple", "Yellow" };
+                var validEffects = Enum.GetNames(typeof(LaunchEffect)).ToHashSet();
+
+                for (int i = 0; i < _fenceData.Count; i++)
                 {
-                    string portalPath = fence.Items?.ToString();
-                    if (!string.IsNullOrEmpty(portalPath) && !System.IO.Directory.Exists(portalPath))
+                    dynamic fence = _fenceData[i];
+                    IDictionary<string, object> fenceDict = fence is IDictionary<string, object> dict ? dict : ((JObject)fence).ToObject<IDictionary<string, object>>();
+
+                    // Existing migration logic
+                    if (fence.ItemsType?.ToString() == "Portal")
                     {
-                        fence.IsFolder = true;
+                        string portalPath = fence.Items?.ToString();
+                        if (!string.IsNullOrEmpty(portalPath) && !System.IO.Directory.Exists(portalPath))
+                        {
+                            fenceDict["IsFolder"] = true;
+                            jsonModified = true;
+                            FenceManager.Log($"Migrated legacy portal fence {fence.Title}: Added IsFolder=true");
+                        }
                     }
+                    else
+                    {
+                        var items = fence.Items as JArray ?? new JArray();
+                        foreach (var item in items)
+                        {
+                            if (item["IsFolder"] == null)
+                            {
+                                string path = item["Filename"]?.ToString();
+                                item["IsFolder"] = System.IO.Directory.Exists(path);
+                                jsonModified = true;
+                                FenceManager.Log($"Migrated item in {fence.Title}: Added IsFolder for {path}");
+                            }
+                        }
+                        fenceDict["Items"] = items; // Ensure Items updates are captured
+                    }
+
+                    // New migration: Add CustomColor
+                    if (!fenceDict.ContainsKey("CustomColor"))
+                    {
+                        fenceDict["CustomColor"] = null;
+                        jsonModified = true;
+                        FenceManager.Log($"Added CustomColor=null to {fence.Title}");
+                    }
+                    else
+                    {
+                        string customColor = fenceDict["CustomColor"]?.ToString();
+                        if (!string.IsNullOrEmpty(customColor) && !validColors.Contains(customColor))
+                        {
+                            FenceManager.Log($"Invalid CustomColor '{customColor}' in {fence.Title}, resetting to null");
+                            fenceDict["CustomColor"] = null;
+                            jsonModified = true;
+                        }
+                    }
+
+                    // New migration: Add CustomLaunchEffect
+                    if (!fenceDict.ContainsKey("CustomLaunchEffect"))
+                    {
+                        fenceDict["CustomLaunchEffect"] = null;
+                        jsonModified = true;
+                        FenceManager.Log($"Added CustomLaunchEffect=null to {fence.Title}");
+                    }
+                    else
+                    {
+                        string customEffect = fenceDict["CustomLaunchEffect"]?.ToString();
+                        if (!string.IsNullOrEmpty(customEffect) && !validEffects.Contains(customEffect))
+                        {
+                            FenceManager.Log($"Invalid CustomLaunchEffect '{customEffect}' in {fence.Title}, resetting to null");
+                            fenceDict["CustomLaunchEffect"] = null;
+                            jsonModified = true;
+                        }
+                    }
+
+                    // Update the original fence in _fenceData with the modified dictionary
+                    _fenceData[i] = JObject.FromObject(fenceDict);
+                }
+
+                if (jsonModified)
+                {
+                    SaveFenceData();
+                    Log("Migrated fences.json with new CustomColor and CustomLaunchEffect fields");
                 }
                 else
                 {
-                    var items = fence.Items as JArray ?? new JArray();
-                    foreach (var item in items)
-                    {
-                        if (item["IsFolder"] == null)
-                        {
-                            string path = item["Filename"]?.ToString();
-                            item["IsFolder"] = System.IO.Directory.Exists(path);
-                        }
-                    }
-                    fence.Items = items;
+                    Log("No migration needed for fences.json");
                 }
             }
-            SaveFenceData();
+            catch (Exception ex)
+            {
+                FenceManager.Log($"Error migrating fences.json: {ex.Message}\nStackTrace: {ex.StackTrace}");
+            }
         }
+        
 
-        private static void CreateFence(dynamic fence, TargetChecker targetChecker)
+   private static void CreateFence(dynamic fence, TargetChecker targetChecker)
         {
+            // Check for valid Portal Fence target folder
+            if (fence.ItemsType?.ToString() == "Portal")
+            {
+                string targetPath = fence.Path?.ToString();
+                if (string.IsNullOrEmpty(targetPath) || !System.IO.Directory.Exists(targetPath))
+                {
+                    FenceManager.Log($"Skipping creation of Portal Fence '{fence.Title}' due to missing target folder: {targetPath ?? "null"}");
+                    _fenceData.Remove(fence);
+                    SaveFenceData();
+                    return;
+                }
+            }
             DockPanel dp = new DockPanel();
             Border cborder = new Border
             {
@@ -159,9 +345,58 @@ namespace Desktop_Fences
             MenuItem miNP = new MenuItem { Header = "New Portal Fence" };
             MenuItem miRF = new MenuItem { Header = "Remove Fence" };
             MenuItem miXT = new MenuItem { Header = "Exit" };
+
+            // Add Customize submenu
+            MenuItem miCustomize = new MenuItem { Header = "Customize" };
+            MenuItem miColors = new MenuItem { Header = "Color" };
+            MenuItem miEffects = new MenuItem { Header = "Launch Effect" };
+            
+            // Valid options from MigrateLegacyJson
+            var validColors = new HashSet<string> { "Red", "Green", "Blue", "White", "Gray", "Black", "Purple", "Yellow" };
+            var validEffects = Enum.GetNames(typeof(LaunchEffect)).ToHashSet();
+            string currentCustomColor = fence.CustomColor?.ToString();
+            string currentCustomEffect = fence.CustomLaunchEffect?.ToString();
+        
+          
+            // Add color options
+            MenuItem miColorDefault = new MenuItem { Header = "Default", Tag = null };
+            miColorDefault.Click += (s, e) => UpdateFenceProperty(fence, "CustomColor", null, "Color set to Default");
+            miColorDefault.IsCheckable = true;
+            miColorDefault.IsChecked = string.IsNullOrEmpty(currentCustomColor); // Check if null
+            miColors.Items.Add(miColorDefault);
+            foreach (var color in validColors)
+            {
+                MenuItem miColor = new MenuItem { Header = color, Tag = color };
+                miColor.Click += (s, e) => UpdateFenceProperty(fence, "CustomColor", color, $"Color set to {color}");
+                miColor.IsCheckable = true;
+                miColor.IsChecked = color.Equals(currentCustomColor, StringComparison.OrdinalIgnoreCase); // Case-insensitive match
+                miColors.Items.Add(miColor);
+            }
+
+            // Add effect options
+            MenuItem miEffectDefault = new MenuItem { Header = "Default", Tag = null };
+            miEffectDefault.Click += (s, e) => UpdateFenceProperty(fence, "CustomLaunchEffect", null, "Launch Effect set to Default");
+            miEffectDefault.IsCheckable = true;
+            miEffectDefault.IsChecked = string.IsNullOrEmpty(currentCustomEffect); // Check if null
+            miEffects.Items.Add(miEffectDefault);
+            foreach (var effect in validEffects)
+            {
+                MenuItem miEffect = new MenuItem { Header = effect, Tag = effect };
+                miEffect.Click += (s, e) => UpdateFenceProperty(fence, "CustomLaunchEffect", effect, $"Launch Effect set to {effect}");
+                miEffect.IsCheckable = true;
+                miEffect.IsChecked = effect.Equals(currentCustomEffect, StringComparison.OrdinalIgnoreCase); // Case-insensitive match
+                miEffects.Items.Add(miEffect);
+            }
+
+
+            miCustomize.Items.Add(miColors);
+            miCustomize.Items.Add(miEffects);
+
             cm.Items.Add(miNF);
             cm.Items.Add(miNP);
             cm.Items.Add(miRF);
+            cm.Items.Add(new Separator());
+            cm.Items.Add(miCustomize); // Add Customize submenu
             cm.Items.Add(new Separator());
             cm.Items.Add(miXT);
 
@@ -179,8 +414,10 @@ namespace Desktop_Fences
                 Width = (double)fence.Width,
                 Height = (double)fence.Height,
                 Top = (double)fence.Y,
-                Left = (double)fence.X
+                Left = (double)fence.X,
+                Tag = fence  // Add this line to store the fence object
             };
+            
 
             miRF.Click += (s, e) =>
             {
@@ -197,7 +434,7 @@ namespace Desktop_Fences
                         }
                     }
 
-                    Log($"Removing fence: {fence.Title}");
+                    FenceManager.Log($"Removing fence: {fence.Title}");
                     if (fence.ItemsType?.ToString() == "Data")
                     {
                         var items = fence.Items as JArray;
@@ -214,7 +451,7 @@ namespace Desktop_Fences
                                         try
                                         {
                                             System.IO.File.Delete(shortcutPath);
-                                            Log($"Deleted shortcut: {shortcutPath}");
+                                            FenceManager.Log($"Deleted shortcut: {shortcutPath}");
                                         }
                                         catch (Exception ex)
                                         {
@@ -234,7 +471,7 @@ namespace Desktop_Fences
                     }
                     SaveFenceData();
                     win.Close();
-                    Log($"Fence {fence.Title} removed successfully");
+                    FenceManager.Log($"Fence {fence.Title} removed successfully");
                 }
             };
 
@@ -253,7 +490,7 @@ namespace Desktop_Fences
                 Point mousePosition = win.PointToScreen(new Point(0, 0));
                 mousePosition = Mouse.GetPosition(win);
                 Point absolutePosition = win.PointToScreen(mousePosition);
-                Log($"Creating new fence at position: X={absolutePosition.X}, Y={absolutePosition.Y}");
+                FenceManager.Log($"Creating new fence at position: X={absolutePosition.X}, Y={absolutePosition.Y}");
                 CreateNewFence("New Fence", "Data", absolutePosition.X, absolutePosition.Y);
             };
 
@@ -272,7 +509,7 @@ namespace Desktop_Fences
                 Point mousePosition = win.PointToScreen(new Point(0, 0));
                 mousePosition = Mouse.GetPosition(win);
                 Point absolutePosition = win.PointToScreen(mousePosition);
-                Log($"Creating new portal fence at position: X={absolutePosition.X}, Y={absolutePosition.Y}");
+                FenceManager.Log($"Creating new portal fence at position: X={absolutePosition.X}, Y={absolutePosition.Y}");
                 CreateNewFence("New Portal Fence", "Portal", absolutePosition.X, absolutePosition.Y);
             };
 
@@ -327,7 +564,8 @@ namespace Desktop_Fences
                         }
                     }
 
-                    Log($"Entering edit mode for fence: {fence.Title}");
+                    FenceManager.Log($"Entering edit mode for fence: {fence.Title}");
+
                     titletb.Text = titlelabel.Content.ToString();
                     titlelabel.Visibility = Visibility.Collapsed;
                     titletb.Visibility = Visibility.Visible;
@@ -335,7 +573,7 @@ namespace Desktop_Fences
                     win.Activate();
                     Keyboard.Focus(titletb);
                     titletb.SelectAll();
-                    Log($"Focus set to title textbox for fence: {fence.Title}");
+                    FenceManager.Log($"Focus set to title textbox for fence: {fence.Title}");
                 }
                 else if (e.LeftButton == MouseButtonState.Pressed)
                 {
@@ -364,7 +602,7 @@ namespace Desktop_Fences
                     titlelabel.Visibility = Visibility.Visible;
                     SaveFenceData();
                     win.ShowActivated = false;
-                    Log($"Exited edit mode via Enter, new title for fence: {fence.Title}");
+                    FenceManager.Log($"Exited edit mode via Enter, new title for fence: {fence.Title}");
                     win.Focus();
                 }
             };
@@ -388,7 +626,7 @@ namespace Desktop_Fences
                 titlelabel.Visibility = Visibility.Visible;
                 SaveFenceData();
                 win.ShowActivated = false;
-                Log($"Exited edit mode via click, new title for fence: {fence.Title}");
+                FenceManager.Log($"Exited edit mode via click, new title for fence: {fence.Title}");
             };
 
             WrapPanel wpcont = new WrapPanel();
@@ -492,7 +730,7 @@ namespace Desktop_Fences
                                                     System.IO.File.AppendAllText(logPath, $"{DateTime.Now}: {message}\n");
                                                 }
                                             }
-                                            Log($"Removing icon for {filePath} from fence");
+                                            FenceManager.Log($"Removing icon for {filePath} from fence");
                                             var fade = new DoubleAnimation(1, 0, TimeSpan.FromSeconds(0.3));
                                             fade.Completed += (s, a) =>
                                             {
@@ -507,11 +745,11 @@ namespace Desktop_Fences
                                                     try
                                                     {
                                                         System.IO.File.Delete(shortcutPath);
-                                                        Log($"Deleted shortcut: {shortcutPath}");
+                                                        FenceManager.Log($"Deleted shortcut: {shortcutPath}");
                                                     }
                                                     catch (Exception ex)
                                                     {
-                                                        Log($"Failed to delete shortcut {shortcutPath}: {ex.Message}");
+                                                        FenceManager.Log($"Failed to delete shortcut {shortcutPath}: {ex.Message}");
                                                     }
                                                 }
                                             };
@@ -632,7 +870,7 @@ namespace Desktop_Fences
                                     IWshShortcut shortcut = (IWshShortcut)shell.CreateShortcut(shortcutName);
                                     shortcut.TargetPath = droppedFile;
                                     shortcut.Save();
-                                    Log($"Created unique shortcut: {shortcutName}");
+                                    FenceManager.Log($"Created unique shortcut: {shortcutName}");
                                 }
                                 else
                                 {
@@ -642,7 +880,7 @@ namespace Desktop_Fences
                                         counter++;
                                     }
                                     System.IO.File.Copy(droppedFile, shortcutName, false);
-                                    Log($"Copied unique shortcut: {shortcutName}");
+                                    FenceManager.Log($"Copied unique shortcut: {shortcutName}");
                                 }
 
                                 dynamic newItem = new System.Dynamic.ExpandoObject();
@@ -650,6 +888,8 @@ namespace Desktop_Fences
                                 newItemDict["Filename"] = shortcutName;
                                 newItemDict["IsFolder"] = isFolder; // Ορίζουμε το isFolder με βάση τον στόχο
                                 newItemDict["DisplayName"] = System.IO.Path.GetFileNameWithoutExtension(droppedFile);
+                              //  newItemDict["Arguments"] = arguments; // Add this line to store arguments
+
 
                                 var items = fence.Items as JArray ?? new JArray();
                                 items.Add(JObject.FromObject(newItem));
@@ -695,7 +935,7 @@ namespace Desktop_Fences
                                             var itemToRemove = items.FirstOrDefault(i => i["Filename"]?.ToString() == shortcutName);
                                             if (itemToRemove != null)
                                             {
-                                                Log($"Removing icon for {shortcutName} from fence");
+                                                FenceManager.Log($"Removing icon for {shortcutName} from fence");
                                                 var fade = new DoubleAnimation(1, 0, TimeSpan.FromSeconds(0.3));
                                                 fade.Completed += (s, a) =>
                                                 {
@@ -710,11 +950,11 @@ namespace Desktop_Fences
                                                         try
                                                         {
                                                             System.IO.File.Delete(shortcutPath);
-                                                            Log($"Deleted shortcut: {shortcutPath}");
+                                                            FenceManager.Log($"Deleted shortcut: {shortcutPath}");
                                                         }
                                                         catch (Exception ex)
                                                         {
-                                                            Log($"Failed to delete shortcut {shortcutPath}: {ex.Message}");
+                                                            FenceManager.Log($"Failed to delete shortcut {shortcutPath}: {ex.Message}");
                                                         }
                                                     }
                                                 };
@@ -736,14 +976,14 @@ namespace Desktop_Fences
                                     {
                                         string folderPath = System.IO.Path.GetDirectoryName(Utility.GetShortcutTarget(shortcutName));
                                         Clipboard.SetText(folderPath);
-                                        Log($"Copied target folder path to clipboard: {folderPath}");
+                                        FenceManager.Log($"Copied target folder path to clipboard: {folderPath}");
                                     };
 
                                     miCopyFullPath.Click += (sender, e) =>
                                     {
                                         string targetPath = Utility.GetShortcutTarget(shortcutName);
                                         Clipboard.SetText(targetPath);
-                                        Log($"Copied target full path to clipboard: {targetPath}");
+                                        FenceManager.Log($"Copied target full path to clipboard: {targetPath}");
                                     };
 
                                     miRunAsAdmin.Click += (sender, e) =>
@@ -756,7 +996,7 @@ namespace Desktop_Fences
                                         });
                                     };
                                 }
-                                Log($"Added shortcut to Data Fence: {shortcutName}");
+                                FenceManager.Log($"Added shortcut to Data Fence: {shortcutName}");
                             }
                             else if (fence.ItemsType?.ToString() == "Portal")
                             {
@@ -767,14 +1007,14 @@ namespace Desktop_Fences
                                 if (string.IsNullOrEmpty(destinationFolder))
                                 {
                                     MessageBox.Show($"No destination folder defined for this Portal Fence. Please recreate the fence.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                                    Log($"No Path defined for Portal Fence: {fence.Title}");
+                                    FenceManager.Log($"No Path defined for Portal Fence: {fence.Title}");
                                     continue;
                                 }
 
                                 if (!System.IO.Directory.Exists(destinationFolder))
                                 {
                                     MessageBox.Show($"The destination folder '{destinationFolder}' no longer exists. Please update the Portal Fence settings.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                                    Log($"Destination folder missing for Portal Fence: {destinationFolder}");
+                                    FenceManager.Log($"Destination folder missing for Portal Fence: {destinationFolder}");
                                     continue;
                                 }
 
@@ -792,12 +1032,12 @@ namespace Desktop_Fences
                                 if (System.IO.File.Exists(droppedFile))
                                 {
                                     System.IO.File.Copy(droppedFile, destinationPath, false);
-                                    Log($"Copied file to Portal Fence: {destinationPath}");
+                                    FenceManager.Log($"Copied file to Portal Fence: {destinationPath}");
                                 }
                                 else if (System.IO.Directory.Exists(droppedFile))
                                 {
                                     CopyDirectory(droppedFile, destinationPath);
-                                    Log($"Copied directory to Portal Fence: {destinationPath}");
+                                    FenceManager.Log($"Copied directory to Portal Fence: {destinationPath}");
                                 }
                             }
                         }
@@ -828,12 +1068,19 @@ namespace Desktop_Fences
             InitContent();
             win.Show();
 
+            //IDictionary<string, object> fenceDict = fence is IDictionary<string, object> dict ? dict : ((JObject)fence).ToObject<IDictionary<string, object>>();
+            //SnapManager.AddSnapping(win, fenceDict);
+            //Utility.ApplyTintAndColorToFence(win);
+            //targetChecker.Start();
+
             IDictionary<string, object> fenceDict = fence is IDictionary<string, object> dict ? dict : ((JObject)fence).ToObject<IDictionary<string, object>>();
             SnapManager.AddSnapping(win, fenceDict);
-            Utility.ApplyTintAndColorToFence(win);
+            // Apply custom color if present, otherwise use global
+            string customColor = fence.CustomColor?.ToString();
+            Utility.ApplyTintAndColorToFence(win, string.IsNullOrEmpty(customColor) ? _options.SelectedColor : customColor);
             targetChecker.Start();
         }
-
+     
         // Βοηθητική μέθοδος για αντιγραφή φακέλων
         private static void CopyDirectory(string sourceDir, string destDir)
         {
@@ -854,6 +1101,7 @@ namespace Desktop_Fences
                 CopyDirectory(subDir.FullName, newDestDir);
             }
         }
+        // Return here
 
         public static void AddIcon(dynamic icon, WrapPanel wpcont)
         {
@@ -864,6 +1112,7 @@ namespace Desktop_Fences
             bool isFolder = iconDict.ContainsKey("IsFolder") && (bool)iconDict["IsFolder"];
             bool isShortcut = System.IO.Path.GetExtension(filePath).ToLower() == ".lnk";
             string targetPath = isShortcut ? Utility.GetShortcutTarget(filePath) : filePath;
+            string arguments = iconDict.ContainsKey("Arguments") ? (string)iconDict["Arguments"] : null; // Add this line
 
             bool isLogEnabled = _options.IsLogEnabled ?? true;
             void Log(string message)
@@ -876,7 +1125,7 @@ namespace Desktop_Fences
             }
 
             ImageSource shortcutIcon = null;
-            string arguments = null;
+           // string arguments = null;
 
             if (isShortcut)
             {
@@ -980,6 +1229,18 @@ namespace Desktop_Fences
                 TextAlignment = TextAlignment.Center,
                 Text = displayText
             };
+            // Add shadow effect for better contrast
+            lbl.Effect = new DropShadowEffect
+            {
+                Color = Colors.Black,       // Black shadow for maximum contrast
+                Direction = 315,            // Angle: slightly upper-left for natural look
+                ShadowDepth = 2,            // Small offset to avoid blurriness
+                BlurRadius = 3,             // Subtle blur for readability
+                Opacity = 0.8               // Strong enough to stand out
+            };
+
+
+
             sp.Children.Add(lbl);
 
             sp.Tag = filePath;
@@ -998,7 +1259,7 @@ namespace Desktop_Fences
             System.IO.File.WriteAllText(_jsonFilePath, formattedJson);
         }
 
-        private static void CreateNewFence(string title, string itemsType, double x = 20, double y = 20)
+        private static void CreateNewFence(string title, string itemsType, double x = 20, double y = 20, string customColor = null, string customLaunchEffect = null)
         {
             dynamic newFence = new System.Dynamic.ExpandoObject();
             IDictionary<string, object> newFenceDict = newFence;
@@ -1009,7 +1270,8 @@ namespace Desktop_Fences
             newFenceDict["Height"] = 130;
             newFenceDict["ItemsType"] = itemsType;
             newFenceDict["Items"] = itemsType == "Portal" ? "" : new JArray();
-
+            newFenceDict["CustomColor"] = customColor; // Use passed value
+            newFenceDict["CustomLaunchEffect"] = customLaunchEffect; // Use passed value
             if (itemsType == "Portal")
             {
                 using (var dialog = new System.Windows.Forms.FolderBrowserDialog())
@@ -1017,15 +1279,14 @@ namespace Desktop_Fences
                     dialog.Description = "Select the folder to monitor for this Portal Fence";
                     if (dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
                     {
-                        newFenceDict["Path"] = dialog.SelectedPath; // Ορίζουμε το Path κατά τη δημιουργία
+                        newFenceDict["Path"] = dialog.SelectedPath;
                     }
                     else
                     {
-                        return; // Αν ακυρώσει, δεν δημιουργούμε το fence
+                        return;
                     }
                 }
             }
-
             _fenceData.Add(newFence);
             SaveFenceData();
             CreateFence(newFence, new TargetChecker(1000));
@@ -1131,6 +1392,37 @@ namespace Desktop_Fences
             }
             moveWindow.ShowDialog();
         }
+        private static WrapPanel FindWrapPanel(DependencyObject parent, int depth = 0, int maxDepth = 10)
+        {
+            // Prevent infinite recursion
+            if (parent == null || depth > maxDepth)
+            {
+                Log($"FindWrapPanel: Reached max depth {maxDepth} or null parent at depth {depth}");
+                return null;
+            }
+
+            // Check if current element is a WrapPanel
+            if (parent is WrapPanel wrapPanel)
+            {
+                Log($"FindWrapPanel: Found WrapPanel at depth {depth}");
+                return wrapPanel;
+            }
+
+            // Recurse through visual tree
+            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
+            {
+                var child = VisualTreeHelper.GetChild(parent, i);
+                Log($"FindWrapPanel: Checking child {i} at depth {depth}, type: {child?.GetType()?.Name ?? "null"}");
+                var result = FindWrapPanel(child, depth + 1, maxDepth);
+                if (result != null)
+                {
+                    return result;
+                }
+            }
+
+            Log($"FindWrapPanel: No WrapPanel found under parent {parent?.GetType()?.Name ?? "null"} at depth {depth}");
+            return null;
+        }
 
         private static void EditItem(dynamic icon, dynamic fence, NonActivatingWindow win)
         {
@@ -1138,16 +1430,6 @@ namespace Desktop_Fences
             string filePath = iconDict.ContainsKey("Filename") ? (string)iconDict["Filename"] : "Unknown";
             string displayName = iconDict.ContainsKey("DisplayName") ? (string)iconDict["DisplayName"] : System.IO.Path.GetFileNameWithoutExtension(filePath);
             bool isShortcut = System.IO.Path.GetExtension(filePath).ToLower() == ".lnk";
-
-            bool isLogEnabled = _options.IsLogEnabled ?? true;
-            void Log(string message)
-            {
-                if (isLogEnabled)
-                {
-                    string logPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "Desktop_Fences.log");
-                    System.IO.File.AppendAllText(logPath, $"{DateTime.Now}: {message}\n");
-                }
-            }
 
             if (!isShortcut)
             {
@@ -1158,135 +1440,205 @@ namespace Desktop_Fences
             var editWindow = new EditShortcutWindow(filePath, displayName);
             if (editWindow.ShowDialog() == true)
             {
-                iconDict["DisplayName"] = editWindow.NewDisplayName;
-                Log($"Updated DisplayName for {filePath} to {editWindow.NewDisplayName}");
+                string newDisplayName = editWindow.NewDisplayName;
+                iconDict["DisplayName"] = newDisplayName;
+                Log($"Updated DisplayName for {filePath} to {newDisplayName}");
 
+                // Update fence data
                 var items = fence.Items as JArray;
                 if (items != null)
                 {
                     var itemToUpdate = items.FirstOrDefault(i => i["Filename"]?.ToString() == filePath);
                     if (itemToUpdate != null)
                     {
-                        itemToUpdate["DisplayName"] = editWindow.NewDisplayName;
+                        itemToUpdate["DisplayName"] = newDisplayName;
                         SaveFenceData();
                         Log($"Fence data updated for {filePath}");
                     }
-                }
-                if (win != null)
-                {
-                    var wpcont = ((win.Content as Border)?.Child as DockPanel)?.Children.Cast<object>()
-                        .OfType<ScrollViewer>().FirstOrDefault()?.Content as WrapPanel;
-                    if (wpcont != null)
+                    else
                     {
-                        var sp = wpcont.Children.Cast<object>()
-                            .OfType<StackPanel>()
-                            .FirstOrDefault(s => (s.Tag as string) == filePath);
-                        if (sp != null)
+                        Log($"Failed to find item {filePath} in fence items for update");
+                    }
+                }
+
+                // Update UI
+                if (win == null)
+                {
+                    Log($"Window is null for fence when updating {filePath}");
+                    return;
+                }
+
+                // Attempt to find WrapPanel directly
+                Log($"Starting UI update for {filePath}. Window content type: {win.Content?.GetType()?.Name ?? "null"}");
+                WrapPanel wpcont = null;
+                var border = win.Content as Border;
+                if (border != null)
+                {
+                    Log($"Found Border. Child type: {border.Child?.GetType()?.Name ?? "null"}");
+                    var dockPanel = border.Child as DockPanel;
+                    if (dockPanel != null)
+                    {
+                        Log($"Found DockPanel. Checking for ScrollViewer...");
+                        var scrollViewer = dockPanel.Children.OfType<ScrollViewer>().FirstOrDefault();
+                        if (scrollViewer != null)
                         {
-                            var lbl = sp.Children.Cast<object>().OfType<TextBlock>().FirstOrDefault();
-                            var ico = sp.Children.Cast<object>().OfType<Image>().FirstOrDefault();
-                            if (lbl != null && ico != null)
+                            Log($"Found ScrollViewer. Content type: {scrollViewer.Content?.GetType()?.Name ?? "null"}");
+                            wpcont = scrollViewer.Content as WrapPanel;
+                        }
+                        else
+                        {
+                            Log($"ScrollViewer not found in DockPanel for {filePath}");
+                        }
+                    }
+                    else
+                    {
+                        Log($"DockPanel not found in Border for {filePath}");
+                    }
+                }
+                else
+                {
+                    Log($"Border not found in window content for {filePath}");
+                }
+
+                // Fallback to visual tree traversal if direct lookup fails
+                if (wpcont == null)
+                {
+                    Log($"Direct WrapPanel lookup failed, attempting visual tree traversal for {filePath}");
+                    wpcont = FindWrapPanel(win);
+                }
+
+                if (wpcont != null)
+                {
+                    Log($"Found WrapPanel. Checking for StackPanel with Tag.FilePath: {filePath}");
+                    // Access Tag.FilePath to match ClickEventAdder's anonymous object
+                    var sp = wpcont.Children.OfType<StackPanel>()
+                        .FirstOrDefault(s => s.Tag != null && s.Tag.GetType().GetProperty("FilePath")?.GetValue(s.Tag)?.ToString() == filePath);
+                    if (sp != null)
+                    {
+                        Log($"Found StackPanel for {filePath}. Tag: {sp.Tag?.ToString() ?? "null"}");
+                        var lbl = sp.Children.OfType<TextBlock>().FirstOrDefault();
+                        if (lbl != null)
+                        {
+                            // Apply truncation logic (same as in AddIcon)
+                            string displayText = string.IsNullOrEmpty(newDisplayName)
+                                ? System.IO.Path.GetFileNameWithoutExtension(filePath)
+                                : newDisplayName;
+                            if (displayText.Length > 20)
                             {
-                                string newText = editWindow.NewDisplayName.Length > 20 ? editWindow.NewDisplayName.Substring(0, 20) + "..." : editWindow.NewDisplayName;
-                                lbl.Text = newText;
+                                displayText = displayText.Substring(0, 20) + "...";
+                            }
+                            lbl.Text = displayText;
+                            lbl.InvalidateVisual(); // Force UI refresh
+                            Log($"Updated TextBlock for {filePath} to '{displayText}'");
+                        }
+                        else
+                        {
+                            Log($"TextBlock not found in StackPanel for {filePath}. Children: {string.Join(", ", sp.Children.OfType<FrameworkElement>().Select(c => c.GetType().Name))}");
+                        }
 
-                                WshShell shell = new WshShell();
-                                IWshShortcut shortcut = (IWshShortcut)shell.CreateShortcut(filePath);
-                                ImageSource shortcutIcon = null;
+                        // Update icon
+                        var ico = sp.Children.OfType<Image>().FirstOrDefault();
+                        if (ico != null)
+                        {
+                            WshShell shell = new WshShell();
+                            IWshShortcut shortcut = (IWshShortcut)shell.CreateShortcut(filePath);
+                            ImageSource shortcutIcon = null;
 
-                                if (!string.IsNullOrEmpty(shortcut.IconLocation))
+                            if (!string.IsNullOrEmpty(shortcut.IconLocation))
+                            {
+                                string[] iconParts = shortcut.IconLocation.Split(',');
+                                string iconPath = iconParts[0];
+                                if (System.IO.File.Exists(iconPath))
                                 {
-                                    string[] iconParts = shortcut.IconLocation.Split(',');
-                                    string iconPath = iconParts[0];
-                                    if (System.IO.File.Exists(iconPath))
+                                    try
                                     {
                                         shortcutIcon = System.Drawing.Icon.ExtractAssociatedIcon(iconPath).ToImageSource();
                                         Log($"Applied custom icon from IconLocation for {filePath}: {iconPath}");
                                     }
+                                    catch (Exception ex)
+                                    {
+                                        Log($"Failed to extract custom icon for {filePath}: {ex.Message}");
+                                    }
                                 }
+                            }
 
-                                if (shortcutIcon == null)
+                            if (shortcutIcon == null)
+                            {
+                                string targetPath = shortcut.TargetPath;
+                                if (System.IO.File.Exists(targetPath))
                                 {
-                                    string targetPath = shortcut.TargetPath;
-                                    if (System.IO.File.Exists(targetPath))
+                                    try
                                     {
                                         shortcutIcon = System.Drawing.Icon.ExtractAssociatedIcon(targetPath).ToImageSource();
                                         Log($"No custom icon, using target icon for {filePath}: {targetPath}");
                                     }
-                                    else if (System.IO.Directory.Exists(targetPath))
+                                    catch (Exception ex)
                                     {
-                                        shortcutIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/folder-White.png"));
-                                        Log($"No custom icon, using folder-White.png for {filePath}");
-                                    }
-                                    else
-                                    {
-                                        shortcutIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/file-WhiteX.png"));
-                                        Log($"No custom icon or valid target, using file-WhiteX.png for {filePath}");
+                                        Log($"Failed to extract target icon for {filePath}: {ex.Message}");
                                     }
                                 }
-
-                                ico.Source = shortcutIcon;
-                                iconCache[filePath] = shortcutIcon;
+                                else if (System.IO.Directory.Exists(targetPath))
+                                {
+                                    shortcutIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/folder-White.png"));
+                                    Log($"No custom icon, using folder-White.png for {filePath}");
+                                }
+                                else
+                                {
+                                    shortcutIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/file-WhiteX.png"));
+                                    Log($"No custom icon or valid target, using file-WhiteX.png for {filePath}");
+                                }
                             }
+
+                            ico.Source = shortcutIcon;
+                            iconCache[filePath] = shortcutIcon;
+                            Log($"Updated icon for {filePath}");
+                        }
+                        else
+                        {
+                            Log($"Image not found in StackPanel for {filePath}");
+                        }
+                    }
+                    else
+                    {
+                        Log($"StackPanel not found for {filePath} in WrapPanel. Available Tag.FilePaths: {string.Join(", ", wpcont.Children.OfType<StackPanel>().Select(s => s.Tag != null ? (s.Tag.GetType().GetProperty("FilePath")?.GetValue(s.Tag)?.ToString() ?? "null") : "null"))}");
+
+                        // Fallback: Rebuild single icon
+                        Log($"Attempting to rebuild icon for {filePath}");
+                        // Remove existing StackPanel if present (in case Tag lookup failed due to corruption)
+                        var oldSp = wpcont.Children.OfType<StackPanel>()
+                            .FirstOrDefault(s => s.Tag != null && s.Tag.GetType().GetProperty("FilePath")?.GetValue(s.Tag)?.ToString() == filePath);
+                        if (oldSp != null)
+                        {
+                            wpcont.Children.Remove(oldSp);
+                            Log($"Removed old StackPanel for {filePath}");
+                        }
+
+                        // Re-add icon
+                        AddIcon(icon, wpcont);
+                        var newSp = wpcont.Children.OfType<StackPanel>().LastOrDefault();
+                        if (newSp != null)
+                        {
+                            bool isFolder = iconDict.ContainsKey("IsFolder") && (bool)iconDict["IsFolder"];
+                            string arguments = null;
+                            if (isShortcut)
+                            {
+                                WshShell shell = new WshShell();
+                                IWshShortcut shortcut = (IWshShortcut)shell.CreateShortcut(filePath);
+                                arguments = shortcut.Arguments;
+                            }
+                            ClickEventAdder(newSp, filePath, isFolder, arguments);
+                            Log($"Rebuilt icon for {filePath} with new StackPanel");
+                        }
+                        else
+                        {
+                            Log($"Failed to rebuild icon for {filePath}: No new StackPanel created");
                         }
                     }
                 }
-                //if (win != null)
-                //{
-                //    var wpcont = ((win.Content as Border)?.Child as DockPanel)?.Children.Cast<object>()
-                //        .OfType<ScrollViewer>().FirstOrDefault()?.Content as WrapPanel;
-                //    if (wpcont != null)
-                //    {
-                //        var sp = wpcont.Children.Cast<object>()
-                //            .OfType<StackPanel>()
-                //            .FirstOrDefault(s => (s.Tag as string) == filePath);
-                //        if (sp != null)
-                //        {
-                //            var lbl = sp.Children.Cast<object>().OfType<TextBlock>().FirstOrDefault();
-                //            var ico = sp.Children.Cast<object>().OfType<Image>().FirstOrDefault();
-                //            if (lbl != null && ico != null)
-                //            {
-                //                string newText = editWindow.NewDisplayName.Length > 20 ? editWindow.NewDisplayName.Substring(0, 20) + "..." : editWindow.NewDisplayName;
-                //                lbl.Text = newText;
-
-                //                WshShell shell = new WshShell();
-                //                IWshShortcut shortcut = (IWshShortcut)shell.CreateShortcut(filePath);
-                //                ImageSource shortcutIcon = null;
-
-                //                if (!string.IsNullOrEmpty(shortcut.IconLocation))
-                //                {
-                //                    string[] iconParts = shortcut.IconLocation.Split(',');
-                //                    string iconPath = iconParts[0];
-                //                    if (System.IO.File.Exists(iconPath))
-                //                    {
-                //                        shortcutIcon = System.Drawing.Icon.ExtractAssociatedIcon(iconPath).ToImageSource();
-                //                    }
-                //                }
-
-                //                if (shortcutIcon == null)
-                //                {
-                //                    string targetPath = shortcut.TargetPath;
-                //                    if (System.IO.File.Exists(targetPath))
-                //                    {
-                //                        shortcutIcon = System.Drawing.Icon.ExtractAssociatedIcon(targetPath).ToImageSource();
-                //                    }
-                //                    else if (System.IO.Directory.Exists(targetPath))
-                //                    {
-                //                        shortcutIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/folder-White.png"));
-                //                    }
-                //                }
-
-                //                if (shortcutIcon == null)
-                //                {
-                //                    shortcutIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/file-WhiteX.png"));
-                //                }
-
-                //                ico.Source = shortcutIcon;
-                //                iconCache[filePath] = shortcutIcon;
-                //            }
-                //        }
-                //    }
-                //}
+                else
+                {
+                    Log($"WrapPanel not found for {filePath}. UI update skipped.");
+                }
             }
         }
 
@@ -1331,7 +1683,7 @@ namespace Desktop_Fences
                             try
                             {
                                 newIcon = System.Drawing.Icon.ExtractAssociatedIcon(iconPath).ToImageSource();
-                                Log($"Using custom IconLocation for {filePath}: {iconPath}");
+                               //Log($"Using custom IconLocation for {filePath}: {iconPath}");
                             }
                             catch (Exception ex)
                             {
@@ -1349,14 +1701,14 @@ namespace Desktop_Fences
                         if (isTargetFolder)
                         {
                             newIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/folder-White.png"));
-                            Log($"Target exists, updating to folder-White.png for {filePath}");
+                         //   Log($"Target exists, updating to folder-White.png for {filePath}");
                         }
                         else
                         {
                             try
                             {
                                 newIcon = System.Drawing.Icon.ExtractAssociatedIcon(targetPath).ToImageSource();
-                                Log($"Target exists, updating to file icon for {filePath}");
+                              //  Log($"Target exists, updating to file icon for {filePath}");
                             }
                             catch (Exception ex)
                             {
@@ -1377,7 +1729,7 @@ namespace Desktop_Fences
                 if (ico.Source != newIcon)
                 {
                     ico.Source = newIcon;
-                    Log($"Icon updated for {filePath}");
+                  //  Log($"Icon updated for {filePath}");
                 }
             });
 
@@ -1388,86 +1740,20 @@ namespace Desktop_Fences
             }
         }
 
-        //private static void UpdateIcon(StackPanel sp, string filePath, bool isFolder)
-        //{
-        //    bool isLogEnabled = _options.IsLogEnabled ?? true;
-        //    void Log(string message)
-        //    {
-        //        if (isLogEnabled)
-        //        {
-        //            string logPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "Desktop_Fences.log");
-        //            System.IO.File.AppendAllText(logPath, $"{DateTime.Now}: {message}\n");
-        //        }
-        //    }
-
-        //    if (Application.Current != null)
-        //    {
-        //        Application.Current.Dispatcher.Invoke(() =>
-        //        {
-        //            Image ico = sp.Children.OfType<Image>().FirstOrDefault();
-        //            if (ico == null) return;
-
-        //            bool isShortcut = System.IO.Path.GetExtension(filePath).ToLower() == ".lnk";
-        //            string targetPath = isShortcut ? Utility.GetShortcutTarget(filePath) : filePath;
-        //            bool targetExists = System.IO.File.Exists(targetPath) || System.IO.Directory.Exists(targetPath);
-        //            bool isTargetFolder = System.IO.Directory.Exists(targetPath);
-
-        //            ImageSource newIcon = null;
-
-        //            if (targetExists)
-        //            {
-        //                if (isTargetFolder)
-        //                {
-        //                    newIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/folder-White.png"));
-        //                    Log($"Target exists, updating to folder-White.png for {filePath}");
-        //                }
-        //                else
-        //                {
-        //                    try
-        //                    {
-        //                        newIcon = System.Drawing.Icon.ExtractAssociatedIcon(targetPath).ToImageSource();
-        //                        Log($"Target exists, updating to file icon for {filePath}");
-        //                    }
-        //                    catch (Exception ex)
-        //                    {
-        //                        newIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/file-WhiteX.png"));
-        //                        Log($"Failed to extract icon for {filePath}: {ex.Message}");
-        //                    }
-        //                }
-        //            }
-        //            else
-        //            {
-        //                newIcon = isFolder
-        //                    ? new BitmapImage(new Uri("pack://application:,,,/Resources/folder-WhiteX.png"))
-        //                    : new BitmapImage(new Uri("pack://application:,,,/Resources/file-WhiteX.png"));
-        //                Log($"Target missing, updating to {(isFolder ? "folder-WhiteX.png" : "file-WhiteX.png")} for {filePath}");
-        //            }
-
-        //            if (ico.Source != newIcon)
-        //            {
-        //                ico.Source = newIcon;
-        //            }
-        //        });
-        //    }
-        //    else
-        //    {
-        //        Log("Application.Current is null, cannot update icon.");
-        //    }
-        //}
-
+    
 
         public static void UpdateOptionsAndClickEvents()
         {
-            bool isLogEnabled = SettingsManager.IsLogEnabled;
+            //bool isLogEnabled = SettingsManager.IsLogEnabled;
 
-            void Log(string message)
-            {
-                if (isLogEnabled)
-                {
-                    string logPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "Desktop_Fences.log");
-                    System.IO.File.AppendAllText(logPath, $"{DateTime.Now}: {message}\n");
-                }
-            }
+            //void Log(string message)
+            //{
+            //    if (isLogEnabled)
+            //    {
+            //        string logPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "Desktop_Fences.log");
+            //        System.IO.File.AppendAllText(logPath, $"{DateTime.Now}: {message}\n");
+            //    }
+            //}
 
             Log($"Updating options, new singleClickToLaunch={SettingsManager.SingleClickToLaunch}");
 
@@ -1525,7 +1811,7 @@ namespace Desktop_Fences
                     Log("Application.Current is null, cannot update icon.");
                 }
         }
-
+      
         public static void ClickEventAdder(StackPanel sp, string path, bool isFolder, string arguments = null)
         {
             bool isLogEnabled = _options.IsLogEnabled ?? true;
@@ -1533,14 +1819,17 @@ namespace Desktop_Fences
             // Clear existing handler
             sp.MouseLeftButtonDown -= MouseDownHandler;
 
-            void Log(string message)
-            {
-                if (isLogEnabled)
-                {
-                    string logPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "Desktop_Fences.log");
-                    System.IO.File.AppendAllText(logPath, $"{DateTime.Now}: {message}\n");
-                }
-            }
+        //    void Log(string message)
+            //{
+            //    if (isLogEnabled)
+            //    {
+            //        string logPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "Desktop_Fences.log");
+            //        System.IO.File.AppendAllText(logPath, $"{DateTime.Now}: {message}\n");
+            //    }
+            //}
+
+            // Store only path, isFolder, and arguments in Tag
+            sp.Tag = new { FilePath = path, IsFolder = isFolder, Arguments = arguments };
 
             Log($"Attaching handler for {path}, initial singleClickToLaunch={_options.singleClickToLaunch}");
 
@@ -1552,203 +1841,243 @@ namespace Desktop_Fences
                 Log($"Corrected isFolder to true for shortcut {path} targeting folder {targetPath}");
             }
 
+
             void MouseDownHandler(object sender, MouseButtonEventArgs e)
             {
                 if (e.ChangedButton != MouseButton.Left) return;
 
-                bool singleClickToLaunch = _options.singleClickToLaunch ?? true; // Check current value at execution
+                bool singleClickToLaunch = _options.singleClickToLaunch ?? true;
                 Log($"MouseDown on {path}, ClickCount={e.ClickCount}, singleClickToLaunch={singleClickToLaunch}");
-                if (singleClickToLaunch && e.ClickCount == 1)
-                {
-                    Log($"Single click launching {path}");
-                    Log($"Single click launching {path} with arguments: {arguments ?? "none"}");
 
-                    LaunchItem(sp, path, isFolder, arguments);
-                    e.Handled = true;
-                }
-                else if (!singleClickToLaunch && e.ClickCount == 2)
+                try
                 {
-                    Log($"Double click launching {path}");
-                    Log($"Double click launching {path} with arguments: {arguments ?? "none"}");
-                    LaunchItem(sp, path, isFolder, arguments);
-                    e.Handled = true;
+                    // Check if the target exists
+                    bool targetExists = isFolder ? Directory.Exists(path) : System.IO.File.Exists(path);
+
+                    if (!targetExists)
+                    {
+                        Log($"Target not found: {path}");
+                        return;
+                    }
+
+                    if (singleClickToLaunch && e.ClickCount == 1)
+                    {
+                        Log($"Single click launching {path}");
+                        LaunchItem(sp, path, isFolder, arguments);
+                        e.Handled = true;
+                    }
+                    else if (!singleClickToLaunch && e.ClickCount == 2)
+                    {
+                        Log($"Double click launching {path}");
+                        LaunchItem(sp, path, isFolder, arguments);
+                        e.Handled = true;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log($"Error checking target existence: {ex.Message}");
                 }
             }
+            //void MouseDownHandler(object sender, MouseButtonEventArgs e)
+            //{
+            //    if (e.ChangedButton != MouseButton.Left) return;
+
+            //    bool singleClickToLaunch = _options.singleClickToLaunch ?? true;
+            //    Log($"MouseDown on {path}, ClickCount={e.ClickCount}, singleClickToLaunch={singleClickToLaunch}");
+            //    if (singleClickToLaunch && e.ClickCount == 1)
+            //    {
+            //        Log($"Single click launching {path}");
+            //        LaunchItem(sp, path, isFolder, arguments);
+            //        e.Handled = true;
+            //    }
+            //    else if (!singleClickToLaunch && e.ClickCount == 2)
+            //    {
+            //        Log($"Double click launching {path}");
+            //        LaunchItem(sp, path, isFolder, arguments);
+            //        e.Handled = true;
+            //    }
+            //}
 
             sp.MouseLeftButtonDown += MouseDownHandler;
         }
-        private static void LaunchItem(StackPanel sp, string path, bool isFolder, string arguments)
-        {
-            bool isLogEnabled = _options.IsLogEnabled ?? true;
-            void Log(string message)
-            {
-                if (isLogEnabled)
-                {
-                    string logPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "Desktop_Fences.log");
-                    System.IO.File.AppendAllText(logPath, $"{DateTime.Now}: {message}\n");
-                }
-            }
+        
 
+        private static T FindVisualParent<T>(DependencyObject child) where T : DependencyObject
+        {
+            DependencyObject parent = VisualTreeHelper.GetParent(child);
+            while (parent != null && !(parent is T))
+            {
+                parent = VisualTreeHelper.GetParent(parent);
+            }
+            return parent as T;
+        }
+
+
+private static void LaunchItem(StackPanel sp, string path, bool isFolder, string arguments)
+{
+    bool isLogEnabled = _options.IsLogEnabled ?? true;
+    void Log(string message)
+    {
+        if (isLogEnabled)
+        {
+            string logPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "Desktop_Fences.log");
+            System.IO.File.AppendAllText(logPath, $"{DateTime.Now}: {message}\n");
+        }
+    }
+
+    try
+    {
+        // Find the fence at runtime
+        NonActivatingWindow win = FindVisualParent<NonActivatingWindow>(sp);
+        dynamic fence = _fenceData.FirstOrDefault(f => f.Title == win?.Title);
+        string customEffect = fence?.CustomLaunchEffect?.ToString();
+        LaunchEffect defaultEffect = _options.LaunchEffect;
+        LaunchEffect effect;
+
+        if (fence == null)
+        {
+            Log($"Failed to find fence for {path}, using default effect");
+            effect = defaultEffect;
+        }
+        else if (string.IsNullOrEmpty(customEffect))
+        {
+            effect = defaultEffect;
+            Log($"No CustomLaunchEffect for {path} in fence '{fence.Title}', using default: {effect}");
+        }
+        else
+        {
             try
             {
-                //  Log($"LaunchItem called for {path}");
-                Log($"LaunchItem called for {path} with effect {_options.LaunchEffect}");
+                effect = (LaunchEffect)Enum.Parse(typeof(LaunchEffect), customEffect, true);
+                Log($"Using CustomLaunchEffect for {path} in fence '{fence.Title}': {effect}");
+            }
+            catch (Exception ex)
+            {
+                effect = defaultEffect;
+                Log($"Failed to parse CustomLaunchEffect '{customEffect}' for {path} in fence '{fence.Title}', falling back to {effect}: {ex.Message}");
+            }
+        }
 
-                //// Animation
-                //if (sp.RenderTransform == null || !(sp.RenderTransform is ScaleTransform))
-                //{
-                //    sp.RenderTransform = new ScaleTransform(1, 1);
-                //    sp.RenderTransformOrigin = new Point(0.5, 0.5);
-                //}
-                //var scale = new DoubleAnimation(1, 1.2, TimeSpan.FromSeconds(0.1)) { AutoReverse = true };
-                //var transform = (ScaleTransform)sp.RenderTransform;
-                //transform.BeginAnimation(ScaleTransform.ScaleXProperty, scale);
-                //transform.BeginAnimation(ScaleTransform.ScaleYProperty, scale);
+        Log($"LaunchItem called for {path} with effect {effect}");
 
-                // Ensure transform is set up
-                if (sp.RenderTransform == null || !(sp.RenderTransform is TransformGroup))
-                {
-                    sp.RenderTransform = new TransformGroup
-                    {
-                        Children = new TransformCollection
+        // Ensure transform is set up
+        if (sp.RenderTransform == null || !(sp.RenderTransform is TransformGroup))
+        {
+            sp.RenderTransform = new TransformGroup
+            {
+                Children = new TransformCollection
                 {
                     new ScaleTransform(1, 1),
                     new TranslateTransform(0, 0),
                     new RotateTransform(0)
                 }
-                    };
-                    sp.RenderTransformOrigin = new Point(0.5, 0.5);
-                }
-                var transformGroup = (TransformGroup)sp.RenderTransform;
-                var scaleTransform = (ScaleTransform)transformGroup.Children[0];
-                var translateTransform = (TranslateTransform)transformGroup.Children[1];
-                var rotateTransform = (RotateTransform)transformGroup.Children[2];
-
-                // Define animation based on selected effect
-                switch (_options.LaunchEffect)
-                {
-                    case LaunchEffect.Zoom:
-                        // Existing zoom effect: Scale up to 1.2 and back
-                        var zoomScale = new DoubleAnimation(1, 1.2, TimeSpan.FromSeconds(0.1)) { AutoReverse = true };
-                        scaleTransform.BeginAnimation(ScaleTransform.ScaleXProperty, zoomScale);
-                        scaleTransform.BeginAnimation(ScaleTransform.ScaleYProperty, zoomScale);
-                        break;
-
-                    case LaunchEffect.Bounce:
-                        // Bounce: Scale up and down 3 times
-                        var bounceScale = new DoubleAnimationUsingKeyFrames
-                        {
-                            Duration = TimeSpan.FromSeconds(0.6)
-                        };
-                        bounceScale.KeyFrames.Add(new LinearDoubleKeyFrame(1.0, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(0))));
-                        bounceScale.KeyFrames.Add(new LinearDoubleKeyFrame(1.3, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(0.1))));
-                        bounceScale.KeyFrames.Add(new LinearDoubleKeyFrame(1.0, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(0.2))));
-                        bounceScale.KeyFrames.Add(new LinearDoubleKeyFrame(1.2, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(0.3))));
-                        bounceScale.KeyFrames.Add(new LinearDoubleKeyFrame(1.0, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(0.4))));
-                        bounceScale.KeyFrames.Add(new LinearDoubleKeyFrame(1.1, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(0.5))));
-                        bounceScale.KeyFrames.Add(new LinearDoubleKeyFrame(1.0, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(0.6))));
-                        scaleTransform.BeginAnimation(ScaleTransform.ScaleXProperty, bounceScale);
-                        scaleTransform.BeginAnimation(ScaleTransform.ScaleYProperty, bounceScale);
-                        break;
-
-                    case LaunchEffect.FadeOut:
-                        // Fade out to 0 and back to 1
-                        var fade = new DoubleAnimation(1, 0, TimeSpan.FromSeconds(0.2))
-                        {
-                            AutoReverse = true
-                        };
-                        sp.BeginAnimation(UIElement.OpacityProperty, fade);
-                        break;
-
-                    case LaunchEffect.SlideUp:
-                        // Slide up 20 units and back
-                        var slideUp = new DoubleAnimation(0, -20, TimeSpan.FromSeconds(0.2))
-                        {
-                            AutoReverse = true
-                        };
-                        translateTransform.BeginAnimation(TranslateTransform.YProperty, slideUp);
-                        break;
-
-                    case LaunchEffect.Rotate:
-                        // Spin 360 degrees
-                        var rotate = new DoubleAnimation(0, 360, TimeSpan.FromSeconds(0.4))
-                        {
-                            EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseInOut }
-                        };
-                        rotateTransform.BeginAnimation(RotateTransform.AngleProperty, rotate);
-                        break;
-                    //Puse effect removed
-                    //case LaunchEffect.Pulse:
-                    //    // Quick scale pulse: Slightly larger then back
-                    //    var pulseScale = new DoubleAnimation(1, 1.15, TimeSpan.FromSeconds(0.1))
-                    //    {
-                    //        AutoReverse = true,
-                    //        RepeatBehavior = new RepeatBehavior(2) // Two quick pulses
-                    //    };
-                    //    scaleTransform.BeginAnimation(ScaleTransform.ScaleXProperty, pulseScale);
-                    //    scaleTransform.BeginAnimation(ScaleTransform.ScaleYProperty, pulseScale);
-                    //    break;
-
-                    case LaunchEffect.Agitate:
-                        // Agitate: Quick left-right bounce 7 times
-                        var agitateTranslate = new DoubleAnimationUsingKeyFrames
-                        {
-                            Duration = TimeSpan.FromSeconds(0.7) // 0.1s per bounce, 7 bounces
-                        };
-                        agitateTranslate.KeyFrames.Add(new LinearDoubleKeyFrame(0, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(0))));
-                        agitateTranslate.KeyFrames.Add(new LinearDoubleKeyFrame(-10, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(0.1))));
-                        agitateTranslate.KeyFrames.Add(new LinearDoubleKeyFrame(10, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(0.2))));
-                        agitateTranslate.KeyFrames.Add(new LinearDoubleKeyFrame(-10, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(0.3))));
-                        agitateTranslate.KeyFrames.Add(new LinearDoubleKeyFrame(10, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(0.4))));
-                        agitateTranslate.KeyFrames.Add(new LinearDoubleKeyFrame(-10, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(0.5))));
-                        agitateTranslate.KeyFrames.Add(new LinearDoubleKeyFrame(10, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(0.6))));
-                        agitateTranslate.KeyFrames.Add(new LinearDoubleKeyFrame(0, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(0.7))));
-                        translateTransform.BeginAnimation(TranslateTransform.XProperty, agitateTranslate);
-                        break;
-                }
-
-
-
-
-
-                // Execution
-                bool isShortcut = System.IO.Path.GetExtension(path).ToLower() == ".lnk";
-                string targetPath = isShortcut ? Utility.GetShortcutTarget(path) : path;
-                bool isTargetFolder = System.IO.Directory.Exists(targetPath);
-                bool targetExists = System.IO.File.Exists(targetPath) || System.IO.Directory.Exists(targetPath);
-
-                Log($"Target path resolved to: {targetPath}");
-                Log($"Target exists: {targetExists}, IsFolder: {isTargetFolder}");
-
-                if (targetExists)
-                {
-                    ProcessStartInfo psi = new ProcessStartInfo
-                    {
-                        FileName = targetPath,
-                        UseShellExecute = true,
-                        Verb = isTargetFolder ? "open" : null
-                    };
-                    if (!string.IsNullOrEmpty(arguments))
-                    {
-                        psi.Arguments = arguments;
-                        Log($"Arguments: {arguments}");
-                    }
-
-                    Log($"Attempting to launch {targetPath}");
-                    Process.Start(psi);
-                    Log($"Successfully launched {targetPath}");
-                }
-                else
-                {
-                    Log($"Target not found: {targetPath}");
-                    MessageBox.Show($"Target '{targetPath}' was not found.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                }
-            }
-            catch (Exception ex)
-            {
-                Log($"Error in LaunchItem for {path}: {ex.Message}");
-                MessageBox.Show($"Error opening item: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
+            };
+            sp.RenderTransformOrigin = new Point(0.5, 0.5);
         }
+        var transformGroup = (TransformGroup)sp.RenderTransform;
+        var scaleTransform = (ScaleTransform)transformGroup.Children[0];
+        var translateTransform = (TranslateTransform)transformGroup.Children[1];
+        var rotateTransform = (RotateTransform)transformGroup.Children[2];
+
+        // Define animation based on selected effect
+        switch (effect)
+        {
+            case LaunchEffect.Zoom:
+                var zoomScale = new DoubleAnimation(1, 1.2, TimeSpan.FromSeconds(0.1)) { AutoReverse = true };
+                scaleTransform.BeginAnimation(ScaleTransform.ScaleXProperty, zoomScale);
+                scaleTransform.BeginAnimation(ScaleTransform.ScaleYProperty, zoomScale);
+                break;
+
+            case LaunchEffect.Bounce:
+                var bounceScale = new DoubleAnimationUsingKeyFrames
+                {
+                    Duration = TimeSpan.FromSeconds(0.6)
+                };
+                bounceScale.KeyFrames.Add(new LinearDoubleKeyFrame(1.0, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(0))));
+                bounceScale.KeyFrames.Add(new LinearDoubleKeyFrame(1.3, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(0.1))));
+                bounceScale.KeyFrames.Add(new LinearDoubleKeyFrame(1.0, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(0.2))));
+                bounceScale.KeyFrames.Add(new LinearDoubleKeyFrame(1.2, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(0.3))));
+                bounceScale.KeyFrames.Add(new LinearDoubleKeyFrame(1.0, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(0.4))));
+                bounceScale.KeyFrames.Add(new LinearDoubleKeyFrame(1.1, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(0.5))));
+                bounceScale.KeyFrames.Add(new LinearDoubleKeyFrame(1.0, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(0.6))));
+                scaleTransform.BeginAnimation(ScaleTransform.ScaleXProperty, bounceScale);
+                scaleTransform.BeginAnimation(ScaleTransform.ScaleYProperty, bounceScale);
+                break;
+
+            case LaunchEffect.FadeOut:
+                var fade = new DoubleAnimation(1, 0, TimeSpan.FromSeconds(0.2)) { AutoReverse = true };
+                sp.BeginAnimation(UIElement.OpacityProperty, fade);
+                break;
+
+            case LaunchEffect.SlideUp:
+                var slideUp = new DoubleAnimation(0, -20, TimeSpan.FromSeconds(0.2)) { AutoReverse = true };
+                translateTransform.BeginAnimation(TranslateTransform.YProperty, slideUp);
+                break;
+
+            case LaunchEffect.Rotate:
+                var rotate = new DoubleAnimation(0, 360, TimeSpan.FromSeconds(0.4))
+                {
+                    EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseInOut }
+                };
+                rotateTransform.BeginAnimation(RotateTransform.AngleProperty, rotate);
+                break;
+
+            case LaunchEffect.Agitate:
+                var agitateTranslate = new DoubleAnimationUsingKeyFrames
+                {
+                    Duration = TimeSpan.FromSeconds(0.7)
+                };
+                agitateTranslate.KeyFrames.Add(new LinearDoubleKeyFrame(0, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(0))));
+                agitateTranslate.KeyFrames.Add(new LinearDoubleKeyFrame(-10, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(0.1))));
+                agitateTranslate.KeyFrames.Add(new LinearDoubleKeyFrame(10, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(0.2))));
+                agitateTranslate.KeyFrames.Add(new LinearDoubleKeyFrame(-10, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(0.3))));
+                agitateTranslate.KeyFrames.Add(new LinearDoubleKeyFrame(10, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(0.4))));
+                agitateTranslate.KeyFrames.Add(new LinearDoubleKeyFrame(-10, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(0.5))));
+                agitateTranslate.KeyFrames.Add(new LinearDoubleKeyFrame(10, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(0.6))));
+                agitateTranslate.KeyFrames.Add(new LinearDoubleKeyFrame(0, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(0.7))));
+                translateTransform.BeginAnimation(TranslateTransform.XProperty, agitateTranslate);
+                break;
+        }
+
+        // Execution
+        bool isShortcut = System.IO.Path.GetExtension(path).ToLower() == ".lnk";
+        string targetPath = isShortcut ? Utility.GetShortcutTarget(path) : path;
+        bool isTargetFolder = System.IO.Directory.Exists(targetPath);
+        bool targetExists = System.IO.File.Exists(targetPath) || System.IO.Directory.Exists(targetPath);
+
+        Log($"Target path resolved to: {targetPath}");
+        Log($"Target exists: {targetExists}, IsFolder: {isTargetFolder}");
+
+        if (targetExists)
+        {
+            ProcessStartInfo psi = new ProcessStartInfo
+            {
+                FileName = targetPath,
+                UseShellExecute = true,
+                Verb = isTargetFolder ? "open" : null
+            };
+            if (!string.IsNullOrEmpty(arguments))
+            {
+                psi.Arguments = arguments;
+                Log($"Arguments: {arguments}");
+            }
+
+            Log($"Attempting to launch {targetPath}");
+            Process.Start(psi);
+            Log($"Successfully launched {targetPath}");
+        }
+        else
+        {
+            Log($"Target not found: {targetPath}");
+            MessageBox.Show($"Target '{targetPath}' was not found.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+    catch (Exception ex)
+    {
+        Log($"Error in LaunchItem for {path}: {ex.Message}");
+        MessageBox.Show($"Error opening item: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+    }
+}
+
     }
 }

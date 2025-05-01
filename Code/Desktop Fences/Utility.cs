@@ -13,16 +13,19 @@ namespace Desktop_Fences
 {
     public static class Utility
     {
-        public static void ApplyTintAndColorToFence(NonActivatingWindow fence)
-        {
-            if (fence.Content is Border border)
-            {
-                Color baseColor = GetColorFromName(SettingsManager.SelectedColor);
-                byte alpha = (byte)(SettingsManager.TintValue * 2.55);
-                border.Background = new SolidColorBrush(Color.FromArgb(alpha, baseColor.R, baseColor.G, baseColor.B));
-            }
-        }
 
+
+        public static void ApplyTintAndColorToFence(Window fence, string colorName = null)
+        {
+            var fenceControl = fence.Content as Border; // Matches your structure
+            if (fenceControl == null) return;
+
+            string effectiveColor = colorName ?? SettingsManager.SelectedColor; // Fallback to global
+                                                                                // Use TintValue from SettingsManager to determine if tint is applied
+            fenceControl.Background = SettingsManager.TintValue > 0
+                ? new SolidColorBrush(GetColorFromName(effectiveColor)) { Opacity = SettingsManager.TintValue / 100.0 }
+                : Brushes.Transparent;
+        }
         public static Color GetColorFromName(string colorName)
         {
             return colorName switch

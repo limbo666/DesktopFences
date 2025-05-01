@@ -5,6 +5,10 @@ using System;
 
 public class NonActivatingWindow : Window
 {
+    private const int WM_SYSCOMMAND = 0x0112;
+    private const int SC_MAXIMIZE = 0xF030;
+    private const int SC_RESTORE = 0xF120;
+
     private const int WM_MOUSEACTIVATE = 0x0021;
     private const int MA_NOACTIVATE = 3;
     private const int GWL_EXSTYLE = -20;
@@ -21,11 +25,24 @@ public class NonActivatingWindow : Window
 
     private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
     {
+        // Handle existing focus prevention
         if (_focusPreventionEnabled && msg == WM_MOUSEACTIVATE)
         {
             handled = true;
             return new IntPtr(MA_NOACTIVATE);
         }
+
+        // Block Aero Snap maximize/restore commands
+        if (msg == WM_SYSCOMMAND)
+        {
+            int command = wParam.ToInt32() & 0xFFF0;
+            if (command == SC_MAXIMIZE || command == SC_RESTORE)
+            {
+                handled = true;
+                return IntPtr.Zero;
+            }
+        }
+
         return IntPtr.Zero;
     }
 

@@ -7,9 +7,9 @@
 		<Nullable>enable</Nullable>
 		<UseWPF>true</UseWPF>
 		<UseWindowsForms>True</UseWindowsForms>
-		<AssemblyVersion>2.5.0.8</AssemblyVersion>
-		<FileVersion>2.5.0.8</FileVersion>
-		<Version>2.5.0.8</Version>
+		<AssemblyVersion>2.5.0.15</AssemblyVersion>
+		<FileVersion>2.5.0.15</FileVersion>
+		<Version>2.5.0.15</Version>
 		<ApplicationIcon>Resources\logo2.ico</ApplicationIcon>
 	</PropertyGroup>
 

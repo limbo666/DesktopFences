@@ -1,0 +1,61 @@
+[
+  {
+    "Title": "1",
+    "X": 1859.0,
+    "Y": 230.0,
+    "Width": 83.0,
+    "Height": 239.0,
+    "ItemsType": "Data",
+    "Items": [
+      {
+        "Filename": "Shortcuts\\Command Prompt (1).lnk",
+        "IsFolder": false,
+        "DisplayName": "Command Prompt"
+      },
+      {
+        "Filename": "Shortcuts\\Βασικες λειτουργιες.docx.lnk",
+        "IsFolder": false,
+        "DisplayName": "Βασικες λειτουργιες"
+      }
+    ]
+  },
+  {
+    "Title": "TWO",
+    "X": 1652.0,
+    "Y": 92.0,
+    "Width": 290.0,
+    "Height": 130.0,
+    "ItemsType": "Data",
+    "Items": [
+      {
+        "Filename": "Shortcuts\\LCDSmartie Main.lnk",
+        "IsFolder": false,
+        "DisplayName": "LCDSmartie Main"
+      },
+      {
+        "Filename": "Shortcuts\\LCDSmartie Purple.lnk",
+        "IsFolder": false,
+        "DisplayName": "LCDSmartie Purple"
+      },
+      {
+        "Filename": "Shortcuts\\LCDSmartie.lnk",
+        "IsFolder": false,
+        "DisplayName": "LCDSmartie"
+      },
+      {
+        "Filename": "Shortcuts\\SADP (1).lnk",
+        "IsFolder": false,
+        "DisplayName": "SADP"
+      }
+    ]
+  },
+  {
+    "Title": "Away",
+    "X": 1950.0,
+    "Y": 96.0,
+    "Width": 357.0,
+    "Height": 414.0,
+    "ItemsType": "Data",
+    "Items": []
+  }
+]

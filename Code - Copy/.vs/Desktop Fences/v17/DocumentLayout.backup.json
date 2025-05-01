@@ -1,0 +1,209 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "D:\\Nextcloud\\Development\\VCS14\\Desktop Fences\\DesktopFences_Active_Dev\\DesktopFences\\Code\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{E8863D62-3FDE-4DB1-BAF5-F398FB639681}|Desktop Fences\\Desktop Fences.csproj|d:\\nextcloud\\development\\vcs14\\desktop fences\\desktopfences_active_dev\\desktopfences\\code\\desktop fences\\desktop fences.csproj||{04B8AB82-A572-4FEF-95CE-5222444B6B64}|",
+      "RelativeMoniker": "D:0:0:{E8863D62-3FDE-4DB1-BAF5-F398FB639681}|Desktop Fences\\Desktop Fences.csproj|solutionrelative:desktop fences\\desktop fences.csproj||{04B8AB82-A572-4FEF-95CE-5222444B6B64}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{E8863D62-3FDE-4DB1-BAF5-F398FB639681}|Desktop Fences\\Desktop Fences.csproj|d:\\nextcloud\\development\\vcs14\\desktop fences\\desktopfences_active_dev\\desktopfences\\code\\desktop fences\\desktop fences.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|",
+      "RelativeMoniker": "D:0:0:{E8863D62-3FDE-4DB1-BAF5-F398FB639681}|Desktop Fences\\Desktop Fences.csproj|solutionrelative:desktop fences\\desktop fences.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{E8863D62-3FDE-4DB1-BAF5-F398FB639681}|Desktop Fences\\Desktop Fences.csproj|d:\\nextcloud\\development\\vcs14\\desktop fences\\desktopfences_active_dev\\desktopfences\\code\\desktop fences\\nonactivatingwindow.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{E8863D62-3FDE-4DB1-BAF5-F398FB639681}|Desktop Fences\\Desktop Fences.csproj|solutionrelative:desktop fences\\nonactivatingwindow.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{E8863D62-3FDE-4DB1-BAF5-F398FB639681}|Desktop Fences\\Desktop Fences.csproj|d:\\nextcloud\\development\\vcs14\\desktop fences\\desktopfences_active_dev\\desktopfences\\code\\desktop fences\\fencemanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{E8863D62-3FDE-4DB1-BAF5-F398FB639681}|Desktop Fences\\Desktop Fences.csproj|solutionrelative:desktop fences\\fencemanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{E8863D62-3FDE-4DB1-BAF5-F398FB639681}|Desktop Fences\\Desktop Fences.csproj|d:\\nextcloud\\development\\vcs14\\desktop fences\\desktopfences_active_dev\\desktopfences\\code\\desktop fences\\traymanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{E8863D62-3FDE-4DB1-BAF5-F398FB639681}|Desktop Fences\\Desktop Fences.csproj|solutionrelative:desktop fences\\traymanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{E8863D62-3FDE-4DB1-BAF5-F398FB639681}|Desktop Fences\\Desktop Fences.csproj|d:\\nextcloud\\development\\vcs14\\desktop fences\\desktopfences_active_dev\\desktopfences\\code\\desktop fences\\targetchecker.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{E8863D62-3FDE-4DB1-BAF5-F398FB639681}|Desktop Fences\\Desktop Fences.csproj|solutionrelative:desktop fences\\targetchecker.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{E8863D62-3FDE-4DB1-BAF5-F398FB639681}|Desktop Fences\\Desktop Fences.csproj|d:\\nextcloud\\development\\vcs14\\desktop fences\\desktopfences_active_dev\\desktopfences\\code\\desktop fences\\portalfencemanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{E8863D62-3FDE-4DB1-BAF5-F398FB639681}|Desktop Fences\\Desktop Fences.csproj|solutionrelative:desktop fences\\portalfencemanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{E8863D62-3FDE-4DB1-BAF5-F398FB639681}|Desktop Fences\\Desktop Fences.csproj|d:\\nextcloud\\development\\vcs14\\desktop fences\\desktopfences_active_dev\\desktopfences\\code\\desktop fences\\utility.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{E8863D62-3FDE-4DB1-BAF5-F398FB639681}|Desktop Fences\\Desktop Fences.csproj|solutionrelative:desktop fences\\utility.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{E8863D62-3FDE-4DB1-BAF5-F398FB639681}|Desktop Fences\\Desktop Fences.csproj|d:\\nextcloud\\development\\vcs14\\desktop fences\\desktopfences_active_dev\\desktopfences\\code\\desktop fences\\settingsmanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{E8863D62-3FDE-4DB1-BAF5-F398FB639681}|Desktop Fences\\Desktop Fences.csproj|solutionrelative:desktop fences\\settingsmanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{E8863D62-3FDE-4DB1-BAF5-F398FB639681}|Desktop Fences\\Desktop Fences.csproj|d:\\nextcloud\\development\\vcs14\\desktop fences\\desktopfences_active_dev\\desktopfences\\code\\desktop fences\\clickeventadder.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{E8863D62-3FDE-4DB1-BAF5-F398FB639681}|Desktop Fences\\Desktop Fences.csproj|solutionrelative:desktop fences\\clickeventadder.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{E8863D62-3FDE-4DB1-BAF5-F398FB639681}|Desktop Fences\\Desktop Fences.csproj|d:\\nextcloud\\development\\vcs14\\desktop fences\\desktopfences_active_dev\\desktopfences\\code\\desktop fences\\app.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{E8863D62-3FDE-4DB1-BAF5-F398FB639681}|Desktop Fences\\Desktop Fences.csproj|solutionrelative:desktop fences\\app.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 9,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{1c4feeaa-4718-4aa9-859d-94ce25d182ba}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:128:0:{116d2292-e37d-41cd-a077-ebacac4c8cc4}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{4a9b7e51-aa16-11d0-a8c5-00a0c921a4d2}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "TrayManager.cs",
+              "DocumentMoniker": "D:\\Nextcloud\\Development\\VCS14\\Desktop Fences\\DesktopFences_Active_Dev\\DesktopFences\\Code\\Desktop Fences\\TrayManager.cs",
+              "RelativeDocumentMoniker": "Desktop Fences\\TrayManager.cs",
+              "ToolTip": "D:\\Nextcloud\\Development\\VCS14\\Desktop Fences\\DesktopFences_Active_Dev\\DesktopFences\\Code\\Desktop Fences\\TrayManager.cs",
+              "RelativeToolTip": "Desktop Fences\\TrayManager.cs",
+              "ViewState": "AgIAAC4AAAAAAAAAAAAAwD8AAAAaAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-04-05T11:37:39.427Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "Desktop Fences.csproj",
+              "DocumentMoniker": "D:\\Nextcloud\\Development\\VCS14\\Desktop Fences\\DesktopFences_Active_Dev\\DesktopFences\\Code\\Desktop Fences\\Desktop Fences.csproj",
+              "RelativeDocumentMoniker": "Desktop Fences\\Desktop Fences.csproj",
+              "ToolTip": "D:\\Nextcloud\\Development\\VCS14\\Desktop Fences\\DesktopFences_Active_Dev\\DesktopFences\\Code\\Desktop Fences\\Desktop Fences.csproj",
+              "RelativeToolTip": "Desktop Fences\\Desktop Fences.csproj",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABIAAAAkAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
+              "WhenOpened": "2025-04-05T11:37:08.127Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "NonActivatingWindow.cs",
+              "DocumentMoniker": "D:\\Nextcloud\\Development\\VCS14\\Desktop Fences\\DesktopFences_Active_Dev\\DesktopFences\\Code\\Desktop Fences\\NonActivatingWindow.cs",
+              "RelativeDocumentMoniker": "Desktop Fences\\NonActivatingWindow.cs",
+              "ToolTip": "D:\\Nextcloud\\Development\\VCS14\\Desktop Fences\\DesktopFences_Active_Dev\\DesktopFences\\Code\\Desktop Fences\\NonActivatingWindow.cs",
+              "RelativeToolTip": "Desktop Fences\\NonActivatingWindow.cs",
+              "ViewState": "AgIAABsAAAAAAAAAAAAAwCwAAAAXAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-04-05T11:37:01.404Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "FenceManager.cs",
+              "DocumentMoniker": "D:\\Nextcloud\\Development\\VCS14\\Desktop Fences\\DesktopFences_Active_Dev\\DesktopFences\\Code\\Desktop Fences\\FenceManager.cs",
+              "RelativeDocumentMoniker": "Desktop Fences\\FenceManager.cs",
+              "ToolTip": "D:\\Nextcloud\\Development\\VCS14\\Desktop Fences\\DesktopFences_Active_Dev\\DesktopFences\\Code\\Desktop Fences\\FenceManager.cs",
+              "RelativeToolTip": "Desktop Fences\\FenceManager.cs",
+              "ViewState": "AgIAAGsGAAAAAAAAAAAtwHkGAAByAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-04-04T21:27:26.746Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "TargetChecker.cs",
+              "DocumentMoniker": "D:\\Nextcloud\\Development\\VCS14\\Desktop Fences\\DesktopFences_Active_Dev\\DesktopFences\\Code\\Desktop Fences\\TargetChecker.cs",
+              "RelativeDocumentMoniker": "Desktop Fences\\TargetChecker.cs",
+              "ToolTip": "D:\\Nextcloud\\Development\\VCS14\\Desktop Fences\\DesktopFences_Active_Dev\\DesktopFences\\Code\\Desktop Fences\\TargetChecker.cs",
+              "RelativeToolTip": "Desktop Fences\\TargetChecker.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABAAAABCAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-04-05T12:02:53.983Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "PortalFenceManager.cs",
+              "DocumentMoniker": "D:\\Nextcloud\\Development\\VCS14\\Desktop Fences\\DesktopFences_Active_Dev\\DesktopFences\\Code\\Desktop Fences\\PortalFenceManager.cs",
+              "RelativeDocumentMoniker": "Desktop Fences\\PortalFenceManager.cs",
+              "ToolTip": "D:\\Nextcloud\\Development\\VCS14\\Desktop Fences\\DesktopFences_Active_Dev\\DesktopFences\\Code\\Desktop Fences\\PortalFenceManager.cs",
+              "RelativeToolTip": "Desktop Fences\\PortalFenceManager.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAHAAAAApAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-04-05T17:43:03.57Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "Desktop Fences",
+              "DocumentMoniker": "D:\\Nextcloud\\Development\\VCS14\\Desktop Fences\\DesktopFences_Active_Dev\\DesktopFences\\Code\\Desktop Fences\\Desktop Fences.csproj",
+              "RelativeDocumentMoniker": "Desktop Fences\\Desktop Fences.csproj",
+              "ToolTip": "D:\\Nextcloud\\Development\\VCS14\\Desktop Fences\\DesktopFences_Active_Dev\\DesktopFences\\Code\\Desktop Fences\\Desktop Fences.csproj",
+              "RelativeToolTip": "Desktop Fences\\Desktop Fences.csproj",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
+              "WhenOpened": "2025-04-05T11:36:37.904Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 10,
+              "Title": "App.xaml.cs",
+              "DocumentMoniker": "D:\\Nextcloud\\Development\\VCS14\\Desktop Fences\\DesktopFences_Active_Dev\\DesktopFences\\Code\\Desktop Fences\\App.xaml.cs",
+              "RelativeDocumentMoniker": "Desktop Fences\\App.xaml.cs",
+              "ToolTip": "D:\\Nextcloud\\Development\\VCS14\\Desktop Fences\\DesktopFences_Active_Dev\\DesktopFences\\Code\\Desktop Fences\\App.xaml.cs",
+              "RelativeToolTip": "Desktop Fences\\App.xaml.cs",
+              "ViewState": "AgIAABgAAAAAAAAAAAAAABgAAAArAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-04-05T10:01:02.748Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 9,
+              "Title": "ClickEventAdder.cs",
+              "DocumentMoniker": "D:\\Nextcloud\\Development\\VCS14\\Desktop Fences\\DesktopFences_Active_Dev\\DesktopFences\\Code\\Desktop Fences\\ClickEventAdder.cs",
+              "RelativeDocumentMoniker": "Desktop Fences\\ClickEventAdder.cs",
+              "ToolTip": "D:\\Nextcloud\\Development\\VCS14\\Desktop Fences\\DesktopFences_Active_Dev\\DesktopFences\\Code\\Desktop Fences\\ClickEventAdder.cs",
+              "RelativeToolTip": "Desktop Fences\\ClickEventAdder.cs",
+              "ViewState": "AgIAABQAAAAAAAAAAAAAABcAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-04-04T21:27:20.068Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 8,
+              "Title": "SettingsManager.cs",
+              "DocumentMoniker": "D:\\Nextcloud\\Development\\VCS14\\Desktop Fences\\DesktopFences_Active_Dev\\DesktopFences\\Code\\Desktop Fences\\SettingsManager.cs",
+              "RelativeDocumentMoniker": "Desktop Fences\\SettingsManager.cs",
+              "ToolTip": "D:\\Nextcloud\\Development\\VCS14\\Desktop Fences\\DesktopFences_Active_Dev\\DesktopFences\\Code\\Desktop Fences\\SettingsManager.cs",
+              "RelativeToolTip": "Desktop Fences\\SettingsManager.cs",
+              "ViewState": "AgIAAEcAAAAAAAAAAAAuwAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-04-04T21:13:01.283Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "Utility.cs",
+              "DocumentMoniker": "D:\\Nextcloud\\Development\\VCS14\\Desktop Fences\\DesktopFences_Active_Dev\\DesktopFences\\Code\\Desktop Fences\\Utility.cs",
+              "RelativeDocumentMoniker": "Desktop Fences\\Utility.cs",
+              "ToolTip": "D:\\Nextcloud\\Development\\VCS14\\Desktop Fences\\DesktopFences_Active_Dev\\DesktopFences\\Code\\Desktop Fences\\Utility.cs",
+              "RelativeToolTip": "Desktop Fences\\Utility.cs",
+              "ViewState": "AgIAAGwAAAAAAAAAAAAmwA8AAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-04-04T21:12:14.529Z"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

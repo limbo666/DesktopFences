@@ -110,7 +110,7 @@ namespace Desktop_Fences
 
         private void Log(string message)
         {
-            bool isLogEnabled = true; // Αν δεν έχεις SettingsManager, το αφήνουμε true προσωρινά
+            bool isLogEnabled = true; // το αφήνουμε true προσωρινά
             if (isLogEnabled)
             {
                 string logPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "Desktop_Fences.log");

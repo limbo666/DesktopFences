@@ -97,6 +97,7 @@ namespace Desktop_Fences
             }
         }
 
+
         private void ShowOptionsForm()
         {
             try
@@ -132,7 +133,7 @@ namespace Desktop_Fences
                     {
                         Dock = DockStyle.Fill,
                         ColumnCount = 2,
-                        RowCount = 5, // Already fits your LaunchEffect
+                        RowCount = 5,
                         AutoSize = true,
                         AutoSizeMode = AutoSizeMode.GrowAndShrink
                     };
@@ -264,6 +265,7 @@ namespace Desktop_Fences
                     };
                     btnSave.Click += (s, ev) =>
                     {
+                        // Save global settings
                         SettingsManager.IsSnapEnabled = chkEnableSnap.Checked;
                         SettingsManager.TintValue = (int)numTint.Value;
                         SettingsManager.SelectedColor = cmbColor.SelectedItem.ToString();
@@ -272,11 +274,27 @@ namespace Desktop_Fences
                         SettingsManager.LaunchEffect = (FenceManager.LaunchEffect)cmbLaunchEffect.SelectedIndex;
 
                         SettingsManager.SaveSettings();
+
+                        // Update FenceManager options
                         FenceManager.UpdateOptionsAndClickEvents();
 
+                        // Apply settings to all fences, respecting custom colors but applying global tint
                         foreach (var fence in System.Windows.Application.Current.Windows.OfType<NonActivatingWindow>())
                         {
-                            Utility.ApplyTintAndColorToFence(fence);
+                            dynamic fenceData = FenceManager.GetFenceData().FirstOrDefault(f => f.Title == fence.Title);
+                            if (fenceData != null)
+                            {
+                                string customColor = fenceData.CustomColor?.ToString();
+                                string appliedColor = string.IsNullOrEmpty(customColor) ? SettingsManager.SelectedColor : customColor;
+                                Utility.ApplyTintAndColorToFence(fence, appliedColor);
+                                Log($"Applied color '{appliedColor}' with global tint '{SettingsManager.TintValue}' to fence '{fence.Title}'");
+                            }
+                            else
+                            {
+                                // Fallback for fences not in _fenceData (shouldn’t happen)
+                                Utility.ApplyTintAndColorToFence(fence, SettingsManager.SelectedColor);
+                                Log($"Applied global color '{SettingsManager.SelectedColor}' with global tint '{SettingsManager.TintValue}' to unknown fence '{fence.Title}' (not found in fence data)");
+                            }
                         }
 
                         frmOptions.Close();
@@ -295,6 +313,8 @@ namespace Desktop_Fences
                 System.Windows.MessageBox.Show($"An error occurred: {ex.Message}", "Error", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
             }
         }
+        // end of replacement
+        // end of replacement
 
         private void ShowAboutForm()
         {

@@ -1,41 +1,21 @@
 [
   {
-    "Title": "1",
-    "X": 570.0,
-    "Y": 230.0,
-    "Width": 83.0,
-    "Height": 239.0,
+    "Title": "White Fence",
+    "X": 2745.0,
+    "Y": 0.0,
+    "Width": 465.0,
+    "Height": 138.0,
     "ItemsType": "Data",
     "Items": [
       {
-        "Filename": "Shortcuts\\Command Prompt (1).lnk",
+        "Filename": "Shortcuts\\PotPlayer 64 bit (4).lnk",
         "IsFolder": false,
-        "DisplayName": "Command Prompt"
+        "DisplayName": "PotPlayer 64 bit"
       },
       {
-        "Filename": "Shortcuts\\Βασικες λειτουργιες.docx.lnk",
-        "IsFolder": false,
-        "DisplayName": "Βασικες λειτουργιες"
-      }
-    ]
-  },
-  {
-    "Title": "TWO",
-    "X": 662.0,
-    "Y": 229.0,
-    "Width": 290.0,
-    "Height": 130.0,
-    "ItemsType": "Data",
-    "Items": [
-      {
-        "Filename": "Shortcuts\\LCDSmartie Main.lnk",
-        "IsFolder": false,
-        "DisplayName": "LCDSmartie Main"
-      },
-      {
-        "Filename": "Shortcuts\\LCDSmartie Purple.lnk",
-        "IsFolder": false,
-        "DisplayName": "LCDSmartie Purple"
+        "Filename": "Shortcuts\\GodMode.{ED7BA470-8E54-465E-825C-99712043E01C}.lnk",
+        "IsFolder": true,
+        "DisplayName": "GodMode"
       },
       {
         "Filename": "Shortcuts\\LCDSmartie.lnk",
@@ -43,39 +23,34 @@
         "DisplayName": "LCDSmartie"
       },
       {
-        "Filename": "Shortcuts\\SADP (1).lnk",
+        "Filename": "Shortcuts\\Βασικες λειτουργιες.docx.lnk",
         "IsFolder": false,
-        "DisplayName": "SADP"
+        "DisplayName": "Βασικες λειτουργιες"
+      },
+      {
+        "Filename": "Shortcuts\\HikCentral Lite Διαχειριστής σέρβις.lnk",
+        "IsFolder": false,
+        "DisplayName": "HikCentral"
       }
-    ]
+    ],
+    "CustomColor": null,
+    "CustomLaunchEffect": "Rotate"
   },
   {
-    "Title": "THREE",
-    "X": 960.0,
-    "Y": 227.0,
-    "Width": 301.0,
-    "Height": 134.0,
+    "Title": "Self",
+    "X": 2507.0,
+    "Y": 0.0,
+    "Width": 233.0,
+    "Height": 140.0,
     "ItemsType": "Data",
     "Items": [
       {
-        "Filename": "Shortcuts\\New Folder.lnk",
-        "IsFolder": true,
-        "DisplayName": "New Folder"
-      },
-      {
-        "Filename": "Shortcuts\\Old Folder.lnk",
-        "IsFolder": true,
-        "DisplayName": "Old Folder"
+        "Filename": "Shortcuts\\Desktop Fences.lnk",
+        "IsFolder": false,
+        "DisplayName": "Desktop Fences"
       }
-    ]
-  },
-  {
-    "Title": "Away",
-    "X": 1950.0,
-    "Y": 96.0,
-    "Width": 357.0,
-    "Height": 414.0,
-    "ItemsType": "Data",
-    "Items": []
+    ],
+    "CustomColor": "White",
+    "CustomLaunchEffect": "SlideUp"
   }
 ]

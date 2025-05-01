@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\Nikos\\Desktop\\DesktopFences - 2.5.0.8 - Copy\\Desktop Fences\\Desktop Fences.csproj": {}
+    "C:\\Users\\Nikos\\Desktop\\DesktopFences\\Code\\Desktop Fences\\Desktop Fences.csproj": {}
   },
   "projects": {
-    "C:\\Users\\Nikos\\Desktop\\DesktopFences - 2.5.0.8 - Copy\\Desktop Fences\\Desktop Fences.csproj": {
-      "version": "2.5.0.8",
+    "C:\\Users\\Nikos\\Desktop\\DesktopFences\\Code\\Desktop Fences\\Desktop Fences.csproj": {
+      "version": "2.5.0.15",
       "restore": {
-        "projectUniqueName": "C:\\Users\\Nikos\\Desktop\\DesktopFences - 2.5.0.8 - Copy\\Desktop Fences\\Desktop Fences.csproj",
+        "projectUniqueName": "C:\\Users\\Nikos\\Desktop\\DesktopFences\\Code\\Desktop Fences\\Desktop Fences.csproj",
         "projectName": "Desktop Fences",
-        "projectPath": "C:\\Users\\Nikos\\Desktop\\DesktopFences - 2.5.0.8 - Copy\\Desktop Fences\\Desktop Fences.csproj",
+        "projectPath": "C:\\Users\\Nikos\\Desktop\\DesktopFences\\Code\\Desktop Fences\\Desktop Fences.csproj",
         "packagesPath": "C:\\Users\\Nikos\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\Nikos\\Desktop\\DesktopFences - 2.5.0.8 - Copy\\Desktop Fences\\obj\\",
+        "outputPath": "C:\\Users\\Nikos\\Desktop\\DesktopFences\\Code\\Desktop Fences\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
@@ -69,19 +69,19 @@
           "downloadDependencies": [
             {
               "name": "Microsoft.AspNetCore.App.Ref",
-              "version": "[8.0.14, 8.0.14]"
+              "version": "[8.0.15, 8.0.15]"
             },
             {
               "name": "Microsoft.NETCore.App.Host.win-x64",
-              "version": "[8.0.14, 8.0.14]"
+              "version": "[8.0.15, 8.0.15]"
             },
             {
               "name": "Microsoft.NETCore.App.Ref",
-              "version": "[8.0.14, 8.0.14]"
+              "version": "[8.0.15, 8.0.15]"
             },
             {
               "name": "Microsoft.WindowsDesktop.App.Ref",
-              "version": "[8.0.14, 8.0.14]"
+              "version": "[8.0.15, 8.0.15]"
             }
           ],
           "frameworkReferences": {
@@ -92,7 +92,7 @@
               "privateAssets": "none"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.201/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.203/PortableRuntimeIdentifierGraph.json"
         }
       }
     }
