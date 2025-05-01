@@ -1,137 +1,361 @@
-1/5/2025 1:24:12 μμ: No migration needed for fences.json
-1/5/2025 1:24:13 μμ: Using target file icon for Shortcuts\PotPlayer 64 bit (4).lnk: C:\Program Files\DAUM\PotPlayer\PotPlayerMini64.exe
-1/5/2025 1:24:13 μμ: Attaching handler for Shortcuts\PotPlayer 64 bit (4).lnk, initial singleClickToLaunch=True
-1/5/2025 1:24:13 μμ: Using folder-White.png for shortcut Shortcuts\GodMode.{ED7BA470-8E54-465E-825C-99712043E01C}.lnk targeting existing folder C:\Users\Nikos\Desktop\GodMode.{ED7BA470-8E54-465E-825C-99712043E01C}
-1/5/2025 1:24:13 μμ: Attaching handler for Shortcuts\GodMode.{ED7BA470-8E54-465E-825C-99712043E01C}.lnk, initial singleClickToLaunch=True
-1/5/2025 1:24:13 μμ: Corrected isFolder to true for shortcut Shortcuts\GodMode.{ED7BA470-8E54-465E-825C-99712043E01C}.lnk targeting folder C:\Users\Nikos\Desktop\GodMode.{ED7BA470-8E54-465E-825C-99712043E01C}
-1/5/2025 1:24:13 μμ: Using target file icon for Shortcuts\LCDSmartie.lnk: F:\SLAVE\!Programs\LCD Smartie\LCD_Smartie\Latest\LCDSmartie_x64\LCDSmartie.exe
-1/5/2025 1:24:13 μμ: Using custom icon from IconLocation for Shortcuts\LCDSmartie.lnk: F:\SLAVE\!Programs\LCD Smartie\LCD_Smartie\Latest\LCDSmartie_x64\LCDSmartie.exe
-1/5/2025 1:24:13 μμ: Attaching handler for Shortcuts\LCDSmartie.lnk, initial singleClickToLaunch=True
-1/5/2025 1:24:13 μμ: Using target file icon for Shortcuts\Βασικες λειτουργιες.docx.lnk: C:\Users\Nikos\Desktop\Βασικες λειτουργιες.docx
-1/5/2025 1:24:13 μμ: Attaching handler for Shortcuts\Βασικες λειτουργιες.docx.lnk, initial singleClickToLaunch=True
-1/5/2025 1:24:13 μμ: Using missing icon for Shortcuts\HikCentral Lite Διαχειριστής σέρβις.lnk: file-WhiteX.png
-1/5/2025 1:24:13 μμ: Attaching handler for Shortcuts\HikCentral Lite Διαχειριστής σέρβις.lnk, initial singleClickToLaunch=True
-1/5/2025 1:24:13 μμ: Target missing, updating to file-WhiteX.png for Shortcuts\HikCentral Lite Διαχειριστής σέρβις.lnk
-1/5/2025 1:24:13 μμ: Using missing icon for Shortcuts\Desktop Fences.lnk: file-WhiteX.png
-1/5/2025 1:24:13 μμ: Attaching handler for Shortcuts\Desktop Fences.lnk, initial singleClickToLaunch=True
-1/5/2025 1:24:13 μμ: Target missing, updating to file-WhiteX.png for Shortcuts\Desktop Fences.lnk
-1/5/2025 1:24:13 μμ: Target missing, updating to file-WhiteX.png for Shortcuts\HikCentral Lite Διαχειριστής σέρβις.lnk
-1/5/2025 1:24:13 μμ: Target missing, updating to file-WhiteX.png for Shortcuts\Desktop Fences.lnk
-1/5/2025 1:24:14 μμ: Target missing, updating to file-WhiteX.png for Shortcuts\HikCentral Lite Διαχειριστής σέρβις.lnk
-1/5/2025 1:24:14 μμ: Target missing, updating to file-WhiteX.png for Shortcuts\Desktop Fences.lnk
-1/5/2025 1:24:15 μμ: Target missing, updating to file-WhiteX.png for Shortcuts\HikCentral Lite Διαχειριστής σέρβις.lnk
-1/5/2025 1:24:15 μμ: Target missing, updating to file-WhiteX.png for Shortcuts\Desktop Fences.lnk
-1/5/2025 1:24:16 μμ: Target missing, updating to file-WhiteX.png for Shortcuts\HikCentral Lite Διαχειριστής σέρβις.lnk
-1/5/2025 1:24:16 μμ: Target missing, updating to file-WhiteX.png for Shortcuts\Desktop Fences.lnk
-1/5/2025 1:24:17 μμ: Target missing, updating to file-WhiteX.png for Shortcuts\HikCentral Lite Διαχειριστής σέρβις.lnk
-1/5/2025 1:24:17 μμ: Target missing, updating to file-WhiteX.png for Shortcuts\Desktop Fences.lnk
-1/5/2025 1:24:18 μμ: Target missing, updating to file-WhiteX.png for Shortcuts\HikCentral Lite Διαχειριστής σέρβις.lnk
-1/5/2025 1:24:18 μμ: Target missing, updating to file-WhiteX.png for Shortcuts\Desktop Fences.lnk
-1/5/2025 1:24:19 μμ: Target missing, updating to file-WhiteX.png for Shortcuts\HikCentral Lite Διαχειριστής σέρβις.lnk
-1/5/2025 1:24:19 μμ: Target missing, updating to file-WhiteX.png for Shortcuts\Desktop Fences.lnk
-1/5/2025 1:24:20 μμ: Target missing, updating to file-WhiteX.png for Shortcuts\HikCentral Lite Διαχειριστής σέρβις.lnk
-1/5/2025 1:24:20 μμ: Target missing, updating to file-WhiteX.png for Shortcuts\Desktop Fences.lnk
-1/5/2025 1:24:21 μμ: Target missing, updating to file-WhiteX.png for Shortcuts\HikCentral Lite Διαχειριστής σέρβις.lnk
-1/5/2025 1:24:21 μμ: Target missing, updating to file-WhiteX.png for Shortcuts\Desktop Fences.lnk
-1/5/2025 1:24:22 μμ: Target missing, updating to file-WhiteX.png for Shortcuts\HikCentral Lite Διαχειριστής σέρβις.lnk
-1/5/2025 1:24:22 μμ: Target missing, updating to file-WhiteX.png for Shortcuts\Desktop Fences.lnk
-1/5/2025 1:24:23 μμ: Target missing, updating to file-WhiteX.png for Shortcuts\HikCentral Lite Διαχειριστής σέρβις.lnk
-1/5/2025 1:24:23 μμ: Target missing, updating to file-WhiteX.png for Shortcuts\Desktop Fences.lnk
-1/5/2025 2:14:48 μμ: No migration needed for fences.json
-1/5/2025 2:14:48 μμ: Using missing icon for Shortcuts\PotPlayer 64 bit (4).lnk: file-WhiteX.png
-1/5/2025 2:14:48 μμ: Attaching handler for Shortcuts\PotPlayer 64 bit (4).lnk, initial singleClickToLaunch=True
-1/5/2025 2:14:48 μμ: Target missing, updating to file-WhiteX.png for Shortcuts\PotPlayer 64 bit (4).lnk
-1/5/2025 2:14:48 μμ: Using folder-White.png for shortcut Shortcuts\GodMode.{ED7BA470-8E54-465E-825C-99712043E01C}.lnk targeting existing folder C:\Users\Nikos\Desktop\GodMode.{ED7BA470-8E54-465E-825C-99712043E01C}
-1/5/2025 2:14:48 μμ: Attaching handler for Shortcuts\GodMode.{ED7BA470-8E54-465E-825C-99712043E01C}.lnk, initial singleClickToLaunch=True
-1/5/2025 2:14:48 μμ: Corrected isFolder to true for shortcut Shortcuts\GodMode.{ED7BA470-8E54-465E-825C-99712043E01C}.lnk targeting folder C:\Users\Nikos\Desktop\GodMode.{ED7BA470-8E54-465E-825C-99712043E01C}
-1/5/2025 2:14:48 μμ: Using target file icon for Shortcuts\LCDSmartie.lnk: F:\SLAVE\!Programs\LCD Smartie\LCD_Smartie\Latest\LCDSmartie_x64\LCDSmartie.exe
-1/5/2025 2:14:48 μμ: Using custom icon from IconLocation for Shortcuts\LCDSmartie.lnk: F:\SLAVE\!Programs\LCD Smartie\LCD_Smartie\Latest\LCDSmartie_x64\LCDSmartie.exe
-1/5/2025 2:14:48 μμ: Attaching handler for Shortcuts\LCDSmartie.lnk, initial singleClickToLaunch=True
-1/5/2025 2:14:48 μμ: Using missing icon for Shortcuts\Βασικες λειτουργιες.docx.lnk: file-WhiteX.png
-1/5/2025 2:14:48 μμ: Attaching handler for Shortcuts\Βασικες λειτουργιες.docx.lnk, initial singleClickToLaunch=True
-1/5/2025 2:14:48 μμ: Target missing, updating to file-WhiteX.png for Shortcuts\Βασικες λειτουργιες.docx.lnk
-1/5/2025 2:14:48 μμ: Using missing icon for Shortcuts\HikCentral Lite Διαχειριστής σέρβις.lnk: file-WhiteX.png
-1/5/2025 2:14:48 μμ: Attaching handler for Shortcuts\HikCentral Lite Διαχειριστής σέρβις.lnk, initial singleClickToLaunch=True
-1/5/2025 2:14:48 μμ: Target missing, updating to file-WhiteX.png for Shortcuts\HikCentral Lite Διαχειριστής σέρβις.lnk
-1/5/2025 2:14:48 μμ: Using missing icon for Shortcuts\Desktop Fences.lnk: file-WhiteX.png
-1/5/2025 2:14:48 μμ: Attaching handler for Shortcuts\Desktop Fences.lnk, initial singleClickToLaunch=True
-1/5/2025 2:14:48 μμ: Target missing, updating to file-WhiteX.png for Shortcuts\Desktop Fences.lnk
-1/5/2025 2:14:49 μμ: Target missing, updating to file-WhiteX.png for Shortcuts\PotPlayer 64 bit (4).lnk
-1/5/2025 2:14:49 μμ: Target missing, updating to file-WhiteX.png for Shortcuts\Βασικες λειτουργιες.docx.lnk
-1/5/2025 2:14:49 μμ: Target missing, updating to file-WhiteX.png for Shortcuts\HikCentral Lite Διαχειριστής σέρβις.lnk
-1/5/2025 2:14:49 μμ: Target missing, updating to file-WhiteX.png for Shortcuts\Desktop Fences.lnk
-1/5/2025 2:14:50 μμ: MouseDown on Shortcuts\LCDSmartie.lnk, ClickCount=1, singleClickToLaunch=True
-1/5/2025 2:14:50 μμ: Single click launching Shortcuts\LCDSmartie.lnk
-1/5/2025 2:14:50 μμ: Using CustomLaunchEffect for Shortcuts\LCDSmartie.lnk in fence 'White Fence': Rotate
-1/5/2025 2:14:50 μμ: LaunchItem called for Shortcuts\LCDSmartie.lnk with effect Rotate
-1/5/2025 2:14:50 μμ: Target path resolved to: F:\SLAVE\!Programs\LCD Smartie\LCD_Smartie\Latest\LCDSmartie_x64\LCDSmartie.exe
-1/5/2025 2:14:50 μμ: Target exists: True, IsFolder: False
-1/5/2025 2:14:50 μμ: Arguments: -config config2x40_green.ini
-1/5/2025 2:14:50 μμ: Attempting to launch F:\SLAVE\!Programs\LCD Smartie\LCD_Smartie\Latest\LCDSmartie_x64\LCDSmartie.exe
-1/5/2025 2:14:50 μμ: Successfully launched F:\SLAVE\!Programs\LCD Smartie\LCD_Smartie\Latest\LCDSmartie_x64\LCDSmartie.exe
-1/5/2025 2:14:50 μμ: Target missing, updating to file-WhiteX.png for Shortcuts\PotPlayer 64 bit (4).lnk
-1/5/2025 2:14:50 μμ: Target missing, updating to file-WhiteX.png for Shortcuts\Βασικες λειτουργιες.docx.lnk
-1/5/2025 2:14:50 μμ: Target missing, updating to file-WhiteX.png for Shortcuts\HikCentral Lite Διαχειριστής σέρβις.lnk
-1/5/2025 2:14:50 μμ: Target missing, updating to file-WhiteX.png for Shortcuts\Desktop Fences.lnk
-1/5/2025 2:14:51 μμ: Target missing, updating to file-WhiteX.png for Shortcuts\PotPlayer 64 bit (4).lnk
-1/5/2025 2:14:51 μμ: Target missing, updating to file-WhiteX.png for Shortcuts\Βασικες λειτουργιες.docx.lnk
-1/5/2025 2:14:51 μμ: Target missing, updating to file-WhiteX.png for Shortcuts\HikCentral Lite Διαχειριστής σέρβις.lnk
-1/5/2025 2:14:51 μμ: Target missing, updating to file-WhiteX.png for Shortcuts\Desktop Fences.lnk
-1/5/2025 2:14:52 μμ: Target missing, updating to file-WhiteX.png for Shortcuts\PotPlayer 64 bit (4).lnk
-1/5/2025 2:14:52 μμ: Target missing, updating to file-WhiteX.png for Shortcuts\Βασικες λειτουργιες.docx.lnk
-1/5/2025 2:14:52 μμ: Target missing, updating to file-WhiteX.png for Shortcuts\HikCentral Lite Διαχειριστής σέρβις.lnk
-1/5/2025 2:14:52 μμ: Target missing, updating to file-WhiteX.png for Shortcuts\Desktop Fences.lnk
-1/5/2025 2:14:53 μμ: Target missing, updating to file-WhiteX.png for Shortcuts\PotPlayer 64 bit (4).lnk
-1/5/2025 2:14:53 μμ: Target missing, updating to file-WhiteX.png for Shortcuts\Βασικες λειτουργιες.docx.lnk
-1/5/2025 2:14:53 μμ: Target missing, updating to file-WhiteX.png for Shortcuts\HikCentral Lite Διαχειριστής σέρβις.lnk
-1/5/2025 2:14:53 μμ: Target missing, updating to file-WhiteX.png for Shortcuts\Desktop Fences.lnk
-1/5/2025 2:14:54 μμ: Target missing, updating to file-WhiteX.png for Shortcuts\PotPlayer 64 bit (4).lnk
-1/5/2025 2:14:54 μμ: Target missing, updating to file-WhiteX.png for Shortcuts\Βασικες λειτουργιες.docx.lnk
-1/5/2025 2:14:54 μμ: Target missing, updating to file-WhiteX.png for Shortcuts\HikCentral Lite Διαχειριστής σέρβις.lnk
-1/5/2025 2:14:54 μμ: Target missing, updating to file-WhiteX.png for Shortcuts\Desktop Fences.lnk
-1/5/2025 2:14:55 μμ: Target missing, updating to file-WhiteX.png for Shortcuts\PotPlayer 64 bit (4).lnk
-1/5/2025 2:14:55 μμ: Target missing, updating to file-WhiteX.png for Shortcuts\Βασικες λειτουργιες.docx.lnk
-1/5/2025 2:14:55 μμ: Target missing, updating to file-WhiteX.png for Shortcuts\HikCentral Lite Διαχειριστής σέρβις.lnk
-1/5/2025 2:14:55 μμ: Target missing, updating to file-WhiteX.png for Shortcuts\Desktop Fences.lnk
-1/5/2025 2:14:56 μμ: Target missing, updating to file-WhiteX.png for Shortcuts\PotPlayer 64 bit (4).lnk
-1/5/2025 2:14:56 μμ: Target missing, updating to file-WhiteX.png for Shortcuts\Βασικες λειτουργιες.docx.lnk
-1/5/2025 2:14:56 μμ: Target missing, updating to file-WhiteX.png for Shortcuts\HikCentral Lite Διαχειριστής σέρβις.lnk
-1/5/2025 2:14:56 μμ: Target missing, updating to file-WhiteX.png for Shortcuts\Desktop Fences.lnk
-1/5/2025 2:14:57 μμ: Target missing, updating to file-WhiteX.png for Shortcuts\PotPlayer 64 bit (4).lnk
-1/5/2025 2:14:57 μμ: Target missing, updating to file-WhiteX.png for Shortcuts\Βασικες λειτουργιες.docx.lnk
-1/5/2025 2:14:57 μμ: Target missing, updating to file-WhiteX.png for Shortcuts\HikCentral Lite Διαχειριστής σέρβις.lnk
-1/5/2025 2:14:57 μμ: Target missing, updating to file-WhiteX.png for Shortcuts\Desktop Fences.lnk
-1/5/2025 2:14:58 μμ: Target missing, updating to file-WhiteX.png for Shortcuts\PotPlayer 64 bit (4).lnk
-1/5/2025 2:14:58 μμ: Target missing, updating to file-WhiteX.png for Shortcuts\Βασικες λειτουργιες.docx.lnk
-1/5/2025 2:14:58 μμ: Target missing, updating to file-WhiteX.png for Shortcuts\HikCentral Lite Διαχειριστής σέρβις.lnk
-1/5/2025 2:14:58 μμ: Target missing, updating to file-WhiteX.png for Shortcuts\Desktop Fences.lnk
-1/5/2025 2:14:59 μμ: Target missing, updating to file-WhiteX.png for Shortcuts\PotPlayer 64 bit (4).lnk
-1/5/2025 2:14:59 μμ: Target missing, updating to file-WhiteX.png for Shortcuts\Βασικες λειτουργιες.docx.lnk
-1/5/2025 2:14:59 μμ: Target missing, updating to file-WhiteX.png for Shortcuts\HikCentral Lite Διαχειριστής σέρβις.lnk
-1/5/2025 2:14:59 μμ: Target missing, updating to file-WhiteX.png for Shortcuts\Desktop Fences.lnk
-1/5/2025 2:14:59 μμ: Updating options, new singleClickToLaunch=False
-1/5/2025 2:14:59 μμ: Updated click events for 0 items
-1/5/2025 2:14:59 μμ: Applied color 'Red' with global tint '72' to fence 'White Fence'
-1/5/2025 2:14:59 μμ: Applied color 'White' with global tint '72' to fence 'Self'
-1/5/2025 2:15:00 μμ: Target missing, updating to file-WhiteX.png for Shortcuts\PotPlayer 64 bit (4).lnk
-1/5/2025 2:15:00 μμ: Target missing, updating to file-WhiteX.png for Shortcuts\Βασικες λειτουργιες.docx.lnk
-1/5/2025 2:15:00 μμ: Target missing, updating to file-WhiteX.png for Shortcuts\HikCentral Lite Διαχειριστής σέρβις.lnk
-1/5/2025 2:15:00 μμ: Target missing, updating to file-WhiteX.png for Shortcuts\Desktop Fences.lnk
-1/5/2025 2:15:00 μμ: MouseDown on Shortcuts\LCDSmartie.lnk, ClickCount=1, singleClickToLaunch=False
-1/5/2025 2:15:00 μμ: MouseDown on Shortcuts\LCDSmartie.lnk, ClickCount=2, singleClickToLaunch=False
-1/5/2025 2:15:00 μμ: Double click launching Shortcuts\LCDSmartie.lnk
-1/5/2025 2:15:00 μμ: Using CustomLaunchEffect for Shortcuts\LCDSmartie.lnk in fence 'White Fence': Rotate
-1/5/2025 2:15:00 μμ: LaunchItem called for Shortcuts\LCDSmartie.lnk with effect Rotate
-1/5/2025 2:15:00 μμ: Target path resolved to: F:\SLAVE\!Programs\LCD Smartie\LCD_Smartie\Latest\LCDSmartie_x64\LCDSmartie.exe
-1/5/2025 2:15:00 μμ: Target exists: True, IsFolder: False
-1/5/2025 2:15:00 μμ: Arguments: -config config2x40_green.ini
-1/5/2025 2:15:00 μμ: Attempting to launch F:\SLAVE\!Programs\LCD Smartie\LCD_Smartie\Latest\LCDSmartie_x64\LCDSmartie.exe
-1/5/2025 2:15:00 μμ: Successfully launched F:\SLAVE\!Programs\LCD Smartie\LCD_Smartie\Latest\LCDSmartie_x64\LCDSmartie.exe
-1/5/2025 2:15:01 μμ: Target missing, updating to file-WhiteX.png for Shortcuts\PotPlayer 64 bit (4).lnk
-1/5/2025 2:15:01 μμ: Target missing, updating to file-WhiteX.png for Shortcuts\Βασικες λειτουργιες.docx.lnk
-1/5/2025 2:15:01 μμ: Target missing, updating to file-WhiteX.png for Shortcuts\HikCentral Lite Διαχειριστής σέρβις.lnk
-1/5/2025 2:15:01 μμ: Target missing, updating to file-WhiteX.png for Shortcuts\Desktop Fences.lnk
-1/5/2025 2:15:02 μμ: Target missing, updating to file-WhiteX.png for Shortcuts\PotPlayer 64 bit (4).lnk
-1/5/2025 2:15:02 μμ: Target missing, updating to file-WhiteX.png for Shortcuts\Βασικες λειτουργιες.docx.lnk
-1/5/2025 2:15:02 μμ: Target missing, updating to file-WhiteX.png for Shortcuts\HikCentral Lite Διαχειριστής σέρβις.lnk
-1/5/2025 2:15:02 μμ: Target missing, updating to file-WhiteX.png for Shortcuts\Desktop Fences.lnk
+1/5/2025 11:16:29 μμ: Invalid IsHidden value 'true' in LCD Smartie Zeus, resetting to false
+1/5/2025 11:16:29 μμ: Invalid IsHidden value 'true' in New Fence, resetting to false
+1/5/2025 11:16:29 μμ: Migrated fences.json with new CustomColor and CustomLaunchEffect fields
+1/5/2025 11:16:29 μμ: Fence 'White Fence' IsHidden state: False
+1/5/2025 11:16:29 μμ: Using target file icon for Shortcuts\Command Prompt.lnk: C:\Windows\system32\cmd.exe
+1/5/2025 11:16:29 μμ: Attaching handler for Shortcuts\Command Prompt.lnk, initial singleClickToLaunch=True
+1/5/2025 11:16:29 μμ: Using target file icon for Shortcuts\Resource Monitor.lnk: C:\Windows\system32\perfmon.exe
+1/5/2025 11:16:29 μμ: Attaching handler for Shortcuts\Resource Monitor.lnk, initial singleClickToLaunch=True
+1/5/2025 11:16:29 μμ: Using target file icon for Shortcuts\Event Viewer.lnk: C:\Windows\system32\eventvwr.msc
+1/5/2025 11:16:29 μμ: Attaching handler for Shortcuts\Event Viewer.lnk, initial singleClickToLaunch=True
+1/5/2025 11:16:29 μμ: Using target file icon for Shortcuts\Computer Management.lnk: C:\Windows\system32\compmgmt.msc
+1/5/2025 11:16:29 μμ: Attaching handler for Shortcuts\Computer Management.lnk, initial singleClickToLaunch=True
+1/5/2025 11:16:29 μμ: Using target file icon for Shortcuts\services.lnk: C:\Windows\system32\services.msc
+1/5/2025 11:16:29 μμ: Attaching handler for Shortcuts\services.lnk, initial singleClickToLaunch=True
+1/5/2025 11:16:29 μμ: Using target file icon for Shortcuts\Registry Editor.lnk: C:\Windows\regedit.exe
+1/5/2025 11:16:29 μμ: Attaching handler for Shortcuts\Registry Editor.lnk, initial singleClickToLaunch=True
+1/5/2025 11:16:29 μμ: Using target file icon for Shortcuts\Task Scheduler.lnk: C:\Windows\system32\taskschd.msc
+1/5/2025 11:16:29 μμ: Attaching handler for Shortcuts\Task Scheduler.lnk, initial singleClickToLaunch=True
+1/5/2025 11:16:29 μμ: Using target file icon for Shortcuts\Windows Defender Firewall with Advanced Security.lnk: C:\Windows\system32\WF.msc
+1/5/2025 11:16:29 μμ: Attaching handler for Shortcuts\Windows Defender Firewall with Advanced Security.lnk, initial singleClickToLaunch=True
+1/5/2025 11:16:29 μμ: Using target file icon for Shortcuts\System Configuration.lnk: C:\Windows\system32\msconfig.exe
+1/5/2025 11:16:29 μμ: Attaching handler for Shortcuts\System Configuration.lnk, initial singleClickToLaunch=True
+1/5/2025 11:16:29 μμ: Fence 'Zeus Fence' IsHidden state: False
+1/5/2025 11:16:29 μμ: Using target file icon for Shortcuts\Black my Screen.lnk: D:\Nextcloud\Development\VB14\Black Screen\BlackMyScreen\BlackMyScreen\bin\Debug\Black my Screen.exe
+1/5/2025 11:16:29 μμ: Attaching handler for Shortcuts\Black my Screen.lnk, initial singleClickToLaunch=True
+1/5/2025 11:16:29 μμ: Using target file icon for Shortcuts\WinOFF.lnk: F:\SLAVE\!Programs\AmpWinoff\WinOFF\WinOFF.exe
+1/5/2025 11:16:29 μμ: Attaching handler for Shortcuts\WinOFF.lnk, initial singleClickToLaunch=True
+1/5/2025 11:16:29 μμ: Using target file icon for Shortcuts\USB Raptor.lnk: D:\Nextcloud\Development\VB14\USB Raptor\Raptor\Raptor\Raptor\bin\Debug\USB Raptor.exe
+1/5/2025 11:16:29 μμ: Attaching handler for Shortcuts\USB Raptor.lnk, initial singleClickToLaunch=True
+1/5/2025 11:16:29 μμ: Using target file icon for Shortcuts\UDP Tool.lnk: D:\Nextcloud\Development\VB14\UDP Tool\UDP Tool\UDP Messages\bin\Debug\UDP Tool.exe
+1/5/2025 11:16:29 μμ: Attaching handler for Shortcuts\UDP Tool.lnk, initial singleClickToLaunch=True
+1/5/2025 11:16:29 μμ: Using target file icon for Shortcuts\#Set Options and Run.ps1 - Shortcut.lnk: C:\Scripts\Organize Downloads\#Set Options and Run.ps1
+1/5/2025 11:16:29 μμ: Using custom icon from IconLocation for Shortcuts\#Set Options and Run.ps1 - Shortcut.lnk: C:\Scripts\Organize Downloads\tool.ico
+1/5/2025 11:16:29 μμ: Attaching handler for Shortcuts\#Set Options and Run.ps1 - Shortcut.lnk, initial singleClickToLaunch=True
+1/5/2025 11:16:29 μμ: Fence 'LCD Smartie Zeus' IsHidden state: False
+1/5/2025 11:16:29 μμ: Using target file icon for Shortcuts\LCDSmartie Main.lnk: F:\SLAVE\!Programs\LCD Smartie\LCD_Smartie\Latest\LCDSmartie_x64\LCDSmartie.exe
+1/5/2025 11:16:29 μμ: Using custom icon from IconLocation for Shortcuts\LCDSmartie Main.lnk: F:\SLAVE\!Programs\LCD Smartie\LCD_Smartie\Latest\LCDSmartie_x64\skins\RainForest\smartie.ico
+1/5/2025 11:16:29 μμ: Attaching handler for Shortcuts\LCDSmartie Main.lnk, initial singleClickToLaunch=True
+1/5/2025 11:16:29 μμ: Using target file icon for Shortcuts\LCDSmartie.lnk: F:\SLAVE\!Programs\LCD Smartie\LCD_Smartie\Latest\LCDSmartie_x64\LCDSmartie.exe
+1/5/2025 11:16:29 μμ: Using custom icon from IconLocation for Shortcuts\LCDSmartie.lnk: F:\SLAVE\!Programs\LCD Smartie\LCD_Smartie\Latest\LCDSmartie_x64\skins\LunarDust\Additional Icons\LCD Smartie Logo 7.ico
+1/5/2025 11:16:29 μμ: Attaching handler for Shortcuts\LCDSmartie.lnk, initial singleClickToLaunch=True
+1/5/2025 11:16:29 μμ: Using target file icon for Shortcuts\LCDSmartie Purple.lnk: F:\SLAVE\!Programs\LCD Smartie\LCD_Smartie\Latest\LCDSmartie_x64\LCDSmartie.exe
+1/5/2025 11:16:29 μμ: Using custom icon from IconLocation for Shortcuts\LCDSmartie Purple.lnk: F:\SLAVE\!Programs\LCD Smartie\LCD_Smartie\Latest\LCDSmartie_x64\skins\Dracula\smartie.ico
+1/5/2025 11:16:29 μμ: Attaching handler for Shortcuts\LCDSmartie Purple.lnk, initial singleClickToLaunch=True
+1/5/2025 11:16:29 μμ: Using target file icon for Shortcuts\LCDSmartie Android.lnk: F:\SLAVE\!Programs\LCD Smartie\LCD_Smartie\Latest\LCDSmartie_x64\LCDSmartie.exe
+1/5/2025 11:16:29 μμ: Attaching handler for Shortcuts\LCDSmartie Android.lnk, initial singleClickToLaunch=True
+1/5/2025 11:16:29 μμ: Using target file icon for Shortcuts\Direct Lines for LCD Smartie.exe - Shortcut.lnk: F:\SLAVE\!Programs\LCD Smartie\LCD_Smartie\Latest\LCDSmartie_x64\Direct Lines for LCD Smartie.exe
+1/5/2025 11:16:29 μμ: Attaching handler for Shortcuts\Direct Lines for LCD Smartie.exe - Shortcut.lnk, initial singleClickToLaunch=True
+1/5/2025 11:16:29 μμ: Fence 'New Fence' IsHidden state: False
+1/5/2025 11:16:29 μμ: Using target file icon for Shortcuts\Backup Folder - With Sound (1).lnk: F:\SLAVE\!Programs\LCD Smartie\Scripts Related To LCD Smartie\Copy Backup Folder - With Sound.vbs
+1/5/2025 11:16:29 μμ: Attaching handler for Shortcuts\Backup Folder - With Sound (1).lnk, initial singleClickToLaunch=True
+1/5/2025 11:37:34 μμ: Preserved IsHidden: "false" for White Fence
+1/5/2025 11:37:34 μμ: Preserved IsHidden: "false" for Zeus Fence
+1/5/2025 11:37:34 μμ: Preserved IsHidden: "false" for LCD Smartie Zeus
+1/5/2025 11:37:34 μμ: Preserved IsHidden: "false" for New Fence
+1/5/2025 11:37:34 μμ: No migration needed for fences.json
+1/5/2025 11:37:34 μμ: Fence 'White Fence' IsHidden state: False
+1/5/2025 11:37:34 μμ: Using target file icon for Shortcuts\Command Prompt.lnk: C:\Windows\system32\cmd.exe
+1/5/2025 11:37:34 μμ: Attaching handler for Shortcuts\Command Prompt.lnk, initial singleClickToLaunch=True
+1/5/2025 11:37:34 μμ: Using target file icon for Shortcuts\Resource Monitor.lnk: C:\Windows\system32\perfmon.exe
+1/5/2025 11:37:34 μμ: Attaching handler for Shortcuts\Resource Monitor.lnk, initial singleClickToLaunch=True
+1/5/2025 11:37:34 μμ: Using target file icon for Shortcuts\Event Viewer.lnk: C:\Windows\system32\eventvwr.msc
+1/5/2025 11:37:34 μμ: Attaching handler for Shortcuts\Event Viewer.lnk, initial singleClickToLaunch=True
+1/5/2025 11:37:34 μμ: Using target file icon for Shortcuts\Computer Management.lnk: C:\Windows\system32\compmgmt.msc
+1/5/2025 11:37:34 μμ: Attaching handler for Shortcuts\Computer Management.lnk, initial singleClickToLaunch=True
+1/5/2025 11:37:34 μμ: Using target file icon for Shortcuts\services.lnk: C:\Windows\system32\services.msc
+1/5/2025 11:37:34 μμ: Attaching handler for Shortcuts\services.lnk, initial singleClickToLaunch=True
+1/5/2025 11:37:34 μμ: Using target file icon for Shortcuts\Registry Editor.lnk: C:\Windows\regedit.exe
+1/5/2025 11:37:34 μμ: Attaching handler for Shortcuts\Registry Editor.lnk, initial singleClickToLaunch=True
+1/5/2025 11:37:34 μμ: Using target file icon for Shortcuts\Task Scheduler.lnk: C:\Windows\system32\taskschd.msc
+1/5/2025 11:37:34 μμ: Attaching handler for Shortcuts\Task Scheduler.lnk, initial singleClickToLaunch=True
+1/5/2025 11:37:34 μμ: Using target file icon for Shortcuts\Windows Defender Firewall with Advanced Security.lnk: C:\Windows\system32\WF.msc
+1/5/2025 11:37:34 μμ: Attaching handler for Shortcuts\Windows Defender Firewall with Advanced Security.lnk, initial singleClickToLaunch=True
+1/5/2025 11:37:34 μμ: Using target file icon for Shortcuts\System Configuration.lnk: C:\Windows\system32\msconfig.exe
+1/5/2025 11:37:34 μμ: Attaching handler for Shortcuts\System Configuration.lnk, initial singleClickToLaunch=True
+1/5/2025 11:37:35 μμ: Saved fences.json with consistent IsHidden string format
+1/5/2025 11:37:35 μμ: Saved fences.json with consistent IsHidden string format
+1/5/2025 11:37:35 μμ: Fence 'Zeus Fence' IsHidden state: False
+1/5/2025 11:37:35 μμ: Using target file icon for Shortcuts\Black my Screen.lnk: D:\Nextcloud\Development\VB14\Black Screen\BlackMyScreen\BlackMyScreen\bin\Debug\Black my Screen.exe
+1/5/2025 11:37:35 μμ: Attaching handler for Shortcuts\Black my Screen.lnk, initial singleClickToLaunch=True
+1/5/2025 11:37:35 μμ: Using target file icon for Shortcuts\WinOFF.lnk: F:\SLAVE\!Programs\AmpWinoff\WinOFF\WinOFF.exe
+1/5/2025 11:37:35 μμ: Attaching handler for Shortcuts\WinOFF.lnk, initial singleClickToLaunch=True
+1/5/2025 11:37:35 μμ: Using target file icon for Shortcuts\USB Raptor.lnk: D:\Nextcloud\Development\VB14\USB Raptor\Raptor\Raptor\Raptor\bin\Debug\USB Raptor.exe
+1/5/2025 11:37:35 μμ: Attaching handler for Shortcuts\USB Raptor.lnk, initial singleClickToLaunch=True
+1/5/2025 11:37:35 μμ: Using target file icon for Shortcuts\UDP Tool.lnk: D:\Nextcloud\Development\VB14\UDP Tool\UDP Tool\UDP Messages\bin\Debug\UDP Tool.exe
+1/5/2025 11:37:35 μμ: Attaching handler for Shortcuts\UDP Tool.lnk, initial singleClickToLaunch=True
+1/5/2025 11:37:35 μμ: Using target file icon for Shortcuts\#Set Options and Run.ps1 - Shortcut.lnk: C:\Scripts\Organize Downloads\#Set Options and Run.ps1
+1/5/2025 11:37:35 μμ: Using custom icon from IconLocation for Shortcuts\#Set Options and Run.ps1 - Shortcut.lnk: C:\Scripts\Organize Downloads\tool.ico
+1/5/2025 11:37:35 μμ: Attaching handler for Shortcuts\#Set Options and Run.ps1 - Shortcut.lnk, initial singleClickToLaunch=True
+1/5/2025 11:37:35 μμ: Saved fences.json with consistent IsHidden string format
+1/5/2025 11:37:35 μμ: Saved fences.json with consistent IsHidden string format
+1/5/2025 11:37:35 μμ: Fence 'LCD Smartie Zeus' IsHidden state: False
+1/5/2025 11:37:35 μμ: Using target file icon for Shortcuts\LCDSmartie Main.lnk: F:\SLAVE\!Programs\LCD Smartie\LCD_Smartie\Latest\LCDSmartie_x64\LCDSmartie.exe
+1/5/2025 11:37:35 μμ: Using custom icon from IconLocation for Shortcuts\LCDSmartie Main.lnk: F:\SLAVE\!Programs\LCD Smartie\LCD_Smartie\Latest\LCDSmartie_x64\skins\RainForest\smartie.ico
+1/5/2025 11:37:35 μμ: Attaching handler for Shortcuts\LCDSmartie Main.lnk, initial singleClickToLaunch=True
+1/5/2025 11:37:35 μμ: Using target file icon for Shortcuts\LCDSmartie.lnk: F:\SLAVE\!Programs\LCD Smartie\LCD_Smartie\Latest\LCDSmartie_x64\LCDSmartie.exe
+1/5/2025 11:37:35 μμ: Using custom icon from IconLocation for Shortcuts\LCDSmartie.lnk: F:\SLAVE\!Programs\LCD Smartie\LCD_Smartie\Latest\LCDSmartie_x64\skins\LunarDust\Additional Icons\LCD Smartie Logo 7.ico
+1/5/2025 11:37:35 μμ: Attaching handler for Shortcuts\LCDSmartie.lnk, initial singleClickToLaunch=True
+1/5/2025 11:37:35 μμ: Using target file icon for Shortcuts\LCDSmartie Purple.lnk: F:\SLAVE\!Programs\LCD Smartie\LCD_Smartie\Latest\LCDSmartie_x64\LCDSmartie.exe
+1/5/2025 11:37:35 μμ: Using custom icon from IconLocation for Shortcuts\LCDSmartie Purple.lnk: F:\SLAVE\!Programs\LCD Smartie\LCD_Smartie\Latest\LCDSmartie_x64\skins\Dracula\smartie.ico
+1/5/2025 11:37:35 μμ: Attaching handler for Shortcuts\LCDSmartie Purple.lnk, initial singleClickToLaunch=True
+1/5/2025 11:37:35 μμ: Using target file icon for Shortcuts\LCDSmartie Android.lnk: F:\SLAVE\!Programs\LCD Smartie\LCD_Smartie\Latest\LCDSmartie_x64\LCDSmartie.exe
+1/5/2025 11:37:35 μμ: Attaching handler for Shortcuts\LCDSmartie Android.lnk, initial singleClickToLaunch=True
+1/5/2025 11:37:35 μμ: Using target file icon for Shortcuts\Direct Lines for LCD Smartie.exe - Shortcut.lnk: F:\SLAVE\!Programs\LCD Smartie\LCD_Smartie\Latest\LCDSmartie_x64\Direct Lines for LCD Smartie.exe
+1/5/2025 11:37:35 μμ: Attaching handler for Shortcuts\Direct Lines for LCD Smartie.exe - Shortcut.lnk, initial singleClickToLaunch=True
+1/5/2025 11:37:35 μμ: Saved fences.json with consistent IsHidden string format
+1/5/2025 11:37:35 μμ: Saved fences.json with consistent IsHidden string format
+1/5/2025 11:37:35 μμ: Fence 'New Fence' IsHidden state: False
+1/5/2025 11:37:35 μμ: Using target file icon for Shortcuts\Backup Folder - With Sound (1).lnk: F:\SLAVE\!Programs\LCD Smartie\Scripts Related To LCD Smartie\Copy Backup Folder - With Sound.vbs
+1/5/2025 11:37:35 μμ: Attaching handler for Shortcuts\Backup Folder - With Sound (1).lnk, initial singleClickToLaunch=True
+1/5/2025 11:37:35 μμ: Saved fences.json with consistent IsHidden string format
+1/5/2025 11:37:35 μμ: Saved fences.json with consistent IsHidden string format
+1/5/2025 11:37:38 μμ: Saved fences.json with consistent IsHidden string format
+1/5/2025 11:37:38 μμ: Hid fence 'New Fence' for fence 'New Fence'
+1/5/2025 11:37:38 μμ: Set visibility to Hidden for fence 'New Fence'
+1/5/2025 11:37:38 μμ: Added fence 'New Fence' to hidden list
+1/5/2025 11:37:38 μμ: Triggered Hide Fence for 'New Fence'
+1/5/2025 11:37:38 μμ: Saved fences.json with consistent IsHidden string format
+1/5/2025 11:37:38 μμ: Hid fence 'New Fence' for fence 'New Fence'
+1/5/2025 11:37:38 μμ: Set visibility to Hidden for fence 'New Fence'
+1/5/2025 11:37:38 μμ: Triggered Hide Fence for 'New Fence'
+1/5/2025 11:37:40 μμ: Saved fences.json with consistent IsHidden string format
+1/5/2025 11:37:40 μμ: Hid fence 'Zeus Fence' for fence 'Zeus Fence'
+1/5/2025 11:37:40 μμ: Set visibility to Hidden for fence 'Zeus Fence'
+1/5/2025 11:37:40 μμ: Added fence 'Zeus Fence' to hidden list
+1/5/2025 11:37:40 μμ: Triggered Hide Fence for 'Zeus Fence'
+1/5/2025 11:37:40 μμ: Saved fences.json with consistent IsHidden string format
+1/5/2025 11:37:40 μμ: Hid fence 'Zeus Fence' for fence 'Zeus Fence'
+1/5/2025 11:37:40 μμ: Set visibility to Hidden for fence 'Zeus Fence'
+1/5/2025 11:37:40 μμ: Triggered Hide Fence for 'Zeus Fence'
+1/5/2025 11:37:42 μμ: Saved fences.json with consistent IsHidden string format
+1/5/2025 11:37:42 μμ: Hid fence 'LCD Smartie Zeus' for fence 'LCD Smartie Zeus'
+1/5/2025 11:37:42 μμ: Set visibility to Hidden for fence 'LCD Smartie Zeus'
+1/5/2025 11:37:42 μμ: Added fence 'LCD Smartie Zeus' to hidden list
+1/5/2025 11:37:42 μμ: Triggered Hide Fence for 'LCD Smartie Zeus'
+1/5/2025 11:37:42 μμ: Saved fences.json with consistent IsHidden string format
+1/5/2025 11:37:42 μμ: Hid fence 'LCD Smartie Zeus' for fence 'LCD Smartie Zeus'
+1/5/2025 11:37:42 μμ: Set visibility to Hidden for fence 'LCD Smartie Zeus'
+1/5/2025 11:37:42 μμ: Triggered Hide Fence for 'LCD Smartie Zeus'
+1/5/2025 11:37:48 μμ: Preserved IsHidden: "false" for White Fence
+1/5/2025 11:37:48 μμ: Preserved IsHidden: "true" for Zeus Fence
+1/5/2025 11:37:48 μμ: Preserved IsHidden: "true" for LCD Smartie Zeus
+1/5/2025 11:37:48 μμ: Preserved IsHidden: "true" for New Fence
+1/5/2025 11:37:48 μμ: No migration needed for fences.json
+1/5/2025 11:37:48 μμ: Fence 'White Fence' IsHidden state: False
+1/5/2025 11:37:48 μμ: Using target file icon for Shortcuts\Command Prompt.lnk: C:\Windows\system32\cmd.exe
+1/5/2025 11:37:48 μμ: Attaching handler for Shortcuts\Command Prompt.lnk, initial singleClickToLaunch=True
+1/5/2025 11:37:48 μμ: Using target file icon for Shortcuts\Resource Monitor.lnk: C:\Windows\system32\perfmon.exe
+1/5/2025 11:37:48 μμ: Attaching handler for Shortcuts\Resource Monitor.lnk, initial singleClickToLaunch=True
+1/5/2025 11:37:48 μμ: Using target file icon for Shortcuts\Event Viewer.lnk: C:\Windows\system32\eventvwr.msc
+1/5/2025 11:37:48 μμ: Attaching handler for Shortcuts\Event Viewer.lnk, initial singleClickToLaunch=True
+1/5/2025 11:37:48 μμ: Using target file icon for Shortcuts\Computer Management.lnk: C:\Windows\system32\compmgmt.msc
+1/5/2025 11:37:48 μμ: Attaching handler for Shortcuts\Computer Management.lnk, initial singleClickToLaunch=True
+1/5/2025 11:37:48 μμ: Using target file icon for Shortcuts\services.lnk: C:\Windows\system32\services.msc
+1/5/2025 11:37:48 μμ: Attaching handler for Shortcuts\services.lnk, initial singleClickToLaunch=True
+1/5/2025 11:37:48 μμ: Using target file icon for Shortcuts\Registry Editor.lnk: C:\Windows\regedit.exe
+1/5/2025 11:37:48 μμ: Attaching handler for Shortcuts\Registry Editor.lnk, initial singleClickToLaunch=True
+1/5/2025 11:37:48 μμ: Using target file icon for Shortcuts\Task Scheduler.lnk: C:\Windows\system32\taskschd.msc
+1/5/2025 11:37:48 μμ: Attaching handler for Shortcuts\Task Scheduler.lnk, initial singleClickToLaunch=True
+1/5/2025 11:37:48 μμ: Using target file icon for Shortcuts\Windows Defender Firewall with Advanced Security.lnk: C:\Windows\system32\WF.msc
+1/5/2025 11:37:48 μμ: Attaching handler for Shortcuts\Windows Defender Firewall with Advanced Security.lnk, initial singleClickToLaunch=True
+1/5/2025 11:37:48 μμ: Using target file icon for Shortcuts\System Configuration.lnk: C:\Windows\system32\msconfig.exe
+1/5/2025 11:37:48 μμ: Attaching handler for Shortcuts\System Configuration.lnk, initial singleClickToLaunch=True
+1/5/2025 11:37:48 μμ: Saved fences.json with consistent IsHidden string format
+1/5/2025 11:37:48 μμ: Saved fences.json with consistent IsHidden string format
+1/5/2025 11:37:48 μμ: Fence 'Zeus Fence' IsHidden state: False
+1/5/2025 11:37:48 μμ: Using target file icon for Shortcuts\Black my Screen.lnk: D:\Nextcloud\Development\VB14\Black Screen\BlackMyScreen\BlackMyScreen\bin\Debug\Black my Screen.exe
+1/5/2025 11:37:48 μμ: Attaching handler for Shortcuts\Black my Screen.lnk, initial singleClickToLaunch=True
+1/5/2025 11:37:48 μμ: Using target file icon for Shortcuts\WinOFF.lnk: F:\SLAVE\!Programs\AmpWinoff\WinOFF\WinOFF.exe
+1/5/2025 11:37:48 μμ: Attaching handler for Shortcuts\WinOFF.lnk, initial singleClickToLaunch=True
+1/5/2025 11:37:48 μμ: Using target file icon for Shortcuts\USB Raptor.lnk: D:\Nextcloud\Development\VB14\USB Raptor\Raptor\Raptor\Raptor\bin\Debug\USB Raptor.exe
+1/5/2025 11:37:48 μμ: Attaching handler for Shortcuts\USB Raptor.lnk, initial singleClickToLaunch=True
+1/5/2025 11:37:48 μμ: Using target file icon for Shortcuts\UDP Tool.lnk: D:\Nextcloud\Development\VB14\UDP Tool\UDP Tool\UDP Messages\bin\Debug\UDP Tool.exe
+1/5/2025 11:37:48 μμ: Attaching handler for Shortcuts\UDP Tool.lnk, initial singleClickToLaunch=True
+1/5/2025 11:37:48 μμ: Using target file icon for Shortcuts\#Set Options and Run.ps1 - Shortcut.lnk: C:\Scripts\Organize Downloads\#Set Options and Run.ps1
+1/5/2025 11:37:48 μμ: Using custom icon from IconLocation for Shortcuts\#Set Options and Run.ps1 - Shortcut.lnk: C:\Scripts\Organize Downloads\tool.ico
+1/5/2025 11:37:48 μμ: Attaching handler for Shortcuts\#Set Options and Run.ps1 - Shortcut.lnk, initial singleClickToLaunch=True
+1/5/2025 11:37:48 μμ: Saved fences.json with consistent IsHidden string format
+1/5/2025 11:37:48 μμ: Saved fences.json with consistent IsHidden string format
+1/5/2025 11:37:48 μμ: Fence 'LCD Smartie Zeus' IsHidden state: False
+1/5/2025 11:37:48 μμ: Using target file icon for Shortcuts\LCDSmartie Main.lnk: F:\SLAVE\!Programs\LCD Smartie\LCD_Smartie\Latest\LCDSmartie_x64\LCDSmartie.exe
+1/5/2025 11:37:48 μμ: Using custom icon from IconLocation for Shortcuts\LCDSmartie Main.lnk: F:\SLAVE\!Programs\LCD Smartie\LCD_Smartie\Latest\LCDSmartie_x64\skins\RainForest\smartie.ico
+1/5/2025 11:37:48 μμ: Attaching handler for Shortcuts\LCDSmartie Main.lnk, initial singleClickToLaunch=True
+1/5/2025 11:37:48 μμ: Using target file icon for Shortcuts\LCDSmartie.lnk: F:\SLAVE\!Programs\LCD Smartie\LCD_Smartie\Latest\LCDSmartie_x64\LCDSmartie.exe
+1/5/2025 11:37:48 μμ: Using custom icon from IconLocation for Shortcuts\LCDSmartie.lnk: F:\SLAVE\!Programs\LCD Smartie\LCD_Smartie\Latest\LCDSmartie_x64\skins\LunarDust\Additional Icons\LCD Smartie Logo 7.ico
+1/5/2025 11:37:48 μμ: Attaching handler for Shortcuts\LCDSmartie.lnk, initial singleClickToLaunch=True
+1/5/2025 11:37:48 μμ: Using target file icon for Shortcuts\LCDSmartie Purple.lnk: F:\SLAVE\!Programs\LCD Smartie\LCD_Smartie\Latest\LCDSmartie_x64\LCDSmartie.exe
+1/5/2025 11:37:48 μμ: Using custom icon from IconLocation for Shortcuts\LCDSmartie Purple.lnk: F:\SLAVE\!Programs\LCD Smartie\LCD_Smartie\Latest\LCDSmartie_x64\skins\Dracula\smartie.ico
+1/5/2025 11:37:48 μμ: Attaching handler for Shortcuts\LCDSmartie Purple.lnk, initial singleClickToLaunch=True
+1/5/2025 11:37:48 μμ: Using target file icon for Shortcuts\LCDSmartie Android.lnk: F:\SLAVE\!Programs\LCD Smartie\LCD_Smartie\Latest\LCDSmartie_x64\LCDSmartie.exe
+1/5/2025 11:37:48 μμ: Attaching handler for Shortcuts\LCDSmartie Android.lnk, initial singleClickToLaunch=True
+1/5/2025 11:37:48 μμ: Using target file icon for Shortcuts\Direct Lines for LCD Smartie.exe - Shortcut.lnk: F:\SLAVE\!Programs\LCD Smartie\LCD_Smartie\Latest\LCDSmartie_x64\Direct Lines for LCD Smartie.exe
+1/5/2025 11:37:48 μμ: Attaching handler for Shortcuts\Direct Lines for LCD Smartie.exe - Shortcut.lnk, initial singleClickToLaunch=True
+1/5/2025 11:37:48 μμ: Saved fences.json with consistent IsHidden string format
+1/5/2025 11:37:48 μμ: Saved fences.json with consistent IsHidden string format
+1/5/2025 11:37:48 μμ: Fence 'New Fence' IsHidden state: False
+1/5/2025 11:37:48 μμ: Using target file icon for Shortcuts\Backup Folder - With Sound (1).lnk: F:\SLAVE\!Programs\LCD Smartie\Scripts Related To LCD Smartie\Copy Backup Folder - With Sound.vbs
+1/5/2025 11:37:48 μμ: Attaching handler for Shortcuts\Backup Folder - With Sound (1).lnk, initial singleClickToLaunch=True
+1/5/2025 11:37:48 μμ: Saved fences.json with consistent IsHidden string format
+1/5/2025 11:37:48 μμ: Saved fences.json with consistent IsHidden string format
+1/5/2025 11:39:35 μμ: Preserved IsHidden: "false" for White Fence
+1/5/2025 11:39:35 μμ: Preserved IsHidden: "true" for Zeus Fence
+1/5/2025 11:39:35 μμ: Preserved IsHidden: "true" for LCD Smartie Zeus
+1/5/2025 11:39:35 μμ: Preserved IsHidden: "true" for New Fence
+1/5/2025 11:39:35 μμ: No migration needed for fences.json
+1/5/2025 11:39:35 μμ: Fence 'White Fence' IsHidden state: False
+1/5/2025 11:39:35 μμ: Using target file icon for Shortcuts\Command Prompt.lnk: C:\Windows\system32\cmd.exe
+1/5/2025 11:39:35 μμ: Attaching handler for Shortcuts\Command Prompt.lnk, initial singleClickToLaunch=True
+1/5/2025 11:39:35 μμ: Using target file icon for Shortcuts\Resource Monitor.lnk: C:\Windows\system32\perfmon.exe
+1/5/2025 11:39:35 μμ: Attaching handler for Shortcuts\Resource Monitor.lnk, initial singleClickToLaunch=True
+1/5/2025 11:39:35 μμ: Using target file icon for Shortcuts\Event Viewer.lnk: C:\Windows\system32\eventvwr.msc
+1/5/2025 11:39:35 μμ: Attaching handler for Shortcuts\Event Viewer.lnk, initial singleClickToLaunch=True
+1/5/2025 11:39:35 μμ: Using target file icon for Shortcuts\Computer Management.lnk: C:\Windows\system32\compmgmt.msc
+1/5/2025 11:39:35 μμ: Attaching handler for Shortcuts\Computer Management.lnk, initial singleClickToLaunch=True
+1/5/2025 11:39:35 μμ: Using target file icon for Shortcuts\services.lnk: C:\Windows\system32\services.msc
+1/5/2025 11:39:35 μμ: Attaching handler for Shortcuts\services.lnk, initial singleClickToLaunch=True
+1/5/2025 11:39:35 μμ: Using target file icon for Shortcuts\Registry Editor.lnk: C:\Windows\regedit.exe
+1/5/2025 11:39:35 μμ: Attaching handler for Shortcuts\Registry Editor.lnk, initial singleClickToLaunch=True
+1/5/2025 11:39:35 μμ: Using target file icon for Shortcuts\Task Scheduler.lnk: C:\Windows\system32\taskschd.msc
+1/5/2025 11:39:35 μμ: Attaching handler for Shortcuts\Task Scheduler.lnk, initial singleClickToLaunch=True
+1/5/2025 11:39:35 μμ: Using target file icon for Shortcuts\Windows Defender Firewall with Advanced Security.lnk: C:\Windows\system32\WF.msc
+1/5/2025 11:39:35 μμ: Attaching handler for Shortcuts\Windows Defender Firewall with Advanced Security.lnk, initial singleClickToLaunch=True
+1/5/2025 11:39:35 μμ: Using target file icon for Shortcuts\System Configuration.lnk: C:\Windows\system32\msconfig.exe
+1/5/2025 11:39:35 μμ: Attaching handler for Shortcuts\System Configuration.lnk, initial singleClickToLaunch=True
+1/5/2025 11:39:35 μμ: Saved fences.json with consistent IsHidden string format
+1/5/2025 11:39:36 μμ: Saved fences.json with consistent IsHidden string format
+1/5/2025 11:39:36 μμ: Fence 'Zeus Fence' IsHidden state: False
+1/5/2025 11:39:36 μμ: Using target file icon for Shortcuts\Black my Screen.lnk: D:\Nextcloud\Development\VB14\Black Screen\BlackMyScreen\BlackMyScreen\bin\Debug\Black my Screen.exe
+1/5/2025 11:39:36 μμ: Attaching handler for Shortcuts\Black my Screen.lnk, initial singleClickToLaunch=True
+1/5/2025 11:39:36 μμ: Using target file icon for Shortcuts\WinOFF.lnk: F:\SLAVE\!Programs\AmpWinoff\WinOFF\WinOFF.exe
+1/5/2025 11:39:36 μμ: Attaching handler for Shortcuts\WinOFF.lnk, initial singleClickToLaunch=True
+1/5/2025 11:39:36 μμ: Using target file icon for Shortcuts\USB Raptor.lnk: D:\Nextcloud\Development\VB14\USB Raptor\Raptor\Raptor\Raptor\bin\Debug\USB Raptor.exe
+1/5/2025 11:39:36 μμ: Attaching handler for Shortcuts\USB Raptor.lnk, initial singleClickToLaunch=True
+1/5/2025 11:39:36 μμ: Using target file icon for Shortcuts\UDP Tool.lnk: D:\Nextcloud\Development\VB14\UDP Tool\UDP Tool\UDP Messages\bin\Debug\UDP Tool.exe
+1/5/2025 11:39:36 μμ: Attaching handler for Shortcuts\UDP Tool.lnk, initial singleClickToLaunch=True
+1/5/2025 11:39:36 μμ: Using target file icon for Shortcuts\#Set Options and Run.ps1 - Shortcut.lnk: C:\Scripts\Organize Downloads\#Set Options and Run.ps1
+1/5/2025 11:39:36 μμ: Using custom icon from IconLocation for Shortcuts\#Set Options and Run.ps1 - Shortcut.lnk: C:\Scripts\Organize Downloads\tool.ico
+1/5/2025 11:39:36 μμ: Attaching handler for Shortcuts\#Set Options and Run.ps1 - Shortcut.lnk, initial singleClickToLaunch=True
+1/5/2025 11:39:36 μμ: Saved fences.json with consistent IsHidden string format
+1/5/2025 11:39:36 μμ: Saved fences.json with consistent IsHidden string format
+1/5/2025 11:39:36 μμ: Fence 'LCD Smartie Zeus' IsHidden state: False
+1/5/2025 11:39:36 μμ: Using target file icon for Shortcuts\LCDSmartie Main.lnk: F:\SLAVE\!Programs\LCD Smartie\LCD_Smartie\Latest\LCDSmartie_x64\LCDSmartie.exe
+1/5/2025 11:39:36 μμ: Using custom icon from IconLocation for Shortcuts\LCDSmartie Main.lnk: F:\SLAVE\!Programs\LCD Smartie\LCD_Smartie\Latest\LCDSmartie_x64\skins\RainForest\smartie.ico
+1/5/2025 11:39:36 μμ: Attaching handler for Shortcuts\LCDSmartie Main.lnk, initial singleClickToLaunch=True
+1/5/2025 11:39:36 μμ: Using target file icon for Shortcuts\LCDSmartie.lnk: F:\SLAVE\!Programs\LCD Smartie\LCD_Smartie\Latest\LCDSmartie_x64\LCDSmartie.exe
+1/5/2025 11:39:36 μμ: Using custom icon from IconLocation for Shortcuts\LCDSmartie.lnk: F:\SLAVE\!Programs\LCD Smartie\LCD_Smartie\Latest\LCDSmartie_x64\skins\LunarDust\Additional Icons\LCD Smartie Logo 7.ico
+1/5/2025 11:39:36 μμ: Attaching handler for Shortcuts\LCDSmartie.lnk, initial singleClickToLaunch=True
+1/5/2025 11:39:36 μμ: Using target file icon for Shortcuts\LCDSmartie Purple.lnk: F:\SLAVE\!Programs\LCD Smartie\LCD_Smartie\Latest\LCDSmartie_x64\LCDSmartie.exe
+1/5/2025 11:39:36 μμ: Using custom icon from IconLocation for Shortcuts\LCDSmartie Purple.lnk: F:\SLAVE\!Programs\LCD Smartie\LCD_Smartie\Latest\LCDSmartie_x64\skins\Dracula\smartie.ico
+1/5/2025 11:39:36 μμ: Attaching handler for Shortcuts\LCDSmartie Purple.lnk, initial singleClickToLaunch=True
+1/5/2025 11:39:36 μμ: Using target file icon for Shortcuts\LCDSmartie Android.lnk: F:\SLAVE\!Programs\LCD Smartie\LCD_Smartie\Latest\LCDSmartie_x64\LCDSmartie.exe
+1/5/2025 11:39:36 μμ: Attaching handler for Shortcuts\LCDSmartie Android.lnk, initial singleClickToLaunch=True
+1/5/2025 11:39:36 μμ: Using target file icon for Shortcuts\Direct Lines for LCD Smartie.exe - Shortcut.lnk: F:\SLAVE\!Programs\LCD Smartie\LCD_Smartie\Latest\LCDSmartie_x64\Direct Lines for LCD Smartie.exe
+1/5/2025 11:39:36 μμ: Attaching handler for Shortcuts\Direct Lines for LCD Smartie.exe - Shortcut.lnk, initial singleClickToLaunch=True
+1/5/2025 11:39:36 μμ: Saved fences.json with consistent IsHidden string format
+1/5/2025 11:39:36 μμ: Saved fences.json with consistent IsHidden string format
+1/5/2025 11:39:36 μμ: Fence 'New Fence' IsHidden state: False
+1/5/2025 11:39:36 μμ: Using target file icon for Shortcuts\Backup Folder - With Sound (1).lnk: F:\SLAVE\!Programs\LCD Smartie\Scripts Related To LCD Smartie\Copy Backup Folder - With Sound.vbs
+1/5/2025 11:39:36 μμ: Attaching handler for Shortcuts\Backup Folder - With Sound (1).lnk, initial singleClickToLaunch=True
+1/5/2025 11:39:36 μμ: Saved fences.json with consistent IsHidden string format
+1/5/2025 11:39:36 μμ: Saved fences.json with consistent IsHidden string format
+1/5/2025 11:39:52 μμ: Preserved IsHidden: "false" for White Fence
+1/5/2025 11:39:52 μμ: Preserved IsHidden: "true" for Zeus Fence
+1/5/2025 11:39:52 μμ: Preserved IsHidden: "true" for LCD Smartie Zeus
+1/5/2025 11:39:52 μμ: Preserved IsHidden: "true" for New Fence
+1/5/2025 11:39:52 μμ: No migration needed for fences.json
+1/5/2025 11:39:52 μμ: Fence 'White Fence' IsHidden state: False
+1/5/2025 11:39:53 μμ: Using target file icon for Shortcuts\Command Prompt.lnk: C:\Windows\system32\cmd.exe
+1/5/2025 11:39:53 μμ: Attaching handler for Shortcuts\Command Prompt.lnk, initial singleClickToLaunch=True
+1/5/2025 11:39:53 μμ: Using target file icon for Shortcuts\Resource Monitor.lnk: C:\Windows\system32\perfmon.exe
+1/5/2025 11:39:53 μμ: Attaching handler for Shortcuts\Resource Monitor.lnk, initial singleClickToLaunch=True
+1/5/2025 11:39:53 μμ: Using target file icon for Shortcuts\Event Viewer.lnk: C:\Windows\system32\eventvwr.msc
+1/5/2025 11:39:53 μμ: Attaching handler for Shortcuts\Event Viewer.lnk, initial singleClickToLaunch=True
+1/5/2025 11:39:53 μμ: Using target file icon for Shortcuts\Computer Management.lnk: C:\Windows\system32\compmgmt.msc
+1/5/2025 11:39:53 μμ: Attaching handler for Shortcuts\Computer Management.lnk, initial singleClickToLaunch=True
+1/5/2025 11:39:53 μμ: Using target file icon for Shortcuts\services.lnk: C:\Windows\system32\services.msc
+1/5/2025 11:39:53 μμ: Attaching handler for Shortcuts\services.lnk, initial singleClickToLaunch=True
+1/5/2025 11:39:53 μμ: Using target file icon for Shortcuts\Registry Editor.lnk: C:\Windows\regedit.exe
+1/5/2025 11:39:53 μμ: Attaching handler for Shortcuts\Registry Editor.lnk, initial singleClickToLaunch=True
+1/5/2025 11:39:53 μμ: Using target file icon for Shortcuts\Task Scheduler.lnk: C:\Windows\system32\taskschd.msc
+1/5/2025 11:39:53 μμ: Attaching handler for Shortcuts\Task Scheduler.lnk, initial singleClickToLaunch=True
+1/5/2025 11:39:53 μμ: Using target file icon for Shortcuts\Windows Defender Firewall with Advanced Security.lnk: C:\Windows\system32\WF.msc
+1/5/2025 11:39:53 μμ: Attaching handler for Shortcuts\Windows Defender Firewall with Advanced Security.lnk, initial singleClickToLaunch=True
+1/5/2025 11:39:53 μμ: Using target file icon for Shortcuts\System Configuration.lnk: C:\Windows\system32\msconfig.exe
+1/5/2025 11:39:53 μμ: Attaching handler for Shortcuts\System Configuration.lnk, initial singleClickToLaunch=True
+1/5/2025 11:39:53 μμ: Saved fences.json with consistent IsHidden string format
+1/5/2025 11:39:53 μμ: Saved fences.json with consistent IsHidden string format
+1/5/2025 11:39:53 μμ: Fence 'Zeus Fence' IsHidden state: False
+1/5/2025 11:39:53 μμ: Using target file icon for Shortcuts\Black my Screen.lnk: D:\Nextcloud\Development\VB14\Black Screen\BlackMyScreen\BlackMyScreen\bin\Debug\Black my Screen.exe
+1/5/2025 11:39:53 μμ: Attaching handler for Shortcuts\Black my Screen.lnk, initial singleClickToLaunch=True
+1/5/2025 11:39:53 μμ: Using target file icon for Shortcuts\WinOFF.lnk: F:\SLAVE\!Programs\AmpWinoff\WinOFF\WinOFF.exe
+1/5/2025 11:39:53 μμ: Attaching handler for Shortcuts\WinOFF.lnk, initial singleClickToLaunch=True
+1/5/2025 11:39:53 μμ: Using target file icon for Shortcuts\USB Raptor.lnk: D:\Nextcloud\Development\VB14\USB Raptor\Raptor\Raptor\Raptor\bin\Debug\USB Raptor.exe
+1/5/2025 11:39:53 μμ: Attaching handler for Shortcuts\USB Raptor.lnk, initial singleClickToLaunch=True
+1/5/2025 11:39:53 μμ: Using target file icon for Shortcuts\UDP Tool.lnk: D:\Nextcloud\Development\VB14\UDP Tool\UDP Tool\UDP Messages\bin\Debug\UDP Tool.exe
+1/5/2025 11:39:53 μμ: Attaching handler for Shortcuts\UDP Tool.lnk, initial singleClickToLaunch=True
+1/5/2025 11:39:53 μμ: Using target file icon for Shortcuts\#Set Options and Run.ps1 - Shortcut.lnk: C:\Scripts\Organize Downloads\#Set Options and Run.ps1
+1/5/2025 11:39:53 μμ: Using custom icon from IconLocation for Shortcuts\#Set Options and Run.ps1 - Shortcut.lnk: C:\Scripts\Organize Downloads\tool.ico
+1/5/2025 11:39:53 μμ: Attaching handler for Shortcuts\#Set Options and Run.ps1 - Shortcut.lnk, initial singleClickToLaunch=True
+1/5/2025 11:39:53 μμ: Saved fences.json with consistent IsHidden string format
+1/5/2025 11:39:53 μμ: Saved fences.json with consistent IsHidden string format
+1/5/2025 11:39:53 μμ: Fence 'LCD Smartie Zeus' IsHidden state: False
+1/5/2025 11:39:53 μμ: Using target file icon for Shortcuts\LCDSmartie Main.lnk: F:\SLAVE\!Programs\LCD Smartie\LCD_Smartie\Latest\LCDSmartie_x64\LCDSmartie.exe
+1/5/2025 11:39:53 μμ: Using custom icon from IconLocation for Shortcuts\LCDSmartie Main.lnk: F:\SLAVE\!Programs\LCD Smartie\LCD_Smartie\Latest\LCDSmartie_x64\skins\RainForest\smartie.ico
+1/5/2025 11:39:53 μμ: Attaching handler for Shortcuts\LCDSmartie Main.lnk, initial singleClickToLaunch=True
+1/5/2025 11:39:53 μμ: Using target file icon for Shortcuts\LCDSmartie.lnk: F:\SLAVE\!Programs\LCD Smartie\LCD_Smartie\Latest\LCDSmartie_x64\LCDSmartie.exe
+1/5/2025 11:39:53 μμ: Using custom icon from IconLocation for Shortcuts\LCDSmartie.lnk: F:\SLAVE\!Programs\LCD Smartie\LCD_Smartie\Latest\LCDSmartie_x64\skins\LunarDust\Additional Icons\LCD Smartie Logo 7.ico
+1/5/2025 11:39:53 μμ: Attaching handler for Shortcuts\LCDSmartie.lnk, initial singleClickToLaunch=True
+1/5/2025 11:39:53 μμ: Using target file icon for Shortcuts\LCDSmartie Purple.lnk: F:\SLAVE\!Programs\LCD Smartie\LCD_Smartie\Latest\LCDSmartie_x64\LCDSmartie.exe
+1/5/2025 11:39:53 μμ: Using custom icon from IconLocation for Shortcuts\LCDSmartie Purple.lnk: F:\SLAVE\!Programs\LCD Smartie\LCD_Smartie\Latest\LCDSmartie_x64\skins\Dracula\smartie.ico
+1/5/2025 11:39:53 μμ: Attaching handler for Shortcuts\LCDSmartie Purple.lnk, initial singleClickToLaunch=True
+1/5/2025 11:39:53 μμ: Using target file icon for Shortcuts\LCDSmartie Android.lnk: F:\SLAVE\!Programs\LCD Smartie\LCD_Smartie\Latest\LCDSmartie_x64\LCDSmartie.exe
+1/5/2025 11:39:53 μμ: Attaching handler for Shortcuts\LCDSmartie Android.lnk, initial singleClickToLaunch=True
+1/5/2025 11:39:53 μμ: Using target file icon for Shortcuts\Direct Lines for LCD Smartie.exe - Shortcut.lnk: F:\SLAVE\!Programs\LCD Smartie\LCD_Smartie\Latest\LCDSmartie_x64\Direct Lines for LCD Smartie.exe
+1/5/2025 11:39:53 μμ: Attaching handler for Shortcuts\Direct Lines for LCD Smartie.exe - Shortcut.lnk, initial singleClickToLaunch=True
+1/5/2025 11:39:53 μμ: Saved fences.json with consistent IsHidden string format
+1/5/2025 11:39:53 μμ: Saved fences.json with consistent IsHidden string format
+1/5/2025 11:39:53 μμ: Fence 'New Fence' IsHidden state: False
+1/5/2025 11:39:53 μμ: Using target file icon for Shortcuts\Backup Folder - With Sound (1).lnk: F:\SLAVE\!Programs\LCD Smartie\Scripts Related To LCD Smartie\Copy Backup Folder - With Sound.vbs
+1/5/2025 11:39:53 μμ: Attaching handler for Shortcuts\Backup Folder - With Sound (1).lnk, initial singleClickToLaunch=True
+1/5/2025 11:39:53 μμ: Saved fences.json with consistent IsHidden string format
+1/5/2025 11:39:53 μμ: Saved fences.json with consistent IsHidden string format
+1/5/2025 11:39:56 μμ: Saved fences.json with consistent IsHidden string format
+1/5/2025 11:39:56 μμ: Hid fence 'New Fence' for fence 'New Fence'
+1/5/2025 11:39:56 μμ: Set visibility to Hidden for fence 'New Fence'
+1/5/2025 11:39:56 μμ: Added fence 'New Fence' to hidden list
+1/5/2025 11:39:56 μμ: Triggered Hide Fence for 'New Fence'
+1/5/2025 11:39:56 μμ: Saved fences.json with consistent IsHidden string format
+1/5/2025 11:39:56 μμ: Hid fence 'New Fence' for fence 'New Fence'
+1/5/2025 11:39:56 μμ: Set visibility to Hidden for fence 'New Fence'
+1/5/2025 11:39:56 μμ: Triggered Hide Fence for 'New Fence'
+1/5/2025 11:39:57 μμ: Saved fences.json with consistent IsHidden string format
+1/5/2025 11:39:57 μμ: Hid fence 'Zeus Fence' for fence 'Zeus Fence'
+1/5/2025 11:39:57 μμ: Set visibility to Hidden for fence 'Zeus Fence'
+1/5/2025 11:39:57 μμ: Added fence 'Zeus Fence' to hidden list
+1/5/2025 11:39:57 μμ: Triggered Hide Fence for 'Zeus Fence'
+1/5/2025 11:39:57 μμ: Saved fences.json with consistent IsHidden string format
+1/5/2025 11:39:57 μμ: Hid fence 'Zeus Fence' for fence 'Zeus Fence'
+1/5/2025 11:39:57 μμ: Set visibility to Hidden for fence 'Zeus Fence'
+1/5/2025 11:39:57 μμ: Triggered Hide Fence for 'Zeus Fence'
+1/5/2025 11:40:01 μμ: Saved fences.json with consistent IsHidden string format
+1/5/2025 11:40:01 μμ: Hid fence 'LCD Smartie Zeus' for fence 'LCD Smartie Zeus'
+1/5/2025 11:40:01 μμ: Set visibility to Hidden for fence 'LCD Smartie Zeus'
+1/5/2025 11:40:01 μμ: Added fence 'LCD Smartie Zeus' to hidden list
+1/5/2025 11:40:01 μμ: Triggered Hide Fence for 'LCD Smartie Zeus'
+1/5/2025 11:40:01 μμ: Saved fences.json with consistent IsHidden string format
+1/5/2025 11:40:01 μμ: Hid fence 'LCD Smartie Zeus' for fence 'LCD Smartie Zeus'
+1/5/2025 11:40:01 μμ: Set visibility to Hidden for fence 'LCD Smartie Zeus'
+1/5/2025 11:40:01 μμ: Triggered Hide Fence for 'LCD Smartie Zeus'
+1/5/2025 11:40:04 μμ: Saved fences.json with consistent IsHidden string format
+1/5/2025 11:40:04 μμ: Showed fence 'Zeus Fence' for fence 'Zeus Fence'
+1/5/2025 11:40:04 μμ: Set visibility to Visible for fence 'Zeus Fence'
+1/5/2025 11:40:04 μμ: Showed fence 'Zeus Fence'
+1/5/2025 11:40:06 μμ: Saved fences.json with consistent IsHidden string format
+1/5/2025 11:40:06 μμ: Showed fence 'LCD Smartie Zeus' for fence 'LCD Smartie Zeus'
+1/5/2025 11:40:06 μμ: Set visibility to Visible for fence 'LCD Smartie Zeus'
+1/5/2025 11:40:06 μμ: Showed fence 'LCD Smartie Zeus'
+1/5/2025 11:40:08 μμ: Saved fences.json with consistent IsHidden string format
+1/5/2025 11:40:08 μμ: Showed fence 'New Fence' for fence 'New Fence'
+1/5/2025 11:40:08 μμ: Set visibility to Visible for fence 'New Fence'
+1/5/2025 11:40:08 μμ: Showed fence 'New Fence'

@@ -1,0 +1,133 @@
+[
+  {
+    "Title": "White Fence",
+    "X": 2814.0,
+    "Y": 520.0,
+    "Width": 650.0,
+    "Height": 141.0,
+    "ItemsType": "Data",
+    "Items": [
+      {
+        "Filename": "Shortcuts\\Command Prompt.lnk",
+        "IsFolder": false,
+        "DisplayName": "Command Prompt"
+      },
+      {
+        "Filename": "Shortcuts\\Resource Monitor.lnk",
+        "IsFolder": false,
+        "DisplayName": "Resource Monitor"
+      },
+      {
+        "Filename": "Shortcuts\\Event Viewer.lnk",
+        "IsFolder": false,
+        "DisplayName": "Event Viewer"
+      },
+      {
+        "Filename": "Shortcuts\\Computer Management.lnk",
+        "IsFolder": false,
+        "DisplayName": "Computer Management"
+      },
+      {
+        "Filename": "Shortcuts\\services.lnk",
+        "IsFolder": false,
+        "DisplayName": "services"
+      },
+      {
+        "Filename": "Shortcuts\\Registry Editor.lnk",
+        "IsFolder": false,
+        "DisplayName": "Registry Editor"
+      },
+      {
+        "Filename": "Shortcuts\\Task Scheduler.lnk",
+        "IsFolder": false,
+        "DisplayName": "Task Scheduler"
+      },
+      {
+        "Filename": "Shortcuts\\Windows Defender Firewall with Advanced Security.lnk",
+        "IsFolder": false,
+        "DisplayName": "Windows Defender Firewall with Advanced Security"
+      },
+      {
+        "Filename": "Shortcuts\\System Configuration.lnk",
+        "IsFolder": false,
+        "DisplayName": "System Configuration"
+      }
+    ],
+    "CustomColor": null,
+    "CustomLaunchEffect": null
+  },
+  {
+    "Title": "Zeus Fence",
+    "X": 2897.0,
+    "Y": 666.0,
+    "Width": 385.0,
+    "Height": 183.0,
+    "ItemsType": "Data",
+    "Items": [
+      {
+        "Filename": "Shortcuts\\Black my Screen.lnk",
+        "IsFolder": false,
+        "DisplayName": "Black my Screen"
+      },
+      {
+        "Filename": "Shortcuts\\WinOFF.lnk",
+        "IsFolder": false,
+        "DisplayName": "WinOFF"
+      },
+      {
+        "Filename": "Shortcuts\\USB Raptor.lnk",
+        "IsFolder": false,
+        "DisplayName": "USB Raptor"
+      },
+      {
+        "Filename": "Shortcuts\\UDP Tool.lnk",
+        "IsFolder": false,
+        "DisplayName": "UDP Tool"
+      },
+      {
+        "Filename": "Shortcuts\\#Set Options and Run.ps1 - Shortcut.lnk",
+        "IsFolder": false,
+        "DisplayName": "Set Options and Run"
+      }
+    ],
+    "CustomColor": "Purple",
+    "CustomLaunchEffect": "SlideUp"
+  },
+  {
+    "Title": "LCD Smartie Zeus",
+    "X": 2933.0,
+    "Y": 857.0,
+    "Width": 352.0,
+    "Height": 134.0,
+    "ItemsType": "Data",
+    "Items": [
+      {
+        "Filename": "Shortcuts\\LCDSmartie Main.lnk",
+        "IsFolder": false,
+        "DisplayName": "LCDSmartie Main"
+      },
+      {
+        "Filename": "Shortcuts\\LCDSmartie.lnk",
+        "IsFolder": false,
+        "DisplayName": "LCDSmartie"
+      },
+      {
+        "Filename": "Shortcuts\\LCDSmartie Purple.lnk",
+        "IsFolder": false,
+        "DisplayName": "LCDSmartie Purple"
+      },
+      {
+        "Filename": "Shortcuts\\LCDSmartie Android.lnk",
+        "IsFolder": false,
+        "DisplayName": "LCDSmartie Android"
+      },
+      {
+        "Filename": "Shortcuts\\Direct Lines for LCD Smartie.exe - Shortcut.lnk",
+        "IsFolder": false,
+        "DisplayName": "Direct Lines for LCD Smartie.exe - Shortcut"
+      }
+    ],
+    "CustomColor": null,
+    "CustomLaunchEffect": null
+  }
+]

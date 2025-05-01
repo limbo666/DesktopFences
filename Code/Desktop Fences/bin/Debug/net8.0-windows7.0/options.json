@@ -1,8 +1,8 @@
 {
   "IsSnapEnabled": true,
-  "TintValue": 72,
-  "SelectedColor": "Red",
+  "TintValue": 85,
+  "SelectedColor": "Blue",
   "IsLogEnabled": true,
-  "SingleClickToLaunch": false,
-  "LaunchEffect": "SlideUp"
+  "SingleClickToLaunch": true,
+  "LaunchEffect": "Agitate"
 }

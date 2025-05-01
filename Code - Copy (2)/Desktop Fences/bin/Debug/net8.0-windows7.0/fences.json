@@ -1,0 +1,56 @@
+[
+  {
+    "Title": "White Fence",
+    "X": 2745.0,
+    "Y": 0.0,
+    "Width": 465.0,
+    "Height": 138.0,
+    "ItemsType": "Data",
+    "Items": [
+      {
+        "Filename": "Shortcuts\\PotPlayer 64 bit (4).lnk",
+        "IsFolder": false,
+        "DisplayName": "PotPlayer 64 bit"
+      },
+      {
+        "Filename": "Shortcuts\\GodMode.{ED7BA470-8E54-465E-825C-99712043E01C}.lnk",
+        "IsFolder": true,
+        "DisplayName": "GodMode"
+      },
+      {
+        "Filename": "Shortcuts\\LCDSmartie.lnk",
+        "IsFolder": false,
+        "DisplayName": "LCDSmartie"
+      },
+      {
+        "Filename": "Shortcuts\\Βασικες λειτουργιες.docx.lnk",
+        "IsFolder": false,
+        "DisplayName": "Βασικες λειτουργιες"
+      },
+      {
+        "Filename": "Shortcuts\\HikCentral Lite Διαχειριστής σέρβις.lnk",
+        "IsFolder": false,
+        "DisplayName": "HikCentral"
+      }
+    ],
+    "CustomColor": null,
+    "CustomLaunchEffect": "Rotate"
+  },
+  {
+    "Title": "Self",
+    "X": 2507.0,
+    "Y": 0.0,
+    "Width": 233.0,
+    "Height": 140.0,
+    "ItemsType": "Data",
+    "Items": [
+      {
+        "Filename": "Shortcuts\\Desktop Fences.lnk",
+        "IsFolder": false,
+        "DisplayName": "Desktop Fences"
+      }
+    ],
+    "CustomColor": "White",
+    "CustomLaunchEffect": "SlideUp"
+  }
+]

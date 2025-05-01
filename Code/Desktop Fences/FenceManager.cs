@@ -52,18 +52,10 @@ namespace Desktop_Fences
                 System.IO.File.AppendAllText(logPath, $"{DateTime.Now}: {message}\n");
             }
         }
-        private static void UpdateFenceProperty(dynamic fence, string propertyName, string value, string logMessage)
-        {
-            //bool isLogEnabled = _options.IsLogEnabled ?? true;
-            //void Log(string message)
-            //{
-            //    if (isLogEnabled)
-            //    {
-            //        string logPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "Desktop_Fences.log");
-            //        System.IO.File.AppendAllText(logPath, $"{DateTime.Now}: {message}\n");
-            //    }
-            //}
+        // Update fence property, save to JSON, and apply runtime changes
 
+        public static void UpdateFenceProperty(dynamic fence, string propertyName, string value, string logMessage)
+        {
             try
             {
                 // Get the actual fence object from _fenceData to ensure we're modifying the correct instance
@@ -76,16 +68,26 @@ namespace Desktop_Fences
                     // Convert to dictionary safely
                     IDictionary<string, object> fenceDict = actualFence as IDictionary<string, object> ?? ((JObject)actualFence).ToObject<IDictionary<string, object>>();
 
-                    // Update the property
-                    fenceDict[propertyName] = value;
+                    // Handle IsHidden specifically to store as string to match JSON format
+                    if (propertyName == "IsHidden")
+                    {
+                        // Convert boolean-like string input to string "true" or "false"
+                        bool parsedValue = value?.ToLower() == "true";
+                        fenceDict[propertyName] = parsedValue.ToString().ToLower(); // Store as "true" or "false"
+                    }
+                    else
+                    {
+                        // Update other properties as provided
+                        fenceDict[propertyName] = value;
+                    }
 
                     // Update the fence in _fenceData
                     _fenceData[index] = JObject.FromObject(fenceDict);
                     SaveFenceData();
-                    FenceManager.Log($"{logMessage} for fence '{fence.Title}'");
+                    Log($"{logMessage} for fence '{fence.Title}'");
 
-                    // Find the window to apply changes
-                    var windows = Application.Current.Windows.OfType<NonActivatingWindow>();
+                    // Find the window to apply runtime changes
+                    var windows = System.Windows.Application.Current.Windows.OfType<NonActivatingWindow>();
                     var win = windows.FirstOrDefault(w => w.Title == fence.Title.ToString());
                     if (win != null)
                     {
@@ -93,7 +95,14 @@ namespace Desktop_Fences
                         if (propertyName == "CustomColor")
                         {
                             Utility.ApplyTintAndColorToFence(win, string.IsNullOrEmpty(value) ? _options.SelectedColor : value);
-                            FenceManager.Log($"Applied color '{value ?? "Default"}' to fence '{fence.Title}' at runtime");
+                            Log($"Applied color '{value ?? "Default"}' to fence '{fence.Title}' at runtime");
+                        }
+                        else if (propertyName == "IsHidden")
+                        {
+                            // Update visibility based on IsHidden
+                            bool isHidden = value?.ToLower() == "true";
+                            win.Visibility = isHidden ? Visibility.Hidden : Visibility.Visible;
+                            Log($"Set visibility to {(isHidden ? "Hidden" : "Visible")} for fence '{fence.Title}'");
                         }
 
                         // Update context menu checkmarks
@@ -117,19 +126,87 @@ namespace Desktop_Fences
                     }
                     else
                     {
-                        FenceManager.Log($"Failed to find window for fence '{fence.Title}' to apply {propertyName}");
+                        Log($"Failed to find window for fence '{fence.Title}' to apply {propertyName}");
                     }
                 }
                 else
                 {
-                    FenceManager.Log($"Failed to find fence '{fence.Title}' in _fenceData for {propertyName} update");
+                    Log($"Failed to find fence '{fence.Title}' in _fenceData for {propertyName} update");
                 }
             }
             catch (Exception ex)
             {
-                FenceManager.Log($"Error updating {propertyName} for fence '{fence.Title}': {ex.Message}");
+                Log($"Error updating {propertyName} for fence '{fence.Title}': {ex.Message}");
             }
         }
+        //public static void UpdateFenceProperty(dynamic fence, string propertyName, string value, string logMessage)
+        //{
+        //    try
+        //    {
+        //        // Get the actual fence object from _fenceData to ensure we're modifying the correct instance
+        //        int index = _fenceData.FindIndex(f => f.Title == fence.Title.ToString());
+        //        if (index >= 0)
+        //        {
+        //            // Get the fence from _fenceData
+        //            dynamic actualFence = _fenceData[index];
+
+        //            // Convert to dictionary safely
+        //            IDictionary<string, object> fenceDict = actualFence as IDictionary<string, object> ?? ((JObject)actualFence).ToObject<IDictionary<string, object>>();
+
+        //            // Update the property
+        //            fenceDict[propertyName] = value;
+
+        //            // Update the fence in _fenceData
+        //            _fenceData[index] = JObject.FromObject(fenceDict);
+        //            SaveFenceData();
+        //            Log($"{logMessage} for fence '{fence.Title}'");
+
+        //            // Find the window to apply changes
+        //            var windows = System.Windows.Application.Current.Windows.OfType<NonActivatingWindow>();
+        //            var win = windows.FirstOrDefault(w => w.Title == fence.Title.ToString());
+        //            if (win != null)
+        //            {
+        //                // Apply runtime changes
+        //                if (propertyName == "CustomColor")
+        //                {
+        //                    Utility.ApplyTintAndColorToFence(win, string.IsNullOrEmpty(value) ? _options.SelectedColor : value);
+        //                    Log($"Applied color '{value ?? "Default"}' to fence '{fence.Title}' at runtime");
+        //                }
+
+        //                // Update context menu checkmarks
+        //                if (win.ContextMenu != null)
+        //                {
+        //                    var customizeMenu = win.ContextMenu.Items.OfType<MenuItem>().FirstOrDefault(m => m.Header.ToString() == "Customize");
+        //                    if (customizeMenu != null)
+        //                    {
+        //                        var submenu = propertyName == "CustomColor"
+        //                            ? customizeMenu.Items.OfType<MenuItem>().FirstOrDefault(m => m.Header.ToString() == "Color")
+        //                            : customizeMenu.Items.OfType<MenuItem>().FirstOrDefault(m => m.Header.ToString() == "Launch Effect");
+        //                        if (submenu != null)
+        //                        {
+        //                            foreach (MenuItem item in submenu.Items)
+        //                            {
+        //                                item.IsChecked = item.Tag?.ToString() == value || (value == null && item.Header.ToString() == "Default");
+        //                            }
+        //                        }
+        //                    }
+        //                }
+        //            }
+        //            else
+        //            {
+        //                Log($"Failed to find window for fence '{fence.Title}' to apply {propertyName}");
+        //            }
+        //        }
+        //        else
+        //        {
+        //            Log($"Failed to find fence '{fence.Title}' in _fenceData for {propertyName} update");
+        //        }
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        Log($"Error updating {propertyName} for fence '{fence.Title}': {ex.Message}");
+        //    }
+        //}
 
         // end of replacement
         public static void LoadAndCreateFences(TargetChecker targetChecker)
@@ -213,16 +290,6 @@ namespace Desktop_Fences
         }
         private static void MigrateLegacyJson()
         {
-            //bool isLogEnabled = _options?.IsLogEnabled ?? true;
-            //void Log(string message)
-            //{
-            //    if (isLogEnabled)
-            //    {
-            //        string logPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "Desktop_Fences.log");
-            //        System.IO.File.AppendAllText(logPath, $"{DateTime.Now}: {message}\n");
-            //    }
-            //}
-
             try
             {
                 bool jsonModified = false;
@@ -234,7 +301,7 @@ namespace Desktop_Fences
                     dynamic fence = _fenceData[i];
                     IDictionary<string, object> fenceDict = fence is IDictionary<string, object> dict ? dict : ((JObject)fence).ToObject<IDictionary<string, object>>();
 
-                    // Existing migration logic
+                    // Existing migration: Handle Portal Fence ItemsType
                     if (fence.ItemsType?.ToString() == "Portal")
                     {
                         string portalPath = fence.Items?.ToString();
@@ -242,7 +309,7 @@ namespace Desktop_Fences
                         {
                             fenceDict["IsFolder"] = true;
                             jsonModified = true;
-                            FenceManager.Log($"Migrated legacy portal fence {fence.Title}: Added IsFolder=true");
+                            Log($"Migrated legacy portal fence {fence.Title}: Added IsFolder=true");
                         }
                     }
                     else
@@ -255,46 +322,75 @@ namespace Desktop_Fences
                                 string path = item["Filename"]?.ToString();
                                 item["IsFolder"] = System.IO.Directory.Exists(path);
                                 jsonModified = true;
-                                FenceManager.Log($"Migrated item in {fence.Title}: Added IsFolder for {path}");
+                                Log($"Migrated item in {fence.Title}: Added IsFolder for {path}");
                             }
                         }
                         fenceDict["Items"] = items; // Ensure Items updates are captured
                     }
 
-                    // New migration: Add CustomColor
+                    // Migration: Add or validate CustomColor
                     if (!fenceDict.ContainsKey("CustomColor"))
                     {
                         fenceDict["CustomColor"] = null;
                         jsonModified = true;
-                        FenceManager.Log($"Added CustomColor=null to {fence.Title}");
+                        Log($"Added CustomColor=null to {fence.Title}");
                     }
                     else
                     {
                         string customColor = fenceDict["CustomColor"]?.ToString();
                         if (!string.IsNullOrEmpty(customColor) && !validColors.Contains(customColor))
                         {
-                            FenceManager.Log($"Invalid CustomColor '{customColor}' in {fence.Title}, resetting to null");
+                            Log($"Invalid CustomColor '{customColor}' in {fence.Title}, resetting to null");
                             fenceDict["CustomColor"] = null;
                             jsonModified = true;
                         }
                     }
 
-                    // New migration: Add CustomLaunchEffect
+                    // Migration: Add or validate CustomLaunchEffect
                     if (!fenceDict.ContainsKey("CustomLaunchEffect"))
                     {
                         fenceDict["CustomLaunchEffect"] = null;
                         jsonModified = true;
-                        FenceManager.Log($"Added CustomLaunchEffect=null to {fence.Title}");
+                        Log($"Added CustomLaunchEffect=null to {fence.Title}");
                     }
                     else
                     {
                         string customEffect = fenceDict["CustomLaunchEffect"]?.ToString();
                         if (!string.IsNullOrEmpty(customEffect) && !validEffects.Contains(customEffect))
                         {
-                            FenceManager.Log($"Invalid CustomLaunchEffect '{customEffect}' in {fence.Title}, resetting to null");
+                            Log($"Invalid CustomLaunchEffect '{customEffect}' in {fence.Title}, resetting to null");
                             fenceDict["CustomLaunchEffect"] = null;
                             jsonModified = true;
                         }
+                    }
+
+                    // Migration: Add or validate IsHidden
+                    if (!fenceDict.ContainsKey("IsHidden"))
+                    {
+                        fenceDict["IsHidden"] = "false"; // Default to string "false"
+                        jsonModified = true;
+                        Log($"Added IsHidden=\"false\" to {fence.Title}");
+                    }
+                    else
+                    {
+                        // Handle both boolean and string IsHidden values
+                        bool isHidden = false;
+                        if (fenceDict["IsHidden"] is bool boolValue)
+                        {
+                            isHidden = boolValue;
+                        }
+                        else if (fenceDict["IsHidden"] is string stringValue)
+                        {
+                            isHidden = stringValue.ToLower() == "true";
+                        }
+                        else
+                        {
+                            Log($"Invalid IsHidden value '{fenceDict["IsHidden"]}' in {fence.Title}, resetting to \"false\"");
+                            isHidden = false;
+                            jsonModified = true;
+                        }
+                        fenceDict["IsHidden"] = isHidden.ToString().ToLower(); // Store as "true" or "false"
+                        Log($"Preserved IsHidden: \"{isHidden.ToString().ToLower()}\" for {fence.Title}");
                     }
 
                     // Update the original fence in _fenceData with the modified dictionary
@@ -304,7 +400,7 @@ namespace Desktop_Fences
                 if (jsonModified)
                 {
                     SaveFenceData();
-                    Log("Migrated fences.json with new CustomColor and CustomLaunchEffect fields");
+                    Log("Migrated fences.json with updated fields");
                 }
                 else
                 {
@@ -313,7 +409,7 @@ namespace Desktop_Fences
             }
             catch (Exception ex)
             {
-                FenceManager.Log($"Error migrating fences.json: {ex.Message}\nStackTrace: {ex.StackTrace}");
+                Log($"Error migrating fences.json: {ex.Message}\nStackTrace: {ex.StackTrace}");
             }
         }
         
@@ -345,6 +441,7 @@ namespace Desktop_Fences
             MenuItem miNP = new MenuItem { Header = "New Portal Fence" };
             MenuItem miRF = new MenuItem { Header = "Remove Fence" };
             MenuItem miXT = new MenuItem { Header = "Exit" };
+            MenuItem miHide = new MenuItem { Header = "Hide Fence" }; // New Hide Fence item
 
             // Add Customize submenu
             MenuItem miCustomize = new MenuItem { Header = "Customize" };
@@ -398,6 +495,8 @@ namespace Desktop_Fences
             cm.Items.Add(new Separator());
             cm.Items.Add(miCustomize); // Add Customize submenu
             cm.Items.Add(new Separator());
+            cm.Items.Add(miHide); // Add Hide Fence
+            cm.Items.Add(new Separator());
             cm.Items.Add(miXT);
 
             NonActivatingWindow win = new NonActivatingWindow
@@ -417,7 +516,45 @@ namespace Desktop_Fences
                 Left = (double)fence.X,
                 Tag = fence  // Add this line to store the fence object
             };
-            
+     
+            // Check IsHidden and apply visibility
+            bool isHidden = false;
+            if (fence.IsHidden != null)
+            {
+                // Handle both string and boolean IsHidden values
+                if (fence.IsHidden is bool boolValue)
+                {
+                    isHidden = boolValue;
+                }
+                else if (fence.IsHidden is string stringValue)
+                {
+                    isHidden = stringValue.ToLower() == "true";
+                }
+            }
+            // Log the IsHidden state for diagnostics
+            Log($"Fence '{fence.Title}' IsHidden state: {isHidden}");
+            if (isHidden)
+            {
+                win.Visibility = Visibility.Hidden;
+                TrayManager.AddHiddenFence(win);
+                Log($"Hid fence '{fence.Title}' at startup");
+            }
+
+            // Hide click
+            miHide.Click += (s, e) =>
+            {
+                UpdateFenceProperty(fence, "IsHidden", "true", $"Hid fence '{fence.Title}'");
+                TrayManager.AddHiddenFence(win);
+                Log($"Triggered Hide Fence for '{fence.Title}'");
+            };
+
+            // hide click
+            miHide.Click += (s, e) =>
+            {
+                UpdateFenceProperty(fence, "IsHidden", "true", $"Hid fence '{fence.Title}'");
+                TrayManager.AddHiddenFence(win);
+                Log($"Triggered Hide Fence for '{fence.Title}'");
+            };
 
             miRF.Click += (s, e) =>
             {
@@ -1253,11 +1390,42 @@ namespace Desktop_Fences
 
             wpcont.Children.Add(sp);
         }
+
+        // Save fence data to JSON with consistent IsHidden string format
         public static void SaveFenceData()
         {
-            string formattedJson = JsonConvert.SerializeObject(_fenceData, Formatting.Indented);
+            // Pre-process _fenceData to ensure IsHidden is stored as string "true" or "false"
+            var serializedData = new List<JObject>();
+            foreach (dynamic fence in _fenceData)
+            {
+                IDictionary<string, object> fenceDict = fence is IDictionary<string, object> dict ? dict : ((JObject)fence).ToObject<IDictionary<string, object>>();
+                // Convert IsHidden to string format
+                if (fenceDict.ContainsKey("IsHidden"))
+                {
+                    bool isHidden = false;
+                    if (fenceDict["IsHidden"] is bool boolValue)
+                    {
+                        isHidden = boolValue;
+                    }
+                    else if (fenceDict["IsHidden"] is string stringValue)
+                    {
+                        isHidden = stringValue.ToLower() == "true";
+                    }
+                    fenceDict["IsHidden"] = isHidden.ToString().ToLower(); // Store as "true" or "false"
+                }
+                serializedData.Add(JObject.FromObject(fenceDict));
+            }
+
+            // Serialize with indented formatting
+            string formattedJson = JsonConvert.SerializeObject(serializedData, Formatting.Indented);
             System.IO.File.WriteAllText(_jsonFilePath, formattedJson);
+            Log($"Saved fences.json with consistent IsHidden string format");
         }
+        //public static void SaveFenceData()
+        //{
+        //    string formattedJson = JsonConvert.SerializeObject(_fenceData, Formatting.Indented);
+        //    System.IO.File.WriteAllText(_jsonFilePath, formattedJson);
+        //}
 
         private static void CreateNewFence(string title, string itemsType, double x = 20, double y = 20, string customColor = null, string customLaunchEffect = null)
         {
@@ -1272,6 +1440,7 @@ namespace Desktop_Fences
             newFenceDict["Items"] = itemsType == "Portal" ? "" : new JArray();
             newFenceDict["CustomColor"] = customColor; // Use passed value
             newFenceDict["CustomLaunchEffect"] = customLaunchEffect; // Use passed value
+            newFenceDict["IsHidden"] = false; // Use passed value
             if (itemsType == "Portal")
             {
                 using (var dialog = new System.Windows.Forms.FolderBrowserDialog())

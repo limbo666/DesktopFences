@@ -2,17 +2,33 @@
 using System.Diagnostics;
 using System.Drawing;
 using System.Reflection;
-using System.Windows;
 using System.Windows.Forms;
-using System.Linq; // Added for OfType
-using System.IO; // Added for File operations
+using System.Linq;
+using System.IO;
+using System.Collections.Generic;
 
 namespace Desktop_Fences
 {
-    public class TrayManager
+    public class TrayManager : IDisposable
     {
         private NotifyIcon _trayIcon;
-        private ToolStripMenuItem _startWithWindowsItem; // New field for the menu item
+        private bool _disposed;
+        public static bool IsStartWithWindows { get; private set; }
+        private static readonly List<HiddenFence> HiddenFences = new List<HiddenFence>();
+        private ToolStripMenuItem _showHiddenFencesItem;
+        public static TrayManager Instance { get; private set; } // Singleton instance
+
+        private class HiddenFence
+        {
+            public string Title { get; set; }
+            public NonActivatingWindow Window { get; set; }
+        }
+
+        public TrayManager()
+        {
+            IsStartWithWindows = IsInStartupFolder();
+            Instance = this; // Set singleton instance
+        }
 
         public void InitializeTray()
         {
@@ -21,82 +37,71 @@ namespace Desktop_Fences
             {
                 Icon = Icon.ExtractAssociatedIcon(exePath),
                 Visible = true,
-                Text = "Desktop Fences" // Added tooltip for clarity
+                Text = "Desktop Fences"
             };
 
             var trayMenu = new ContextMenuStrip();
             trayMenu.Items.Add("About", null, (s, e) => ShowAboutForm());
-            trayMenu.Items.Add("-", null); // Horizontal line
+            trayMenu.Items.Add("-", null);
             trayMenu.Items.Add("Options", null, (s, e) => ShowOptionsForm());
-
-            // Add "Start with Windows" menu item
-            _startWithWindowsItem = new ToolStripMenuItem("Start with Windows")
+            _showHiddenFencesItem = new ToolStripMenuItem("Show Hidden Fences") // Simple constructor
             {
-                Checked = IsInStartupFolder(), // Initial state
-                CheckOnClick = true // Toggle on click
+                Enabled = false
             };
-            _startWithWindowsItem.Click += ToggleStartWithWindows;
-            trayMenu.Items.Add(_startWithWindowsItem);
-
+            trayMenu.Items.Add(_showHiddenFencesItem);
             trayMenu.Items.Add("Exit", null, (s, e) => System.Windows.Application.Current.Shutdown());
             _trayIcon.ContextMenuStrip = trayMenu;
+
+            UpdateHiddenFencesMenu();
         }
 
-        private bool IsInStartupFolder()
+        // Add fence to hidden list and update tray menu
+        public static void AddHiddenFence(NonActivatingWindow fence)
         {
-            string startupPath = Environment.GetFolderPath(Environment.SpecialFolder.Startup);
-            string shortcutPath = Path.Combine(startupPath, "Desktop Fences.lnk");
-            return File.Exists(shortcutPath);
-        }
+            if (fence == null || string.IsNullOrEmpty(fence.Title)) return;
 
-        private void ToggleStartWithWindows(object sender, EventArgs e)
-        {
-            string startupPath = Environment.GetFolderPath(Environment.SpecialFolder.Startup);
-            string shortcutPath = Path.Combine(startupPath, "Desktop Fences.lnk");
-            string exePath = Process.GetCurrentProcess().MainModule.FileName;
-
-            try
+            if (!HiddenFences.Any(f => f.Title == fence.Title))
             {
-                if (_startWithWindowsItem.Checked)
+                HiddenFences.Add(new HiddenFence { Title = fence.Title, Window = fence });
+                fence.Visibility = System.Windows.Visibility.Hidden;
+                Log($"Added fence '{fence.Title}' to hidden list");
+                Instance?.UpdateHiddenFencesMenu();
+            }
+        }
+
+        // Show hidden fence and update tray menu
+        public static void ShowHiddenFence(string title)
+        {
+            var hiddenFence = HiddenFences.FirstOrDefault(f => f.Title == title);
+            if (hiddenFence != null)
+            {
+                hiddenFence.Window.Visibility = System.Windows.Visibility.Visible;
+                var fenceData = FenceManager.GetFenceData().FirstOrDefault(f => f.Title == title);
+                if (fenceData != null)
                 {
-                    // Add shortcut to Startup folder
-                    Type shellType = Type.GetTypeFromProgID("WScript.Shell");
-                    dynamic shell = Activator.CreateInstance(shellType);
-                    var shortcut = shell.CreateShortcut(shortcutPath);
-                    shortcut.TargetPath = exePath;
-                    shortcut.Description = "Desktop Fences Startup Shortcut";
-                    shortcut.Save();
-                    Log("Added Desktop Fences to Startup folder");
+                    FenceManager.UpdateFenceProperty(fenceData, "IsHidden", "false", $"Showed fence '{title}'");
                 }
-                else
-                {
-                    // Remove shortcut from Startup folder
-                    if (File.Exists(shortcutPath))
-                    {
-                        File.Delete(shortcutPath);
-                        Log("Removed Desktop Fences from Startup folder");
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Log($"Failed to toggle Start with Windows: {ex.Message}");
-              System.Windows.Forms.MessageBox.Show($"Error: {ex.Message}", "Startup Toggle Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                // Revert the checkbox state if the operation fails
-                _startWithWindowsItem.Checked = IsInStartupFolder();
+                HiddenFences.Remove(hiddenFence);
+                Log($"Showed fence '{title}'");
+                Instance?.UpdateHiddenFencesMenu();
             }
         }
 
-        private void Log(string message)
+        // Update tray menu with hidden fences
+        private void UpdateHiddenFencesMenu()
         {
-            bool isLogEnabled = SettingsManager.IsLogEnabled;
-            if (isLogEnabled)
+            if (_showHiddenFencesItem == null) return;
+
+            _showHiddenFencesItem.DropDownItems.Clear();
+            _showHiddenFencesItem.Enabled = HiddenFences.Count > 0;
+
+            foreach (var fence in HiddenFences)
             {
-                string logPath = Path.Combine(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "Desktop_Fences.log");
-                File.AppendAllText(logPath, $"{DateTime.Now}: {message}\n");
+                var menuItem = new ToolStripMenuItem(fence.Title); // Use simple constructor
+                menuItem.Click += (s, e) => ShowHiddenFence(fence.Title); // Assign Click event separately
+                _showHiddenFencesItem.DropDownItems.Add(menuItem);
             }
         }
-
 
         private void ShowOptionsForm()
         {
@@ -105,7 +110,7 @@ namespace Desktop_Fences
                 using (var frmOptions = new Form())
                 {
                     frmOptions.Text = "Options";
-                    frmOptions.Size = new System.Drawing.Size(260, 400);
+                    frmOptions.Size = new Size(260, 480);
                     frmOptions.StartPosition = FormStartPosition.CenterScreen;
                     frmOptions.FormBorderStyle = FormBorderStyle.FixedDialog;
                     frmOptions.MaximizeBox = false;
@@ -121,6 +126,48 @@ namespace Desktop_Fences
                         Padding = new Padding(10)
                     };
                     layoutPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
+
+                    var groupBoxGeneral = new GroupBox
+                    {
+                        Text = "General",
+                        Dock = DockStyle.Top,
+                        AutoSize = true,
+                        AutoSizeMode = AutoSizeMode.GrowAndShrink
+                    };
+                    var generalLayout = new TableLayoutPanel
+                    {
+                        Dock = DockStyle.Fill,
+                        ColumnCount = 1,
+                        AutoSize = true,
+                        AutoSizeMode = AutoSizeMode.GrowAndShrink,
+                        Padding = new Padding(5)
+                    };
+                    generalLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
+
+                    var chkStartWithWindows = new CheckBox
+                    {
+                        Text = "Start with Windows",
+                        Dock = DockStyle.Fill,
+                        AutoSize = true,
+                        Checked = IsStartWithWindows
+                    };
+                    chkStartWithWindows.CheckedChanged += (s, e) =>
+                    {
+                        try
+                        {
+                            ToggleStartWithWindows(chkStartWithWindows.Checked);
+                            Log($"Set Start with Windows to {chkStartWithWindows.Checked} via Options");
+                        }
+                        catch (Exception ex)
+                        {
+                            Log($"Error setting Start with Windows: {ex.Message}");
+                            System.Windows.Forms.MessageBox.Show($"Error: {ex.Message}", "Startup Toggle Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                            chkStartWithWindows.Checked = IsStartWithWindows;
+                        }
+                    };
+                    generalLayout.Controls.Add(chkStartWithWindows, 0, 0);
+                    groupBoxGeneral.Controls.Add(generalLayout);
+                    layoutPanel.Controls.Add(groupBoxGeneral);
 
                     var groupBoxSelections = new GroupBox
                     {
@@ -237,7 +284,7 @@ namespace Desktop_Fences
 
                     var buttonsLayout = new TableLayoutPanel
                     {
-                        Dock = DockStyle.Bottom,
+                        Dock = DockStyle.Top,
                         ColumnCount = 2,
                         AutoSize = true,
                         AutoSizeMode = AutoSizeMode.GrowAndShrink
@@ -265,20 +312,17 @@ namespace Desktop_Fences
                     };
                     btnSave.Click += (s, ev) =>
                     {
-                        // Save global settings
                         SettingsManager.IsSnapEnabled = chkEnableSnap.Checked;
                         SettingsManager.TintValue = (int)numTint.Value;
                         SettingsManager.SelectedColor = cmbColor.SelectedItem.ToString();
                         SettingsManager.IsLogEnabled = chkEnableLog.Checked;
                         SettingsManager.SingleClickToLaunch = chkSingleClickToLaunch.Checked;
                         SettingsManager.LaunchEffect = (FenceManager.LaunchEffect)cmbLaunchEffect.SelectedIndex;
+                        IsStartWithWindows = chkStartWithWindows.Checked;
 
                         SettingsManager.SaveSettings();
-
-                        // Update FenceManager options
                         FenceManager.UpdateOptionsAndClickEvents();
 
-                        // Apply settings to all fences, respecting custom colors but applying global tint
                         foreach (var fence in System.Windows.Application.Current.Windows.OfType<NonActivatingWindow>())
                         {
                             dynamic fenceData = FenceManager.GetFenceData().FirstOrDefault(f => f.Title == fence.Title);
@@ -291,9 +335,8 @@ namespace Desktop_Fences
                             }
                             else
                             {
-                                // Fallback for fences not in _fenceData (shouldn’t happen)
                                 Utility.ApplyTintAndColorToFence(fence, SettingsManager.SelectedColor);
-                                Log($"Applied global color '{SettingsManager.SelectedColor}' with global tint '{SettingsManager.TintValue}' to unknown fence '{fence.Title}' (not found in fence data)");
+                                Log($"Applied global color '{SettingsManager.SelectedColor}' with global tint '{SettingsManager.TintValue}' to unknown fence '{fence.Title}'");
                             }
                         }
 
@@ -304,27 +347,61 @@ namespace Desktop_Fences
                     buttonsLayout.Controls.Add(btnSave, 1, 0);
                     layoutPanel.Controls.Add(buttonsLayout);
 
+                    var donatePictureBox = new PictureBox
+                    {
+                        Image = Utility.LoadImageFromResources("Desktop_Fences.Resources.donate.png"),
+                        SizeMode = PictureBoxSizeMode.Zoom,
+                        Dock = DockStyle.Fill,
+                        Height = 25,
+                        Cursor = Cursors.Hand
+                    };
+                    donatePictureBox.Click += (s, e) =>
+                    {
+                        try
+                        {
+                            Process.Start(new ProcessStartInfo
+                            {
+                                FileName = "https://www.paypal.com/donate/?hosted_button_id=M8H4M4R763RBE",
+                                UseShellExecute = true
+                            });
+                        }
+                        catch (Exception ex)
+                        {
+                            Log($"Error opening donation link: {ex.Message}");
+                            System.Windows.Forms.MessageBox.Show($"Error opening donation link: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        }
+                    };
+                    layoutPanel.Controls.Add(donatePictureBox);
+
+                    var donateLabel = new Label
+                    {
+                        Text = "Donate to help development",
+                        Font = new Font("Tahoma", 9),
+                        TextAlign = ContentAlignment.MiddleCenter,
+                        Dock = DockStyle.Fill,
+                        AutoSize = true
+                    };
+                    layoutPanel.Controls.Add(donateLabel);
+
                     frmOptions.Controls.Add(layoutPanel);
                     frmOptions.ShowDialog();
                 }
             }
             catch (Exception ex)
             {
-                System.Windows.MessageBox.Show($"An error occurred: {ex.Message}", "Error", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+                Log($"Error showing Options form: {ex.Message}");
+                System.Windows.Forms.MessageBox.Show($"An error occurred: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
-        // end of replacement
-        // end of replacement
 
         private void ShowAboutForm()
         {
-            // Unchanged from your original
             try
             {
                 using (var frmAbout = new Form())
                 {
                     frmAbout.Text = "About Desktop Fences +";
-                    frmAbout.Size = new System.Drawing.Size(400, 450);
+                    frmAbout.Size = new Size(400, 480);
                     frmAbout.StartPosition = FormStartPosition.CenterScreen;
                     frmAbout.FormBorderStyle = FormBorderStyle.FixedDialog;
                     frmAbout.MaximizeBox = false;
@@ -335,7 +412,7 @@ namespace Desktop_Fences
                     {
                         Dock = DockStyle.Fill,
                         ColumnCount = 1,
-                        RowCount = 7,
+                        RowCount = 9,
                         AutoSize = true,
                         AutoSizeMode = AutoSizeMode.GrowAndShrink,
                         Padding = new Padding(20)
@@ -347,7 +424,7 @@ namespace Desktop_Fences
                         Image = Utility.LoadImageFromResources("Desktop_Fences.Resources.logo1.png"),
                         SizeMode = PictureBoxSizeMode.Zoom,
                         Dock = DockStyle.Fill,
-                        Height = 100
+                        Height = 50
                     };
                     layoutPanel.Controls.Add(pictureBox);
 
@@ -421,10 +498,30 @@ namespace Desktop_Fences
                         }
                         catch (Exception ex)
                         {
-                            System.Windows.MessageBox.Show($"Error opening GitHub link: {ex.Message}", "Error", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+                            Log($"Error opening GitHub link: {ex.Message}");
+                            System.Windows.Forms.MessageBox.Show($"Error opening GitHub link: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                         }
                     };
                     layoutPanel.Controls.Add(linkLabelGitHub);
+
+                    var horizontalLine2 = new Label
+                    {
+                        BorderStyle = BorderStyle.Fixed3D,
+                        Height = 2,
+                        Dock = DockStyle.Fill,
+                        Margin = new Padding(10)
+                    };
+                    layoutPanel.Controls.Add(horizontalLine2);
+
+                    var labelThanks = new Label
+                    {
+                        Text = "Thank you for using Desktop Fences +",
+                        Font = new Font("Tahoma", 9),
+                        TextAlign = ContentAlignment.MiddleCenter,
+                        Dock = DockStyle.Fill,
+                        AutoSize = true
+                    };
+                    layoutPanel.Controls.Add(labelThanks);
 
                     frmAbout.Controls.Add(layoutPanel);
                     frmAbout.ShowDialog();
@@ -432,17 +529,66 @@ namespace Desktop_Fences
             }
             catch (Exception ex)
             {
-                System.Windows.MessageBox.Show($"An error occurred: {ex.Message}", "Error", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+                Log($"Error showing About form: {ex.Message}");
+                System.Windows.Forms.MessageBox.Show($"An error occurred: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
+        private bool IsInStartupFolder()
+        {
+            string startupPath = Environment.GetFolderPath(Environment.SpecialFolder.Startup);
+            string shortcutPath = Path.Combine(startupPath, "Desktop Fences.lnk");
+            return File.Exists(shortcutPath);
+        }
+
+        private void ToggleStartWithWindows(bool enable)
+        {
+            string startupPath = Environment.GetFolderPath(Environment.SpecialFolder.Startup);
+            string shortcutPath = Path.Combine(startupPath, "Desktop Fences.lnk");
+            string exePath = Process.GetCurrentProcess().MainModule.FileName;
+
+            try
+            {
+                if (enable && !IsInStartupFolder())
+                {
+                    Type shellType = Type.GetTypeFromProgID("WScript.Shell");
+                    dynamic shell = Activator.CreateInstance(shellType);
+                    var shortcut = shell.CreateShortcut(shortcutPath);
+                    shortcut.TargetPath = exePath;
+                    shortcut.Description = "Desktop Fences Startup Shortcut";
+                    shortcut.Save();
+                    IsStartWithWindows = true;
+                    Log("Added Desktop Fences to Startup folder");
+                }
+                else if (!enable && IsInStartupFolder())
+                {
+                    File.Delete(shortcutPath);
+                    IsStartWithWindows = false;
+                    Log("Removed Desktop Fences from Startup folder");
+                }
+            }
+            catch (Exception ex)
+            {
+                Log($"Failed to toggle Start with Windows: {ex.Message}");
+                IsStartWithWindows = IsInStartupFolder();
+                throw;
+            }
+        }
+
+        // Dispose of NotifyIcon to prevent resource leaks
         public void Dispose()
         {
-            if (_trayIcon != null)
+            if (_disposed) return;
+            _trayIcon?.Dispose();
+            _disposed = true;
+        }
+
+        private static void Log(string message)
+        {
+            if (SettingsManager.IsLogEnabled)
             {
-                _trayIcon.Visible = false;
-                _trayIcon.Dispose();
-                _trayIcon = null;
+                string logPath = Path.Combine(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "Desktop_Fences.log");
+                File.AppendAllText(logPath, $"{DateTime.Now}: {message}\n");
             }
         }
     }
