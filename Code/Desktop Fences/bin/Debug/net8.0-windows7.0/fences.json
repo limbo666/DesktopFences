@@ -1,132 +1,36 @@
 [
   {
-    "Title": "Universal",
-    "X": 2849.0,
-    "Y": 426.0,
-    "Width": 650.0,
-    "Height": 141.0,
+    "Title": "New Fence",
+    "X": 2766.0,
+    "Y": 281.0,
+    "Width": 456.0,
+    "Height": 166.0,
     "ItemsType": "Data",
     "Items": [
       {
-        "Filename": "Shortcuts\\Command Prompt.lnk",
-        "IsFolder": false,
-        "DisplayName": "Command Prompt"
+        "Filename": "Shortcuts\\Desktop Fences.lnk",
+        "IsFolder": true,
+        "DisplayName": "Desktop Fences"
       },
       {
-        "Filename": "Shortcuts\\Resource Monitor.lnk",
-        "IsFolder": false,
-        "DisplayName": "Resource Monitor"
+        "Filename": "Shortcuts\\DesktopFences.lnk",
+        "IsFolder": true,
+        "DisplayName": "DesktopFences"
       },
-      {
-        "Filename": "Shortcuts\\Event Viewer.lnk",
-        "IsFolder": false,
-        "DisplayName": "Event Viewer"
-      },
-      {
-        "Filename": "Shortcuts\\Computer Management.lnk",
-        "IsFolder": false,
-        "DisplayName": "Computer Management"
-      },
-      {
-        "Filename": "Shortcuts\\services.lnk",
-        "IsFolder": false,
-        "DisplayName": "services"
-      },
-      {
-        "Filename": "Shortcuts\\Registry Editor.lnk",
-        "IsFolder": false,
-        "DisplayName": "Registry Editor"
-      },
-      {
-        "Filename": "Shortcuts\\Task Scheduler.lnk",
-        "IsFolder": false,
-        "DisplayName": "Task Scheduler"
-      },
-      {
-        "Filename": "Shortcuts\\Windows Defender Firewall with Advanced Security.lnk",
-        "IsFolder": false,
-        "DisplayName": "Windows Defender Firewall with Advanced Security"
-      },
-      {
-        "Filename": "Shortcuts\\System Configuration.lnk",
-        "IsFolder": false,
-        "DisplayName": "System Configuration"
-      }
-    ],
-    "CustomColor": null,
-    "CustomLaunchEffect": null,
-    "IsHidden": "false"
-  },
-  {
-    "Title": "Zeus Fence",
-    "X": 2846.0,
-    "Y": 575.0,
-    "Width": 386.0,
-    "Height": 152.0,
-    "ItemsType": "Data",
-    "Items": [
-      {
-        "Filename": "Shortcuts\\Black my Screen.lnk",
-        "IsFolder": false,
-        "DisplayName": "Black my Screen"
-      },
-      {
-        "Filename": "Shortcuts\\WinOFF.lnk",
-        "IsFolder": false,
-        "DisplayName": "WinOFF"
-      },
-      {
-        "Filename": "Shortcuts\\USB Raptor.lnk",
-        "IsFolder": false,
-        "DisplayName": "USB Raptor"
-      },
-      {
-        "Filename": "Shortcuts\\UDP Tool.lnk",
-        "IsFolder": false,
-        "DisplayName": "UDP Tool"
-      },
-      {
-        "Filename": "Shortcuts\\#Set Options and Run.ps1 - Shortcut.lnk",
-        "IsFolder": false,
-        "DisplayName": "Set Options and Run"
-      }
-    ],
-    "CustomColor": "Purple",
-    "CustomLaunchEffect": "SlideUp",
-    "IsHidden": "true"
-  },
-  {
-    "Title": "LCD Smartie Zeus",
-    "X": 3240.0,
-    "Y": 727.0,
-    "Width": 352.0,
-    "Height": 134.0,
-    "ItemsType": "Data",
-    "Items": [
       {
         "Filename": "Shortcuts\\LCDSmartie Main.lnk",
         "IsFolder": false,
         "DisplayName": "LCDSmartie Main"
       },
       {
-        "Filename": "Shortcuts\\LCDSmartie.lnk",
+        "Filename": "Shortcuts\\Text Formatter For LCD Smartie Plugin Info.lnk",
         "IsFolder": false,
-        "DisplayName": "LCDSmartie"
+        "DisplayName": "Text Formatter For LCD Smartie Plugin Info"
       },
       {
-        "Filename": "Shortcuts\\LCDSmartie Purple.lnk",
-        "IsFolder": false,
-        "DisplayName": "LCDSmartie Purple"
-      },
-      {
-        "Filename": "Shortcuts\\LCDSmartie Android.lnk",
-        "IsFolder": false,
-        "DisplayName": "LCDSmartie Android"
-      },
-      {
-        "Filename": "Shortcuts\\Direct Lines for LCD Smartie.exe - Shortcut.lnk",
-        "IsFolder": false,
-        "DisplayName": "Direct Lines for LCD Smartie.exe - Shortcut"
+        "Filename": "Shortcuts\\Desktop Fences - Copy.lnk",
+        "IsFolder": true,
+        "DisplayName": "Desktop Fences - Copy"
       }
     ],
     "CustomColor": null,
@@ -134,49 +38,16 @@
     "IsHidden": "true"
   },
   {
-    "Title": "New Fence",
-    "X": 2565.0,
-    "Y": 573.0,
-    "Width": 234.0,
-    "Height": 146.0,
-    "ItemsType": "Data",
-    "Items": [
-      {
-        "Filename": "Shortcuts\\run.vbs - Hello.lnk",
-        "IsFolder": false,
-        "DisplayName": "run.vbs - Hello"
-      },
-      {
-        "Filename": "Shortcuts\\run.vbs - message.lnk",
-        "IsFolder": false,
-        "DisplayName": "run.vbs - message"
-      }
-    ],
-    "CustomColor": null,
+    "Title": "New Portal Fence",
+    "X": 2991.0,
+    "Y": 455.0,
+    "Width": 299.0,
+    "Height": 218.0,
+    "ItemsType": "Portal",
+    "Items": "",
+    "CustomColor": "Red",
     "CustomLaunchEffect": null,
-    "IsHidden": "false"
-  },
-  {
-    "Title": "Job",
-    "X": 3240.0,
-    "Y": 575.0,
-    "Width": 260.0,
-    "Height": 144.0,
-    "ItemsType": "Data",
-    "Items": [
-      {
-        "Filename": "Shortcuts\\LCDSmartie Lazarus Temp.lnk",
-        "IsFolder": false,
-        "DisplayName": "LCDSmartie Lazarus Temp"
-      },
-      {
-        "Filename": "Shortcuts\\LCDSmartie Lazarus x.lnk",
-        "IsFolder": false,
-        "DisplayName": "LCDSmartie Lazarus x"
-      }
-    ],
-    "CustomColor": null,
-    "CustomLaunchEffect": null,
-    "IsHidden": "false"
+    "IsHidden": "false",
+    "Path": "F:\\Collections\\090. Files 2\\Special\\Flat Icon"
   }
 ]

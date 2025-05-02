@@ -42,13 +42,15 @@ namespace Desktop_Fences
 
             var trayMenu = new ContextMenuStrip();
             trayMenu.Items.Add("About", null, (s, e) => ShowAboutForm());
-            trayMenu.Items.Add("-", null);
             trayMenu.Items.Add("Options", null, (s, e) => ShowOptionsForm());
+            trayMenu.Items.Add("-", null);
+
             _showHiddenFencesItem = new ToolStripMenuItem("Show Hidden Fences") // Simple constructor
             {
                 Enabled = false
             };
             trayMenu.Items.Add(_showHiddenFencesItem);
+            trayMenu.Items.Add("-", null);
             trayMenu.Items.Add("Exit", null, (s, e) => System.Windows.Application.Current.Shutdown());
             _trayIcon.ContextMenuStrip = trayMenu;
 
@@ -103,7 +105,7 @@ namespace Desktop_Fences
             }
         }
 
-        private void ShowOptionsForm()
+        public void ShowOptionsForm()
         {
             try
             {
@@ -394,7 +396,7 @@ namespace Desktop_Fences
             }
         }
 
-        private void ShowAboutForm()
+        public void ShowAboutForm()
         {
             try
             {

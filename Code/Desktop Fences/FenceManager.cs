@@ -139,76 +139,7 @@ namespace Desktop_Fences
                 Log($"Error updating {propertyName} for fence '{fence.Title}': {ex.Message}");
             }
         }
-        //public static void UpdateFenceProperty(dynamic fence, string propertyName, string value, string logMessage)
-        //{
-        //    try
-        //    {
-        //        // Get the actual fence object from _fenceData to ensure we're modifying the correct instance
-        //        int index = _fenceData.FindIndex(f => f.Title == fence.Title.ToString());
-        //        if (index >= 0)
-        //        {
-        //            // Get the fence from _fenceData
-        //            dynamic actualFence = _fenceData[index];
-
-        //            // Convert to dictionary safely
-        //            IDictionary<string, object> fenceDict = actualFence as IDictionary<string, object> ?? ((JObject)actualFence).ToObject<IDictionary<string, object>>();
-
-        //            // Update the property
-        //            fenceDict[propertyName] = value;
-
-        //            // Update the fence in _fenceData
-        //            _fenceData[index] = JObject.FromObject(fenceDict);
-        //            SaveFenceData();
-        //            Log($"{logMessage} for fence '{fence.Title}'");
-
-        //            // Find the window to apply changes
-        //            var windows = System.Windows.Application.Current.Windows.OfType<NonActivatingWindow>();
-        //            var win = windows.FirstOrDefault(w => w.Title == fence.Title.ToString());
-        //            if (win != null)
-        //            {
-        //                // Apply runtime changes
-        //                if (propertyName == "CustomColor")
-        //                {
-        //                    Utility.ApplyTintAndColorToFence(win, string.IsNullOrEmpty(value) ? _options.SelectedColor : value);
-        //                    Log($"Applied color '{value ?? "Default"}' to fence '{fence.Title}' at runtime");
-        //                }
-
-        //                // Update context menu checkmarks
-        //                if (win.ContextMenu != null)
-        //                {
-        //                    var customizeMenu = win.ContextMenu.Items.OfType<MenuItem>().FirstOrDefault(m => m.Header.ToString() == "Customize");
-        //                    if (customizeMenu != null)
-        //                    {
-        //                        var submenu = propertyName == "CustomColor"
-        //                            ? customizeMenu.Items.OfType<MenuItem>().FirstOrDefault(m => m.Header.ToString() == "Color")
-        //                            : customizeMenu.Items.OfType<MenuItem>().FirstOrDefault(m => m.Header.ToString() == "Launch Effect");
-        //                        if (submenu != null)
-        //                        {
-        //                            foreach (MenuItem item in submenu.Items)
-        //                            {
-        //                                item.IsChecked = item.Tag?.ToString() == value || (value == null && item.Header.ToString() == "Default");
-        //                            }
-        //                        }
-        //                    }
-        //                }
-        //            }
-        //            else
-        //            {
-        //                Log($"Failed to find window for fence '{fence.Title}' to apply {propertyName}");
-        //            }
-        //        }
-        //        else
-        //        {
-        //            Log($"Failed to find fence '{fence.Title}' in _fenceData for {propertyName} update");
-        //        }
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        Log($"Error updating {propertyName} for fence '{fence.Title}': {ex.Message}");
-        //    }
-        //}
-
-        // end of replacement
+        
         public static void LoadAndCreateFences(TargetChecker targetChecker)
         {
             string exePath = Assembly.GetEntryAssembly().Location;
@@ -436,15 +367,108 @@ namespace Desktop_Fences
                 Child = dp
             };
 
+         
+
+            // NEW: Add heart symbol in top-left corner
+            TextBlock heart = new TextBlock
+            {
+                Text = "♥",
+                FontSize = 16,
+                Foreground = Brushes.White, // Match title and icon text color
+                Margin = new Thickness(5, 2, 0, 0), // Position top-left, aligned with title
+                HorizontalAlignment = HorizontalAlignment.Left,
+                VerticalAlignment = VerticalAlignment.Top,
+                Cursor = Cursors.Hand
+            };
+            dp.Children.Add(heart);
+
+            // NEW: Create context menu for heart
+            ContextMenu heartContextMenu = new ContextMenu();
+            MenuItem aboutItem = new MenuItem { Header = "About" };
+          
+            // aboutItem.Click += (s, e) => MessageBox.Show("Desktop Fences\nVersion 1.0", "About");
+            aboutItem.Click += (s, e) => TrayManager.Instance.ShowAboutForm();
+
+            MenuItem optionsItem = new MenuItem { Header = "Options" };
+            optionsItem.Click += (s, e) => TrayManager.Instance.ShowOptionsForm();
+
+            MenuItem newfenceItem = new MenuItem { Header ="New Fence" };
+          //  newfenceItem.Click += (s, e) => Application.Current.Shutdown();
+            MenuItem newportalfenceItem = new MenuItem { Header = "New Portal Fence" };
+            // newportalfenceItem.Click += (s, e) => Application.Current.Shutdown();
+
+            newfenceItem.Click += (s, e) =>
+            {
+                bool isLogEnabled = _options.IsLogEnabled ?? true;
+                void Log(string message)
+                {
+                    if (isLogEnabled)
+                    {
+                        string logPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "Desktop_Fences.log");
+                        System.IO.File.AppendAllText(logPath, $"{DateTime.Now}: {message}\n");
+                    }
+                }
+
+                // Get mouse position in screen coordinates
+                var mousePosition = System.Windows.Forms.Cursor.Position;
+                double x = mousePosition.X;
+                double y = mousePosition.Y;
+                Log($"Creating new fence at mouse position: X={x}, Y={y}");
+                CreateNewFence("New Fence", "Data", x, y);
+            };
+
+            newportalfenceItem.Click += (s, e) =>
+            {
+                bool isLogEnabled = _options.IsLogEnabled ?? true;
+                void Log(string message)
+                {
+                    if (isLogEnabled)
+                    {
+                        string logPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "Desktop_Fences.log");
+                        System.IO.File.AppendAllText(logPath, $"{DateTime.Now}: {message}\n");
+                    }
+                }
+
+                // Get mouse position in screen coordinates
+                var mousePosition = System.Windows.Forms.Cursor.Position;
+                double x = mousePosition.X;
+                double y = mousePosition.Y;
+                Log($"Creating new portal fence at mouse position: X={x}, Y={y}");
+                CreateNewFence("New Portal Fence", "Portal", x, y);
+            };
+
+            MenuItem exitItem = new MenuItem { Header = "Exit" };
+            exitItem.Click += (s, e) => Application.Current.Shutdown();
+           
+            heartContextMenu.Items.Add(aboutItem);
+            heartContextMenu.Items.Add(optionsItem);
+            heartContextMenu.Items.Add(new Separator());
+            heartContextMenu.Items.Add(newfenceItem);
+            heartContextMenu.Items.Add(newportalfenceItem);
+            heartContextMenu.Items.Add(new Separator());
+                      heartContextMenu.Items.Add(exitItem);
+            heart.ContextMenu = heartContextMenu;
+
+            // NEW: Handle left-click to open heart context menu
+            heart.MouseLeftButtonDown += (s, e) =>
+            {
+                if (e.ChangedButton == MouseButton.Left)
+                {
+                    heartContextMenu.IsOpen = true;
+                    e.Handled = true;
+                }
+            };
+
+
             ContextMenu cm = new ContextMenu();
             MenuItem miNF = new MenuItem { Header = "New Fence" };
             MenuItem miNP = new MenuItem { Header = "New Portal Fence" };
             MenuItem miRF = new MenuItem { Header = "Remove Fence" };
-            MenuItem miXT = new MenuItem { Header = "Exit" };
+           // MenuItem miXT = new MenuItem { Header = "Exit" };
             MenuItem miHide = new MenuItem { Header = "Hide Fence" }; // New Hide Fence item
 
             // Add Customize submenu
-            MenuItem miCustomize = new MenuItem { Header = "Customize" };
+            MenuItem miCustomize = new MenuItem { Header = "Customize Fence" };
             MenuItem miColors = new MenuItem { Header = "Color" };
             MenuItem miEffects = new MenuItem { Header = "Launch Effect" };
             
@@ -489,15 +513,16 @@ namespace Desktop_Fences
             miCustomize.Items.Add(miColors);
             miCustomize.Items.Add(miEffects);
 
-            cm.Items.Add(miNF);
-            cm.Items.Add(miNP);
+           // cm.Items.Add(miNF);
+          //  cm.Items.Add(miNP);
             cm.Items.Add(miRF);
-            cm.Items.Add(new Separator());
-            cm.Items.Add(miCustomize); // Add Customize submenu
-            cm.Items.Add(new Separator());
             cm.Items.Add(miHide); // Add Hide Fence
             cm.Items.Add(new Separator());
-            cm.Items.Add(miXT);
+            cm.Items.Add(miCustomize); // Add Customize submenu
+          //  cm.Items.Add(new Separator());
+         
+         //   cm.Items.Add(new Separator());
+         //   cm.Items.Add(miXT);
 
             NonActivatingWindow win = new NonActivatingWindow
             {
@@ -650,7 +675,7 @@ namespace Desktop_Fences
                 CreateNewFence("New Portal Fence", "Portal", absolutePosition.X, absolutePosition.Y);
             };
 
-            miXT.Click += (s, e) => Application.Current.Shutdown();
+         //   miXT.Click += (s, e) => Application.Current.Shutdown();
 
             Label titlelabel = new Label
             {
@@ -2003,7 +2028,8 @@ namespace Desktop_Fences
                     Log("Application.Current is null, cannot update icon.");
                 }
         }
-      
+
+
         public static void ClickEventAdder(StackPanel sp, string path, bool isFolder, string arguments = null)
         {
             bool isLogEnabled = _options.IsLogEnabled ?? true;
@@ -2011,20 +2037,12 @@ namespace Desktop_Fences
             // Clear existing handler
             sp.MouseLeftButtonDown -= MouseDownHandler;
 
-        //    void Log(string message)
-            //{
-            //    if (isLogEnabled)
-            //    {
-            //        string logPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "Desktop_Fences.log");
-            //        System.IO.File.AppendAllText(logPath, $"{DateTime.Now}: {message}\n");
-            //    }
-            //}
-
             // Store only path, isFolder, and arguments in Tag
             sp.Tag = new { FilePath = path, IsFolder = isFolder, Arguments = arguments };
 
             Log($"Attaching handler for {path}, initial singleClickToLaunch={_options.singleClickToLaunch}");
 
+            // Check if path is a shortcut and correct isFolder for folder shortcuts
             bool isShortcut = System.IO.Path.GetExtension(path).ToLower() == ".lnk";
             string targetPath = isShortcut ? Utility.GetShortcutTarget(path) : path;
             if (isShortcut && System.IO.Directory.Exists(targetPath))
@@ -2032,7 +2050,6 @@ namespace Desktop_Fences
                 isFolder = true;
                 Log($"Corrected isFolder to true for shortcut {path} targeting folder {targetPath}");
             }
-
 
             void MouseDownHandler(object sender, MouseButtonEventArgs e)
             {
@@ -2043,12 +2060,25 @@ namespace Desktop_Fences
 
                 try
                 {
-                    // Check if the target exists
-                    bool targetExists = isFolder ? Directory.Exists(path) : System.IO.File.Exists(path);
+                    // Recompute isShortcut to avoid unassigned variable issue
+                    bool isShortcutLocal = System.IO.Path.GetExtension(path).ToLower() == ".lnk";
+                    bool targetExists;
+                    string resolvedPath = path;
+                    if (isShortcutLocal)
+                    {
+                        resolvedPath = Utility.GetShortcutTarget(path);
+                        targetExists = isFolder ? System.IO.Directory.Exists(resolvedPath) : System.IO.File.Exists(resolvedPath);
+                    }
+                    else
+                    {
+                        targetExists = isFolder ? System.IO.Directory.Exists(path) : System.IO.File.Exists(path);
+                    }
+
+                    Log($"Target check: Path={path}, ResolvedPath={resolvedPath}, IsShortcut={isShortcutLocal}, IsFolder={isFolder}, TargetExists={targetExists}");
 
                     if (!targetExists)
                     {
-                        Log($"Target not found: {path}");
+                        Log($"Target not found: {resolvedPath}");
                         return;
                     }
 
@@ -2070,29 +2100,101 @@ namespace Desktop_Fences
                     Log($"Error checking target existence: {ex.Message}");
                 }
             }
-            //void MouseDownHandler(object sender, MouseButtonEventArgs e)
-            //{
-            //    if (e.ChangedButton != MouseButton.Left) return;
-
-            //    bool singleClickToLaunch = _options.singleClickToLaunch ?? true;
-            //    Log($"MouseDown on {path}, ClickCount={e.ClickCount}, singleClickToLaunch={singleClickToLaunch}");
-            //    if (singleClickToLaunch && e.ClickCount == 1)
-            //    {
-            //        Log($"Single click launching {path}");
-            //        LaunchItem(sp, path, isFolder, arguments);
-            //        e.Handled = true;
-            //    }
-            //    else if (!singleClickToLaunch && e.ClickCount == 2)
-            //    {
-            //        Log($"Double click launching {path}");
-            //        LaunchItem(sp, path, isFolder, arguments);
-            //        e.Handled = true;
-            //    }
-            //}
 
             sp.MouseLeftButtonDown += MouseDownHandler;
         }
-        
+
+        //uncoment below to restore
+
+        //public static void ClickEventAdder(StackPanel sp, string path, bool isFolder, string arguments = null)
+        //{
+        //    bool isLogEnabled = _options.IsLogEnabled ?? true;
+
+        //    // Clear existing handler
+        //    sp.MouseLeftButtonDown -= MouseDownHandler;
+
+        ////    void Log(string message)
+        //    //{
+        //    //    if (isLogEnabled)
+        //    //    {
+        //    //        string logPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "Desktop_Fences.log");
+        //    //        System.IO.File.AppendAllText(logPath, $"{DateTime.Now}: {message}\n");
+        //    //    }
+        //    //}
+
+        //    // Store only path, isFolder, and arguments in Tag
+        //    sp.Tag = new { FilePath = path, IsFolder = isFolder, Arguments = arguments };
+
+        //    Log($"Attaching handler for {path}, initial singleClickToLaunch={_options.singleClickToLaunch}");
+
+        //    bool isShortcut = System.IO.Path.GetExtension(path).ToLower() == ".lnk";
+        //    string targetPath = isShortcut ? Utility.GetShortcutTarget(path) : path;
+        //    if (isShortcut && System.IO.Directory.Exists(targetPath))
+        //    {
+        //        isFolder = true;
+        //        Log($"Corrected isFolder to true for shortcut {path} targeting folder {targetPath}");
+        //    }
+
+
+        //    void MouseDownHandler(object sender, MouseButtonEventArgs e)
+        //    {
+        //        if (e.ChangedButton != MouseButton.Left) return;
+
+        //        bool singleClickToLaunch = _options.singleClickToLaunch ?? true;
+        //        Log($"MouseDown on {path}, ClickCount={e.ClickCount}, singleClickToLaunch={singleClickToLaunch}");
+
+        //        try
+        //        {
+        //            // Check if the target exists
+        //            bool targetExists = isFolder ? Directory.Exists(path) : System.IO.File.Exists(path);
+
+        //            if (!targetExists)
+        //            {
+        //                Log($"Target not found: {path}");
+        //                return;
+        //            }
+
+        //            if (singleClickToLaunch && e.ClickCount == 1)
+        //            {
+        //                Log($"Single click launching {path}");
+        //                LaunchItem(sp, path, isFolder, arguments);
+        //                e.Handled = true;
+        //            }
+        //            else if (!singleClickToLaunch && e.ClickCount == 2)
+        //            {
+        //                Log($"Double click launching {path}");
+        //                LaunchItem(sp, path, isFolder, arguments);
+        //                e.Handled = true;
+        //            }
+        //        }
+        //        catch (Exception ex)
+        //        {
+        //            Log($"Error checking target existence: {ex.Message}");
+        //        }
+        //    }
+        //    //void MouseDownHandler(object sender, MouseButtonEventArgs e)
+        //    //{
+        //    //    if (e.ChangedButton != MouseButton.Left) return;
+
+        //    //    bool singleClickToLaunch = _options.singleClickToLaunch ?? true;
+        //    //    Log($"MouseDown on {path}, ClickCount={e.ClickCount}, singleClickToLaunch={singleClickToLaunch}");
+        //    //    if (singleClickToLaunch && e.ClickCount == 1)
+        //    //    {
+        //    //        Log($"Single click launching {path}");
+        //    //        LaunchItem(sp, path, isFolder, arguments);
+        //    //        e.Handled = true;
+        //    //    }
+        //    //    else if (!singleClickToLaunch && e.ClickCount == 2)
+        //    //    {
+        //    //        Log($"Double click launching {path}");
+        //    //        LaunchItem(sp, path, isFolder, arguments);
+        //    //        e.Handled = true;
+        //    //    }
+        //    //}
+
+        //    sp.MouseLeftButtonDown += MouseDownHandler;
+        //}
+
 
         private static T FindVisualParent<T>(DependencyObject child) where T : DependencyObject
         {
