@@ -930,12 +930,35 @@ namespace Desktop_Fences
 
                                 miRunAsAdmin.Click += (sender, e) =>
                                 {
-                                    Process.Start(new ProcessStartInfo
+                                    string targetPath = Utility.GetShortcutTarget(filePath);
+                                    string runArguments = null;
+                                    if (System.IO.Path.GetExtension(filePath).ToLower() == ".lnk")
                                     {
-                                        FileName = Utility.GetShortcutTarget(filePath),
+                                        WshShell shell = new WshShell();
+                                        IWshShortcut shortcut = (IWshShortcut)shell.CreateShortcut(filePath);
+                                        runArguments = shortcut.Arguments;
+                                    }
+                                    ProcessStartInfo psi = new ProcessStartInfo
+                                    {
+                                        FileName = targetPath,
                                         UseShellExecute = true,
                                         Verb = "runas"
-                                    });
+                                    };
+                                    if (!string.IsNullOrEmpty(runArguments))
+                                    {
+                                        psi.Arguments = runArguments;
+                                        Log($"Run as admin with arguments: {runArguments} for {filePath}");
+                                    }
+                                    try
+                                    {
+                                        Process.Start(psi);
+                                        Log($"Successfully launched {targetPath} as admin");
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        Log($"Failed to launch {targetPath} as admin: {ex.Message}");
+                                        MessageBox.Show($"Error running as admin: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                                    }
                                 };
                             }
                         }

@@ -1,8 +1,8 @@
 [
   {
-    "Title": "White Fence",
-    "X": 2814.0,
-    "Y": 520.0,
+    "Title": "Universal",
+    "X": 2849.0,
+    "Y": 426.0,
     "Width": 650.0,
     "Height": 141.0,
     "ItemsType": "Data",
@@ -59,10 +59,10 @@
   },
   {
     "Title": "Zeus Fence",
-    "X": 2897.0,
-    "Y": 666.0,
-    "Width": 385.0,
-    "Height": 183.0,
+    "X": 2846.0,
+    "Y": 575.0,
+    "Width": 386.0,
+    "Height": 152.0,
     "ItemsType": "Data",
     "Items": [
       {
@@ -93,12 +93,12 @@
     ],
     "CustomColor": "Purple",
     "CustomLaunchEffect": "SlideUp",
-    "IsHidden": "false"
+    "IsHidden": "true"
   },
   {
     "Title": "LCD Smartie Zeus",
-    "X": 2933.0,
-    "Y": 857.0,
+    "X": 3240.0,
+    "Y": 727.0,
     "Width": 352.0,
     "Height": 134.0,
     "ItemsType": "Data",
@@ -131,20 +131,48 @@
     ],
     "CustomColor": null,
     "CustomLaunchEffect": null,
-    "IsHidden": "false"
+    "IsHidden": "true"
   },
   {
     "Title": "New Fence",
-    "X": 2659.0,
-    "Y": 814.0,
-    "Width": 231.0,
-    "Height": 158.0,
+    "X": 2565.0,
+    "Y": 573.0,
+    "Width": 234.0,
+    "Height": 146.0,
     "ItemsType": "Data",
     "Items": [
       {
-        "Filename": "Shortcuts\\Backup Folder - With Sound (1).lnk",
+        "Filename": "Shortcuts\\run.vbs - Hello.lnk",
         "IsFolder": false,
-        "DisplayName": "Backup Folder - With Sound"
+        "DisplayName": "run.vbs - Hello"
+      },
+      {
+        "Filename": "Shortcuts\\run.vbs - message.lnk",
+        "IsFolder": false,
+        "DisplayName": "run.vbs - message"
+      }
+    ],
+    "CustomColor": null,
+    "CustomLaunchEffect": null,
+    "IsHidden": "false"
+  },
+  {
+    "Title": "Job",
+    "X": 3240.0,
+    "Y": 575.0,
+    "Width": 260.0,
+    "Height": 144.0,
+    "ItemsType": "Data",
+    "Items": [
+      {
+        "Filename": "Shortcuts\\LCDSmartie Lazarus Temp.lnk",
+        "IsFolder": false,
+        "DisplayName": "LCDSmartie Lazarus Temp"
+      },
+      {
+        "Filename": "Shortcuts\\LCDSmartie Lazarus x.lnk",
+        "IsFolder": false,
+        "DisplayName": "LCDSmartie Lazarus x"
       }
     ],
     "CustomColor": null,

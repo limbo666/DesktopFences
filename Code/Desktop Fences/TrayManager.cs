@@ -110,7 +110,7 @@ namespace Desktop_Fences
                 using (var frmOptions = new Form())
                 {
                     frmOptions.Text = "Options";
-                    frmOptions.Size = new Size(260, 480);
+                    frmOptions.Size = new Size(260, 560);
                     frmOptions.StartPosition = FormStartPosition.CenterScreen;
                     frmOptions.FormBorderStyle = FormBorderStyle.FixedDialog;
                     frmOptions.MaximizeBox = false;
@@ -401,7 +401,7 @@ namespace Desktop_Fences
                 using (var frmAbout = new Form())
                 {
                     frmAbout.Text = "About Desktop Fences +";
-                    frmAbout.Size = new Size(400, 480);
+                    frmAbout.Size = new Size(400, 600);
                     frmAbout.StartPosition = FormStartPosition.CenterScreen;
                     frmAbout.FormBorderStyle = FormBorderStyle.FixedDialog;
                     frmAbout.MaximizeBox = false;
@@ -511,17 +511,49 @@ namespace Desktop_Fences
                         Dock = DockStyle.Fill,
                         Margin = new Padding(10)
                     };
+                    layoutPanel.Controls.Add(linkLabelGitHub);
                     layoutPanel.Controls.Add(horizontalLine2);
 
-                    var labelThanks = new Label
+               
+                  
+
+                    // Donation Logo
+                    var donatePictureBox = new PictureBox
                     {
-                        Text = "Thank you for using Desktop Fences +",
+                        Image = Utility.LoadImageFromResources("Desktop_Fences.Resources.donate.png"),
+                        SizeMode = PictureBoxSizeMode.Zoom,
+                        Dock = DockStyle.Fill,
+                        Height = 50, // Adjust based on donate.png size
+                        Cursor = Cursors.Hand // Indicate clickability
+                    };
+                    donatePictureBox.Click += (s, e) =>
+                    {
+                        try
+                        {
+                            Process.Start(new ProcessStartInfo
+                            {
+                                FileName = "https://www.paypal.com/donate/?hosted_button_id=M8H4M4R763RBE",
+                                UseShellExecute = true
+                            });
+                        }
+                        catch (Exception ex)
+                        {
+                            Log($"Error opening donation link: {ex.Message}");
+                            System.Windows.MessageBox.Show($"Error opening donation link: {ex.Message}", "Error", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+                        }
+                    };
+                    layoutPanel.Controls.Add(donatePictureBox);
+
+                    // Donation Text
+                    var donateLabel = new Label
+                    {
+                        Text = "Donate to help development",
                         Font = new Font("Tahoma", 9),
                         TextAlign = ContentAlignment.MiddleCenter,
                         Dock = DockStyle.Fill,
                         AutoSize = true
                     };
-                    layoutPanel.Controls.Add(labelThanks);
+                    layoutPanel.Controls.Add(donateLabel);
 
                     frmAbout.Controls.Add(layoutPanel);
                     frmAbout.ShowDialog();
