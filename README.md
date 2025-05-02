@@ -1,6 +1,9 @@
 # Desktop Fences +
 
-![Logo_Desktop_Fences100x100](https://github.com/user-attachments/assets/fb7f3da9-2e1f-4f79-90dc-33994ff33104) <br>
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/fb7f3da9-2e1f-4f79-90dc-33994ff33104" />
+</p>
+
 
 Desktop Fences + creates **virtual fences** on your desktop, allowing you to group and organize icons in a clean and convenient way. With enhanced visual effects and right-click options, it aims to provide a more polished and customizable user interface.
 
