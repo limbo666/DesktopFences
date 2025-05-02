@@ -1,8 +1,27 @@
 # Desktop Fences +
+
 ![Logo_Desktop_Fences100x100](https://github.com/user-attachments/assets/fb7f3da9-2e1f-4f79-90dc-33994ff33104) <br>
+
 Desktop Fences + creates **virtual fences** on your desktop, allowing you to group and organize icons in a clean and convenient way. With enhanced visual effects and right-click options, it aims to provide a more polished and customizable user interface.
-**Desktop Fences +** is an open-source alternative to **Stardock Fences**, originally created by [HakanKokcu](https://github.com/HakanKokcu) under the name **BirdyFences**.  
+
+**Desktop Fences +** is an open-source alternative to **Stardock Fences**, originally created by [HakanKokcu](https://github.com/HakanKokcu) under the name **BirdyFences**.
+
 **Desktop Fences +** has been significantly enhanced and optimized for improved performance, stability, and user experience.
+
+---
+
+##  Support
+If you find this project helpful, consider supporting its development!
+Your contribution helps cover development time, new features, bug fixes, and overall project improvements.
+
+ - Buy me a coffee
+
+ - Help me pay AI subscription (yeah, development gets easier with AI but costs money)
+
+Every little bit helps and is greatly appreciated! 🙏
+
+
+[![Donate](https://github.com/limbo666/DesktopFences/blob/main/Imgs/donate.png)](https://www.paypal.com/donate/?hosted_button_id=M8H4M4R763RBE)
 
 ---
 
@@ -34,6 +53,16 @@ Desktop Fences + creates **virtual fences** on your desktop, allowing you to gro
 -  **Logging Option** for diagnostics
 -  **Selectable Launch Effects**: Zoom, Bounce, Fadeout, SlideUp, Rotate, Agitate
 -  **Run at Windows Startup** option
+
+##  2.5.0.18
+-  **Added**:  Custom animation selection for each fence
+-  **Added**:  Custom background color selection for each fence
+-  **Fixed**:  Bug on fence movement across multiscreen ssystem
+-  **Changed**:  Start with windows option moved under `Options` window
+-  **Fixed**: Passing argument in `Run as administrator` selection
+-  **Fixed**: Bug on portal fences causing program crash on startup when target fodler is missing
+-  **Changed**:  Code improvements on log function
+-  **Added**:  Basic `Hide` function for each fence
 
 ---
 
