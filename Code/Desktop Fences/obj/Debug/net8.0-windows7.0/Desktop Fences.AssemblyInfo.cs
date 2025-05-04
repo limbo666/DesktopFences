@@ -13,11 +13,11 @@ using System.Reflection;
 
 [assembly: System.Reflection.AssemblyCompanyAttribute("Desktop Fences")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
-[assembly: System.Reflection.AssemblyFileVersionAttribute("2.5.0.19")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("2.5.0.19+f05019b1415a65f9fe46ae948717e5f789c44e81")]
+[assembly: System.Reflection.AssemblyFileVersionAttribute("2.5.0.22")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("2.5.0.22")]
 [assembly: System.Reflection.AssemblyProductAttribute("Desktop Fences")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Desktop Fences")]
-[assembly: System.Reflection.AssemblyVersionAttribute("2.5.0.19")]
+[assembly: System.Reflection.AssemblyVersionAttribute("2.5.0.22")]
 [assembly: System.Runtime.Versioning.TargetPlatformAttribute("Windows7.0")]
 [assembly: System.Runtime.Versioning.SupportedOSPlatformAttribute("Windows7.0")]
 

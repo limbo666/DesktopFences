@@ -43,18 +43,22 @@ namespace Desktop_Fences
             var trayMenu = new ContextMenuStrip();
             trayMenu.Items.Add("About", null, (s, e) => ShowAboutForm());
             trayMenu.Items.Add("Options", null, (s, e) => ShowOptionsForm());
-            trayMenu.Items.Add("-", null);
+            trayMenu.Items.Add("Diagnostics", null, (s, e) => ShowDiagnosticsForm());
 
-            _showHiddenFencesItem = new ToolStripMenuItem("Show Hidden Fences") // Simple constructor
+            trayMenu.Items.Add("-");
+
+
+            _showHiddenFencesItem = new ToolStripMenuItem("Show Hidden Fences")
             {
                 Enabled = false
             };
             trayMenu.Items.Add(_showHiddenFencesItem);
-            trayMenu.Items.Add("-", null);
+            trayMenu.Items.Add("-");
             trayMenu.Items.Add("Exit", null, (s, e) => System.Windows.Application.Current.Shutdown());
             _trayIcon.ContextMenuStrip = trayMenu;
 
             UpdateHiddenFencesMenu();
+            UpdateTrayIcon(); // Ensure the tray icon is updated on initialization
         }
 
         // Add fence to hidden list and update tray menu
@@ -68,6 +72,7 @@ namespace Desktop_Fences
                 fence.Visibility = System.Windows.Visibility.Hidden;
                 Log($"Added fence '{fence.Title}' to hidden list");
                 Instance?.UpdateHiddenFencesMenu();
+                Instance?.UpdateTrayIcon(); // Update the tray icon
             }
         }
 
@@ -86,6 +91,7 @@ namespace Desktop_Fences
                 HiddenFences.Remove(hiddenFence);
                 Log($"Showed fence '{title}'");
                 Instance?.UpdateHiddenFencesMenu();
+                Instance?.UpdateTrayIcon(); // Update the tray icon
             }
         }
 
@@ -105,14 +111,145 @@ namespace Desktop_Fences
             }
         }
 
+
+        public void ShowDiagnosticsForm()
+        {
+            try
+            {
+                using (var frmDiagnostics = new Form())
+                {
+                    frmDiagnostics.Text = "Desktop Fences + Diagnostics";
+                    frmDiagnostics.Size = new Size(300, 300);
+                    frmDiagnostics.StartPosition = FormStartPosition.CenterScreen;
+                    frmDiagnostics.FormBorderStyle = FormBorderStyle.FixedDialog;
+                    frmDiagnostics.MaximizeBox = false;
+                    frmDiagnostics.MinimizeBox = false;
+                    frmDiagnostics.Icon = Icon.ExtractAssociatedIcon(Process.GetCurrentProcess().MainModule.FileName);
+
+                    var layoutPanel = new TableLayoutPanel
+                    {
+                        Dock = DockStyle.Fill,
+                        ColumnCount = 1,
+                        AutoSize = true,
+                        AutoSizeMode = AutoSizeMode.GrowAndShrink,
+                        Padding = new Padding(10),
+                        BorderStyle = BorderStyle.Fixed3D
+                    };
+                    layoutPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
+
+
+                    var groupBoxInfo = new GroupBox
+                    {
+                        Text = "Info",
+                        Dock = DockStyle.Top,
+                        AutoSize = true,
+                        AutoSizeMode = AutoSizeMode.GrowAndShrink
+                    };
+                    var infoLayout = new TableLayoutPanel
+                    {
+                        Dock = DockStyle.Fill,
+                        ColumnCount = 2,
+                        RowCount = 5, // Set the number of rows to 5
+                        AutoSize = true,
+                        AutoSizeMode = AutoSizeMode.GrowAndShrink
+                    };
+
+                    infoLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
+                    infoLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
+
+                    // Create arrays for labels and values for easier management
+                    string[] variableNames = { "Variable1", "Variable2", "Variable3", "Variable4", "Variable5" };
+                    string[] variableValues = { "Value1", "Value2", "Value3", "Value4", "Value5" };
+
+                    // Loop through and create labels for variables and values.
+                    for (int i = 0; i < 5; i++) // Loop 5 times for the 5 rows
+                    {
+                        var lblVariable = new Label
+                        {
+                            Text = variableNames[i],
+                            Dock = DockStyle.Fill,
+                            AutoSize = true,
+                        };
+                        infoLayout.Controls.Add(lblVariable, 0, i); // Add variable name label
+
+                        var lblValue = new Label
+                        {
+                            Text = variableValues[i],
+                            Dock = DockStyle.Fill,
+                            //  AutoSize = true, // Removed AutoSize
+                        };
+                        infoLayout.Controls.Add(lblValue, 1, i); // Add variable value label.
+                    }
+
+                    groupBoxInfo.Controls.Add(infoLayout); // Add the infoLayout to the groupBoxInfo
+                    layoutPanel.Controls.Add(groupBoxInfo);    // Add the groupBoxInfo to the layoutPanel.
+
+                    // Add the blinking label
+                    var blinkingLabel = new Label
+                    {
+                        Text = "Timed check",
+                        Dock = DockStyle.Top, // Or any other suitable DockStyle
+                        AutoSize = true,
+                        TextAlign = ContentAlignment.MiddleCenter,
+                        Font = new Font("Arial", 12, FontStyle.Bold),
+                        ForeColor = Color.Red, // Initial color
+                        BackColor = Color.Transparent
+                    };
+                    layoutPanel.Controls.Add(blinkingLabel);
+
+                    // Create and configure the timer
+                    Timer blinkTimer = new Timer();
+                    blinkTimer.Interval = 500; // Blink every 500 milliseconds (0.5 seconds)
+                    bool isLabelVisible = true;
+
+                    blinkTimer.Tick += (sender, e) =>
+                    {
+                        if (isLabelVisible)
+                        {
+                            blinkingLabel.ForeColor = Color.Red; // Change to red
+                        }
+                        else
+                        {
+                            blinkingLabel.ForeColor = Color.Green; // Change to green
+                        }
+                        isLabelVisible = !isLabelVisible; // Toggle visibility state
+                    };
+
+                    // Start the timer when the form is shown
+                    frmDiagnostics.Shown += (sender, e) =>
+                    {
+                        blinkTimer.Start();
+                    };
+
+                    // Stop the timer when the form is closing
+                    frmDiagnostics.FormClosing += (sender, e) =>
+                    {
+                        blinkTimer.Stop();
+                        blinkTimer.Dispose(); // Important: Dispose of the timer to release resources
+                    };
+
+
+                    frmDiagnostics.Controls.Add(layoutPanel);
+                    frmDiagnostics.ShowDialog();
+                }
+            }
+            catch (Exception ex)
+            {
+                Log($"Error showing Diagnostics form: {ex.Message}");
+                System.Windows.Forms.MessageBox.Show($"An error occurred: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+
+
         public void ShowOptionsForm()
         {
             try
             {
                 using (var frmOptions = new Form())
                 {
-                    frmOptions.Text = "Options";
-                    frmOptions.Size = new Size(260, 560);
+                    frmOptions.Text = "Desktop Fences + Options";
+                    frmOptions.Size = new Size(320, 540);
                     frmOptions.StartPosition = FormStartPosition.CenterScreen;
                     frmOptions.FormBorderStyle = FormBorderStyle.FixedDialog;
                     frmOptions.MaximizeBox = false;
@@ -188,6 +325,15 @@ namespace Desktop_Fences
                     };
                     selectionsLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
                     selectionsLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
+                    //var chkSingleClickToLaunch = new CheckBox
+                    //{
+                    //    Text = "Single Click to Launch",
+                    //    Dock = DockStyle.Fill,
+                    //    AutoSize = true,
+                    //    Checked = SettingsManager.SingleClickToLaunch
+                    //};
+                    //selectionsLayout.Controls.Add(chkSingleClickToLaunch, 0, 4);
+                    //selectionsLayout.SetColumnSpan(chkSingleClickToLaunch, 2);
 
                     var chkEnableSnap = new CheckBox
                     {
@@ -196,41 +342,8 @@ namespace Desktop_Fences
                         AutoSize = true,
                         Checked = SettingsManager.IsSnapEnabled
                     };
-                    selectionsLayout.Controls.Add(chkEnableSnap, 0, 0);
+                    selectionsLayout.Controls.Add(chkEnableSnap, 0, 1);
                     selectionsLayout.SetColumnSpan(chkEnableSnap, 2);
-
-                    var lblTint = new Label { Text = "Tint", Dock = DockStyle.Fill, AutoSize = true };
-                    var numTint = new NumericUpDown
-                    {
-                        Maximum = 100,
-                        Minimum = 1,
-                        Value = SettingsManager.TintValue,
-                        Dock = DockStyle.Fill
-                    };
-                    selectionsLayout.Controls.Add(lblTint, 0, 1);
-                    selectionsLayout.Controls.Add(numTint, 1, 1);
-
-                    var lblColor = new Label { Text = "Color", Dock = DockStyle.Fill, AutoSize = true };
-                    var cmbColor = new ComboBox
-                    {
-                        Dock = DockStyle.Fill,
-                        DropDownStyle = ComboBoxStyle.DropDownList
-                    };
-                    cmbColor.Items.AddRange(new string[] { "Gray", "Black", "White", "Green", "Purple", "Yellow", "Red", "Blue" });
-                    cmbColor.SelectedItem = SettingsManager.SelectedColor;
-                    selectionsLayout.Controls.Add(lblColor, 0, 2);
-                    selectionsLayout.Controls.Add(cmbColor, 1, 2);
-
-                    var lblLaunchEffect = new Label { Text = "Launch Effect", Dock = DockStyle.Fill, AutoSize = true };
-                    var cmbLaunchEffect = new ComboBox
-                    {
-                        Dock = DockStyle.Fill,
-                        DropDownStyle = ComboBoxStyle.DropDownList
-                    };
-                    cmbLaunchEffect.Items.AddRange(new string[] { "Zoom", "Bounce", "FadeOut", "SlideUp", "Rotate", "Agitate" });
-                    cmbLaunchEffect.SelectedIndex = (int)SettingsManager.LaunchEffect;
-                    selectionsLayout.Controls.Add(lblLaunchEffect, 0, 3);
-                    selectionsLayout.Controls.Add(cmbLaunchEffect, 1, 3);
 
                     var chkSingleClickToLaunch = new CheckBox
                     {
@@ -239,8 +352,51 @@ namespace Desktop_Fences
                         AutoSize = true,
                         Checked = SettingsManager.SingleClickToLaunch
                     };
-                    selectionsLayout.Controls.Add(chkSingleClickToLaunch, 0, 4);
+                    selectionsLayout.Controls.Add(chkSingleClickToLaunch, 0, 0);
                     selectionsLayout.SetColumnSpan(chkSingleClickToLaunch, 2);
+
+                    var lblTint = new Label { Text = "Tint", Dock = DockStyle.Fill, AutoSize = true, Anchor = AnchorStyles.Right };
+                    var numTint = new NumericUpDown
+                    {
+                        Maximum = 100,
+                        Minimum = 1,
+                        Value = SettingsManager.TintValue,
+                        Dock = DockStyle.Fill,
+                        MaximumSize = new Size(80, 0), // Set maximum width to 150 pixels, height is unrestricted
+                        Anchor = AnchorStyles.Right
+                    };
+                    selectionsLayout.Controls.Add(lblTint, 0, 2);
+                    selectionsLayout.Controls.Add(numTint, 1, 2);
+
+                    var lblColor = new Label { Text = "Color", Dock = DockStyle.Fill, AutoSize = true, Anchor = AnchorStyles.Right };
+                    var cmbColor = new ComboBox
+                    {
+                        Dock = DockStyle.Fill,
+                        DropDownStyle = ComboBoxStyle.DropDownList,
+                        MaximumSize = new Size(80, 0), // Set maximum width to 150 pixels, height is unrestricted
+                        Anchor = AnchorStyles.Right
+                    };
+                    cmbColor.Items.AddRange(new string[] { "Gray", "Black", "White", "Green", "Purple", "Yellow", "Red", "Blue" });
+
+                    cmbColor.SelectedItem = SettingsManager.SelectedColor;
+                    selectionsLayout.Controls.Add(lblColor, 0, 3);
+                    selectionsLayout.Controls.Add(cmbColor, 1, 3);
+
+                    var lblLaunchEffect = new Label { Text = "Launch Effect", Dock = DockStyle.Fill, AutoSize = true, Anchor = AnchorStyles.Right };
+                    var cmbLaunchEffect = new ComboBox
+                    {
+                        Dock = DockStyle.Fill,
+                        DropDownStyle = ComboBoxStyle.DropDownList,
+                        MaximumSize = new Size(80, 0),// Set maximum width to 150 pixels, height is unrestricted
+
+                        Anchor = AnchorStyles.Right
+                    };
+                    cmbLaunchEffect.Items.AddRange(new string[] { "Zoom", "Bounce", "FadeOut", "SlideUp", "Rotate", "Agitate" });
+
+                    cmbLaunchEffect.SelectedIndex = (int)SettingsManager.LaunchEffect;
+                    selectionsLayout.Controls.Add(lblLaunchEffect, 0, 4);
+                    selectionsLayout.Controls.Add(cmbLaunchEffect, 1, 4);
+
 
                     groupBoxSelections.Controls.Add(selectionsLayout);
                     layoutPanel.Controls.Add(groupBoxSelections);
@@ -261,25 +417,36 @@ namespace Desktop_Fences
                     };
                     toolsLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
 
+                    var btnBackup = new Button
+                    {
+                        Text = "Backup",
+                        AutoSize = false,
+                        Width = 85,
+                        Height = 25,
+                        Anchor = AnchorStyles.Right
+                    };
+                    btnBackup.Click += (s, ev) => BackupManager.BackupData();
+                    toolsLayout.Controls.Add(btnBackup, 0, 0);
+                    //var btnRestore = new Button
+                    //{
+                    //    Text = "Restore",
+                    //    AutoSize = false,
+                    //    Width = 85,
+                    //    Height = 25,
+                    //    Anchor = AnchorStyles.Right
+                    //};
+
+
                     var chkEnableLog = new CheckBox
                     {
-                        Text = "Enable log",
+                        Text = "Enable logging",
                         Dock = DockStyle.Fill,
                         AutoSize = true,
                         Checked = SettingsManager.IsLogEnabled
                     };
-                    toolsLayout.Controls.Add(chkEnableLog, 0, 0);
+                    toolsLayout.Controls.Add(chkEnableLog, 0, 1);
 
-                    var btnBackup = new Button
-                    {
-                        Text = "Backup",
-                        AutoSize = true,
-                        Width = 80,
-                        Height = 30,
-                        Anchor = AnchorStyles.None
-                    };
-                    btnBackup.Click += (s, ev) => BackupManager.BackupData();
-                    toolsLayout.Controls.Add(btnBackup, 0, 1);
+
 
                     groupBoxTools.Controls.Add(toolsLayout);
                     layoutPanel.Controls.Add(groupBoxTools);
@@ -287,29 +454,36 @@ namespace Desktop_Fences
                     var buttonsLayout = new TableLayoutPanel
                     {
                         Dock = DockStyle.Top,
-                        ColumnCount = 2,
+                        ColumnCount = 3, // Three columns: spacer, Cancel button, Save button
                         AutoSize = true,
                         AutoSizeMode = AutoSizeMode.GrowAndShrink
                     };
-                    buttonsLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
-                    buttonsLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
 
+                    // Define column styles
+                    buttonsLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F)); // Spacer column (60% of width)
+                    buttonsLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 25F)); // Cancel button (20% of width)
+                    buttonsLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 25F)); // Save button (20% of width)
+
+                    // Cancel button
                     var btnCancel = new Button
                     {
+                        // Dock = DockStyle.Fill,
                         Text = "Cancel",
-                        AutoSize = true,
-                        Width = 80,
-                        Height = 30,
+                        AutoSize = false,
+                        Width = 85,
+                        Height = 25,
                         Anchor = AnchorStyles.Right
                     };
                     btnCancel.Click += (s, ev) => frmOptions.Close();
 
+                    // Save button
                     var btnSave = new Button
                     {
+                        // Dock = DockStyle.Fill,
                         Text = "Save",
-                        AutoSize = true,
-                        Width = 80,
-                        Height = 30,
+                        AutoSize = false,
+                        Width = 85,
+                        Height = 25,
                         Anchor = AnchorStyles.Right
                     };
                     btnSave.Click += (s, ev) =>
@@ -345,18 +519,50 @@ namespace Desktop_Fences
                         frmOptions.Close();
                     };
 
-                    buttonsLayout.Controls.Add(btnCancel, 0, 0);
-                    buttonsLayout.Controls.Add(btnSave, 1, 0);
-                    layoutPanel.Controls.Add(buttonsLayout);
+                    // Add controls to the layout
+                    var emptySpacer = new Label { Dock = DockStyle.Fill }; // Spacer column
+                    buttonsLayout.Controls.Add(emptySpacer, 0, 0); // Add spacer to the first column
+                    buttonsLayout.Controls.Add(btnCancel, 1, 0); // Add Cancel button to the second column
+                    buttonsLayout.Controls.Add(btnSave, 2, 0); // Add Save button to the third column
 
+                    // Add the buttons layout to the main layout panel
+                    layoutPanel.Controls.Add(buttonsLayout);
                     var donatePictureBox = new PictureBox
                     {
                         Image = Utility.LoadImageFromResources("Desktop_Fences.Resources.donate.png"),
                         SizeMode = PictureBoxSizeMode.Zoom,
                         Dock = DockStyle.Fill,
-                        Height = 25,
+                        Height = 35,
                         Cursor = Cursors.Hand
                     };
+
+
+                    var tempLabel1 = new Label
+                    {
+                        Text = "☘",
+                        ForeColor = Color.FromArgb(250, 0, 200, 0),
+                        Font = new Font("Tahoma", 12),
+                        TextAlign = ContentAlignment.MiddleCenter,
+                        Dock = DockStyle.Fill,
+                        AutoSize = true,
+                        Anchor = AnchorStyles.Right
+                    };
+                    layoutPanel.Controls.Add(tempLabel1);
+
+
+                    var tempLabel2 = new Label
+                    {
+                        //Text = "❀",
+                        Text = " ",
+                        ForeColor = Color.FromArgb(250, 210, 20, 120),
+                        Font = new Font("Tahoma", 12),
+                        TextAlign = ContentAlignment.MiddleRight,
+                        Dock = DockStyle.Fill,
+                        AutoSize = true,
+                        Anchor = AnchorStyles.Right
+                    };
+                    layoutPanel.Controls.Add(tempLabel2);
+
                     donatePictureBox.Click += (s, e) =>
                     {
                         try
@@ -403,7 +609,7 @@ namespace Desktop_Fences
                 using (var frmAbout = new Form())
                 {
                     frmAbout.Text = "About Desktop Fences +";
-                    frmAbout.Size = new Size(400, 600);
+                    frmAbout.Size = new Size(400, 580);
                     frmAbout.StartPosition = FormStartPosition.CenterScreen;
                     frmAbout.FormBorderStyle = FormBorderStyle.FixedDialog;
                     frmAbout.MaximizeBox = false;
@@ -426,7 +632,7 @@ namespace Desktop_Fences
                         Image = Utility.LoadImageFromResources("Desktop_Fences.Resources.logo1.png"),
                         SizeMode = PictureBoxSizeMode.Zoom,
                         Dock = DockStyle.Fill,
-                        Height = 50
+                        Height = 120
                     };
                     layoutPanel.Controls.Add(pictureBox);
 
@@ -516,8 +722,16 @@ namespace Desktop_Fences
                     layoutPanel.Controls.Add(linkLabelGitHub);
                     layoutPanel.Controls.Add(horizontalLine2);
 
-               
-                  
+
+                    var label1Text = new Label
+                    {
+                        Text = " ",
+                        Font = new Font("Tahoma", 9),
+                        TextAlign = ContentAlignment.MiddleCenter,
+                        Dock = DockStyle.Fill,
+                        AutoSize = true
+                    };
+                    layoutPanel.Controls.Add(label1Text);
 
                     // Donation Logo
                     var donatePictureBox = new PictureBox
@@ -525,7 +739,7 @@ namespace Desktop_Fences
                         Image = Utility.LoadImageFromResources("Desktop_Fences.Resources.donate.png"),
                         SizeMode = PictureBoxSizeMode.Zoom,
                         Dock = DockStyle.Fill,
-                        Height = 50, // Adjust based on donate.png size
+                        Height = 40, // Adjust based on donate.png size
                         Cursor = Cursors.Hand // Indicate clickability
                     };
                     donatePictureBox.Click += (s, e) =>
@@ -541,7 +755,7 @@ namespace Desktop_Fences
                         catch (Exception ex)
                         {
                             Log($"Error opening donation link: {ex.Message}");
-                            System.Windows.MessageBox.Show($"Error opening donation link: {ex.Message}", "Error", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+                            System.Windows.Forms.MessageBox.Show($"Error opening donation link: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                         }
                     };
                     layoutPanel.Controls.Add(donatePictureBox);
@@ -625,5 +839,53 @@ namespace Desktop_Fences
                 File.AppendAllText(logPath, $"{DateTime.Now}: {message}\n");
             }
         }
+        private Icon GenerateIconWithNumber(int count)
+        {
+            // Base icon (default tray icon)
+            string exePath = Process.GetCurrentProcess().MainModule.FileName;
+            using (var baseIcon = Icon.ExtractAssociatedIcon(exePath))
+            using (var bitmap = baseIcon.ToBitmap())
+            using (var graphics = Graphics.FromImage(bitmap))
+            {
+                // Define the circle's size and position
+                int circleDiameter = 24; // Diameter of the circle
+                int circleX = -4; // X position (top-left corner)
+                int circleY = -1; // Y position (top-left corner)
+
+                // Draw the whiteish circle
+                var circleBrush = new SolidBrush(Color.FromArgb(230, 255, 153, 53)); // Semi-transparent white
+                graphics.FillEllipse(circleBrush, circleX, circleY, circleDiameter, circleDiameter);
+
+                // Draw the number overlay
+                var font = new Font("Calibri", 26, FontStyle.Bold, GraphicsUnit.Pixel);
+                var textBrush = new SolidBrush(Color.Navy);
+
+                // Measure the size of the text to center it within the circle
+                string text = count.ToString();
+                var textSize = graphics.MeasureString(text, font);
+                float textX = circleX + (circleDiameter - textSize.Width) / 2;
+                float textY = circleY + (circleDiameter - textSize.Height) / 2;
+
+                graphics.DrawString(text, font, textBrush, textX, textY);
+
+                // Convert the bitmap back to an icon
+                return Icon.FromHandle(bitmap.GetHicon());
+            }
+        }
+        private void UpdateTrayIcon()
+        {
+            if (HiddenFences.Count > 0)
+            {
+                // Generate an icon with the number of hidden fences
+                _trayIcon.Icon = GenerateIconWithNumber(HiddenFences.Count);
+            }
+            else
+            {
+                // Revert to the default icon
+                string exePath = Process.GetCurrentProcess().MainModule.FileName;
+                _trayIcon.Icon = Icon.ExtractAssociatedIcon(exePath);
+            }
+        }
     }
 }
+

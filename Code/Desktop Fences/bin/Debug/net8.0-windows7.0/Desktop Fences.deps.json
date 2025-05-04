@@ -6,7 +6,7 @@
   "compilationOptions": {},
   "targets": {
     ".NETCoreApp,Version=v8.0": {
-      "Desktop Fences/2.5.0.19": {
+      "Desktop Fences/2.5.0.22": {
         "dependencies": {
           "Newtonsoft.Json": "13.0.1"
         },
@@ -25,7 +25,7 @@
     }
   },
   "libraries": {
-    "Desktop Fences/2.5.0.19": {
+    "Desktop Fences/2.5.0.22": {
       "type": "project",
       "serviceable": false,
       "sha512": ""

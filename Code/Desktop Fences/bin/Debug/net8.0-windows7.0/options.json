@@ -1,8 +1,8 @@
 {
   "IsSnapEnabled": false,
-  "TintValue": 85,
-  "SelectedColor": "Gray",
+  "TintValue": 90,
+  "SelectedColor": "Purple",
   "IsLogEnabled": true,
   "SingleClickToLaunch": true,
-  "LaunchEffect": "Agitate"
+  "LaunchEffect": "FadeOut"
 }
