@@ -66,6 +66,15 @@ Every little bit helps and is greatly appreciated! 🙏
 -  **Fixed**: Bug on portal fences causing program crash on startup when target fodler is missing
 -  **Changed**:  Code improvements on log function
 -  **Added**:  Basic `Hide` function for each fence
+  
+
+##  2.5.0.23
+-  **Added**:  Heart menu to seperate rightclick menu item on fences 
+-  **Added**:  Function to undo fence deletion (Restore fence)
+-  **Fixed**:  Bug on fence removal causing program to crash
+-  **Changed**:  Lot of menus, descriptions, and other visual elements changed.
+-  **Added**:  Number overlay on tray icon that indicates number of the hidden fences 
+
 
 ---
 
