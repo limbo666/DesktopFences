@@ -43,7 +43,7 @@ namespace Desktop_Fences
             var trayMenu = new ContextMenuStrip();
             trayMenu.Items.Add("About", null, (s, e) => ShowAboutForm());
             trayMenu.Items.Add("Options", null, (s, e) => ShowOptionsForm());
-            trayMenu.Items.Add("Diagnostics", null, (s, e) => ShowDiagnosticsForm());
+           // trayMenu.Items.Add("Diagnostics", null, (s, e) => ShowDiagnosticsForm());
 
             trayMenu.Items.Add("-");
 
@@ -230,7 +230,7 @@ namespace Desktop_Fences
 
 
                     frmDiagnostics.Controls.Add(layoutPanel);
-                    frmDiagnostics.ShowDialog();
+                    frmDiagnostics.Show();
                 }
             }
             catch (Exception ex)

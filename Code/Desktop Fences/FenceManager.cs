@@ -265,23 +265,7 @@ namespace Desktop_Fences
             // Clear backup state
             _lastDeletedFence = null;
             _isRestoreAvailable = false;
-            //UpdateHeartContextMenus();
-            //UpdateRestoreFenceItemVisibility(restoreFenceItem);
-            //UpdateRestoreFenceItemInAllFences();
-            //// restoreFenceItem.Visibility = Visibility.Collapsed; // Hide the restore item after restoring
-
-            //Application.Current.Dispatcher.Invoke(() => 
-            //{
-            //    foreach (var win in Application.Current.Windows.OfType<NonActivatingWindow>())
-            //    {
-            //        //var heartContextMenu = win.ContextMenu;
-            //        //if (heartContextMenu != null)
-            //        //{
-            //        //    var restoreItem = heartContextMenu.Items.OfType<MenuItem>().FirstOrDefault(m => m.Header.ToString() == "Restore Fence");
-            //        //    UpdateRestoreFenceItemVisibility(restoreItem);
-            //        //}
-            //    }
-            //});
+    
             UpdateAllHeartContextMenus();
 
 
@@ -290,7 +274,7 @@ namespace Desktop_Fences
 
         public static void CleanLastDeletedFolder()
         {
-            _lastDeletedFolderPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "lastfencedeleted");
+            _lastDeletedFolderPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "Last Fence Deleted");
             if (Directory.Exists(_lastDeletedFolderPath))
             {
                 foreach (var file in Directory.GetFiles(_lastDeletedFolderPath))
@@ -696,7 +680,7 @@ namespace Desktop_Fences
                 if (result == MessageBoxResult.Yes)
                 {
                     // Ensure the backup folder exists
-                    _lastDeletedFolderPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "lastfencedeleted");
+                    _lastDeletedFolderPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "Last Fence Deleted");
                     if (!Directory.Exists(_lastDeletedFolderPath))
                     {
                         Directory.CreateDirectory(_lastDeletedFolderPath);
@@ -711,10 +695,6 @@ namespace Desktop_Fences
                     // Backup the fence and its shortcuts
                     _lastDeletedFence = fence;
                     _isRestoreAvailable = true;
-                    //UpdateHeartContextMenus();
-                    //UpdateRestoreFenceItemVisibility(restoreFenceItem);
-                    //UpdateRestoreFenceItemInAllFences();
-
                     UpdateAllHeartContextMenus();
 
                     if (fence.ItemsType?.ToString() == "Data")
@@ -725,10 +705,14 @@ namespace Desktop_Fences
                             foreach (var item in items)
                             {
                                 string itemFilePath = item["Filename"]?.ToString();
-                                if (!string.IsNullOrEmpty(itemFilePath))
+                                if (!string.IsNullOrEmpty(itemFilePath) && System.IO.File.Exists(itemFilePath))
                                 {
                                     string shortcutPath = System.IO.Path.Combine(_lastDeletedFolderPath, System.IO.Path.GetFileName(itemFilePath));
                                     System.IO.File.Copy(itemFilePath, shortcutPath, true);
+                                }
+                                else
+                                {
+                                    Log($"Skipped backing up missing file: {itemFilePath}");
                                 }
                             }
                         }
@@ -740,7 +724,6 @@ namespace Desktop_Fences
 
                     // Proceed with deletion
                     _fenceData.Remove(fence);
-                    // Remove heart TextBlock reference for the deleted fence
                     _heartTextBlocks.Remove(fence);
                     if (_portalFences.ContainsKey(fence))
                     {
