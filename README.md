@@ -81,7 +81,7 @@ Every little bit helps and is greatly appreciated! 🙏
 -  **Added**:  More background colors
 -  **Added**:  More launch effects (I ♥ Elastic)
 -  **Fixed**:  Bug on context menus items unchecking behavior
--  **Fixed**:  Bug on customization where chenges was not applied into fences with same name
+-  **Fixed**:  Bug on customization where changes was not applied into fences under same name
 -  **Added**:  Random name generator for new fences instead of the dull "New Fence"
 -   
 ---
