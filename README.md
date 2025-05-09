@@ -76,6 +76,14 @@ Every little bit helps and is greatly appreciated! 🙏
 -  **Added**:  Number overlay on tray icon that indicates number of the hidden fences 
 
 
+##  2.5.0.26
+-  **Changed**:  Background color codes
+-  **Added**:  More background colors
+-  **Added**:  More launch effects (I ♥ Elastic)
+-  **Fixed**:  Bug on context menus items unchecking behavior
+-  **Fixed**:  Bug on customization where chenges was not applied into fences with same name
+-  **Added**:  Random name generator for new fences instead of the dull "New Fence"
+-   
 ---
 
 ##  Summary
