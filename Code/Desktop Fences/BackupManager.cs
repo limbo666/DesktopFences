@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Windows;
 
@@ -11,10 +12,15 @@ namespace Desktop_Fences
     /// </summary>
     public static class BackupManager
     {
-        /// <summary>
-        /// Creates a backup of the fences data and shortcuts folder.
-        /// The backup is stored in a new folder named with the current timestamp under the "Backups" directory.
-        /// </summary>
+
+
+
+
+
+
+
+
+
         public static void BackupData()
         {
             try

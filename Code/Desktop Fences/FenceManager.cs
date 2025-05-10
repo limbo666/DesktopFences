@@ -34,6 +34,77 @@ namespace Desktop_Fences
         private static readonly Dictionary<dynamic, TextBlock> _heartTextBlocks = new Dictionary<dynamic, TextBlock>();
 
 
+        // Add near other static fields
+        private static TargetChecker _currentTargetChecker;
+
+        // Add this new method
+        public static void ReloadFences()
+        {
+            try
+            {
+                // Clear existing data
+                _fenceData?.Clear();
+
+                // Stop previous target checker
+                _currentTargetChecker?.Stop();
+
+                // Create new target checker
+                _currentTargetChecker = new TargetChecker(1000);
+
+                // Reload settings and fences
+                LoadAndCreateFences(_currentTargetChecker);
+            }
+            catch (Exception ex)
+            {
+                Log($"Error reloading fences: {ex.Message}");
+                throw;
+            }
+        }
+
+
+        public static void RestoreFromBackup(string backupFolder)
+        {
+            try
+            {
+                // Validate backup folder
+                string backupFencesPath = System.IO.Path.Combine(backupFolder, "fences.json");
+                string backupShortcutsPath = System.IO.Path.Combine(backupFolder, "Shortcuts");
+
+                if (!System.IO.File.Exists(backupFencesPath) || !Directory.Exists(backupShortcutsPath))
+                {
+                    MessageBox.Show("Invalid backup folder - missing required files", "Restore Error",
+                                  MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
+
+                // Clear existing fences
+                _fenceData.Clear();
+                _heartTextBlocks.Clear();
+                _portalFences.Clear();
+
+                // Restore fences.json
+                string currentFencesPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "fences.json");
+                System.IO.File.Copy(backupFencesPath, currentFencesPath, true);
+
+                // Restore shortcuts
+                string currentShortcutsPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "Shortcuts");
+                if (Directory.Exists(currentShortcutsPath))
+                {
+                    Directory.Delete(currentShortcutsPath, true);
+                }
+                Directory.CreateDirectory(currentShortcutsPath);
+                CopyDirectory(backupShortcutsPath, currentShortcutsPath);
+
+                // Reload fences
+                LoadAndCreateFences(new TargetChecker(1000));
+            }
+            catch (Exception ex)
+            {
+                Log($"Restore failed: {ex.Message}");
+                MessageBox.Show($"Restore failed: {ex.Message}", "Error",
+                              MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
 
         public static void UpdateHeartContextMenus()
         {
@@ -65,7 +136,8 @@ namespace Desktop_Fences
             {
                 var mousePosition = System.Windows.Forms.Cursor.Position;
                 Log($"Creating new fence at mouse position: X={mousePosition.X}, Y={mousePosition.Y}");
-                CreateNewFence("New Fence", "Data", mousePosition.X, mousePosition.Y);
+                //CreateNewFence("New Fence", "Data", mousePosition.X, mousePosition.Y);
+                CreateNewFence("", "Data", mousePosition.X, mousePosition.Y);
             };
             menu.Items.Add(newFenceItem);
 
@@ -135,8 +207,13 @@ namespace Desktop_Fences
             FadeOut,        // Fade out and back in
             SlideUp,     // Slide up and return
             Rotate,      // Spin 360 degrees
-                         // Pulse       // Quick scale pulse
-            Agitate // Shake back and forth
+            Agitate, // Shake back and forth
+GrowAndFly,   // New effect - grow and fly away
+Pulse,
+Elastic,
+Flip3D,
+Spiral
+
         }
 
         // add here:
@@ -160,7 +237,20 @@ namespace Desktop_Fences
             try
             {
                 // Get the actual fence object from _fenceData to ensure we're modifying the correct instance
-                int index = _fenceData.FindIndex(f => f.Title == fence.Title.ToString());
+                // int index = _fenceData.FindIndex(f => f.Title == fence.Title.ToString());
+
+                // Find the index by reference instead of title
+                // int index = _fenceData.IndexOf(fence);
+
+                string fenceId = fence.Id?.ToString();
+                if (string.IsNullOrEmpty(fenceId))
+                {
+                    Log($"Fence '{fence.Title}' has no Id");
+                    return;
+                }
+
+                // Find by GUID instead of title or reference
+                int index = _fenceData.FindIndex(f => f.Id?.ToString() == fenceId);
                 if (index >= 0)
                 {
                     // Get the fence from _fenceData
@@ -189,7 +279,8 @@ namespace Desktop_Fences
 
                     // Find the window to apply runtime changes
                     var windows = System.Windows.Application.Current.Windows.OfType<NonActivatingWindow>();
-                    var win = windows.FirstOrDefault(w => w.Title == fence.Title.ToString());
+                    //var win = windows.FirstOrDefault(w => w.Title == fence.Title.ToString());
+                    var win = windows.FirstOrDefault(w => w.Tag?.ToString() == fenceId);
                     if (win != null)
                     {
                         // Apply runtime changes
@@ -299,6 +390,9 @@ namespace Desktop_Fences
             string exePath = Assembly.GetEntryAssembly().Location;
             string exeDir = System.IO.Path.GetDirectoryName(exePath);
             _jsonFilePath = System.IO.Path.Combine(exeDir, "fences.json");
+            // Below added for reload function
+            _currentTargetChecker = targetChecker;
+
 
             SettingsManager.LoadSettings();
             CleanLastDeletedFolder();
@@ -379,13 +473,21 @@ namespace Desktop_Fences
             try
             {
                 bool jsonModified = false;
-                var validColors = new HashSet<string> { "Red", "Green", "Blue", "White", "Gray", "Black", "Purple", "Yellow" };
+                var validColors = new HashSet<string> { "Red", "Green","Teal", "Blue", "Bismark", "White", "Beige", "Gray", "Black", "Purple","Fuchsia", "Yellow", "Orange" };
                 var validEffects = Enum.GetNames(typeof(LaunchEffect)).ToHashSet();
 
                 for (int i = 0; i < _fenceData.Count; i++)
                 {
                     dynamic fence = _fenceData[i];
                     IDictionary<string, object> fenceDict = fence is IDictionary<string, object> dict ? dict : ((JObject)fence).ToObject<IDictionary<string, object>>();
+
+                    // Add GUID if missing
+                    if (!fenceDict.ContainsKey("Id"))
+                    {
+                        fenceDict["Id"] = Guid.NewGuid().ToString();
+                        jsonModified = true;
+                        Log($"Added Id to {fence.Title}");
+                    }
 
                     // Existing migration: Handle Portal Fence ItemsType
                     if (fence.ItemsType?.ToString() == "Portal")
@@ -543,7 +645,7 @@ namespace Desktop_Fences
             // Create and assign heart ContextMenu using centralized builder
             heart.ContextMenu = BuildHeartContextMenu(fence);
 
-            // NEW: Handle left-click to open heart context menu
+
             // Handle left-click to open heart context menu
             heart.MouseLeftButtonDown += (s, e) =>
             {
@@ -567,7 +669,7 @@ namespace Desktop_Fences
             MenuItem miEffects = new MenuItem { Header = "Launch Effect" };
             
             // Valid options from MigrateLegacyJson
-            var validColors = new HashSet<string> { "Red", "Green", "Blue", "White", "Gray", "Black", "Purple", "Yellow" };
+            var validColors = new HashSet<string> { "Red", "Green", "Teal", "Blue", "Bismark", "White", "Beige", "Gray", "Black", "Purple","Fuchsia", "Yellow","Orange" };
             var validEffects = Enum.GetNames(typeof(LaunchEffect)).ToHashSet();
             string currentCustomColor = fence.CustomColor?.ToString();
             string currentCustomEffect = fence.CustomLaunchEffect?.ToString();
@@ -575,14 +677,36 @@ namespace Desktop_Fences
           
             // Add color options
             MenuItem miColorDefault = new MenuItem { Header = "Default", Tag = null };
-            miColorDefault.Click += (s, e) => UpdateFenceProperty(fence, "CustomColor", null, "Color set to Default");
+            //  miColorDefault.Click += (s, e) => UpdateFenceProperty(fence, "CustomColor", null, "Color set to Default");
+            miColorDefault.Click += (s, e) =>
+            {
+                // NEW: Uncheck all color items first
+                foreach (MenuItem item in miColors.Items)
+                {
+                    item.IsChecked = false;
+                }
+                // Now check Default
+                miColorDefault.IsChecked = true;
+                UpdateFenceProperty(fence, "CustomColor", null, "Color set to Default");
+            };
+
             miColorDefault.IsCheckable = true;
             miColorDefault.IsChecked = string.IsNullOrEmpty(currentCustomColor); // Check if null
             miColors.Items.Add(miColorDefault);
             foreach (var color in validColors)
             {
                 MenuItem miColor = new MenuItem { Header = color, Tag = color };
-                miColor.Click += (s, e) => UpdateFenceProperty(fence, "CustomColor", color, $"Color set to {color}");
+                //  miColor.Click += (s, e) => UpdateFenceProperty(fence, "CustomColor", color, $"Color set to {color}");
+                miColor.Click += (s, e) =>
+                {
+                    // Uncheck all color items
+                    foreach (MenuItem item in miColors.Items)
+                    {
+                        item.IsChecked = false;
+                    }
+                    miColor.IsChecked = true;
+                    UpdateFenceProperty(fence, "CustomColor", color, $"Color set to {color}");
+                };
                 miColor.IsCheckable = true;
                 miColor.IsChecked = color.Equals(currentCustomColor, StringComparison.OrdinalIgnoreCase); // Case-insensitive match
                 miColors.Items.Add(miColor);
@@ -590,14 +714,35 @@ namespace Desktop_Fences
 
             // Add effect options
             MenuItem miEffectDefault = new MenuItem { Header = "Default", Tag = null };
-            miEffectDefault.Click += (s, e) => UpdateFenceProperty(fence, "CustomLaunchEffect", null, "Launch Effect set to Default");
+            // miEffectDefault.Click += (s, e) => UpdateFenceProperty(fence, "CustomLaunchEffect", null, "Launch Effect set to Default");
+            miEffectDefault.Click += (s, e) =>
+            {
+                // Uncheck all effect items
+                foreach (MenuItem item in miEffects.Items)
+                {
+                    item.IsChecked = false;
+                }
+                miEffectDefault.IsChecked = true;
+                UpdateFenceProperty(fence, "CustomLaunchEffect", null, "Launch Effect set to Default");
+            };
             miEffectDefault.IsCheckable = true;
             miEffectDefault.IsChecked = string.IsNullOrEmpty(currentCustomEffect); // Check if null
             miEffects.Items.Add(miEffectDefault);
             foreach (var effect in validEffects)
             {
                 MenuItem miEffect = new MenuItem { Header = effect, Tag = effect };
-                miEffect.Click += (s, e) => UpdateFenceProperty(fence, "CustomLaunchEffect", effect, $"Launch Effect set to {effect}");
+
+                // miEffect.Click += (s, e) => UpdateFenceProperty(fence, "CustomLaunchEffect", effect, $"Launch Effect set to {effect}");
+                miEffect.Click += (s, e) =>
+                {
+                    // Uncheck all effect items
+                    foreach (MenuItem item in miEffects.Items)
+                    {
+                        item.IsChecked = false;
+                    }
+                    miEffect.IsChecked = true;
+                    UpdateFenceProperty(fence, "CustomLaunchEffect", effect, $"Launch Effect set to {effect}");
+                };
                 miEffect.IsCheckable = true;
                 miEffect.IsChecked = effect.Equals(currentCustomEffect, StringComparison.OrdinalIgnoreCase); // Case-insensitive match
                 miEffects.Items.Add(miEffect);
@@ -613,11 +758,60 @@ namespace Desktop_Fences
             cm.Items.Add(miHide); // Add Hide Fence
             cm.Items.Add(new Separator());
             cm.Items.Add(miCustomize); // Add Customize submenu
-          //  cm.Items.Add(new Separator());
-         
-         //   cm.Items.Add(new Separator());
-         //   cm.Items.Add(miXT);
+                                       //  cm.Items.Add(new Separator());
 
+            //   cm.Items.Add(new Separator());
+            //   cm.Items.Add(miXT);
+
+            // Handle both JObject and ExpandoObject access
+            string isHiddenString = "false"; // Default value
+            try
+            {
+                if (fence is JObject jFence)
+                {
+                    // Existing fence from JSON
+                    isHiddenString = jFence["IsHidden"]?.ToString().ToLower() ?? "false";
+                }
+                else
+                {
+                    // New ExpandoObject fence
+                    isHiddenString = (fence.IsHidden?.ToString() ?? "false").ToLower();
+                }
+            }
+            catch (Exception ex)
+            {
+                Log($"Error reading IsHidden: {ex.Message}");
+            }
+
+            bool isHidden = isHiddenString == "true";
+            Log($"Fence '{fence.Title}' IsHidden state: {isHidden}");
+
+            // Check IsHidden and apply visibility
+            //  bool isHidden = false;
+            // Convert dynamic to JObject for proper value access
+
+            //    JObject fenceJObject = (JObject)fence;
+
+
+
+            //// Get IsHidden value correctly from JToken
+            //string isHiddenString = fenceJObject["IsHidden"]?.ToString().ToLower();
+            //bool isHidden = isHiddenString == "true";
+            //// Log the actual parsed value
+            //Log($"Fence '{fence.Title}' IsHidden state: {isHidden}");
+
+            //if (fence.IsHidden != null)
+            //{
+            //    // Handle both string and boolean IsHidden values
+            //    if (fence.IsHidden is bool boolHidden)
+            //    {
+            //        isHidden = boolHidden;
+            //    }
+            //    else if (fence.IsHidden is string stringValue)
+            //    {
+            //        isHidden = stringValue.ToLower() == "true";
+            //    }
+            //}
             NonActivatingWindow win = new NonActivatingWindow
             {
                 ContextMenu = cm,
@@ -633,30 +827,36 @@ namespace Desktop_Fences
                 Height = (double)fence.Height,
                 Top = (double)fence.Y,
                 Left = (double)fence.X,
-                Tag = fence  // Add this line to store the fence object
+                //  Tag = fence  // Add this line to store the fence object
+                Tag = fence.Id.ToString()  // Store fence ID in Tag
+              //  Visibility = isHidden ? Visibility.Hidden : Visibility.Visible
             };
-     
-            // Check IsHidden and apply visibility
-            bool isHidden = false;
-            if (fence.IsHidden != null)
-            {
-                // Handle both string and boolean IsHidden values
-                if (fence.IsHidden is bool boolValue)
-                {
-                    isHidden = boolValue;
-                }
-                else if (fence.IsHidden is string stringValue)
-                {
-                    isHidden = stringValue.ToLower() == "true";
-                }
-            }
+
             // Log the IsHidden state for diagnostics
-            Log($"Fence '{fence.Title}' IsHidden state: {isHidden}");
+            //   Log($"Fence '{fence.Title}' IsHidden state: {isHidden}");
+            // Show the window first
+            // Defer hiding until after the window is loaded
+            win.Loaded += (s, e) =>
+            {
+                if (isHidden)
+                {
+                    win.Visibility = Visibility.Hidden;
+                    TrayManager.AddHiddenFence(win);
+                    Log($"Hid fence '{fence.Title}' after loading at startup");
+                }
+            };
+
+            //if (isHidden)
+            //{
+            //    win.Visibility = Visibility.Hidden;
+            //  //  TrayManager.AddHiddenFence(win);
+            //    Log($"Hid fence '{fence.Title}' at startup");
+            //}
+
             if (isHidden)
             {
-                win.Visibility = Visibility.Hidden;
                 TrayManager.AddHiddenFence(win);
-                Log($"Hid fence '{fence.Title}' at startup");
+                Log($"Added fence '{fence.Title}' to hidden list at startup");
             }
 
             // Hide click
@@ -667,6 +867,9 @@ namespace Desktop_Fences
                 Log($"Triggered Hide Fence for '{fence.Title}'");
             };
 
+            win.Show();
+
+
             // hide click
             miHide.Click += (s, e) =>
             {
@@ -676,8 +879,12 @@ namespace Desktop_Fences
             };
             miRF.Click += (s, e) =>
             {
-                var result = MessageBox.Show("Are you sure you want to remove this fence?", "Confirm", MessageBoxButton.YesNo);
-                if (result == MessageBoxResult.Yes)
+                bool result = TrayManager.Instance.ShowCustomMessageBoxForm(); // Call the method and store the result  
+              //  System.Windows.Forms.MessageBox.Show(result.ToString()); // Display the result in a MessageBox  
+
+                //   var result = MessageBox.Show("Are you sure you want to remove this fence?", "Confirm", MessageBoxButton.YesNo);
+                //   if (result == MessageBoxResult.Yes)
+                if (result == true)
                 {
                     // Ensure the backup folder exists
                     _lastDeletedFolderPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "Last Fence Deleted");
@@ -1576,9 +1783,15 @@ namespace Desktop_Fences
 
         private static void CreateNewFence(string title, string itemsType, double x = 20, double y = 20, string customColor = null, string customLaunchEffect = null)
         {
+            // Generate random name instead of using the passed title
+            string fenceName = GenerateRandomName();
+
+
             dynamic newFence = new System.Dynamic.ExpandoObject();
+            newFence.Id = Guid.NewGuid().ToString();
             IDictionary<string, object> newFenceDict = newFence;
-            newFenceDict["Title"] = title;
+            // newFenceDict["Title"] = title;
+            newFenceDict["Title"] = fenceName; // Use random name
             newFenceDict["X"] = x;
             newFenceDict["Y"] = y;
             newFenceDict["Width"] = 230;
@@ -1634,6 +1847,77 @@ namespace Desktop_Fences
                 if (fence.ItemsType?.ToString() != "Portal")
                 {
                     Button btn = new Button { Content = fence.Title.ToString(), Margin = new Thickness(5) };
+                    //btn.Click += (s, e) =>
+                    //{
+                    //    var sourceItems = sourceFence.Items as JArray;
+                    //    var destItems = fence.Items as JArray ?? new JArray();
+                    //    if (sourceItems != null)
+                    //    {
+                    //        IDictionary<string, object> itemDict = item is IDictionary<string, object> dict ? dict : ((JObject)item).ToObject<IDictionary<string, object>>();
+                    //        string filename = itemDict.ContainsKey("Filename") ? itemDict["Filename"].ToString() : "Unknown";
+
+                    //        Log($"Moving item {filename} from {sourceFence.Title} to {fence.Title}");
+                    //        sourceItems.Remove(item);
+                    //        destItems.Add(item);
+                    //        fence.Items = destItems;
+                    //        SaveFenceData();
+                    //        moveWindow.Close();
+
+                    //        var waitWindow = new Window
+                    //        {
+                    //            Title = "Desktop Fences +",
+                    //            Width = 200,
+                    //            Height = 100,
+                    //            WindowStartupLocation = WindowStartupLocation.CenterScreen,
+                    //            WindowStyle = WindowStyle.None,
+                    //            Background = Brushes.LightGray,
+                    //            Topmost = true
+                    //        };
+                    //        var waitStack = new StackPanel
+                    //        {
+                    //            HorizontalAlignment = HorizontalAlignment.Center,
+                    //            VerticalAlignment = VerticalAlignment.Center
+                    //        };
+                    //        waitWindow.Content = waitStack;
+
+                    //        string exePath = Assembly.GetEntryAssembly().Location;
+                    //        var iconImage = new Image
+                    //        {
+                    //            Source = System.Drawing.Icon.ExtractAssociatedIcon(exePath).ToImageSource(),
+                    //            Width = 32,
+                    //            Height = 32,
+                    //            Margin = new Thickness(0, 0, 0, 5)
+                    //        };
+                    //        waitStack.Children.Add(iconImage);
+
+                    //        var waitLabel = new Label
+                    //        {
+                    //            Content = "Please wait...",
+                    //            HorizontalAlignment = HorizontalAlignment.Center
+                    //        };
+                    //        waitStack.Children.Add(waitLabel);
+
+                    //        waitWindow.Show();
+
+                    //        dispatcher.InvokeAsync(() =>
+                    //        {
+                    //            if (Application.Current != null && !Application.Current.Dispatcher.HasShutdownStarted)
+                    //            {
+                    //                Application.Current.Windows.OfType<NonActivatingWindow>().ToList().ForEach(w => w.Close());
+                    //                LoadAndCreateFences(new TargetChecker(1000));
+                    //                waitWindow.Close();
+                    //                Log($"Item moved successfully to {fence.Title}");
+                    //            }
+                    //            else
+                    //            {
+                    //                waitWindow.Close();
+                    //                Log($"Skipped fence reload due to application shutdown");
+                    //            }
+                    //        }, DispatcherPriority.Background);
+                    //    }
+                    //};
+
+
                     btn.Click += (s, e) =>
                     {
                         var sourceItems = sourceFence.Items as JArray;
@@ -1644,12 +1928,26 @@ namespace Desktop_Fences
                             string filename = itemDict.ContainsKey("Filename") ? itemDict["Filename"].ToString() : "Unknown";
 
                             Log($"Moving item {filename} from {sourceFence.Title} to {fence.Title}");
-                            sourceItems.Remove(item);
-                            destItems.Add(item);
-                            fence.Items = destItems;
-                            SaveFenceData();
-                            moveWindow.Close();
 
+                            // Find the JToken in sourceItems that matches the Filename
+                            var itemToRemove = sourceItems.FirstOrDefault(i =>
+                                i["Filename"]?.ToString() == filename
+                            );
+
+                            if (itemToRemove != null)
+                            {
+                                sourceItems.Remove(itemToRemove); // Remove the JToken from the JArray
+                                destItems.Add(itemToRemove); // Add the JToken to the destination
+                                fence.Items = destItems;
+                                SaveFenceData();
+                            }
+                            else
+                            {
+                                Log($"Item {filename} not found in source fence '{sourceFence.Title}'");
+                            }
+
+                            moveWindow.Close();
+                            // ... rest of the code ...
                             var waitWindow = new Window
                             {
                                 Title = "Desktop Fences +",
@@ -1702,6 +2000,7 @@ namespace Desktop_Fences
                                 }
                             }, DispatcherPriority.Background);
                         }
+                    
                     };
                     sp.Children.Add(btn);
                 }
@@ -2326,7 +2625,8 @@ private static void LaunchItem(StackPanel sp, string path, bool isFolder, string
                 rotateTransform.BeginAnimation(RotateTransform.AngleProperty, rotate);
                 break;
 
-            case LaunchEffect.Agitate:
+
+                    case LaunchEffect.Agitate:
                 var agitateTranslate = new DoubleAnimationUsingKeyFrames
                 {
                     Duration = TimeSpan.FromSeconds(0.7)
@@ -2341,10 +2641,184 @@ private static void LaunchItem(StackPanel sp, string path, bool isFolder, string
                 agitateTranslate.KeyFrames.Add(new LinearDoubleKeyFrame(0, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(0.7))));
                 translateTransform.BeginAnimation(TranslateTransform.XProperty, agitateTranslate);
                 break;
-        }
 
-        // Execution
-        bool isShortcut = System.IO.Path.GetExtension(path).ToLower() == ".lnk";
+
+
+
+
+
+
+                    case LaunchEffect.GrowAndFly:
+                        var growAnimation = new DoubleAnimation(1, 1.2, TimeSpan.FromSeconds(0.2));
+                        growAnimation.Completed += (s, _) =>
+                        {
+                            // After growing, start the fly away animation
+                            var shrinkAnimation = new DoubleAnimation(1.2, 0.05, TimeSpan.FromSeconds(0.3));
+                            var moveUpAnimation = new DoubleAnimation(0, -50, TimeSpan.FromSeconds(0.3));
+
+                            shrinkAnimation.Completed += (s2, _2) =>
+                            {
+                                // Make the icon invisible
+                                sp.Opacity = 0;
+
+                                // Remove all animations to allow direct property setting
+                                scaleTransform.BeginAnimation(ScaleTransform.ScaleXProperty, null);
+                                scaleTransform.BeginAnimation(ScaleTransform.ScaleYProperty, null);
+                                translateTransform.BeginAnimation(TranslateTransform.YProperty, null);
+
+                                // Reset transform values
+                                scaleTransform.ScaleX = 1.0;
+                                scaleTransform.ScaleY = 1.0;
+                                translateTransform.Y = 0;
+
+                                // Small delay before showing the icon again
+                                var restoreTimer = new System.Windows.Threading.DispatcherTimer
+                                {
+                                    Interval = TimeSpan.FromSeconds(0.1)
+                                };
+
+                                restoreTimer.Tick += (timerSender, timerArgs) =>
+                                {
+                                    // Restore opacity
+                                    var restoreAnimation = new DoubleAnimation(0, 1, TimeSpan.FromSeconds(0.1));
+                                    sp.BeginAnimation(UIElement.OpacityProperty, restoreAnimation);
+
+                                    // Stop and cleanup timer
+                                    restoreTimer.Stop();
+                                };
+
+                                restoreTimer.Start();
+                            };
+
+                            scaleTransform.BeginAnimation(ScaleTransform.ScaleXProperty, shrinkAnimation);
+                            scaleTransform.BeginAnimation(ScaleTransform.ScaleYProperty, shrinkAnimation);
+                            translateTransform.BeginAnimation(TranslateTransform.YProperty, moveUpAnimation);
+                        };
+
+                        scaleTransform.BeginAnimation(ScaleTransform.ScaleXProperty, growAnimation);
+                        scaleTransform.BeginAnimation(ScaleTransform.ScaleYProperty, growAnimation);
+                        break;
+
+
+
+                    case LaunchEffect.Pulse:
+                        // Creates a pulsing effect with color change
+                        var pulseAnimation = new DoubleAnimationUsingKeyFrames
+                        {
+                            Duration = TimeSpan.FromSeconds(0.8),
+                            AutoReverse = false
+                        };
+                        pulseAnimation.KeyFrames.Add(new EasingDoubleKeyFrame(1.0, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(0))));
+                        pulseAnimation.KeyFrames.Add(new EasingDoubleKeyFrame(1.3, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(0.2))));
+                        pulseAnimation.KeyFrames.Add(new EasingDoubleKeyFrame(0.8, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(0.4))));
+                        pulseAnimation.KeyFrames.Add(new EasingDoubleKeyFrame(1.1, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(0.6))));
+                        pulseAnimation.KeyFrames.Add(new EasingDoubleKeyFrame(1.0, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(0.8))));
+
+                        // Optional: Add color animation if icon supports it (assuming it's a Path or Shape)
+                        if (sp.Children.Count > 0 && sp.Children[0] is Shape shape)
+                        {
+                            var originalBrush = shape.Fill as SolidColorBrush;
+                            if (originalBrush != null)
+                            {
+                                var colorAnimation = new ColorAnimation(
+                                    Colors.Red,
+                                    TimeSpan.FromSeconds(0.4))
+                                {
+                                    AutoReverse = true
+                                };
+                                shape.Fill.BeginAnimation(SolidColorBrush.ColorProperty, colorAnimation);
+                            }
+                        }
+
+                        scaleTransform.BeginAnimation(ScaleTransform.ScaleXProperty, pulseAnimation);
+                        scaleTransform.BeginAnimation(ScaleTransform.ScaleYProperty, pulseAnimation);
+                        break;
+
+                    case LaunchEffect.Spiral:
+                        // Combines rotation with a zoom effect
+                        var spiralRotate = new DoubleAnimation(0, 720, TimeSpan.FromSeconds(0.7))
+                        {
+                            EasingFunction = new BackEase { Amplitude = 0.3, EasingMode = EasingMode.EaseInOut }
+                        };
+
+                        var spiralScale = new DoubleAnimationUsingKeyFrames
+                        {
+                            Duration = TimeSpan.FromSeconds(0.7)
+                        };
+                        spiralScale.KeyFrames.Add(new EasingDoubleKeyFrame(1.0, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(0))));
+                        spiralScale.KeyFrames.Add(new EasingDoubleKeyFrame(0.7, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(0.3))));
+                        spiralScale.KeyFrames.Add(new EasingDoubleKeyFrame(1.3, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(0.5))));
+                        spiralScale.KeyFrames.Add(new EasingDoubleKeyFrame(1.0, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(0.7))));
+
+                        rotateTransform.BeginAnimation(RotateTransform.AngleProperty, spiralRotate);
+                        scaleTransform.BeginAnimation(ScaleTransform.ScaleXProperty, spiralScale);
+                        scaleTransform.BeginAnimation(ScaleTransform.ScaleYProperty, spiralScale);
+                        break;
+
+                    case LaunchEffect.Elastic:
+                        // Creates a stretchy, elastic effect
+                        var elasticX = new DoubleAnimationUsingKeyFrames
+                        {
+                            Duration = TimeSpan.FromSeconds(0.8)
+                        };
+                        elasticX.KeyFrames.Add(new EasingDoubleKeyFrame(1.0, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(0))));
+                        elasticX.KeyFrames.Add(new EasingDoubleKeyFrame(1.5, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(0.2))));
+                        elasticX.KeyFrames.Add(new EasingDoubleKeyFrame(0.8, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(0.4))));
+                        elasticX.KeyFrames.Add(new EasingDoubleKeyFrame(1.1, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(0.6))));
+                        elasticX.KeyFrames.Add(new EasingDoubleKeyFrame(1.0, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(0.8))));
+
+                        var elasticY = new DoubleAnimationUsingKeyFrames
+                        {
+                            Duration = TimeSpan.FromSeconds(0.8)
+                        };
+                        elasticY.KeyFrames.Add(new EasingDoubleKeyFrame(1.0, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(0))));
+                        elasticY.KeyFrames.Add(new EasingDoubleKeyFrame(0.7, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(0.2))));
+                        elasticY.KeyFrames.Add(new EasingDoubleKeyFrame(1.2, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(0.4))));
+                        elasticY.KeyFrames.Add(new EasingDoubleKeyFrame(0.9, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(0.6))));
+                        elasticY.KeyFrames.Add(new EasingDoubleKeyFrame(1.0, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(0.8))));
+
+                        scaleTransform.BeginAnimation(ScaleTransform.ScaleXProperty, elasticX);
+                        scaleTransform.BeginAnimation(ScaleTransform.ScaleYProperty, elasticY);
+                        break;
+
+                    case LaunchEffect.Flip3D:
+                        // Creates a 3D flip effect
+                        var flipAnimation = new DoubleAnimationUsingKeyFrames
+                        {
+                            Duration = TimeSpan.FromSeconds(0.6)
+                        };
+
+                        flipAnimation.KeyFrames.Add(new EasingDoubleKeyFrame(0, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(0))));
+                        flipAnimation.KeyFrames.Add(new EasingDoubleKeyFrame(90, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(0.15))));
+                        flipAnimation.KeyFrames.Add(new EasingDoubleKeyFrame(270, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(0.45))));
+                        flipAnimation.KeyFrames.Add(new EasingDoubleKeyFrame(360, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(0.6))));
+
+                        // For X-axis flip
+                        scaleTransform.CenterX = sp.ActualWidth / 2;
+                        scaleTransform.CenterY = sp.ActualHeight / 2;
+
+                        // We use a scale animation to create the flip illusion
+                        var scaleFlipAnimation = new DoubleAnimationUsingKeyFrames
+                        {
+                            Duration = TimeSpan.FromSeconds(0.6)
+                        };
+                        scaleFlipAnimation.KeyFrames.Add(new EasingDoubleKeyFrame(1, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(0))));
+                        scaleFlipAnimation.KeyFrames.Add(new EasingDoubleKeyFrame(0, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(0.15))));
+                        scaleFlipAnimation.KeyFrames.Add(new EasingDoubleKeyFrame(0, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(0.45))));
+                        scaleFlipAnimation.KeyFrames.Add(new EasingDoubleKeyFrame(1, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(0.6))));
+
+                        rotateTransform.BeginAnimation(RotateTransform.AngleProperty, flipAnimation);
+                        scaleTransform.BeginAnimation(ScaleTransform.ScaleXProperty, scaleFlipAnimation);
+                        break;
+
+                    //case LaunchEffect.Explosion:
+            
+
+
+                }
+
+                // Execution
+                bool isShortcut = System.IO.Path.GetExtension(path).ToLower() == ".lnk";
         string targetPath = isShortcut ? Utility.GetShortcutTarget(path) : path;
         bool isTargetFolder = System.IO.Directory.Exists(targetPath);
         bool targetExists = System.IO.File.Exists(targetPath) || System.IO.Directory.Exists(targetPath);
@@ -2381,9 +2855,30 @@ private static void LaunchItem(StackPanel sp, string path, bool isFolder, string
         Log($"Error in LaunchItem for {path}: {ex.Message}");
         MessageBox.Show($"Error opening item: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
     }
-}
+    }
+        static readonly string[] adjectives = {
+        "High", "Low", "Tiny", "Vast", "Wide", "Slim", "Flat", "Bold", "Cold", "Warm",
+        "Soft", "Hard", "Dark", "Pale", "Fast", "Slow", "Deep", "Tall", "Short", "Bent",
+        "Thin", "Bright", "Light", "Sharp", "Dull", "Loud", "Mute", "Grim", "Kind", "Neat",
+        "Rough", "Smooth", "Brave", "Fierce", "Plain", "Worn", "Dry", "Damp", "Strong", "Weak"
+    };
 
-   
+        static readonly string[] places = {
+        "Bay", "Hill", "Lake", "Cove", "Peak", "Reef", "Dune", "Glen", "Moor", "Vale",
+        "Rock", "Shore", "Bank", "Ford", "Cape", "Crag", "Marsh", "Pond", "Cliff", "Wood",
+        "Dell", "Pass", "Cave", "Ridge", "Knob", "Fall", "Isle", "Path", "Stream", "Creek",
+        "Field", "Plain", "Bluff", "Point", "Grove", "Dock", "Harbor", "Spring", "Meadow", "Hollow"
+    };
+
+        static readonly Random random = new Random();
+
+        public static string GenerateRandomName()
+        {
+            string word1 = adjectives[random.Next(adjectives.Length)];
+            string word2 = places[random.Next(places.Length)];
+            return word1 + " " + word2;
+        }
+
 
     }
 }

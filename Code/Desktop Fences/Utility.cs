@@ -15,6 +15,7 @@ namespace Desktop_Fences
     {
 
 
+
         public static void ApplyTintAndColorToFence(Window fence, string colorName = null)
         {
             var fenceControl = fence.Content as Border; // Matches your structure
@@ -30,21 +31,36 @@ namespace Desktop_Fences
         {
             return colorName switch
             {
-                "Red" => (Color)ColorConverter.ConvertFromString("#c10338"),
-                "Green" => (Color)ColorConverter.ConvertFromString("#005618"),
+
+                "Red" => (Color)ColorConverter.ConvertFromString("#9E052E"),
+                "Green" => (Color)ColorConverter.ConvertFromString("#06491A"),
+                "Teal" => (Color)ColorConverter.ConvertFromString("#008080"),
                 "Blue" => (Color)ColorConverter.ConvertFromString("#012162"),
-                "White" => (Color)ColorConverter.ConvertFromString("#fdfdff"),
-                "Gray" => (Color)ColorConverter.ConvertFromString("#3d3d3f"),
+                "Bismark" => (Color)ColorConverter.ConvertFromString("#49697E"),
+                "White" => (Color)ColorConverter.ConvertFromString("#F1F1F6"),
+                "Beige" => (Color)ColorConverter.ConvertFromString("#C8AD7E"),
+                "Gray" => (Color)ColorConverter.ConvertFromString("#6E6E6E"),
                 "Black" => (Color)ColorConverter.ConvertFromString("#0b0b0c"),
                 "Purple" => (Color)ColorConverter.ConvertFromString("#3a0b50"),
-                "Yellow" => (Color)ColorConverter.ConvertFromString("#d8da1f"),
+                "Fuchsia" => (Color)ColorConverter.ConvertFromString("#5F093d"),
+                "Yellow" => (Color)ColorConverter.ConvertFromString("#C1C708"),
+                "Orange" => (Color)ColorConverter.ConvertFromString("#B75433"),
                 _ => Colors.Transparent,
+                // "Red" => (Color)ColorConverter.ConvertFromString("#c10338"),
+                // "Green" => (Color)ColorConverter.ConvertFromString("#005618"),
+                // "Blue" => (Color)ColorConverter.ConvertFromString("#012162"),
+                //  "White" => (Color)ColorConverter.ConvertFromString("#fdfdff"),
+                //  "Gray" => (Color)ColorConverter.ConvertFromString("#3d3d3f"),
+                //  "Black" => (Color)ColorConverter.ConvertFromString("#0b0b0c"),
+                // "Purple" => (Color)ColorConverter.ConvertFromString("#3a0b50"),
+                //  "Yellow" => (Color)ColorConverter.ConvertFromString("#d8da1f"),
+                //  _ => Colors.Transparent, 
             };
         }
 
         public static bool IsExecutableFile(string filePath)
         {
-            string[] executableExtensions = { ".exe", ".bat", ".cmd", ".vbs", ".ps1", ".hta" };
+            string[] executableExtensions = { ".exe", ".bat", ".cmd", ".vbs", ".ps1", ".hta",".msi" };
             if (Path.GetExtension(filePath).ToLower() == ".lnk")
             {
                 try
