@@ -83,7 +83,16 @@ Every little bit helps and is greatly appreciated! 🙏
 -  **Fixed**:  Bug on context menus items unchecking behavior
 -  **Fixed**:  Bug on customization where changes was not applied into fences under same name
 -  **Added**:  Random name generator for new fences instead of the dull "New Fence"
--   
+-  **Added:** custom delete confirmation message box
+
+##  2.5.0.30
+-  **Added:** Restore for previously backed up configurations 
+-  **Added:** Reload all Fences function
+-  **Added:** Tootips on options window
+-  **Added:** Restore hidden fences to their hidden status on startup
+-  **Added:** Temporarily hide function for all fences (show desktop) on tray icon double click, restore with double click
+  
+  
 ---
 
 ##  Summary
