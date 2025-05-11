@@ -1,7 +1,7 @@
 # Desktop Fences +
 
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/fb7f3da9-2e1f-4f79-90dc-33994ff33104" />
+  <img src="https://github.com/limbo666/DesktopFences/blob/main/Imgs/Desktop_Fences_Social_Media_PNG.png" />
 </p>
 
 
