@@ -97,7 +97,7 @@ Every little bit helps and is greatly appreciated! 🙏
 -  **Added:** Export Fence and Import Fence options to help move fences across systems
 -  **Added** Added ability to get icons from dll libraries or executables on under "Edit" Requested on https://github.com/limbo666/DesktopFences/issues/1
 -  **Changed**  All message boxes changed to internal themed ones to follow mouse position across multimonitor systems
--  **Changed** Some thememing correction on message boxes.
+-  **Changed** Some theming correction on message boxes.
 -  **Added**  Sound on custom message box appearance.
   
 ---
