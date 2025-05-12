@@ -94,7 +94,7 @@ Every little bit helps and is greatly appreciated! 🙏
 
   ## 2.5.1.37 - Release 3
 -  **Added:** Snap to Dimension function for better size alignment 
--  **Added:** Export Fence and Import Fence options to help move fences across systems
+-  **Added:** Export Fence and Import Fence options to help move fences across systems. Few exported fences can be found [here](https://github.com/limbo666/DesktopFences/tree/main/Exported%20Fences)
 -  **Added** Added ability to get icons from dll libraries or executables on under "Edit" Requested on https://github.com/limbo666/DesktopFences/issues/1
 -  **Changed**  All message boxes changed to internal themed ones to follow mouse position across multimonitor systems
 -  **Changed** Some theming correction on message boxes.
