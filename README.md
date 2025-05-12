@@ -91,7 +91,14 @@ Every little bit helps and is greatly appreciated! 🙏
 -  **Added:** Tootips on options window
 -  **Added:** Restore hidden fences to their hidden status on startup
 -  **Added:** Temporarily hide function for all fences (show desktop) on tray icon double click, restore with double click
-  
+
+  ## 2.5.1.37 - Release 3
+-  **Added:** Snap to Dimension function for better size alignment 
+-  **Added:** Export Fence and Import Fence options to help move fences across systems
+-  **Added** Added ability to get icons from dll libraries or executables on under "Edit" Requested on https://github.com/limbo666/DesktopFences/issues/1
+-  **Changed**  All message boxes changed to internal themed ones to follow mouse position across multimonitor systems
+-  **Changed** Some thememing correction on message boxes.
+-  **Added**  Sound on custom message box appearance.
   
 ---
 
