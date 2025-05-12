@@ -37,7 +37,7 @@ Every little bit helps and is greatly appreciated! 🙏
 -  **Error Handling** on: Move actions, Program execution, Empty or invalid JSON files
 
 ##  New Functionalities
--  **Minimal About Screen**
+-  **About Screen**
 -  **Tray Icon** indicates the application is running
 -  **Program Exit Option** in the tray icon’s context menu
 -  **New Fence Creation** at mouse location for intuitive placement
