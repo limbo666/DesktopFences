@@ -15,12 +15,6 @@ namespace Desktop_Fences
 
 
 
-
-
-
-
-
-
         public static void BackupData()
         {
             try
@@ -70,12 +64,16 @@ namespace Desktop_Fences
                 }
 
                 // Notify the user of successful backup
-                MessageBox.Show("Backup completed successfully.", "Backup", MessageBoxButton.OK, MessageBoxImage.Information);
+                //  MessageBox.Show("Backup completed successfully.", "Backup", MessageBoxButton.OK, MessageBoxImage.Information);
+                TrayManager.Instance.ShowOKOnlyMessageBoxForm("Backup completed successfully.", "Backup");
+
             }
             catch (Exception ex)
             {
                 // Handle any errors during the backup process and inform the user
-                MessageBox.Show($"An error occurred during backup: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                //MessageBox.Show($"An error occurred during backup: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                TrayManager.Instance.ShowOKOnlyMessageBoxForm($"An error occurred during backup: {ex.Message}", "Error");
+
             }
         }
     }

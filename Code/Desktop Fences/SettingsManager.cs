@@ -35,6 +35,8 @@ namespace Desktop_Fences
         /// </summary>
         /// 
 
+        public static bool EnableDimensionSnap { get; set; } = false;
+
         public static bool SingleClickToLaunch { get; set; } = true;
 
         // Add LaunchEffect property
@@ -59,6 +61,7 @@ namespace Desktop_Fences
                     SelectedColor = optionsData.SelectedColor ?? "Gray";
                     IsLogEnabled = optionsData.IsLogEnabled ?? false;
                     SingleClickToLaunch = optionsData.SingleClickToLaunch ?? true;
+                    EnableDimensionSnap = optionsData.EnableDimensionSnap ?? false;
                     // Load LaunchEffect, parsing from string if present
                     LaunchEffect = optionsData.LaunchEffect != null
                         ? Enum.Parse(typeof(FenceManager.LaunchEffect), optionsData.LaunchEffect.ToString())
@@ -96,6 +99,7 @@ namespace Desktop_Fences
                     SelectedColor,
                     IsLogEnabled,
                     SingleClickToLaunch,
+                    EnableDimensionSnap,
                     LaunchEffect = LaunchEffect.ToString() // Save as string for JSON compatibility
                 };
 

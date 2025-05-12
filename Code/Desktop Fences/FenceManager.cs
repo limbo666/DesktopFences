@@ -18,10 +18,24 @@ using System.IO;
 using System.Windows.Shapes;
 using System.Windows.Media.Effects;
 
+using Microsoft.Win32;
+using System.IO.Compression;
+using System.Windows.Interop;
+using System.Runtime.InteropServices;
+
+
+
 namespace Desktop_Fences
 {
     public static class FenceManager
     {
+
+        [DllImport("shell32.dll", CharSet = CharSet.Auto)]
+        private static extern uint ExtractIconEx(string szFileName, int nIconIndex, IntPtr[] phiconLarge, IntPtr[] phiconSmall, uint nIcons);
+
+        [DllImport("user32.dll")]
+        private static extern bool DestroyIcon(IntPtr hIcon);
+
         private static List<dynamic> _fenceData;
         private static string _jsonFilePath;
         private static dynamic _options;
@@ -33,6 +47,9 @@ namespace Desktop_Fences
         // Stores heart TextBlock references for each fence to enable efficient ContextMenu updates
         private static readonly Dictionary<dynamic, TextBlock> _heartTextBlocks = new Dictionary<dynamic, TextBlock>();
 
+        //resize feedback
+        private static Window _sizeFeedbackWindow;
+        private static System.Windows.Threading.DispatcherTimer _hideTimer;
 
         // Add near other static fields
         private static TargetChecker _currentTargetChecker;
@@ -72,8 +89,10 @@ namespace Desktop_Fences
 
                 if (!System.IO.File.Exists(backupFencesPath) || !Directory.Exists(backupShortcutsPath))
                 {
-                    MessageBox.Show("Invalid backup folder - missing required files", "Restore Error",
-                                  MessageBoxButton.OK, MessageBoxImage.Error);
+                    // MessageBox.Show("Invalid backup folder - missing required files", "Restore Error",
+
+                    //              MessageBoxButton.OK, MessageBoxImage.Error);
+                    TrayManager.Instance.ShowOKOnlyMessageBoxForm("Invalid backup folder - missing required files", "Restore Error");
                     return;
                 }
 
@@ -101,10 +120,187 @@ namespace Desktop_Fences
             catch (Exception ex)
             {
                 Log($"Restore failed: {ex.Message}");
-                MessageBox.Show($"Restore failed: {ex.Message}", "Error",
-                              MessageBoxButton.OK, MessageBoxImage.Error);
+                //    MessageBox.Show($"Restore failed: {ex.Message}", "Error",
+                //               MessageBoxButton.OK, MessageBoxImage.Error);
+
+                TrayManager.Instance.ShowOKOnlyMessageBoxForm($"Restore failed: {ex.Message}", "Error");
             }
         }
+
+        // Add the ExportFence method
+        public static void ExportFence(dynamic fence)
+        {
+            try
+            {
+                string exeDir = System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
+                string fenceTitle = fence.Title.ToString();
+
+                // Sanitize folder name
+                foreach (char c in System.IO.Path.GetInvalidFileNameChars())
+                {
+                    fenceTitle = fenceTitle.Replace(c, '_');
+                }
+
+                string exportFolder = System.IO.Path.Combine(exeDir, "Exports", fenceTitle);
+                string fencePath = System.IO.Path.Combine(exeDir, "Exports", $"{fenceTitle}.fence");
+
+                // Cleanup existing
+                if (Directory.Exists(exportFolder))
+                    Directory.Delete(exportFolder, true);
+                if (System.IO.File.Exists(fencePath))
+                    System.IO.File.Delete(fencePath);
+
+                Directory.CreateDirectory(exportFolder);
+
+                // Save fence data
+                string fenceJson = JsonConvert.SerializeObject(fence, Formatting.Indented);
+                System.IO.File.WriteAllText(System.IO.Path.Combine(exportFolder, "fence.json"), fenceJson);
+
+                // Copy shortcuts for Data fences
+                if (fence.ItemsType?.ToString() == "Data")
+                {
+                    string shortcutsDestDir = System.IO.Path.Combine(exportFolder, "Shortcuts");
+                    Directory.CreateDirectory(shortcutsDestDir);
+
+                    foreach (var item in fence.Items)
+                    {
+                        string filename = item.Filename?.ToString();
+                        if (!string.IsNullOrEmpty(filename))
+                        {
+                            string sourcePath = System.IO.Path.Combine(exeDir, filename);
+                            if (System.IO.File.Exists(sourcePath))
+                            {
+                                string destName = System.IO.Path.GetFileName(filename);
+                                System.IO.File.Copy(sourcePath, System.IO.Path.Combine(shortcutsDestDir, destName));
+                            }
+                        }
+                    }
+                }
+
+                // Create zip and cleanup
+                ZipFile.CreateFromDirectory(exportFolder, fencePath);
+                Directory.Delete(exportFolder, true);
+
+                //   MessageBox.Show($"Fence exported to:\n{fencePath}", "Export Successful",
+                //               MessageBoxButton.OK, MessageBoxImage.Information);
+
+                TrayManager.Instance.ShowOKOnlyMessageBoxForm($"Fence exported to:\n{fencePath}", "Export Successful");
+            }
+            catch (Exception ex)
+            {
+                Log($"Export failed: {ex.Message}");
+                //   MessageBox.Show($"Export failed: {ex.Message}", "Error",
+                //                  MessageBoxButton.OK, MessageBoxImage.Error);
+                TrayManager.Instance.ShowOKOnlyMessageBoxForm($"Export failed: {ex.Message}", "Error");
+            }
+        }
+
+
+        // Import function implementation
+        public static void ImportFence()
+        {
+            try
+            {
+                string exeDir = System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
+                string exportsDir = System.IO.Path.Combine(exeDir, "Exports");
+
+                var openDialog = new OpenFileDialog
+                {
+                    Filter = "Fence Files|*.fence", // Changed filter
+                    DefaultExt = ".fence",          // Added default extension
+                    InitialDirectory = Directory.Exists(exportsDir) ? exportsDir : exeDir,
+                    Title = "Select Fence Export File"
+                };
+
+                if (openDialog.ShowDialog() != true) return;
+
+                string tempDir = System.IO.Path.Combine(System.IO.Path.GetTempPath(), Guid.NewGuid().ToString());
+                Directory.CreateDirectory(tempDir);
+
+                try
+                {
+                    // Extract ZIP contents
+                    ZipFile.ExtractToDirectory(openDialog.FileName, tempDir);
+
+                    // Validate export structure
+                    string fenceJsonPath = System.IO.Path.Combine(tempDir, "fence.json");
+                    if (!System.IO.File.Exists(fenceJsonPath))
+                    {
+                        throw new FileNotFoundException("Missing fence.json in export file");
+                    }
+
+                    // Deserialize fence data
+                    string jsonContent = System.IO.File.ReadAllText(fenceJsonPath);
+                    dynamic importedFence = JsonConvert.DeserializeObject<JObject>(jsonContent);
+
+                    // Generate new ID to prevent conflicts
+                    importedFence["Id"] = Guid.NewGuid().ToString();
+
+                    // Handle shortcuts for Data fences
+                    if (importedFence.ItemsType?.ToString() == "Data")
+                    {
+                        string sourceShortcuts = System.IO.Path.Combine(tempDir, "Shortcuts");
+                        string destShortcuts = System.IO.Path.Combine(exeDir, "Shortcuts");
+
+                        if (Directory.Exists(sourceShortcuts))
+                        {
+                            Directory.CreateDirectory(destShortcuts);
+                            foreach (string srcPath in Directory.GetFiles(sourceShortcuts))
+                            {
+                                string fileName = System.IO.Path.GetFileName(srcPath);
+                                string destPath = System.IO.Path.Combine(destShortcuts, fileName);
+
+                                // Handle duplicate filenames
+                                int counter = 1;
+                                while (System.IO.File.Exists(destPath))
+                                {
+                                    string tempName = $"{System.IO.Path.GetFileNameWithoutExtension(fileName)} ({counter++}){System.IO.Path.GetExtension(fileName)}";
+                                    destPath = System.IO.Path.Combine(destShortcuts, tempName);
+                                }
+
+                                System.IO.File.Copy(srcPath, destPath);
+
+                                // Update shortcut references in fence items
+                                var items = importedFence.Items as JArray;
+                                foreach (var item in items.Where(i => i["Filename"]?.ToString() == fileName))
+                                {
+                                    item["Filename"] = System.IO.Path.Combine("Shortcuts", System.IO.Path.GetFileName(destPath));
+                                }
+                            }
+                        }
+                    }
+
+                    // Add to fence data and create
+                    _fenceData.Add(importedFence);
+                    CreateFence(importedFence, new TargetChecker(1000));
+                    SaveFenceData();
+
+                    //MessageBox.Show("Fence imported successfully!", "Import Complete",
+                    //              MessageBoxButton.OK, MessageBoxImage.Information);
+
+
+                    TrayManager.Instance.ShowOKOnlyMessageBoxForm("Fence imported successfully!", "Import Complete");
+                }
+                finally
+                {
+                    // Cleanup temporary files
+                    if (Directory.Exists(tempDir))
+                    {
+                        Directory.Delete(tempDir, true);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Log($"Fence import failed: {ex.Message}");
+                // MessageBox.Show($"Failed to import fence: {ex.Message}", "Import Error",
+                //              MessageBoxButton.OK, MessageBoxImage.Error);
+
+                TrayManager.Instance.ShowOKOnlyMessageBoxForm($"Failed to import fence: {ex.Message}", "Import Error");
+            }
+        }
+
+
 
         public static void UpdateHeartContextMenus()
         {
@@ -118,12 +314,12 @@ namespace Desktop_Fences
             var menu = new ContextMenu();
 
             // About item
-            var aboutItem = new MenuItem { Header = "About" };
+            var aboutItem = new MenuItem { Header = "About..." };
             aboutItem.Click += (s, e) => TrayManager.Instance.ShowAboutForm();
             menu.Items.Add(aboutItem);
 
             // Options item
-            var optionsItem = new MenuItem { Header = "Options" };
+            var optionsItem = new MenuItem { Header = "Options..." };
             optionsItem.Click += (s, e) => TrayManager.Instance.ShowOptionsForm();
             menu.Items.Add(optionsItem);
 
@@ -159,6 +355,17 @@ namespace Desktop_Fences
             };
             restoreItem.Click += (s, e) => RestoreLastDeletedFence();
             menu.Items.Add(restoreItem);
+
+            menu.Items.Add(new Separator());
+            // New Export Fence menu item
+            var exportItem = new MenuItem { Header = "Export this Fence" };
+            exportItem.Click += (s, e) => ExportFence(fence);
+            menu.Items.Add(exportItem);
+
+            var importItem = new MenuItem { Header = "Import a Fence..." };
+            importItem.Click += (s, e) => ImportFence();
+            menu.Items.Add(importItem);
+
 
             // Separator
             menu.Items.Add(new Separator());
@@ -198,7 +405,6 @@ namespace Desktop_Fences
 
 
 
-       // public static MenuItem restoreFenceItem { get; private set; }
 
         public enum LaunchEffect
         {
@@ -336,7 +542,8 @@ Spiral
         {
             if (!_isRestoreAvailable || string.IsNullOrEmpty(_lastDeletedFolderPath) || _lastDeletedFence == null)
             {
-                MessageBox.Show("No fence to restore.", "Restore", MessageBoxButton.OK, MessageBoxImage.Information);
+                // MessageBox.Show("No fence to restore.", "Restore", MessageBoxButton.OK, MessageBoxImage.Information);
+                TrayManager.Instance.ShowOKOnlyMessageBoxForm("No fence to restore", "Restore");
                 return;
             }
 
@@ -752,7 +959,7 @@ Spiral
             miCustomize.Items.Add(miColors);
             miCustomize.Items.Add(miEffects);
 
-           // cm.Items.Add(miNF);
+       
           //  cm.Items.Add(miNP);
             cm.Items.Add(miRF);
             cm.Items.Add(miHide); // Add Hide Fence
@@ -786,39 +993,37 @@ Spiral
             bool isHidden = isHiddenString == "true";
             Log($"Fence '{fence.Title}' IsHidden state: {isHidden}");
 
-            // Check IsHidden and apply visibility
-            //  bool isHidden = false;
-            // Convert dynamic to JObject for proper value access
+            
 
-            //    JObject fenceJObject = (JObject)fence;
-
-
-
-            //// Get IsHidden value correctly from JToken
-            //string isHiddenString = fenceJObject["IsHidden"]?.ToString().ToLower();
-            //bool isHidden = isHiddenString == "true";
-            //// Log the actual parsed value
-            //Log($"Fence '{fence.Title}' IsHidden state: {isHidden}");
-
-            //if (fence.IsHidden != null)
+            // start of removed on 0.33
+            //NonActivatingWindow win = new NonActivatingWindow
             //{
-            //    // Handle both string and boolean IsHidden values
-            //    if (fence.IsHidden is bool boolHidden)
-            //    {
-            //        isHidden = boolHidden;
-            //    }
-            //    else if (fence.IsHidden is string stringValue)
-            //    {
-            //        isHidden = stringValue.ToLower() == "true";
-            //    }
-            //}
+            //    ContextMenu = cm,
+            //    AllowDrop = true,
+            //    AllowsTransparency = true,
+            //    Background = Brushes.Transparent,
+            //    Title = fence.Title.ToString(),
+            //    ShowInTaskbar = false,
+            //    WindowStyle = WindowStyle.None,
+            //    Content = cborder,
+            //    ResizeMode = ResizeMode.CanResizeWithGrip,
+            //    Width = (double)fence.Width,
+            //    Height = (double)fence.Height,
+            //    Top = (double)fence.Y,
+            //    Left = (double)fence.X,
+            //  //  //  Tag = fence  // Add this line to store the fence object
+            //    Tag = fence.Id.ToString()  // Store fence ID in Tag
+            //  ////  Visibility = isHidden ? Visibility.Hidden : Visibility.Visible
+            //};
+
+            //end of remove 0.33
             NonActivatingWindow win = new NonActivatingWindow
             {
                 ContextMenu = cm,
                 AllowDrop = true,
                 AllowsTransparency = true,
                 Background = Brushes.Transparent,
-                Title = fence.Title.ToString(),
+                Title = fence.Title?.ToString() ?? "New Fence", // Handle null title
                 ShowInTaskbar = false,
                 WindowStyle = WindowStyle.None,
                 Content = cborder,
@@ -827,9 +1032,7 @@ Spiral
                 Height = (double)fence.Height,
                 Top = (double)fence.Y,
                 Left = (double)fence.X,
-                //  Tag = fence  // Add this line to store the fence object
-                Tag = fence.Id.ToString()  // Store fence ID in Tag
-              //  Visibility = isHidden ? Visibility.Hidden : Visibility.Visible
+                Tag = fence.Id?.ToString() ?? Guid.NewGuid().ToString() // Ensure ID exists
             };
 
             // Log the IsHidden state for diagnostics
@@ -1220,6 +1423,26 @@ Spiral
                                                         FenceManager.Log($"Failed to delete shortcut {shortcutPath}: {ex.Message}");
                                                     }
                                                 }
+                                                // Delete backup shortcut if it exists
+                                                string tempShortcutsDir = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "Temp Shortcuts");
+                                                string backupPath = System.IO.Path.Combine(tempShortcutsDir, System.IO.Path.GetFileName(filePath));
+                                                if (System.IO.File.Exists(backupPath))
+                                                {
+                                                    try
+                                                    {
+                                                        System.IO.File.Delete(backupPath);
+                                                        Log($"Deleted backup shortcut: {backupPath}");
+                                                    }
+                                                    catch (Exception ex)
+                                                    {
+                                                        Log($"Failed to delete backup shortcut {backupPath}: {ex.Message}");
+                                                    }
+                                                }
+
+
+
+
+
                                             };
                                             sp.BeginAnimation(UIElement.OpacityProperty, fade);
                                         }
@@ -1288,7 +1511,8 @@ Spiral
                                     catch (Exception ex)
                                     {
                                         Log($"Failed to launch {targetPath} as admin: {ex.Message}");
-                                        MessageBox.Show($"Error running as admin: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                                        // MessageBox.Show($"Error running as admin: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                                        TrayManager.Instance.ShowOKOnlyMessageBoxForm($"Error running as admin: {ex.Message}", "Error");
                                     }
                                 };
                             }
@@ -1303,7 +1527,8 @@ Spiral
                     }
                     catch (Exception ex)
                     {
-                        MessageBox.Show($"Failed to initialize Portal Fence: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                        // MessageBox.Show($"Failed to initialize Portal Fence: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                        TrayManager.Instance.ShowOKOnlyMessageBoxForm($"Failed to initialize Portal Fence: {ex.Message}", "Error");
                         _fenceData.Remove(fence);
                         SaveFenceData();
                         win.Close();
@@ -1323,7 +1548,8 @@ Spiral
                             Debug.WriteLine($"Dropped file: {droppedFile}");
                             if (!System.IO.File.Exists(droppedFile) && !System.IO.Directory.Exists(droppedFile))
                             {
-                                MessageBox.Show($"Invalid file or directory: {droppedFile}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                                //  MessageBox.Show($"Invalid file or directory: {droppedFile}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                                TrayManager.Instance.ShowOKOnlyMessageBoxForm($"Invalid file or directory: {droppedFile}", "Error");
                                 continue;
                             }
 
@@ -1497,14 +1723,16 @@ Spiral
 
                                 if (string.IsNullOrEmpty(destinationFolder))
                                 {
-                                    MessageBox.Show($"No destination folder defined for this Portal Fence. Please recreate the fence.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                                    //MessageBox.Show($"No destination folder defined for this Portal Fence. Please recreate the fence.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                                    TrayManager.Instance.ShowOKOnlyMessageBoxForm($"No destination folder defined for this Portal Fence. Please recreate the fence.", "Error");
                                     FenceManager.Log($"No Path defined for Portal Fence: {fence.Title}");
                                     continue;
                                 }
 
                                 if (!System.IO.Directory.Exists(destinationFolder))
                                 {
-                                    MessageBox.Show($"The destination folder '{destinationFolder}' no longer exists. Please update the Portal Fence settings.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                                    // MessageBox.Show($"The destination folder '{destinationFolder}' no longer exists. Please update the Portal Fence settings.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                                    TrayManager.Instance.ShowOKOnlyMessageBoxForm($"The destination folder '{destinationFolder}' no longer exists. Please update the Portal Fence settings.", "Error");
                                     FenceManager.Log($"Destination folder missing for Portal Fence: {destinationFolder}");
                                     continue;
                                 }
@@ -1535,7 +1763,8 @@ Spiral
                         catch (Exception ex)
                         {
                             Debug.WriteLine($"Error in drop: {ex.Message}");
-                            MessageBox.Show($"Failed to add {droppedFile}: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                            //  MessageBox.Show($"Failed to add {droppedFile}: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                            TrayManager.Instance.ShowOKOnlyMessageBoxForm($"Failed to add {droppedFile}: {ex.Message}", "Error");
                         }
                     }
                     SaveFenceData(); // Αποθηκεύουμε τις αλλαγές στο JSON
@@ -1548,6 +1777,11 @@ Spiral
                 fence.Height = win.Height;
                 SaveFenceData();
             };
+            if (SettingsManager.EnableDimensionSnap)
+            {
+                win.SizeChanged += UpdateSizeFeedback;
+            }
+
 
             win.LocationChanged += (s, e) =>
             {
@@ -1593,6 +1827,107 @@ Spiral
             }
         }
         // Return here
+        private static void ShowSizeFeedback(double width, double height)
+        {
+            if (_sizeFeedbackWindow == null)
+            {
+                _sizeFeedbackWindow = new Window
+                {
+                    WindowStyle = WindowStyle.None,
+                    AllowsTransparency = true,
+                    Background = Brushes.Transparent,
+                    Width = 100,
+                    Height = 30,
+                    ShowInTaskbar = false,
+                    Topmost = true
+                };
+
+                var label = new Label
+                {
+                    Content = "",
+                    Foreground = Brushes.White,
+                    Background = Brushes.Black,
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    VerticalAlignment = VerticalAlignment.Center
+                };
+                _sizeFeedbackWindow.Content = label;
+            }
+
+            var labelContent = (Label)_sizeFeedbackWindow.Content;
+            labelContent.Content = $"{Math.Round(width)} x {Math.Round(height)}";
+
+            var mousePos = System.Windows.Forms.Cursor.Position;
+            _sizeFeedbackWindow.Left = mousePos.X + 10;
+            _sizeFeedbackWindow.Top = mousePos.Y + 10;
+
+            _sizeFeedbackWindow.Show();
+        }
+
+        private static void HideSizeFeedback()
+        {
+            if (_sizeFeedbackWindow != null)
+            {
+                _sizeFeedbackWindow.Hide();
+            }
+        }
+
+
+        public static void OnResizingStarted(NonActivatingWindow fence)
+        {
+            if (SettingsManager.EnableDimensionSnap)
+            {
+                fence.SizeChanged += UpdateSizeFeedback;
+                ShowSizeFeedback(fence.Width, fence.Height);
+            }
+        }
+
+        public static void OnResizingEnded(NonActivatingWindow fence)
+        {
+            if (SettingsManager.EnableDimensionSnap)
+            {
+                fence.SizeChanged -= UpdateSizeFeedback;
+                HideSizeFeedback();
+
+                double snappedWidth = Math.Round(fence.Width / 10.0) * 10;
+                double snappedHeight = Math.Round(fence.Height / 10.0) * 10;
+
+                fence.Width = snappedWidth;
+                fence.Height = snappedHeight;
+
+                dynamic fenceData = FenceManager.GetFenceData().FirstOrDefault(f => f.Title == fence.Title);
+                if (fenceData != null)
+                {
+                    fenceData.Width = snappedWidth;
+                    fenceData.Height = snappedHeight;
+                    FenceManager.SaveFenceData();
+                }
+
+                ShowSizeFeedback(snappedWidth, snappedHeight);
+                _hideTimer = new System.Windows.Threading.DispatcherTimer
+                {
+                    Interval = TimeSpan.FromSeconds(2)
+                };
+                _hideTimer.Tick += (s, e) =>
+                {
+                    HideSizeFeedback();
+                    _hideTimer.Stop();
+                };
+                _hideTimer.Start();
+            }
+        }
+
+        private static void UpdateSizeFeedback(object sender, SizeChangedEventArgs e)
+        {
+            var fence = sender as NonActivatingWindow;
+            if (fence != null)
+            {
+                ShowSizeFeedback(fence.Width, fence.Height);
+            }
+        }
+
+
+
+
 
         public static void AddIcon(dynamic icon, WrapPanel wpcont)
         {
@@ -1603,20 +1938,9 @@ Spiral
             bool isFolder = iconDict.ContainsKey("IsFolder") && (bool)iconDict["IsFolder"];
             bool isShortcut = System.IO.Path.GetExtension(filePath).ToLower() == ".lnk";
             string targetPath = isShortcut ? Utility.GetShortcutTarget(filePath) : filePath;
-            string arguments = iconDict.ContainsKey("Arguments") ? (string)iconDict["Arguments"] : null; // Add this line
-
-            bool isLogEnabled = _options.IsLogEnabled ?? true;
-            void Log(string message)
-            {
-                if (isLogEnabled)
-                {
-                    string logPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "Desktop_Fences.log");
-                    System.IO.File.AppendAllText(logPath, $"{DateTime.Now}: {message}\n");
-                }
-            }
+            string arguments = iconDict.ContainsKey("Arguments") ? (string)iconDict["Arguments"] : null;
 
             ImageSource shortcutIcon = null;
-           // string arguments = null;
 
             if (isShortcut)
             {
@@ -1625,52 +1949,88 @@ Spiral
                 targetPath = shortcut.TargetPath;
                 arguments = shortcut.Arguments;
 
-                if (System.IO.Directory.Exists(targetPath))
-                {
-                    shortcutIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/folder-White.png"));
-                    Log($"Using folder-White.png for shortcut {filePath} targeting existing folder {targetPath}");
-                }
-                else if (System.IO.File.Exists(targetPath))
-                {
-                    try
-                    {
-                        shortcutIcon = System.Drawing.Icon.ExtractAssociatedIcon(targetPath).ToImageSource();
-                        Log($"Using target file icon for {filePath}: {targetPath}");
-                    }
-                    catch (Exception ex)
-                    {
-                        shortcutIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/file-WhiteX.png"));
-                        Log($"Failed to extract target file icon for {filePath}: {ex.Message}");
-                    }
-                }
-                else
-                {
-                    shortcutIcon = isFolder
-                        ? new BitmapImage(new Uri("pack://application:,,,/Resources/folder-WhiteX.png"))
-                        : new BitmapImage(new Uri("pack://application:,,,/Resources/file-WhiteX.png"));
-                    Log($"Using missing icon for {filePath}: {(isFolder ? "folder-WhiteX.png" : "file-WhiteX.png")}");
-                }
-
+                // Handle custom IconLocation with index
                 if (!string.IsNullOrEmpty(shortcut.IconLocation))
                 {
                     string[] iconParts = shortcut.IconLocation.Split(',');
                     string iconPath = iconParts[0];
+                    int iconIndex = 0;
+                    if (iconParts.Length == 2 && int.TryParse(iconParts[1], out int parsedIndex))
+                    {
+                        iconIndex = parsedIndex;
+                    }
+
                     if (System.IO.File.Exists(iconPath))
                     {
                         try
                         {
-                            shortcutIcon = System.Drawing.Icon.ExtractAssociatedIcon(iconPath).ToImageSource();
-                            Log($"Using custom icon from IconLocation for {filePath}: {iconPath}");
+                            IntPtr[] hIcon = new IntPtr[1];
+                            uint result = ExtractIconEx(iconPath, iconIndex, hIcon, null, 1);
+                            if (result > 0 && hIcon[0] != IntPtr.Zero)
+                            {
+                                try
+                                {
+                                    shortcutIcon = Imaging.CreateBitmapSourceFromHIcon(
+                                        hIcon[0],
+                                        Int32Rect.Empty,
+                                        BitmapSizeOptions.FromEmptyOptions()
+                                    );
+                                    Log($"Extracted icon at index {iconIndex} from {iconPath} for {filePath}");
+                                }
+                                finally
+                                {
+                                    DestroyIcon(hIcon[0]);
+                                }
+                            }
+                            else
+                            {
+                                Log($"Failed to extract icon at index {iconIndex} from {iconPath} for {filePath}. Result: {result}");
+                            }
                         }
                         catch (Exception ex)
                         {
-                            Log($"Failed to extract custom icon for {filePath}: {ex.Message}");
+                            Log($"Error extracting icon from {iconPath} at index {iconIndex} for {filePath}: {ex.Message}");
                         }
+                    }
+                    else
+                    {
+                        Log($"Icon file not found: {iconPath} for {filePath}");
+                    }
+                }
+
+                // Fallback only if no custom icon was successfully extracted
+                if (shortcutIcon == null)
+                {
+                    if (System.IO.Directory.Exists(targetPath))
+                    {
+                        shortcutIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/folder-White.png"));
+                        Log($"Using folder-White.png for shortcut {filePath} targeting folder {targetPath}");
+                    }
+                    else if (System.IO.File.Exists(targetPath))
+                    {
+                        try
+                        {
+                            shortcutIcon = System.Drawing.Icon.ExtractAssociatedIcon(targetPath).ToImageSource();
+                            Log($"Using target file icon for {filePath}: {targetPath}");
+                        }
+                        catch (Exception ex)
+                        {
+                            shortcutIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/file-WhiteX.png"));
+                            Log($"Failed to extract target file icon for {filePath}: {ex.Message}");
+                        }
+                    }
+                    else
+                    {
+                        shortcutIcon = isFolder
+                            ? new BitmapImage(new Uri("pack://application:,,,/Resources/folder-WhiteX.png"))
+                            : new BitmapImage(new Uri("pack://application:,,,/Resources/file-WhiteX.png"));
+                        Log($"Using missing icon for {filePath}: {(isFolder ? "folder-WhiteX.png" : "file-WhiteX.png")}");
                     }
                 }
             }
             else
             {
+                // Non-shortcut handling remains unchanged
                 if (System.IO.Directory.Exists(filePath))
                 {
                     shortcutIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/folder-White.png"));
@@ -1720,17 +2080,14 @@ Spiral
                 TextAlignment = TextAlignment.Center,
                 Text = displayText
             };
-            // Add shadow effect for better contrast
             lbl.Effect = new DropShadowEffect
             {
-                Color = Colors.Black,       // Black shadow for maximum contrast
-                Direction = 315,            // Angle: slightly upper-left for natural look
-                ShadowDepth = 2,            // Small offset to avoid blurriness
-                BlurRadius = 3,             // Subtle blur for readability
-                Opacity = 0.8               // Strong enough to stand out
+                Color = Colors.Black,
+                Direction = 315,
+                ShadowDepth = 2,
+                BlurRadius = 3,
+                Opacity = 0.8
             };
-
-
 
             sp.Children.Add(lbl);
 
@@ -1745,7 +2102,12 @@ Spiral
             wpcont.Children.Add(sp);
         }
 
-        // Save fence data to JSON with consistent IsHidden string format
+
+
+
+
+
+        //// Save fence data to JSON with consistent IsHidden string format
         public static void SaveFenceData()
         {
             // Pre-process _fenceData to ensure IsHidden is stored as string "true" or "false"
@@ -1847,75 +2209,7 @@ Spiral
                 if (fence.ItemsType?.ToString() != "Portal")
                 {
                     Button btn = new Button { Content = fence.Title.ToString(), Margin = new Thickness(5) };
-                    //btn.Click += (s, e) =>
-                    //{
-                    //    var sourceItems = sourceFence.Items as JArray;
-                    //    var destItems = fence.Items as JArray ?? new JArray();
-                    //    if (sourceItems != null)
-                    //    {
-                    //        IDictionary<string, object> itemDict = item is IDictionary<string, object> dict ? dict : ((JObject)item).ToObject<IDictionary<string, object>>();
-                    //        string filename = itemDict.ContainsKey("Filename") ? itemDict["Filename"].ToString() : "Unknown";
-
-                    //        Log($"Moving item {filename} from {sourceFence.Title} to {fence.Title}");
-                    //        sourceItems.Remove(item);
-                    //        destItems.Add(item);
-                    //        fence.Items = destItems;
-                    //        SaveFenceData();
-                    //        moveWindow.Close();
-
-                    //        var waitWindow = new Window
-                    //        {
-                    //            Title = "Desktop Fences +",
-                    //            Width = 200,
-                    //            Height = 100,
-                    //            WindowStartupLocation = WindowStartupLocation.CenterScreen,
-                    //            WindowStyle = WindowStyle.None,
-                    //            Background = Brushes.LightGray,
-                    //            Topmost = true
-                    //        };
-                    //        var waitStack = new StackPanel
-                    //        {
-                    //            HorizontalAlignment = HorizontalAlignment.Center,
-                    //            VerticalAlignment = VerticalAlignment.Center
-                    //        };
-                    //        waitWindow.Content = waitStack;
-
-                    //        string exePath = Assembly.GetEntryAssembly().Location;
-                    //        var iconImage = new Image
-                    //        {
-                    //            Source = System.Drawing.Icon.ExtractAssociatedIcon(exePath).ToImageSource(),
-                    //            Width = 32,
-                    //            Height = 32,
-                    //            Margin = new Thickness(0, 0, 0, 5)
-                    //        };
-                    //        waitStack.Children.Add(iconImage);
-
-                    //        var waitLabel = new Label
-                    //        {
-                    //            Content = "Please wait...",
-                    //            HorizontalAlignment = HorizontalAlignment.Center
-                    //        };
-                    //        waitStack.Children.Add(waitLabel);
-
-                    //        waitWindow.Show();
-
-                    //        dispatcher.InvokeAsync(() =>
-                    //        {
-                    //            if (Application.Current != null && !Application.Current.Dispatcher.HasShutdownStarted)
-                    //            {
-                    //                Application.Current.Windows.OfType<NonActivatingWindow>().ToList().ForEach(w => w.Close());
-                    //                LoadAndCreateFences(new TargetChecker(1000));
-                    //                waitWindow.Close();
-                    //                Log($"Item moved successfully to {fence.Title}");
-                    //            }
-                    //            else
-                    //            {
-                    //                waitWindow.Close();
-                    //                Log($"Skipped fence reload due to application shutdown");
-                    //            }
-                    //        }, DispatcherPriority.Background);
-                    //    }
-                    //};
+          
 
 
                     btn.Click += (s, e) =>
@@ -2048,7 +2342,9 @@ Spiral
 
             if (!isShortcut)
             {
-                MessageBox.Show("Edit is only available for shortcuts.", "Info", MessageBoxButton.OK, MessageBoxImage.Information);
+                //   MessageBox.Show("Edit is only available for shortcuts.", "Info", MessageBoxButton.OK, MessageBoxImage.Information);
+
+                TrayManager.Instance.ShowOKOnlyMessageBoxForm("Edit is only available for shortcuts.", "Info");
                 return;
             }
 
@@ -2150,8 +2446,6 @@ Spiral
                         {
                             Log($"TextBlock not found in StackPanel for {filePath}. Children: {string.Join(", ", sp.Children.OfType<FrameworkElement>().Select(c => c.GetType().Name))}");
                         }
-
-                        // Update icon
                         var ico = sp.Children.OfType<Image>().FirstOrDefault();
                         if (ico != null)
                         {
@@ -2163,20 +2457,51 @@ Spiral
                             {
                                 string[] iconParts = shortcut.IconLocation.Split(',');
                                 string iconPath = iconParts[0];
+                                int iconIndex = 0;
+                                if (iconParts.Length == 2 && int.TryParse(iconParts[1], out int parsedIndex))
+                                {
+                                    iconIndex = parsedIndex; // Use the specified index
+                                }
+
                                 if (System.IO.File.Exists(iconPath))
                                 {
                                     try
                                     {
-                                        shortcutIcon = System.Drawing.Icon.ExtractAssociatedIcon(iconPath).ToImageSource();
-                                        Log($"Applied custom icon from IconLocation for {filePath}: {iconPath}");
+                                        IntPtr[] hIcon = new IntPtr[1];
+                                        uint result = ExtractIconEx(iconPath, iconIndex, hIcon, null, 1);
+                                        if (result > 0 && hIcon[0] != IntPtr.Zero)
+                                        {
+                                            try
+                                            {
+                                                shortcutIcon = Imaging.CreateBitmapSourceFromHIcon(
+                                                    hIcon[0],
+                                                    Int32Rect.Empty,
+                                                    BitmapSizeOptions.FromEmptyOptions()
+                                                );
+                                                Log($"Extracted icon at index {iconIndex} from {iconPath} for {filePath}");
+                                            }
+                                            finally
+                                            {
+                                                DestroyIcon(hIcon[0]); // Clean up icon handle
+                                            }
+                                        }
+                                        else
+                                        {
+                                            Log($"Failed to extract icon at index {iconIndex} from {iconPath} for {filePath}. Result: {result}");
+                                        }
                                     }
                                     catch (Exception ex)
                                     {
-                                        Log($"Failed to extract custom icon for {filePath}: {ex.Message}");
+                                        Log($"Error extracting icon from {iconPath} at index {iconIndex} for {filePath}: {ex.Message}");
                                     }
+                                }
+                                else
+                                {
+                                    Log($"Icon file not found: {iconPath} for {filePath}");
                                 }
                             }
 
+                            // Fallback logic if no custom icon is extracted
                             if (shortcutIcon == null)
                             {
                                 string targetPath = shortcut.TargetPath;
@@ -2208,6 +2533,8 @@ Spiral
                             iconCache[filePath] = shortcutIcon;
                             Log($"Updated icon for {filePath}");
                         }
+
+ 
                         else
                         {
                             Log($"Image not found in StackPanel for {filePath}");
@@ -2256,6 +2583,65 @@ Spiral
                 }
             }
         }
+        private static void BackupOrRestoreShortcut(string filePath, bool targetExists, bool isFolder)
+        {
+            bool isLogEnabled = _options.IsLogEnabled ?? true;
+            void Log(string message)
+            {
+                if (isLogEnabled)
+                {
+                    string logPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "Desktop_Fences.log");
+                    System.IO.File.AppendAllText(logPath, $"{DateTime.Now}: {message}\n");
+                }
+            }
+
+            string exeDir = System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
+            string tempShortcutsDir = System.IO.Path.Combine(exeDir, "Temp Shortcuts");
+            string backupFileName = System.IO.Path.GetFileName(filePath);
+            string backupPath = System.IO.Path.Combine(tempShortcutsDir, backupFileName);
+
+            try
+            {
+                // Ensure TempShortcuts directory exists
+                if (!Directory.Exists(tempShortcutsDir))
+                {
+                    Directory.CreateDirectory(tempShortcutsDir);
+                    Log($"Created TempShortcuts directory: {tempShortcutsDir}");
+                }
+
+                if (!targetExists)
+                {
+                    // Backup shortcut if target is missing and not already backed up
+                    if (System.IO.File.Exists(filePath) && !System.IO.File.Exists(backupPath))
+                    {
+                        System.IO.File.Copy(filePath, backupPath, true);
+                        Log($"Backed up shortcut {filePath} to {backupPath}");
+                    }
+                }
+                else
+                {
+                    // Restore shortcut from backup if target exists
+                    if (System.IO.File.Exists(backupPath))
+                    {
+                        // Verify the backup has a custom icon before restoring
+                        WshShell shell = new WshShell();
+                        IWshShortcut backupShortcut = (IWshShortcut)shell.CreateShortcut(backupPath);
+                        if (!string.IsNullOrEmpty(backupShortcut.IconLocation))
+                        {
+                            System.IO.File.Copy(backupPath, filePath, true);
+                            Log($"Restored shortcut {filePath} from {backupPath} with custom icon");
+                        }
+                        // Delete backup
+                        System.IO.File.Delete(backupPath);
+                        Log($"Deleted backup {backupPath} after restoration");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Log($"Error in BackupOrRestoreShortcut for {filePath}: {ex.Message}");
+            }
+        }
 
         private static void UpdateIcon(StackPanel sp, string filePath, bool isFolder)
         {
@@ -2268,94 +2654,349 @@ Spiral
                     System.IO.File.AppendAllText(logPath, $"{DateTime.Now}: {message}\n");
                 }
             }
-            if (Application.Current != null)
+
+            if (Application.Current == null)
             {
-                Application.Current.Dispatcher.Invoke(() =>
+                Log("Application.Current is null, cannot update icon.");
+                return;
+            }
+
+            Application.Current.Dispatcher.Invoke(() =>
             {
                 Image ico = sp.Children.OfType<Image>().FirstOrDefault();
-                if (ico == null) return;
+                if (ico == null)
+                {
+                    Log($"No Image found in StackPanel for {filePath}");
+                    return;
+                }
 
                 bool isShortcut = System.IO.Path.GetExtension(filePath).ToLower() == ".lnk";
                 string targetPath = isShortcut ? Utility.GetShortcutTarget(filePath) : filePath;
                 bool targetExists = System.IO.File.Exists(targetPath) || System.IO.Directory.Exists(targetPath);
                 bool isTargetFolder = System.IO.Directory.Exists(targetPath);
 
+                // Correct isFolder for shortcut to folder
+                if (isShortcut && isTargetFolder)
+                {
+                    isFolder = true;
+                    Log($"Corrected isFolder to true for shortcut {filePath} targeting folder {targetPath}");
+                }
+
                 ImageSource newIcon = null;
 
+                // Handle backup/restore for shortcuts
                 if (isShortcut)
+                {
+                    BackupOrRestoreShortcut(filePath, targetExists, isFolder);
+                }
+
+                if (!targetExists)
+                {
+                    // Use missing icon for both shortcuts and non-shortcuts when target is missing
+                    newIcon = isFolder
+                        ? new BitmapImage(new Uri("pack://application:,,,/Resources/folder-WhiteX.png"))
+                        : new BitmapImage(new Uri("pack://application:,,,/Resources/file-WhiteX.png"));
+                    Log($"Using missing icon for {filePath}: {(isFolder ? "folder-WhiteX.png" : "file-WhiteX.png")}");
+                }
+                else if (isShortcut)
                 {
                     WshShell shell = new WshShell();
                     IWshShortcut shortcut = (IWshShortcut)shell.CreateShortcut(filePath);
-                    string iconLocation = shortcut.IconLocation;
 
-                    // Check if a custom icon is set and the file exists
-                    if (!string.IsNullOrEmpty(iconLocation))
+                    // Check for custom IconLocation
+                    if (!string.IsNullOrEmpty(shortcut.IconLocation))
                     {
-                        string[] iconParts = iconLocation.Split(',');
+                        string[] iconParts = shortcut.IconLocation.Split(',');
                         string iconPath = iconParts[0];
+                        int iconIndex = 0;
+                        if (iconParts.Length == 2 && int.TryParse(iconParts[1], out int parsedIndex))
+                        {
+                            iconIndex = parsedIndex;
+                        }
+
                         if (System.IO.File.Exists(iconPath))
                         {
                             try
                             {
-                                newIcon = System.Drawing.Icon.ExtractAssociatedIcon(iconPath).ToImageSource();
-                               //Log($"Using custom IconLocation for {filePath}: {iconPath}");
+                                IntPtr[] hIcon = new IntPtr[1];
+                                uint result = ExtractIconEx(iconPath, iconIndex, hIcon, null, 1);
+                                if (result > 0 && hIcon[0] != IntPtr.Zero)
+                                {
+                                    try
+                                    {
+                                        newIcon = Imaging.CreateBitmapSourceFromHIcon(
+                                            hIcon[0],
+                                            Int32Rect.Empty,
+                                            BitmapSizeOptions.FromEmptyOptions()
+                                        );
+                                        Log($"Extracted custom icon at index {iconIndex} from {iconPath} for {filePath}");
+                                    }
+                                    finally
+                                    {
+                                        DestroyIcon(hIcon[0]);
+                                    }
+                                }
+                                else
+                                {
+                                    Log($"Failed to extract custom icon at index {iconIndex} from {iconPath} for {filePath}. Result: {result}");
+                                }
                             }
                             catch (Exception ex)
                             {
-                                Log($"Failed to load custom icon for {filePath} from {iconPath}: {ex.Message}");
+                                Log($"Error extracting custom icon from {iconPath} at index {iconIndex} for {filePath}: {ex.Message}");
                             }
                         }
+                        else
+                        {
+                            Log($"Custom icon file not found: {iconPath} for {filePath}");
+                        }
                     }
-                }
 
-                // If no valid custom icon, fall back to target-based or default logic
-                if (newIcon == null)
-                {
-                    if (targetExists)
+                    // Fallback if no custom icon
+                    if (newIcon == null)
                     {
                         if (isTargetFolder)
                         {
                             newIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/folder-White.png"));
-                         //   Log($"Target exists, updating to folder-White.png for {filePath}");
+                            Log($"Using folder-White.png for shortcut {filePath} targeting folder {targetPath}");
                         }
                         else
                         {
                             try
                             {
                                 newIcon = System.Drawing.Icon.ExtractAssociatedIcon(targetPath).ToImageSource();
-                              //  Log($"Target exists, updating to file icon for {filePath}");
+                                Log($"Using target file icon for shortcut {filePath}: {targetPath}");
                             }
                             catch (Exception ex)
                             {
                                 newIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/file-WhiteX.png"));
-                                Log($"Failed to extract icon for {filePath}: {ex.Message}");
+                                Log($"Failed to extract target file icon for shortcut {filePath}: {ex.Message}");
                             }
                         }
                     }
+                }
+                else
+                {
+                    // Non-shortcut handling
+                    if (isTargetFolder)
+                    {
+                        newIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/folder-White.png"));
+                        Log($"Using folder-White.png for {filePath}");
+                    }
                     else
                     {
-                        newIcon = isFolder
-                            ? new BitmapImage(new Uri("pack://application:,,,/Resources/folder-WhiteX.png"))
-                            : new BitmapImage(new Uri("pack://application:,,,/Resources/file-WhiteX.png"));
-                        Log($"Target missing, updating to {(isFolder ? "folder-WhiteX.png" : "file-WhiteX.png")} for {filePath}");
+                        try
+                        {
+                            newIcon = System.Drawing.Icon.ExtractAssociatedIcon(filePath).ToImageSource();
+                            Log($"Using file icon for {filePath}");
+                        }
+                        catch (Exception ex)
+                        {
+                            newIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/file-WhiteX.png"));
+                            Log($"Failed to extract icon for {filePath}: {ex.Message}");
+                        }
                     }
                 }
 
+                // Update icon only if different
                 if (ico.Source != newIcon)
                 {
                     ico.Source = newIcon;
-                  //  Log($"Icon updated for {filePath}");
+                    // Update cache if used
+                    if (iconCache.ContainsKey(filePath))
+                    {
+                        iconCache[filePath] = newIcon;
+                        Log($"Updated icon cache for {filePath}");
+                    }
+                    Log($"Icon updated for {filePath}");
+                }
+                else
+                {
+                    Log($"No icon update needed for {filePath}: same icon");
                 }
             });
-
-            }
-            else
-            {
-                Log("Application.Current is null, cannot update icon.");
-            }
         }
+        //private static void UpdateIcon(StackPanel sp, string filePath, bool isFolder)
+        //{
+        //    bool isLogEnabled = _options.IsLogEnabled ?? true;
+        //    void Log(string message)
+        //    {
+        //        if (isLogEnabled)
+        //        {
+        //            string logPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "Desktop_Fences.log");
+        //            System.IO.File.AppendAllText(logPath, $"{DateTime.Now}: {message}\n");
+        //        }
+        //    }
 
-    
+        //    if (Application.Current == null)
+        //    {
+        //        Log("Application.Current is null, cannot update icon.");
+        //        return;
+        //    }
+
+        //    Application.Current.Dispatcher.Invoke(() =>
+        //    {
+        //        Image ico = sp.Children.OfType<Image>().FirstOrDefault();
+        //        if (ico == null)
+        //        {
+        //            Log($"No Image found in StackPanel for {filePath}");
+        //            return;
+        //        }
+
+        //        bool isShortcut = System.IO.Path.GetExtension(filePath).ToLower() == ".lnk";
+        //        string targetPath = isShortcut ? Utility.GetShortcutTarget(filePath) : filePath;
+        //        bool targetExists = System.IO.File.Exists(targetPath) || System.IO.Directory.Exists(targetPath);
+        //        bool isTargetFolder = System.IO.Directory.Exists(targetPath);
+
+        //        // Correct isFolder for shortcut to folder
+        //        if (isShortcut && isTargetFolder)
+        //        {
+        //            isFolder = true;
+        //            Log($"Corrected isFolder to true for shortcut {filePath} targeting folder {targetPath}");
+        //        }
+
+        //        ImageSource newIcon = null;
+
+        //        if (isShortcut)
+        //        {
+        //            WshShell shell = new WshShell();
+        //            IWshShortcut shortcut = (IWshShortcut)shell.CreateShortcut(filePath);
+
+        //            // Check for custom IconLocation
+        //            if (!string.IsNullOrEmpty(shortcut.IconLocation))
+        //            {
+        //                string[] iconParts = shortcut.IconLocation.Split(',');
+        //                string iconPath = iconParts[0];
+        //                int iconIndex = 0;
+        //                if (iconParts.Length == 2 && int.TryParse(iconParts[1], out int parsedIndex))
+        //                {
+        //                    iconIndex = parsedIndex;
+        //                }
+
+        //                if (System.IO.File.Exists(iconPath))
+        //                {
+        //                    try
+        //                    {
+        //                        IntPtr[] hIcon = new IntPtr[1];
+        //                        uint result = ExtractIconEx(iconPath, iconIndex, hIcon, null, 1);
+        //                        if (result > 0 && hIcon[0] != IntPtr.Zero)
+        //                        {
+        //                            try
+        //                            {
+        //                                newIcon = Imaging.CreateBitmapSourceFromHIcon(
+        //                                    hIcon[0],
+        //                                    Int32Rect.Empty,
+        //                                    BitmapSizeOptions.FromEmptyOptions()
+        //                                );
+        //                                Log($"Extracted custom icon at index {iconIndex} from {iconPath} for {filePath}");
+        //                            }
+        //                            finally
+        //                            {
+        //                                DestroyIcon(hIcon[0]);
+        //                            }
+        //                        }
+        //                        else
+        //                        {
+        //                            Log($"Failed to extract custom icon at index {iconIndex} from {iconPath} for {filePath}. Result: {result}");
+        //                        }
+        //                    }
+        //                    catch (Exception ex)
+        //                    {
+        //                        Log($"Error extracting custom icon from {iconPath} at index {iconIndex} for {filePath}: {ex.Message}");
+        //                    }
+        //                }
+        //                else
+        //                {
+        //                    Log($"Custom icon file not found: {iconPath} for {filePath}");
+        //                }
+        //            }
+
+        //            // Fallback only if no custom icon was extracted
+        //            if (newIcon == null)
+        //            {
+        //                if (targetExists)
+        //                {
+        //                    if (isTargetFolder)
+        //                    {
+        //                        newIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/folder-White.png"));
+        //                        Log($"Using folder-White.png for shortcut {filePath} targeting folder {targetPath}");
+        //                    }
+        //                    else
+        //                    {
+        //                        try
+        //                        {
+        //                            newIcon = System.Drawing.Icon.ExtractAssociatedIcon(targetPath).ToImageSource();
+        //                            Log($"Using target file icon for shortcut {filePath}: {targetPath}");
+        //                        }
+        //                        catch (Exception ex)
+        //                        {
+        //                            newIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/file-WhiteX.png"));
+        //                            Log($"Failed to extract target file icon for shortcut {filePath}: {ex.Message}");
+        //                        }
+        //                    }
+        //                }
+        //                else
+        //                {
+        //                    newIcon = isFolder
+        //                        ? new BitmapImage(new Uri("pack://application:,,,/Resources/folder-WhiteX.png"))
+        //                        : new BitmapImage(new Uri("pack://application:,,,/Resources/file-WhiteX.png"));
+        //                    Log($"Using missing icon for shortcut {filePath}: {(isFolder ? "folder-WhiteX.png" : "file-WhiteX.png")}");
+        //                }
+        //            }
+        //        }
+        //        else
+        //        {
+        //            // Non-shortcut handling
+        //            if (targetExists)
+        //            {
+        //                if (isTargetFolder)
+        //                {
+        //                    newIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/folder-White.png"));
+        //                    Log($"Using folder-White.png for {filePath}");
+        //                }
+        //                else
+        //                {
+        //                    try
+        //                    {
+        //                        newIcon = System.Drawing.Icon.ExtractAssociatedIcon(filePath).ToImageSource();
+        //                        Log($"Using file icon for {filePath}");
+        //                    }
+        //                    catch (Exception ex)
+        //                    {
+        //                        newIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/file-WhiteX.png"));
+        //                        Log($"Failed to extract icon for {filePath}: {ex.Message}");
+        //                    }
+        //                }
+        //            }
+        //            else
+        //            {
+        //                newIcon = isFolder
+        //                    ? new BitmapImage(new Uri("pack://application:,,,/Resources/folder-WhiteX.png"))
+        //                    : new BitmapImage(new Uri("pack://application:,,,/Resources/file-WhiteX.png"));
+        //                Log($"Using missing icon for {filePath}: {(isFolder ? "folder-WhiteX.png" : "file-WhiteX.png")}");
+        //            }
+        //        }
+
+        //        // Update icon only if different
+        //        if (ico.Source != newIcon)
+        //        {
+        //            ico.Source = newIcon;
+        //            // Update cache if used
+        //            if (iconCache.ContainsKey(filePath))
+        //            {
+        //                iconCache[filePath] = newIcon;
+        //                Log($"Updated icon cache for {filePath}");
+        //            }
+        //            Log($"Icon updated for {filePath}");
+        //        }
+        //        else
+        //        {
+        //            Log($"No icon update needed for {filePath}: same icon");
+        //        }
+        //    });
+        //}
+
+
 
         public static void UpdateOptionsAndClickEvents()
         {
@@ -2847,14 +3488,17 @@ private static void LaunchItem(StackPanel sp, string path, bool isFolder, string
         else
         {
             Log($"Target not found: {targetPath}");
-            MessageBox.Show($"Target '{targetPath}' was not found.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-        }
+                    //    MessageBox.Show($"Target '{targetPath}' was not found.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    TrayManager.Instance.ShowOKOnlyMessageBoxForm($"Target '{targetPath}' was not found.", "Error");
+
+                }
     }
     catch (Exception ex)
     {
         Log($"Error in LaunchItem for {path}: {ex.Message}");
-        MessageBox.Show($"Error opening item: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-    }
+                //  MessageBox.Show($"Error opening item: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                TrayManager.Instance.ShowOKOnlyMessageBoxForm($"Error opening item: {ex.Message}", "Error");
+            }
     }
         static readonly string[] adjectives = {
         "High", "Low", "Tiny", "Vast", "Wide", "Slim", "Flat", "Bold", "Cold", "Warm",

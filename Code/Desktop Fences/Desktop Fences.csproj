@@ -7,9 +7,9 @@
 		<Nullable>enable</Nullable>
 		<UseWPF>true</UseWPF>
 		<UseWindowsForms>True</UseWindowsForms>
-		<AssemblyVersion>2.5.0.30</AssemblyVersion>
-		<FileVersion>2.5.0.30</FileVersion>
-		<Version>2.5.0.30</Version>
+		<AssemblyVersion>2.5.1.37</AssemblyVersion>
+		<FileVersion>2.5.1.37</FileVersion>
+		<Version>2.5.1.37</Version>
 		<ApplicationIcon>Resources\logo2.ico</ApplicationIcon>
 	</PropertyGroup>
 
@@ -21,7 +21,9 @@
 		<None Remove="folder.png" />
 		<None Remove="folderX.png" />
 		<None Remove="portal.png" />
+		<None Remove="Resources\ding.wav" />
 		<None Remove="Resources\donate.png" />
+		<None Remove="Resources\logo_blue.ico" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -43,6 +45,12 @@
 			<Isolated>false</Isolated>
 			<EmbedInteropTypes>true</EmbedInteropTypes>
 		</COMReference>
+		<COMReference Include="{d37e2a3e-8545-3a39-9f4f-31827c9124ab}">
+		  <WrapperTool>tlbimp</WrapperTool>
+		  <VersionMinor>4</VersionMinor>
+		  <VersionMajor>2</VersionMajor>
+		  <Guid>d37e2a3e-8545-3a39-9f4f-31827c9124ab</Guid>
+		</COMReference>
 	</ItemGroup>
 
 	<ItemGroup>
@@ -50,6 +58,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<EmbeddedResource Include="Resources\ding.wav" />
 		<EmbeddedResource Include="Resources\logo1.png" />
 	</ItemGroup>
 	<ItemGroup>
@@ -69,6 +78,9 @@
 			<CopyToOutputDirectory>Never</CopyToOutputDirectory>
 		</Resource>
 		<Resource Include="Resources\folderX.png" />
+		<EmbeddedResource Include="Resources\logo_blue.ico">
+		  <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+		</EmbeddedResource>
 		<Resource Include="Resources\portal.png" />
 	</ItemGroup>
 

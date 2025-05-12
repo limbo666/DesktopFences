@@ -2,6 +2,7 @@
 using System.Windows.Interop;
 using System.Windows;
 using System;
+using Desktop_Fences;
 
 public class NonActivatingWindow : Window
 {
@@ -25,7 +26,21 @@ public class NonActivatingWindow : Window
 
     private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
     {
+
+        const int WM_ENTERSIZEMOVE = 0x0231; // Resizing starts
+        const int WM_EXITSIZEMOVE = 0x0232;  // Resizing ends
+
+        if (msg == WM_ENTERSIZEMOVE)
+        {
+            FenceManager.OnResizingStarted(this);
+        }
+        else if (msg == WM_EXITSIZEMOVE)
+        {
+            FenceManager.OnResizingEnded(this);
+        }
+
         // Handle existing focus prevention
+
         if (_focusPreventionEnabled && msg == WM_MOUSEACTIVATE)
         {
             handled = true;

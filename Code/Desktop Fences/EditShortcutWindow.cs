@@ -1,210 +1,13 @@
-﻿//using IWshRuntimeLibrary;
-//using System.Windows.Controls;
-//using System.Windows;
-//using System;
-//using System.Linq;
-
-//public partial class EditShortcutWindow : Window
-//{
-//    private string shortcutPath;
-//    public string NewDisplayName { get; private set; }
-
-//    public EditShortcutWindow(string shortcutPath, string currentDisplayName)
-//    {
-//        this.shortcutPath = shortcutPath;
-//        NewDisplayName = currentDisplayName;
-//        InitializeComponent();
-//    }
-
-//    private void InitializeComponent()
-//    {
-//        this.Title = "Edit Shortcut";
-//        this.Width = 400;
-//        this.Height = 200; // Reduced from 300 to 2/3 (200)
-//        this.WindowStartupLocation = WindowStartupLocation.CenterScreen;
-
-//        Grid mainGrid = new Grid();
-//        mainGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
-//        mainGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-
-//        // GroupBox for controls
-//        GroupBox groupBox = new GroupBox
-//        {
-//            Header = "Shortcut Properties",
-//            Margin = new Thickness(10),
-//        };
-//        Grid.SetRow(groupBox, 0);
-
-//        Grid innerGrid = new Grid();
-//        innerGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-//        innerGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-//        innerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-//        innerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-
-//        // Display Name
-//        Label nameLabel = new Label { Content = "Display Name:", Margin = new Thickness(5, 5, 0, 0) };
-//        Grid.SetRow(nameLabel, 0);
-//        Grid.SetColumn(nameLabel, 0);
-
-//        TextBox nameBox = new TextBox
-//        {
-//            Text = NewDisplayName,
-//            Margin = new Thickness(100, 5, 5, 0),
-//            VerticalAlignment = VerticalAlignment.Center
-//        };
-//        Grid.SetRow(nameBox, 0);
-//        Grid.SetColumn(nameBox, 0);
-//        Grid.SetColumnSpan(nameBox, 2);
-
-//        // Icon Selection
-//        Label iconLabel = new Label { Content = "Icon:", Margin = new Thickness(5, 5, 0, 0) };
-//        Grid.SetRow(iconLabel, 1);
-//        Grid.SetColumn(iconLabel, 0);
-
-//        TextBox iconPathBox = new TextBox
-//        {
-//            Text = GetCurrentIconLocation(),
-//            IsReadOnly = true,
-//            Margin = new Thickness(100, 5, 5, 0),
-//            VerticalAlignment = VerticalAlignment.Center
-//        };
-//        Grid.SetRow(iconPathBox, 1);
-//        Grid.SetColumn(iconPathBox, 0);
-
-//        Button browseIconButton = new Button
-//        {
-//            Content = "Browse...",
-//            Margin = new Thickness(0, 5, 5, 0),
-//            Width = 80,
-//            Height = 25
-//        };
-//        browseIconButton.Click += BrowseIcon_Click;
-//        Grid.SetRow(browseIconButton, 1);
-//        Grid.SetColumn(browseIconButton, 1);
-
-//        innerGrid.Children.Add(nameLabel);
-//        innerGrid.Children.Add(nameBox);
-//        innerGrid.Children.Add(iconLabel);
-//        innerGrid.Children.Add(iconPathBox);
-//        innerGrid.Children.Add(browseIconButton);
-//        groupBox.Content = innerGrid;
-
-//        // Buttons
-//        StackPanel buttonPanel = new StackPanel
-//        {
-//            Orientation = Orientation.Horizontal,
-//            HorizontalAlignment = HorizontalAlignment.Right,
-//            Margin = new Thickness(0, 0, 10, 10)
-//        };
-//        Grid.SetRow(buttonPanel, 1);
-
-//        Button saveButton = new Button
-//        {
-//            Content = "Save",
-//            Margin = new Thickness(0, 0, 10, 0),
-//            Width = 80,
-//            Height = 25
-//        };
-//        saveButton.Click += Save_Click;
-
-//        Button cancelButton = new Button
-//        {
-//            Content = "Cancel",
-//            Width = 80,
-//            Height = 25
-//        };
-//        cancelButton.Click += (s, e) => this.DialogResult = false;
-
-//        buttonPanel.Children.Add(saveButton);
-//        buttonPanel.Children.Add(cancelButton);
-
-//        mainGrid.Children.Add(groupBox);
-//        mainGrid.Children.Add(buttonPanel);
-
-//        this.Content = mainGrid;
-//    }
-
-//    private string GetCurrentIconLocation()
-//    {
-//        WshShell shell = new WshShell();
-//        IWshShortcut shortcut = (IWshShortcut)shell.CreateShortcut(shortcutPath);
-//        return string.IsNullOrEmpty(shortcut.IconLocation) ? "Default" : shortcut.IconLocation.Split(',')[0];
-//    }
-
-//    private void BrowseIcon_Click(object sender, RoutedEventArgs e)
-//    {
-//        var dialog = new System.Windows.Forms.OpenFileDialog
-//        {
-//            Filter = "Icon Files (*.ico)|*.ico|Executable Files (*.exe)|*.exe|All Files (*.*)|*.*",
-//            Title = "Select an Icon"
-//        };
-//        if (dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
-//        {
-//            var iconPathBox = ((this.Content as Grid)?.Children.OfType<GroupBox>().FirstOrDefault()?.Content as Grid)?
-//                .Children.OfType<TextBox>().FirstOrDefault(t => Grid.GetRow(t) == 1);
-//            if (iconPathBox != null)
-//            {
-//                iconPathBox.Text = dialog.FileName;
-//            }
-//        }
-//    }
-
-//    private void Save_Click(object sender, RoutedEventArgs e)
-//    {
-//        try
-//        {
-//            var nameBox = ((this.Content as Grid)?.Children.OfType<GroupBox>().FirstOrDefault()?.Content as Grid)?
-//                .Children.OfType<TextBox>().FirstOrDefault(t => Grid.GetRow(t) == 0);
-//            var iconPathBox = ((this.Content as Grid)?.Children.OfType<GroupBox>().FirstOrDefault()?.Content as Grid)?
-//                .Children.OfType<TextBox>().FirstOrDefault(t => Grid.GetRow(t) == 1);
-
-//            if (nameBox == null)
-//            {
-//                throw new InvalidOperationException("Display Name TextBox not found.");
-//            }
-
-//            NewDisplayName = string.IsNullOrWhiteSpace(nameBox.Text) ? System.IO.Path.GetFileNameWithoutExtension(shortcutPath) : nameBox.Text;
-
-//            WshShell shell = new WshShell();
-//            IWshShortcut shortcut = (IWshShortcut)shell.CreateShortcut(shortcutPath);
-
-//            string iconPath = iconPathBox?.Text;
-//            if (!string.IsNullOrEmpty(iconPath) && iconPath != "Default" && System.IO.File.Exists(iconPath))
-//            {
-//                shortcut.IconLocation = iconPath;
-//                Log($"Set custom icon for {shortcutPath} to {iconPath}");
-//            }
-//            else
-//            {
-//                Log($"No new icon selected for {shortcutPath}, keeping existing: {shortcut.IconLocation}");
-//            }
-
-//            shortcut.Save();
-//            this.DialogResult = true;
-//            Log($"Saved changes to shortcut {shortcutPath}");
-//        }
-//        catch (Exception ex)
-//        {
-//            Log($"Failed to save shortcut {shortcutPath}: {ex.Message}");
-//            MessageBox.Show($"Failed to save changes: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-//        }
-//    }
-
-//    private void Log(string message)
-//    {
-//        bool isLogEnabled = true; // Adjust based on your _options
-//        if (isLogEnabled)
-//        {
-//            string logPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly().Location), "desktop_fences.log");
-//            System.IO.File.AppendAllText(logPath, $"{DateTime.Now}: {message}\n");
-//        }
-//    }
-//}
-using System;
+﻿using System;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using Desktop_Fences;
+using System.Windows.Interop;
+using System.Windows.Media.Imaging;
+using System.Windows.Media;
 using IWshRuntimeLibrary;
+using System.Runtime.InteropServices;
 
 public partial class EditShortcutWindow : Window
 {
@@ -212,6 +15,15 @@ public partial class EditShortcutWindow : Window
     public string NewDisplayName { get; private set; }
     private TextBox nameBox; // Field to store reference
     private TextBox iconPathBox; // Field to store reference
+
+    private Image iconPreview;
+
+    [DllImport("shell32.dll", CharSet = CharSet.Auto)]
+    private static extern uint ExtractIconEx(string szFileName, int nIconIndex, IntPtr[] phiconLarge, IntPtr[] phiconSmall, uint nIcons);
+
+    [DllImport("user32.dll")]
+    private static extern bool DestroyIcon(IntPtr hIcon);
+
 
     public EditShortcutWindow(string shortcutPath, string currentDisplayName)
     {
@@ -227,10 +39,12 @@ public partial class EditShortcutWindow : Window
         this.Height = 200;
         this.WindowStartupLocation = WindowStartupLocation.CenterScreen;
 
+        // Root Grid
         Grid mainGrid = new Grid();
         mainGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
         mainGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
 
+        // GroupBox
         GroupBox groupBox = new GroupBox
         {
             Header = "Shortcut Properties",
@@ -238,40 +52,80 @@ public partial class EditShortcutWindow : Window
         };
         Grid.SetRow(groupBox, 0);
 
+        // Inner Grid
         Grid innerGrid = new Grid();
         innerGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         innerGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+
+        innerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         innerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         innerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
+        // Display Name Label
         Label nameLabel = new Label { Content = "Display Name:", Margin = new Thickness(5, 5, 0, 0) };
         Grid.SetRow(nameLabel, 0);
         Grid.SetColumn(nameLabel, 0);
 
-        nameBox = new TextBox // Assign to field
+        // Display Name TextBox
+        nameBox = new TextBox
         {
             Text = NewDisplayName,
-            Margin = new Thickness(100, 5, 5, 0),
-            VerticalAlignment = VerticalAlignment.Center
+            Margin = new Thickness(5, 5, 5, 0),
+            VerticalAlignment = VerticalAlignment.Center,
+            HorizontalAlignment = HorizontalAlignment.Stretch
         };
         Grid.SetRow(nameBox, 0);
-        Grid.SetColumn(nameBox, 0);
-        Grid.SetColumnSpan(nameBox, 2);
+        Grid.SetColumn(nameBox, 1);
 
+        // Icon Label
         Label iconLabel = new Label { Content = "Icon:", Margin = new Thickness(5, 5, 0, 0) };
         Grid.SetRow(iconLabel, 1);
         Grid.SetColumn(iconLabel, 0);
 
-        iconPathBox = new TextBox // Assign to field
+        // Icon StackPanel
+        StackPanel iconStack = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        Grid.SetRow(iconStack, 1);
+        Grid.SetColumn(iconStack, 1);
+
+        iconPathBox = new TextBox
         {
             Text = GetCurrentIconLocation(),
             IsReadOnly = true,
-            Margin = new Thickness(100, 5, 5, 0),
-            VerticalAlignment = VerticalAlignment.Center
+            Margin = new Thickness(0, 5, 5, 0),
+            VerticalAlignment = VerticalAlignment.Center,
+            Width = 200
         };
-        Grid.SetRow(iconPathBox, 1);
-        Grid.SetColumn(iconPathBox, 0);
 
+        iconPreview = new Image
+        {
+            Width = 32,
+            Height = 32,
+            VerticalAlignment = VerticalAlignment.Center,
+            Stretch = Stretch.Uniform
+        };
+
+        iconPreview.Source = null;
+
+        var iconContainer = new Border
+        {
+            Width = 32,
+            Height = 32,
+            Margin = new Thickness(5, 0, 0, 0),
+            Background = Brushes.DarkRed,
+            BorderBrush = Brushes.Gray,           // visible outline
+            BorderThickness = new Thickness(3),
+            Padding = new Thickness(2),       // so the Image inside doesn’t fill the whole thing
+                        Child = iconPreview
+        };
+
+        iconStack.Children.Add(iconPathBox);
+        iconStack.Children.Add(iconContainer);
+
+        // Browse Button
         Button browseIconButton = new Button
         {
             Content = "Browse...",
@@ -281,15 +135,28 @@ public partial class EditShortcutWindow : Window
         };
         browseIconButton.Click += BrowseIcon_Click;
         Grid.SetRow(browseIconButton, 1);
-        Grid.SetColumn(browseIconButton, 1);
+        Grid.SetColumn(browseIconButton, 2);
 
+        // Add all controls
         innerGrid.Children.Add(nameLabel);
         innerGrid.Children.Add(nameBox);
         innerGrid.Children.Add(iconLabel);
-        innerGrid.Children.Add(iconPathBox);
+        innerGrid.Children.Add(iconStack);
         innerGrid.Children.Add(browseIconButton);
+
+        // Safe call to icon preview method
+        try
+        {
+            UpdateIconPreview();
+        }
+        catch (Exception ex)
+        {
+            Log($"Error setting initial icon preview: {ex.Message}");
+        }
+
         groupBox.Content = innerGrid;
 
+        // Bottom Buttons
         StackPanel buttonPanel = new StackPanel
         {
             Orientation = Orientation.Horizontal,
@@ -298,40 +165,40 @@ public partial class EditShortcutWindow : Window
         };
         Grid.SetRow(buttonPanel, 1);
 
-        Button defaultButton = new Button
-        {
-            Content = "Default",
-            Margin = new Thickness(0, 0, 10, 0),
-            Width = 80,
-            Height = 25
-        };
+        Button defaultButton = new Button { Content = "Default", Margin = new Thickness(0, 0, 10, 0), Width = 80, Height = 25 };
         defaultButton.Click += Default_Click;
 
-        Button saveButton = new Button
-        {
-            Content = "Save",
-            Margin = new Thickness(0, 0, 10, 0),
-            Width = 80,
-            Height = 25
-        };
+        Button saveButton = new Button { Content = "Save", Margin = new Thickness(0, 0, 10, 0), Width = 80, Height = 25 };
         saveButton.Click += Save_Click;
 
-        Button cancelButton = new Button
-        {
-            Content = "Cancel",
-            Width = 80,
-            Height = 25
-        };
+        Button cancelButton = new Button { Content = "Cancel", Width = 80, Height = 25 };
         cancelButton.Click += (s, e) => this.DialogResult = false;
 
         buttonPanel.Children.Add(defaultButton);
         buttonPanel.Children.Add(saveButton);
         buttonPanel.Children.Add(cancelButton);
 
+        // Final layout assembly
         mainGrid.Children.Add(groupBox);
         mainGrid.Children.Add(buttonPanel);
 
         this.Content = mainGrid;
+    }
+
+
+ 
+
+    private void UpdateIconPreview()
+    {
+        var path = iconPathBox.Text;
+        if (System.IO.File.Exists(path))
+            iconPreview.Source = new BitmapImage(new Uri(path));
+
+        //if (iconPathBox != null && iconPreview != null)
+        //{
+        //    iconPreview.Source = GetIconSource(iconPathBox.Text, shortcutPath);
+
+        //}
     }
 
     private void Default_Click(object sender, RoutedEventArgs e)
@@ -370,100 +237,239 @@ public partial class EditShortcutWindow : Window
             Log("Shortcut saved");
 
             iconPathBox.Text = "Default";
+            UpdateIconPreview(); // Update the icon preview
             Log($"Restored default icon and name for {shortcutPath}");
         }
         catch (Exception ex)
         {
             Log($"Failed to restore defaults for {shortcutPath}: {ex.Message}\nStackTrace: {ex.StackTrace}");
-            MessageBox.Show($"Failed to restore defaults: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            //      MessageBox.Show($"Failed to restore defaults: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            TrayManager.Instance.ShowOKOnlyMessageBoxForm($"Failed to restore defaults: {ex.Message}", "Error");
+        }
+        finally
+        {
+            Log("Exiting Default_Click");
         }
     }
 
-    //private void Default_Click(object sender, RoutedEventArgs e)
-    //{
-    //    Log($"nameBox is {(nameBox == null ? "null" : "not null")}, iconPathBox is {(iconPathBox == null ? "null" : "not null")}");
-    //    try
-    //    {
-    //        if (nameBox == null || iconPathBox == null)
-    //        {
-    //            throw new InvalidOperationException("TextBox controls not initialized.");
-    //        }
+    private ImageSource GetIconSource(string iconLocation, string shortcutPath)
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(iconLocation) || iconLocation == "Default")
+            {
+                string targetPath = GetTargetPath(shortcutPath);
+                if (System.IO.Directory.Exists(targetPath))
+                {
+                    return new BitmapImage(new Uri("pack://application:,,,/Resources/folder-White.png"));
+                }
+                else if (System.IO.File.Exists(targetPath))
+                {
+                    try
+                    {
+                        return System.Drawing.Icon.ExtractAssociatedIcon(targetPath).ToImageSource();
+                    }
+                    catch
+                    {
+                        return new BitmapImage(new Uri("pack://application:,,,/Resources/file-WhiteX.png"));
+                    }
+                }
+                return null;
+            }
 
-    //        string defaultName = System.IO.Path.GetFileNameWithoutExtension(shortcutPath);
-    //        nameBox.Text = defaultName;
-    //        NewDisplayName = defaultName;
+            string[] parts = iconLocation.Split(',');
+            string iconPath = parts[0];
+            int iconIndex = 0;
 
-    //        WshShell shell = new WshShell();
-    //        IWshShortcut shortcut = (IWshShortcut)shell.CreateShortcut(shortcutPath);
-    //        shortcut.IconLocation = ""; // Clear custom icon
-    //        shortcut.Save();
+            if (parts.Length > 1 && int.TryParse(parts[1], out int index))
+            {
+                iconIndex = index;
+            }
 
-    //        iconPathBox.Text = "Default";
-    //        Log($"Restored default icon and name for {shortcutPath}");
-    //    }
-    //    catch (Exception ex)
-    //    {
-    //        Log($"Failed to restore defaults for {shortcutPath}: {ex.Message}");
-    //        MessageBox.Show($"Failed to restore defaults: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-    //    }
-    //}
+            if (!System.IO.File.Exists(iconPath))
+            {
+                return null;
+            }
 
-    private string GetCurrentIconLocation()
+            if (iconPath.ToLower().EndsWith(".ico"))
+            {
+                // Load .ico file directly
+                using (var stream = new System.IO.FileStream(iconPath, System.IO.FileMode.Open, System.IO.FileAccess.Read))
+                {
+                    var bitmap = new BitmapImage();
+                    bitmap.BeginInit();
+                    bitmap.StreamSource = stream;
+                    bitmap.CacheOption = BitmapCacheOption.OnLoad;
+                    bitmap.EndInit();
+                    bitmap.Freeze(); // Ensures it's usable across threads
+                    return bitmap;
+                }
+            }
+            else
+            {
+                // Use ExtractIconEx for .exe/.dll icons
+                IntPtr[] hIcon = new IntPtr[1];
+                uint result = ExtractIconEx(iconPath, iconIndex, hIcon, null, 1);
+                if (result > 0 && hIcon[0] != IntPtr.Zero)
+                {
+                    try
+                    {
+                        return Imaging.CreateBitmapSourceFromHIcon(
+                            hIcon[0],
+                            Int32Rect.Empty,
+                            BitmapSizeOptions.FromEmptyOptions()
+                        );
+                    }
+                    finally
+                    {
+                        DestroyIcon(hIcon[0]);
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Log($"Error extracting icon from {iconLocation}: {ex.Message}");
+        }
+
+        return null;
+    }
+    
+    private string GetTargetPath(string shortcutPath)
     {
         WshShell shell = new WshShell();
         IWshShortcut shortcut = (IWshShortcut)shell.CreateShortcut(shortcutPath);
-        return string.IsNullOrEmpty(shortcut.IconLocation) ? "Default" : shortcut.IconLocation.Split(',')[0];
+        return shortcut.TargetPath;
+    }
+
+    private string GetCurrentIconLocation()
+    {
+        try
+        {
+            WshShell shell = new WshShell();
+            IWshShortcut shortcut = (IWshShortcut)shell.CreateShortcut(shortcutPath);
+            return string.IsNullOrEmpty(shortcut.IconLocation) ? "Default" : shortcut.IconLocation;
+        }
+        catch (Exception ex)
+        {
+            Log($"Error getting current icon location: {ex.Message}");
+            return "Default";
+        }
     }
 
     private void BrowseIcon_Click(object sender, RoutedEventArgs e)
     {
         var dialog = new System.Windows.Forms.OpenFileDialog
         {
-            Filter = "Icon Files (*.ico)|*.ico|Executable Files (*.exe)|*.exe|All Files (*.*)|*.*",
+            Filter = "Icon Files (*.ico)|*.ico|Executable Files (*.exe)|*.exe|DLL Files (*.dll)|*.dll|All Files (*.*)|*.*",
             Title = "Select an Icon"
         };
+
         if (dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
         {
-            if (iconPathBox != null)
+            string selectedPath = dialog.FileName;
+            string extension = System.IO.Path.GetExtension(selectedPath).ToLower();
+
+            if (extension == ".dll" || extension == ".exe")
             {
-                iconPathBox.Text = dialog.FileName;
+                var picker = new IconPickerDialog(selectedPath);
+                if (picker.ShowDialog() == true && picker.SelectedIndex >= 0)
+                {
+                    Log($"User selected icon index: {picker.SelectedIndex} from {selectedPath}");
+                    iconPathBox.Text = $"{selectedPath},{picker.SelectedIndex}";
+                    UpdateIconPreview(); // Update the icon preview
+                }
+            }
+            else
+            {
+                iconPathBox.Text = selectedPath;
+                UpdateIconPreview(); // Update the icon preview
+
+
+
             }
         }
     }
+
+    private ImageSource ExtractIconForPreview(string iconPath, int iconIndex)
+    {
+        if (!System.IO.File.Exists(iconPath))
+        {
+            Log($"Icon file not found for preview: {iconPath}");
+            return null;
+        }
+
+        try
+        {
+            IntPtr[] hIcon = new IntPtr[1];
+            uint result = ExtractIconEx(iconPath, iconIndex, hIcon, null, 1);
+            if (result > 0 && hIcon[0] != IntPtr.Zero)
+            {
+                try
+                {
+                    ImageSource source = System.Windows.Interop.Imaging.CreateBitmapSourceFromHIcon(
+                        hIcon[0],
+                        Int32Rect.Empty,
+                        BitmapSizeOptions.FromEmptyOptions()
+                    );
+                    return source;
+                }
+                finally
+                {
+                    DestroyIcon(hIcon[0]);
+                }
+            }
+            else
+            {
+                Log($"ExtractIconEx failed for {iconPath} at index {iconIndex}. Result: {result}");
+                return null;
+            }
+        }
+        catch (Exception ex)
+        {
+            Log($"Error extracting icon for preview from {iconPath} at index {iconIndex}: {ex.Message}");
+            return null;
+        }
+    }
+
 
     private void Save_Click(object sender, RoutedEventArgs e)
     {
         try
         {
-            if (nameBox == null)
-            {
-                throw new InvalidOperationException("Display Name TextBox not found.");
-            }
+            Log("Save_Click started");
 
-            NewDisplayName = string.IsNullOrWhiteSpace(nameBox.Text) ? System.IO.Path.GetFileNameWithoutExtension(shortcutPath) : nameBox.Text;
+            NewDisplayName = string.IsNullOrWhiteSpace(nameBox.Text)
+                ? System.IO.Path.GetFileNameWithoutExtension(shortcutPath)
+                : nameBox.Text;
+
+            Log($"New display name: {NewDisplayName}");
 
             WshShell shell = new WshShell();
             IWshShortcut shortcut = (IWshShortcut)shell.CreateShortcut(shortcutPath);
 
             string iconPath = iconPathBox?.Text;
-            if (!string.IsNullOrEmpty(iconPath) && iconPath != "Default" && System.IO.File.Exists(iconPath))
+            Log($"Icon path from textbox: {iconPath}");
+
+            if (!string.IsNullOrEmpty(iconPath) && iconPath != "Default")
             {
+                // Don't modify the iconPath value - use it exactly as stored
+                // It should already be in the correct format (path,index)
                 shortcut.IconLocation = iconPath;
-                Log($"Set custom icon for {shortcutPath} to {iconPath}");
-            }
-            else
-            {
-                Log($"No new icon selected or reset to default for {shortcutPath}, keeping existing: {shortcut.IconLocation}");
+                Log($"Set shortcut.IconLocation to: {shortcut.IconLocation}");
             }
 
             shortcut.Save();
+            Log("Shortcut saved successfully");
+
             this.DialogResult = true;
-            Log($"Saved changes to shortcut {shortcutPath}");
         }
         catch (Exception ex)
         {
-            Log($"Failed to save shortcut {shortcutPath}: {ex.Message}");
-            MessageBox.Show($"Failed to save changes: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            Log($"Failed to save shortcut: {ex.Message}\nStack trace: {ex.StackTrace}");
+            //  MessageBox.Show($"Failed to save shortcut: {ex.Message}", "Error",
+            //                  MessageBoxButton.OK, MessageBoxImage.Error);
+            TrayManager.Instance.ShowOKOnlyMessageBoxForm($"Failed to save shortcut: {ex.Message}", "Error");
         }
     }
 
