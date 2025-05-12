@@ -60,7 +60,7 @@ Every little bit helps and is greatly appreciated! 🙏
 ##  2.5.0.18
 -  **Added**:  Custom animation selection for each fence
 -  **Added**:  Custom background color selection for each fence
--  **Fixed**:  Bug on fence movement across multiscreen ssystem
+-  **Fixed**:  Bug on fence movement across multiscreen systems https://github.com/limbo666/DesktopFences/issues/2
 -  **Changed**:  Start with windows option moved under `Options` window
 -  **Fixed**: Passing argument in `Run as administrator` selection
 -  **Fixed**: Bug on portal fences causing program crash on startup when target fodler is missing
