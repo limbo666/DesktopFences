@@ -34,13 +34,13 @@ Every little bit helps and is greatly appreciated! 🙏
 -  **Fence JSON File** now placed in the same directory as the executable
 -  **First Fence Line** is created automatically during the first execution
 -  **Program Icon** added
--  **Error Handling** on: Move actions, Program execution, Empty or invalid JSON files
+-  **Error Handlers** for Move actions, Program execution, Empty or invalid JSON files
 
 ##  New Functionalities
--  **About Screen**
 -  **Tray Icon** indicates the application is running
 -  **Program Exit Option** in the tray icon’s context menu
 -  **New Fence Creation** at mouse location for intuitive placement
+-  **About Screen**
 -  **Shortcuts no longer depend** on original shortcut files
 -  **Execution Arguments** of original shortcuts are preserved
 -  **Target Type Detection** with proper error handling
@@ -83,22 +83,22 @@ Every little bit helps and is greatly appreciated! 🙏
 -  **Fixed**:  Bug on context menus items unchecking behavior
 -  **Fixed**:  Bug on customization where changes was not applied into fences under same name
 -  **Added**:  Random name generator for new fences instead of the dull "New Fence"
--  **Added:** custom delete confirmation message box
+-  **Added**: custom delete confirmation message box
 
 ##  2.5.0.30
--  **Added:** Restore for previously backed up configurations 
--  **Added:** Reload all Fences function
--  **Added:** Tootips on options window
--  **Added:** Restore hidden fences to their hidden status on startup
--  **Added:** Temporarily hide function for all fences (show desktop) on tray icon double click, restore with double click
+-  **Added**: Restore for previously backed up configurations 
+-  **Added**: Reload all Fences function
+-  **Added**: Tootips on options window
+-  **Added**: Restore hidden fences to their hidden status on startup
+-  **Added**: Temporarily hide function for all fences (show desktop) on tray icon double click, restore with double click
 
   ## 2.5.1.37 - Release 3
--  **Added:** Snap to Dimension function for better size alignment 
--  **Added:** Export Fence and Import Fence options to help move fences across systems. Few exported fences can be found [here](https://github.com/limbo666/DesktopFences/tree/main/Exported%20Fences)
--  **Added** Added ability to get icons from dll libraries or executables on under "Edit" Requested on https://github.com/limbo666/DesktopFences/issues/1
--  **Changed**  All message boxes changed to internal themed ones to follow mouse position across multimonitor systems
--  **Changed** Some theming correction on message boxes.
--  **Added**  Sound on custom message box appearance.
+-  **Added**: Snap to Dimension function for better size alignment 
+-  **Added**" Export Fence and Import Fence options to help move fences across systems. Few exported fences can be found [here](https://github.com/limbo666/DesktopFences/tree/main/Exported%20Fences)
+-  **Added**: Ability to get icons from dll libraries or executables on under "Edit" Requested on https://github.com/limbo666/DesktopFences/issues/1
+-  **Changed**: All message boxes changed to internal themed ones to follow mouse position across multimonitor systems
+-  **Changed**: Some theming correction on message boxes.
+-  **Added**:  Sound on custom message box appearance.
   
 ---
 
