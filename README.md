@@ -63,7 +63,7 @@ Every little bit helps and is greatly appreciated! 🙏
 -  **Fixed**:  Bug on fence movement across multiscreen systems https://github.com/limbo666/DesktopFences/issues/2
 -  **Changed**:  Start with windows option moved under `Options` window
 -  **Fixed**: Passing argument in `Run as administrator` selection
--  **Fixed**: Bug on portal fences causing program crash on startup when target fodler is missing
+-  **Fixed**: Bug on portal fences causing program crash on startup when target folder is missing
 -  **Changed**:  Code improvements on log function
 -  **Added**:  Basic `Hide` function for each fence
   
