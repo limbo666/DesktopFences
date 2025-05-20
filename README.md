@@ -95,14 +95,14 @@ Every little bit helps and is greatly appreciated! 🙏
   ## 2.5.1.37 - Release 3
 -  **Added**: Snap to Dimension function for better size alignment 
 -  **Added**" Export Fence and Import Fence options to help move fences across systems. Few exported fences can be found [here](https://github.com/limbo666/DesktopFences/tree/main/Exported%20Fences)
--  **Added**: Ability to get icons from dll libraries or executables on under "Edit" Requested on https://github.com/limbo666/DesktopFences/issues/1
+-  **Added**: Ability to get icons from dll libraries or executables on under `Edit` Requested on https://github.com/limbo666/DesktopFences/issues/1
 -  **Changed**: All message boxes changed to internal themed ones to follow mouse position across multimonitor systems
 -  **Changed**: Some theming correction on message boxes.
 -  **Added**:  Sound on custom message box appearance.
 
- ## 2.5.1.39 - 
+ ## 2.5.1.39 
 -  **Fixed**: Bug on start with Windows. The program now displays shortcuts correctly https://github.com/limbo666/DesktopFences/issues/6
--  **Fixed**" Bug with options and About screen that misplaced controls on scaled displays https://github.com/limbo666/DesktopFences/issues/5
+-  **Fixed**" Bug with `Options` and `About` screen that misplaced controls on scaled displays https://github.com/limbo666/DesktopFences/issues/5
   
 ---
 
