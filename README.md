@@ -99,6 +99,10 @@ Every little bit helps and is greatly appreciated! 🙏
 -  **Changed**: All message boxes changed to internal themed ones to follow mouse position across multimonitor systems
 -  **Changed**: Some theming correction on message boxes.
 -  **Added**:  Sound on custom message box appearance.
+
+ ## 2.5.1.39 - 
+-  **Fixed**: Bug on start with Windows. The program now displays shortcuts correctly https://github.com/limbo666/DesktopFences/issues/6
+-  **Fixed**" Bug with options and About screen that misplaced controls on scaled displays https://github.com/limbo666/DesktopFences/issues/5
   
 ---
 
