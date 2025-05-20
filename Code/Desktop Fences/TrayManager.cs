@@ -735,6 +735,8 @@ namespace Desktop_Fences
                     frmOptions.FormBorderStyle = FormBorderStyle.FixedDialog;
                     frmOptions.MaximizeBox = false;
                     frmOptions.MinimizeBox = false;
+                    frmOptions.AutoScaleMode = AutoScaleMode.Dpi;
+                    frmOptions.AutoScaleDimensions = new SizeF(96F, 96F);
                     frmOptions.Icon = Icon.ExtractAssociatedIcon(Process.GetCurrentProcess().MainModule.FileName);
 
                     var toolTip = new ToolTip
@@ -1137,6 +1139,8 @@ namespace Desktop_Fences
                     frmAbout.FormBorderStyle = FormBorderStyle.FixedDialog;
                     frmAbout.MaximizeBox = false;
                     frmAbout.MinimizeBox = false;
+                    frmAbout.AutoScaleMode = AutoScaleMode.Dpi;
+                    frmAbout.AutoScaleDimensions = new SizeF(96F, 96F);
                     frmAbout.Icon = Icon.ExtractAssociatedIcon(Process.GetCurrentProcess().MainModule.FileName);
 
                     var layoutPanel = new TableLayoutPanel
@@ -1320,11 +1324,48 @@ namespace Desktop_Fences
             return File.Exists(shortcutPath);
         }
 
+        //private void ToggleStartWithWindows(bool enable)
+        //{
+        //    string startupPath = Environment.GetFolderPath(Environment.SpecialFolder.Startup);
+        //    string shortcutPath = Path.Combine(startupPath, "Desktop Fences.lnk");
+        //    string exePath = Process.GetCurrentProcess().MainModule.FileName;
+
+        //    try
+        //    {
+        //        if (enable && !IsInStartupFolder())
+        //        {
+        //            Type shellType = Type.GetTypeFromProgID("WScript.Shell");
+        //            dynamic shell = Activator.CreateInstance(shellType);
+        //            var shortcut = shell.CreateShortcut(shortcutPath);
+        //            shortcut.WorkingDirectory = Path.GetDirectoryName(exePath); 
+        //            shortcut.TargetPath = exePath;
+        //            shortcut.Description = "Desktop Fences Startup Shortcut";
+        //            shortcut.Save();
+        //            IsStartWithWindows = true;
+        //            Log("Added Desktop Fences to Startup folder");
+        //        }
+        //        else if (!enable && IsInStartupFolder())
+        //        {
+        //            File.Delete(shortcutPath);
+        //            IsStartWithWindows = false;
+        //            Log("Removed Desktop Fences from Startup folder");
+        //        }
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        Log($"Failed to toggle Start with Windows: {ex.Message}");
+        //        IsStartWithWindows = IsInStartupFolder();
+        //        throw;
+        //    }
+        //}
+
+
         private void ToggleStartWithWindows(bool enable)
         {
             string startupPath = Environment.GetFolderPath(Environment.SpecialFolder.Startup);
             string shortcutPath = Path.Combine(startupPath, "Desktop Fences.lnk");
             string exePath = Process.GetCurrentProcess().MainModule.FileName;
+            string workingDir = Path.GetDirectoryName(exePath); // Ensure working directory is extracted
 
             try
             {
@@ -1334,10 +1375,11 @@ namespace Desktop_Fences
                     dynamic shell = Activator.CreateInstance(shellType);
                     var shortcut = shell.CreateShortcut(shortcutPath);
                     shortcut.TargetPath = exePath;
+                    shortcut.WorkingDirectory = workingDir; // Explicitly set working directory
                     shortcut.Description = "Desktop Fences Startup Shortcut";
                     shortcut.Save();
                     IsStartWithWindows = true;
-                    Log("Added Desktop Fences to Startup folder");
+                    Log("Added Desktop Fences to Startup folder with working directory: " + workingDir);
                 }
                 else if (!enable && IsInStartupFolder())
                 {
@@ -1353,6 +1395,8 @@ namespace Desktop_Fences
                 throw;
             }
         }
+
+
 
         public void Dispose()
         {
