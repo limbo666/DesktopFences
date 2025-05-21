@@ -1,14 +1,10 @@
 {
   "version": 2,
-  "dgSpecHash": "rOruucNwWUE=",
+  "dgSpecHash": "Aq/mo77S/oM=",
   "success": true,
-  "projectFilePath": "C:\\Users\\Nikos\\Desktop\\DesktopFences\\Code\\Desktop Fences\\Desktop Fences.csproj",
+  "projectFilePath": "C:\\Users\\Nikos\\Desktop\\Code\\Desktop Fences\\Desktop Fences.csproj",
   "expectedPackageFiles": [
-    "C:\\Users\\Nikos\\.nuget\\packages\\newtonsoft.json\\13.0.1\\newtonsoft.json.13.0.1.nupkg.sha512",
-    "C:\\Users\\Nikos\\.nuget\\packages\\microsoft.windowsdesktop.app.ref\\8.0.15\\microsoft.windowsdesktop.app.ref.8.0.15.nupkg.sha512",
-    "C:\\Users\\Nikos\\.nuget\\packages\\microsoft.netcore.app.ref\\8.0.15\\microsoft.netcore.app.ref.8.0.15.nupkg.sha512",
-    "C:\\Users\\Nikos\\.nuget\\packages\\microsoft.aspnetcore.app.ref\\8.0.15\\microsoft.aspnetcore.app.ref.8.0.15.nupkg.sha512",
-    "C:\\Users\\Nikos\\.nuget\\packages\\microsoft.netcore.app.host.win-x64\\8.0.15\\microsoft.netcore.app.host.win-x64.8.0.15.nupkg.sha512"
+    "C:\\Users\\Nikos\\.nuget\\packages\\newtonsoft.json\\13.0.1\\newtonsoft.json.13.0.1.nupkg.sha512"
   ],
   "logs": []
 }

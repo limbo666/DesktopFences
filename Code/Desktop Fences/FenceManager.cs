@@ -22,6 +22,7 @@ using Microsoft.Win32;
 using System.IO.Compression;
 using System.Windows.Interop;
 using System.Runtime.InteropServices;
+using System.Drawing;
 
 
 
@@ -194,7 +195,78 @@ namespace Desktop_Fences
                 TrayManager.Instance.ShowOKOnlyMessageBoxForm($"Export failed: {ex.Message}", "Error");
             }
         }
+ 
 
+        private static double GetDpiScaleFactor(Window window)
+        {
+            // Get the screen where the window is located based on its position
+            var screen = System.Windows.Forms.Screen.FromPoint(
+                new System.Drawing.Point((int)window.Left, (int)window.Top));
+
+            // Use Graphics to get the screen's DPI
+            using (var graphics = Graphics.FromHwnd(IntPtr.Zero))
+            {
+                float dpiX = graphics.DpiX; // Horizontal DPI
+                return dpiX / 96.0; // Standard DPI is 96, so scale factor = dpiX / 96
+            }
+        }
+        private static void AdjustFencePositionToScreen(NonActivatingWindow win)
+        {
+            // Get the DPI scale factor for the window
+            double dpiScale = GetDpiScaleFactor(win);
+
+            // Determine the screen based on the current position in pixels
+            var screen = System.Windows.Forms.Screen.FromPoint(
+                new System.Drawing.Point((int)(win.Left * dpiScale), (int)(win.Top * dpiScale)));
+
+            // Get the screen's working area in pixels (excludes taskbars)
+            var workingArea = screen.WorkingArea;
+
+            // Convert window position and size from DIUs to pixels
+            double winLeftPx = win.Left * dpiScale;
+            double winTopPx = win.Top * dpiScale;
+            double winWidthPx = win.Width * dpiScale;
+            double winHeightPx = win.Height * dpiScale;
+
+            // Calculate new position in pixels
+            double newLeftPx = winLeftPx;
+            double newTopPx = winTopPx;
+
+            // Ensure the right edge doesn't exceed the working area's right boundary
+            if (newLeftPx + winWidthPx > workingArea.Right)
+            {
+                newLeftPx = workingArea.Right - winWidthPx;
+            }
+            // Ensure the left edge isn't off-screen to the left
+            if (newLeftPx < workingArea.Left)
+            {
+                newLeftPx = workingArea.Left;
+            }
+
+            // Ensure the bottom edge doesn't exceed the working area's bottom boundary
+            if (newTopPx + winHeightPx > workingArea.Bottom)
+            {
+                newTopPx = workingArea.Bottom - winHeightPx;
+            }
+            // Ensure the top edge isn't off-screen to the top
+            if (newTopPx < workingArea.Top)
+            {
+                newTopPx = workingArea.Top;
+            }
+
+            // Convert the adjusted position back to DIUs
+            double newLeft = newLeftPx / dpiScale;
+            double newTop = newTopPx / dpiScale;
+
+            // Apply the new position if it has changed
+            if (newLeft != win.Left || newTop != win.Top)
+            {
+                win.Left = newLeft;
+                win.Top = newTop;
+                FenceManager.Log($"Adjusted fence '{win.Title}' position to ({newLeft}, {newTop}) to fit within screen bounds.");
+            }
+            SaveFenceData();
+        }
 
         // Import function implementation
         public static void ImportFence()
@@ -826,7 +898,7 @@ Spiral
             DockPanel dp = new DockPanel();
             Border cborder = new Border
             {
-                Background = new SolidColorBrush(Color.FromArgb(100, 0, 0, 0)),
+                Background = new SolidColorBrush(System.Windows.Media.Color.FromArgb(100, 0, 0, 0)),
                 CornerRadius = new CornerRadius(6),
                 Child = dp
             };
@@ -838,7 +910,7 @@ Spiral
             {
                 Text = "♥",
                 FontSize = 22,
-                Foreground = Brushes.White, // Match title and icon text color
+                Foreground = System.Windows.Media.Brushes.White, // Match title and icon text color
                 Margin = new Thickness(5, -3, 0, 0), // Position top-left, aligned with title
                 HorizontalAlignment = HorizontalAlignment.Left,
                 VerticalAlignment = VerticalAlignment.Top,
@@ -995,34 +1067,13 @@ Spiral
 
             
 
-            // start of removed on 0.33
-            //NonActivatingWindow win = new NonActivatingWindow
-            //{
-            //    ContextMenu = cm,
-            //    AllowDrop = true,
-            //    AllowsTransparency = true,
-            //    Background = Brushes.Transparent,
-            //    Title = fence.Title.ToString(),
-            //    ShowInTaskbar = false,
-            //    WindowStyle = WindowStyle.None,
-            //    Content = cborder,
-            //    ResizeMode = ResizeMode.CanResizeWithGrip,
-            //    Width = (double)fence.Width,
-            //    Height = (double)fence.Height,
-            //    Top = (double)fence.Y,
-            //    Left = (double)fence.X,
-            //  //  //  Tag = fence  // Add this line to store the fence object
-            //    Tag = fence.Id.ToString()  // Store fence ID in Tag
-            //  ////  Visibility = isHidden ? Visibility.Hidden : Visibility.Visible
-            //};
-
-            //end of remove 0.33
+      
             NonActivatingWindow win = new NonActivatingWindow
             {
                 ContextMenu = cm,
                 AllowDrop = true,
                 AllowsTransparency = true,
-                Background = Brushes.Transparent,
+                Background = System.Windows.Media.Brushes.Transparent,
                 Title = fence.Title?.ToString() ?? "New Fence", // Handle null title
                 ShowInTaskbar = false,
                 WindowStyle = WindowStyle.None,
@@ -1034,7 +1085,8 @@ Spiral
                 Left = (double)fence.X,
                 Tag = fence.Id?.ToString() ?? Guid.NewGuid().ToString() // Ensure ID exists
             };
-
+            // Adjust the fence position to ensure it fits within screen bounds
+            AdjustFencePositionToScreen(win);
             // Log the IsHidden state for diagnostics
             //   Log($"Fence '{fence.Title}' IsHidden state: {isHidden}");
             // Show the window first
@@ -1073,13 +1125,7 @@ Spiral
             win.Show();
 
 
-            // hide click
-            miHide.Click += (s, e) =>
-            {
-                UpdateFenceProperty(fence, "IsHidden", "true", $"Hid fence '{fence.Title}'");
-                TrayManager.AddHiddenFence(win);
-                Log($"Triggered Hide Fence for '{fence.Title}'");
-            };
+       
             miRF.Click += (s, e) =>
             {
                 bool result = TrayManager.Instance.ShowCustomMessageBoxForm(); // Call the method and store the result  
@@ -1158,9 +1204,9 @@ Spiral
                     }
                 }
 
-                Point mousePosition = win.PointToScreen(new Point(0, 0));
+                System.Windows.Point mousePosition = win.PointToScreen(new System.Windows.Point(0, 0));
                 mousePosition = Mouse.GetPosition(win);
-                Point absolutePosition = win.PointToScreen(mousePosition);
+                System.Windows.Point absolutePosition = win.PointToScreen(mousePosition);
                 FenceManager.Log($"Creating new fence at position: X={absolutePosition.X}, Y={absolutePosition.Y}");
                 CreateNewFence("New Fence", "Data", absolutePosition.X, absolutePosition.Y);
             };
@@ -1177,9 +1223,9 @@ Spiral
                     }
                 }
 
-                Point mousePosition = win.PointToScreen(new Point(0, 0));
+                System.Windows.Point mousePosition = win.PointToScreen(new System.Windows.Point(0, 0));
                 mousePosition = Mouse.GetPosition(win);
-                Point absolutePosition = win.PointToScreen(mousePosition);
+                System.Windows.Point absolutePosition = win.PointToScreen(mousePosition);
                 FenceManager.Log($"Creating new portal fence at position: X={absolutePosition.X}, Y={absolutePosition.Y}");
                 CreateNewFence("New Portal Fence", "Portal", absolutePosition.X, absolutePosition.Y);
             };
@@ -1189,8 +1235,8 @@ Spiral
             Label titlelabel = new Label
             {
                 Content = fence.Title.ToString(),
-                Background = new SolidColorBrush(Color.FromArgb(20, 0, 0, 0)),
-                Foreground = Brushes.White,
+                Background = new SolidColorBrush(System.Windows.Media.Color.FromArgb(20, 0, 0, 0)),
+                Foreground = System.Windows.Media.Brushes.White,
                 HorizontalContentAlignment = HorizontalAlignment.Center,
                 Cursor = Cursors.SizeAll
             };
@@ -1835,7 +1881,7 @@ Spiral
                 {
                     WindowStyle = WindowStyle.None,
                     AllowsTransparency = true,
-                    Background = Brushes.Transparent,
+                    Background = System.Windows.Media.Brushes.Transparent,
                     Width = 100,
                     Height = 30,
                     ShowInTaskbar = false,
@@ -1845,8 +1891,8 @@ Spiral
                 var label = new Label
                 {
                     Content = "",
-                    Foreground = Brushes.White,
-                    Background = Brushes.Black,
+                    Foreground = System.Windows.Media.Brushes.White,
+                    Background = System.Windows.Media.Brushes.Black,
                     HorizontalAlignment = HorizontalAlignment.Center,
                     VerticalAlignment = VerticalAlignment.Center
                 };
@@ -1932,7 +1978,7 @@ Spiral
         public static void AddIcon(dynamic icon, WrapPanel wpcont)
         {
             StackPanel sp = new StackPanel { Margin = new Thickness(5), Width = 60 };
-            Image ico = new Image { Width = 40, Height = 40, Margin = new Thickness(5) };
+            System.Windows.Controls.Image ico = new System.Windows.Controls.Image { Width = 40, Height = 40, Margin = new Thickness(5) };
             IDictionary<string, object> iconDict = icon is IDictionary<string, object> dict ? dict : ((JObject)icon).ToObject<IDictionary<string, object>>();
             string filePath = iconDict.ContainsKey("Filename") ? (string)iconDict["Filename"] : "Unknown";
             bool isFolder = iconDict.ContainsKey("IsFolder") && (bool)iconDict["IsFolder"];
@@ -2074,7 +2120,7 @@ Spiral
                 TextWrapping = TextWrapping.Wrap,
                 TextTrimming = TextTrimming.None,
                 HorizontalAlignment = HorizontalAlignment.Center,
-                Foreground = Brushes.White,
+                Foreground = System.Windows.Media.Brushes.White,
                 MaxWidth = double.MaxValue,
                 Width = double.NaN,
                 TextAlignment = TextAlignment.Center,
@@ -2249,7 +2295,7 @@ Spiral
                                 Height = 100,
                                 WindowStartupLocation = WindowStartupLocation.CenterScreen,
                                 WindowStyle = WindowStyle.None,
-                                Background = Brushes.LightGray,
+                                Background = System.Windows.Media.Brushes.LightGray,
                                 Topmost = true
                             };
                             var waitStack = new StackPanel
@@ -2260,7 +2306,7 @@ Spiral
                             waitWindow.Content = waitStack;
 
                             string exePath = Assembly.GetEntryAssembly().Location;
-                            var iconImage = new Image
+                            var iconImage = new System.Windows.Controls.Image
                             {
                                 Source = System.Drawing.Icon.ExtractAssociatedIcon(exePath).ToImageSource(),
                                 Width = 32,
@@ -2446,7 +2492,7 @@ Spiral
                         {
                             Log($"TextBlock not found in StackPanel for {filePath}. Children: {string.Join(", ", sp.Children.OfType<FrameworkElement>().Select(c => c.GetType().Name))}");
                         }
-                        var ico = sp.Children.OfType<Image>().FirstOrDefault();
+                        var ico = sp.Children.OfType<System.Windows.Controls.Image>().FirstOrDefault();
                         if (ico != null)
                         {
                             WshShell shell = new WshShell();
@@ -2663,7 +2709,7 @@ Spiral
 
             Application.Current.Dispatcher.Invoke(() =>
             {
-                Image ico = sp.Children.OfType<Image>().FirstOrDefault();
+                System.Windows.Controls.Image ico = sp.Children.OfType<System.Windows.Controls.Image>().FirstOrDefault();
                 if (ico == null)
                 {
                     Log($"No Image found in StackPanel for {filePath}");
@@ -3216,7 +3262,7 @@ private static void LaunchItem(StackPanel sp, string path, bool isFolder, string
                     new RotateTransform(0)
                 }
             };
-            sp.RenderTransformOrigin = new Point(0.5, 0.5);
+            sp.RenderTransformOrigin = new System.Windows.Point(0.5, 0.5);
         }
         var transformGroup = (TransformGroup)sp.RenderTransform;
         var scaleTransform = (ScaleTransform)transformGroup.Children[0];
