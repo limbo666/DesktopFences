@@ -100,9 +100,10 @@ Every little bit helps and is greatly appreciated! 🙏
 -  **Changed**: Some theming correction on message boxes.
 -  **Added**:  Sound on custom message box appearance.
 
- ## 2.5.1.39 
+ ## 2.5.1.40 
 -  **Fixed**: Bug on `Start with Windows`. The program now displays shortcuts correctly https://github.com/limbo666/DesktopFences/issues/6
--  **Fixed**" Bug with `Options` and `About` screen that misplaced controls on scaled displays https://github.com/limbo666/DesktopFences/issues/5
+-  **Fixed**: Bug with `Options` and `About` screen that misplaced controls on scaled displays https://github.com/limbo666/DesktopFences/issues/5
+-  **Added**: Function to display fences which are saved out of screen bounds (restored from other systems)
   
 ---
 
