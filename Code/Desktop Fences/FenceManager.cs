@@ -894,6 +894,8 @@ Spiral
                     SaveFenceData();
                     return;
                 }
+
+
             }
             DockPanel dp = new DockPanel();
             Border cborder = new Border
@@ -1035,6 +1037,37 @@ Spiral
           //  cm.Items.Add(miNP);
             cm.Items.Add(miRF);
             cm.Items.Add(miHide); // Add Hide Fence
+                                  // Add "Open Folder in Explorer" only for portal fences
+            if (fence.ItemsType?.ToString() == "Portal")
+            {
+                MenuItem miOpenFolder = new MenuItem { Header = "Open fence folder" };
+                miOpenFolder.Click += (s, e) =>
+                {
+                    try
+                    {
+                        string folderPath = fence.Path?.ToString();
+                        if (!string.IsNullOrEmpty(folderPath) && Directory.Exists(folderPath))
+                        {
+                            Process.Start("explorer.exe", folderPath);
+                            Log($"Opened folder in Explorer: {folderPath}");
+                        }
+                        else
+                        {
+                            Log($"Folder path is invalid or does not exist: {folderPath}");
+                            MessageBox.Show("The folder path is invalid or does not exist.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Log($"Error opening folder in Explorer: {ex.Message}");
+                        MessageBox.Show("An error occurred while trying to open the folder.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    }
+                };
+                cm.Items.Add(miOpenFolder);
+            }
+
+
+
             cm.Items.Add(new Separator());
             cm.Items.Add(miCustomize); // Add Customize submenu
                                        //  cm.Items.Add(new Separator());
