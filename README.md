@@ -104,6 +104,10 @@ Every little bit helps and is greatly appreciated! 🙏
 -  **Fixed**: Bug on `Start with Windows`. The program now displays shortcuts correctly https://github.com/limbo666/DesktopFences/issues/6
 -  **Fixed**: Bug with `Options` and `About` screen that misplaced controls on scaled displays https://github.com/limbo666/DesktopFences/issues/5
 -  **Added**: Function to display fences which are saved out of screen bounds (restored from other systems)
+
+ ## 2.5.1.42 
+-  **Fixed**: Bug on `Portal Fences` created by misuse of FileSystemWatcher. The program now updates target files as renamed, removed. https://github.com/limbo666/DesktopFences/issues/3
+-  **Added**: Context menu items for `Portal Fences` and items. Now user is able to copy target file path or shortcut destination path and open `Portal Fence` target folder from right click.
   
 ---
 
