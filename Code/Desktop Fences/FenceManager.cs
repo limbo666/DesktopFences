@@ -678,6 +678,8 @@ Spiral
             _options = new
             {
                 IsSnapEnabled = SettingsManager.IsSnapEnabled,
+                ShowBackgroundImageOnPortalFences = SettingsManager.ShowBackgroundImageOnPortalFences,
+                Showintray = SettingsManager.ShowInTray,
                 TintValue = SettingsManager.TintValue,
                 SelectedColor = SettingsManager.SelectedColor,
                 IsLogEnabled = SettingsManager.IsLogEnabled,
@@ -1389,24 +1391,26 @@ Spiral
             // Προσθήκη watermark για Portal Fences
             if (fence.ItemsType?.ToString() == "Portal")
             {
-                wpcontscr.Background = new ImageBrush
+               if (_options.ShowBackgroundImageOnPortalFences ?? true) {
+                    wpcontscr.Background = new ImageBrush
                 {
                     ImageSource = new BitmapImage(new Uri("pack://application:,,,/Resources/portal.png")),
                     Opacity = 0.2,
                     Stretch = Stretch.UniformToFill
                 };
+                     }
             }
 
-            // Προσθήκη watermark για Portal Fences
-            if (fence.ItemsType?.ToString() == "Portal")
-            {
-                wpcontscr.Background = new ImageBrush
-                {
-                    ImageSource = new BitmapImage(new Uri("pack://application:,,,/Resources/portal.png")),
-                    Opacity = 0.2,
-                    Stretch = Stretch.UniformToFill
-                };
-            }
+            //// Προσθήκη watermark για Portal Fences
+            //if (fence.ItemsType?.ToString() == "Portal")
+            //{
+            //    wpcontscr.Background = new ImageBrush
+            //    {
+            //        ImageSource = new BitmapImage(new Uri("pack://application:,,,/Resources/portal.png")),
+            //        Opacity = 0.2,
+            //        Stretch = Stretch.UniformToFill
+            //    };
+            //}
 
             dp.Children.Add(wpcontscr);
 

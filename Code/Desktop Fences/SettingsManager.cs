@@ -16,6 +16,20 @@ namespace Desktop_Fences
         public static bool IsSnapEnabled { get; set; } = true;
 
         /// <summary>
+        /// Gets or sets whether the background image should be displayed on portal fences.
+        /// </summary>
+        public static bool ShowBackgroundImageOnPortalFences { get; set; } = true;
+        /// <summary>
+        /// Gets or sets whether the portal fence deletion method will use the recycle bin.
+        /// </summary>
+        public static bool UseRecycleBin { get; set; } = true;
+       
+        /// <summary>
+        /// Gets or sets whether the tray icon will be shown.
+        /// </summary>
+        public static bool ShowInTray { get; set; } = true;
+
+        /// <summary>
         /// Gets or sets the tint value (0-100) that controls fence transparency.
         /// </summary>
         public static int TintValue { get; set; } = 60;
@@ -57,6 +71,9 @@ namespace Desktop_Fences
 
                     // Update settings with values from the file, using defaults if values are missing
                     IsSnapEnabled = optionsData.IsSnapEnabled ?? true;
+                    ShowBackgroundImageOnPortalFences= optionsData.ShowBackgroundImageOnPortalFences ?? true;
+                    ShowInTray = optionsData.ShowInTray ?? true;
+                    UseRecycleBin = optionsData.UseRecycleBin ?? true;
                     TintValue = optionsData.TintValue ?? 60;
                     SelectedColor = optionsData.SelectedColor ?? "Gray";
                     IsLogEnabled = optionsData.IsLogEnabled ?? false;
@@ -95,6 +112,9 @@ namespace Desktop_Fences
                 var optionsData = new
                 {
                     IsSnapEnabled,
+                    ShowBackgroundImageOnPortalFences,
+                    ShowInTray,
+                    UseRecycleBin,
                     TintValue,
                     SelectedColor,
                     IsLogEnabled,

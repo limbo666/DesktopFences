@@ -9,6 +9,7 @@ using System.Reflection;
 using IWshRuntimeLibrary;
 using System.Diagnostics;
 using System.Windows;
+using System.Runtime.InteropServices;
 
 namespace Desktop_Fences
 {
@@ -230,28 +231,35 @@ namespace Desktop_Fences
                 MessageBox.Show("Unable to copy path.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
-
+        // delete  item handler
         private void DeleteItem(string path, StackPanel sp)
         {
+           bool  UseRecycleBin= SettingsManager.UseRecycleBin; //  UseRecycleBin is a property in SettingsManager
+            if (UseRecycleBin== true) { 
+            
             try
             {
-                if (Directory.Exists(path))
-                {
-                    // Delete folder
-                    Directory.Delete(path, true); // true for recursive deletion
-                    Log($"Deleted folder: {path}");
-                }
-                else if (System.IO.File.Exists(path))
-                {
-                    // Delete file
-                    System.IO.File.Delete(path);
-                    Log($"Deleted file: {path}");
-                }
-                else
+                // First, check if the item exists
+                if (!Directory.Exists(path) && !System.IO.File.Exists(path))
                 {
                     Log($"Item not found for deletion: {path}");
                     return;
                 }
+
+                // Use SHFileOperation to move to recycle bin
+                SHFILEOPSTRUCT shf = new SHFILEOPSTRUCT();
+                shf.wFunc = FO_DELETE;
+                shf.fFlags = FOF_ALLOWUNDO | FOF_NOCONFIRMATION;
+                shf.pFrom = path + '\0' + '\0'; // Double null-terminated string
+
+                int result = SHFileOperation(ref shf);
+
+                if (result != 0)
+                {
+                    throw new Exception($"Failed to move to recycle bin (error code: {result})");
+                }
+
+                Log($"Moved to recycle bin: {path}");
 
                 // Remove the icon from the UI
                 _wpcont.Children.Remove(sp);
@@ -259,10 +267,72 @@ namespace Desktop_Fences
             }
             catch (Exception ex)
             {
-                Log($"Failed to delete item {path}: {ex.Message}");
-                MessageBox.Show("Unable to delete item.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                Log($"Failed to move item {path} to recycle bin: {ex.Message}");
+                MessageBox.Show("Unable to move item to recycle bin.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
+            }
+            else
+            {
+
+                try
+                {
+                    if (Directory.Exists(path))
+                    {
+                        // Delete folder
+                        Directory.Delete(path, true); // true for recursive deletion
+                        Log($"Deleted folder: {path}");
+                    }
+                    else if (System.IO.File.Exists(path))
+                    {
+                        // Delete file
+                        System.IO.File.Delete(path);
+                        Log($"Deleted file: {path}");
+                    }
+                    else
+                    {
+                        Log($"Item not found for deletion: {path}");
+                        return;
+                    }
+
+                    // Remove the icon from the UI
+                    _wpcont.Children.Remove(sp);
+                    Log($"Removed icon for {path} from UI");
+                }
+                catch (Exception ex)
+                {
+                    Log($"Failed to delete item {path}: {ex.Message}");
+                    MessageBox.Show("Unable to delete item.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+
+            }
+
         }
+
+        // Corrected Win32 API declarations
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+        public struct SHFILEOPSTRUCT
+        {
+            public IntPtr hwnd;
+            public uint wFunc;
+            [MarshalAs(UnmanagedType.LPWStr)]
+            public string pFrom;
+            [MarshalAs(UnmanagedType.LPWStr)]
+            public string pTo;
+            public ushort fFlags;
+            [MarshalAs(UnmanagedType.Bool)]
+            public bool fAnyOperationsAborted;
+            public IntPtr hNameMappings;
+            [MarshalAs(UnmanagedType.LPWStr)]
+            public string lpszProgressTitle;
+        }
+
+        [DllImport("shell32.dll", CharSet = CharSet.Unicode)]
+        static extern int SHFileOperation([In] ref SHFILEOPSTRUCT lpFileOp);
+
+        const uint FO_DELETE = 0x0003;
+        const ushort FOF_ALLOWUNDO = 0x0040;
+        const ushort FOF_NOCONFIRMATION = 0x0010;
+
 
         private void RemoveIcon(string path)
         {

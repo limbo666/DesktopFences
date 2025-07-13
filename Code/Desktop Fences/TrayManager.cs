@@ -27,7 +27,10 @@ namespace Desktop_Fences
 
         private bool _areFencesTempHidden = false;
         private List<NonActivatingWindow> _tempHiddenFences = new List<NonActivatingWindow>();
-
+      
+        private bool Showintray = SettingsManager.ShowInTray;
+        
+        
         private class HiddenFence
         {
             public string Title { get; set; }
@@ -93,55 +96,56 @@ namespace Desktop_Fences
             trayMenu.Items.Add("Options", null, (s, e) => ShowOptionsForm());
             trayMenu.Items.Add("Reload All Fences", null, async (s, e) =>
             {
-                var waitWindow = new Window
-                {
-                    Title = "Please Wait",
-                    Content = new System.Windows.Controls.Label
-                    {
-                        Content = "Reloading all fences, please wait...",
-                        HorizontalAlignment = System.Windows.HorizontalAlignment.Center,
-                        VerticalAlignment = System.Windows.VerticalAlignment.Center,
-                        FontFamily = new System.Windows.Media.FontFamily("Segoe UI"),
-                        FontSize = 10
-                    },
-                    Width = 300,
-                    Height = 150,
-                    WindowStartupLocation = WindowStartupLocation.CenterScreen,
-                    WindowStyle = WindowStyle.ToolWindow,
-                    ResizeMode = ResizeMode.NoResize,
-                    Topmost = true
-                };
+                reloadAllFences();
+                //var waitWindow = new Window
+                //{
+                //    Title = "Please Wait",
+                //    Content = new System.Windows.Controls.Label
+                //    {
+                //        Content = "Reloading all fences, please wait...",
+                //        HorizontalAlignment = System.Windows.HorizontalAlignment.Center,
+                //        VerticalAlignment = System.Windows.VerticalAlignment.Center,
+                //        FontFamily = new System.Windows.Media.FontFamily("Segoe UI"),
+                //        FontSize = 10
+                //    },
+                //    Width = 300,
+                //    Height = 150,
+                //    WindowStartupLocation = WindowStartupLocation.CenterScreen,
+                //    WindowStyle = WindowStyle.ToolWindow,
+                //    ResizeMode = ResizeMode.NoResize,
+                //    Topmost = true
+                //};
 
-                waitWindow.Show();
+                //waitWindow.Show();
 
-                try
-                {
-                    await Task.Run(() =>
-                    {
-                        System.Windows.Application.Current.Dispatcher.Invoke(() =>
-                        {
-                            foreach (var fence in System.Windows.Application.Current.Windows.OfType<NonActivatingWindow>().ToList())
-                            {
-                                fence.Close();
-                            }
-                            FenceManager.ReloadFences();
-                        });
-                    });
-                }
-                catch (Exception ex)
-                {
-                    //System.Windows.MessageBox.Show(
-                    //    $"An error occurred while reloading fences: {ex.Message}",
-                    //    "Error",
-                    //    System.Windows.MessageBoxButton.OK,
-                    //    System.Windows.MessageBoxImage.Error
-                    //);
-                    ShowOKOnlyMessageBoxForm($"An error occurred while reloading fences: {ex.Message}", "Error");
-                }
-                finally
-                {
-                    waitWindow.Close();
-                }
+                //try
+                //{
+                //    await Task.Run(() =>
+                //    {
+                //        System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                //        {
+                //            foreach (var fence in System.Windows.Application.Current.Windows.OfType<NonActivatingWindow>().ToList())
+                //            {
+                //                fence.Close();
+                //            }
+                //            FenceManager.ReloadFences();
+                //        });
+                //    });
+                //}
+                //catch (Exception ex)
+                //{
+                //    //System.Windows.MessageBox.Show(
+                //    //    $"An error occurred while reloading fences: {ex.Message}",
+                //    //    "Error",
+                //    //    System.Windows.MessageBoxButton.OK,
+                //    //    System.Windows.MessageBoxImage.Error
+                //    //);
+                //    ShowOKOnlyMessageBoxForm($"An error occurred while reloading fences: {ex.Message}", "Error");
+                //}
+                //finally
+                //{
+                //    waitWindow.Close();
+                //}
             });
             trayMenu.Items.Add("-");
             _showHiddenFencesItem = new ToolStripMenuItem("Show Hidden Fences")
@@ -156,7 +160,54 @@ namespace Desktop_Fences
             UpdateHiddenFencesMenu();
             UpdateTrayIcon();
         }
+        public static async Task reloadAllFences()
+        {
+            var waitWindow = new Window
+            {
+                Title = "Please Wait",
+                Content = new System.Windows.Controls.Label
+                {
+                    Content = "Reloading all fences, please wait...",
+                    HorizontalAlignment = System.Windows.HorizontalAlignment.Center,
+                    VerticalAlignment = System.Windows.VerticalAlignment.Center,
+                    FontFamily = new System.Windows.Media.FontFamily("Segoe UI"),
+                    FontSize = 10
+                },
+                Width = 300,
+                Height = 150,
+                WindowStartupLocation = WindowStartupLocation.CenterScreen,
+                WindowStyle = WindowStyle.ToolWindow,
+                ResizeMode = ResizeMode.NoResize,
+                Topmost = true
+            };
 
+            waitWindow.Show();
+
+            try
+            {
+                await Task.Run(() =>
+                {
+                    System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        foreach (var fence in System.Windows.Application.Current.Windows.OfType<NonActivatingWindow>().ToList())
+                        {
+                            fence.Close();
+                        }
+                        FenceManager.ReloadFences();
+                    });
+                });
+            }
+            catch (Exception ex)
+            {
+                TrayManager.ShowOKOnlyMessageBoxFormStatic($"An error occurred while reloading fences: {ex.Message}", "Error");
+            }
+            finally
+            {
+                waitWindow.Close();
+            }
+
+           // TrayManager.ShowOKOnlyMessageBoxFormStatic($"An error occurred while reloading fences: {ex.Message}", "Error");
+        }
         public static void AddHiddenFence(NonActivatingWindow fence)
         {
             if (fence == null || string.IsNullOrEmpty(fence.Title)) return;
@@ -730,7 +781,7 @@ namespace Desktop_Fences
                 using (var frmOptions = new Form())
                 {
                     frmOptions.Text = "Desktop Fences + Options";
-                    frmOptions.Size = new System.Drawing.Size(320, 560);
+                    frmOptions.Size = new System.Drawing.Size(400, 640);
                     frmOptions.StartPosition = FormStartPosition.CenterScreen;
                     frmOptions.FormBorderStyle = FormBorderStyle.FixedDialog;
                     frmOptions.MaximizeBox = false;
@@ -813,7 +864,7 @@ namespace Desktop_Fences
                     {
                         Dock = DockStyle.Fill,
                         ColumnCount = 2,
-                        RowCount = 6, // Increased to accommodate new checkbox
+                        RowCount = 10, // Increased to accommodate new checkbox
                         AutoSize = true,
                         AutoSizeMode = AutoSizeMode.GrowAndShrink
                     };
@@ -850,6 +901,39 @@ namespace Desktop_Fences
                     selectionsLayout.Controls.Add(chkEnableDimensionSnap, 0, 2);
                     selectionsLayout.SetColumnSpan(chkEnableDimensionSnap, 2);
 
+                    var chkEnableTrayIcon = new CheckBox
+                    {
+                        Text = "Enable Tray Icon",
+                        Dock = DockStyle.Fill,
+                        AutoSize = true,
+                        Checked = SettingsManager.ShowInTray
+                    };
+                    selectionsLayout.Controls.Add(chkEnableTrayIcon, 0, 3);
+                    selectionsLayout.SetColumnSpan(chkEnableTrayIcon, 2);
+
+
+
+                    var chkEnablePortalWatermark = new CheckBox
+                    {
+                        Text = "Enable Portal Fences Watermark",
+                        Dock = DockStyle.Fill,
+                        AutoSize = true,
+                        Checked = SettingsManager.ShowBackgroundImageOnPortalFences
+                    };
+                    selectionsLayout.Controls.Add(chkEnablePortalWatermark, 0, 4);
+                    selectionsLayout.SetColumnSpan(chkEnablePortalWatermark, 2);
+
+                    var chkUseRecycleBin = new CheckBox
+                    {
+                        Text = "Use Recycle Bin on Portal Fences 'Delete item' command",
+                        Dock = DockStyle.Fill,
+                        AutoSize = true,
+                        Checked = SettingsManager.UseRecycleBin
+                    };
+                    selectionsLayout.Controls.Add(chkUseRecycleBin, 0, 5);
+                    selectionsLayout.SetColumnSpan(chkUseRecycleBin, 2);
+
+
                     var lblTint = new Label { Text = "Tint", Dock = DockStyle.Fill, AutoSize = true, Anchor = AnchorStyles.Right };
                     var numTint = new NumericUpDown
                     {
@@ -860,8 +944,8 @@ namespace Desktop_Fences
                         MaximumSize = new System.Drawing.Size(80, 0),
                         Anchor = AnchorStyles.Right
                     };
-                    selectionsLayout.Controls.Add(lblTint, 0, 3);
-                    selectionsLayout.Controls.Add(numTint, 1, 3);
+                    selectionsLayout.Controls.Add(lblTint, 0, 7);
+                    selectionsLayout.Controls.Add(numTint, 1, 7);
 
                     var lblColor = new Label { Text = "Color", Dock = DockStyle.Fill, AutoSize = true, Anchor = AnchorStyles.Right };
                     var cmbColor = new ComboBox
@@ -873,8 +957,8 @@ namespace Desktop_Fences
                     };
                     cmbColor.Items.AddRange(new string[] { "Gray", "Black", "White", "Beige", "Green", "Purple", "Fuchsia", "Yellow", "Orange", "Red", "Blue", "Bismark" });
                     cmbColor.SelectedItem = SettingsManager.SelectedColor;
-                    selectionsLayout.Controls.Add(lblColor, 0, 4);
-                    selectionsLayout.Controls.Add(cmbColor, 1, 4);
+                    selectionsLayout.Controls.Add(lblColor, 0, 8);
+                    selectionsLayout.Controls.Add(cmbColor, 1, 8);
 
                     var lblLaunchEffect = new Label { Text = "Launch Effect", Dock = DockStyle.Fill, AutoSize = true, Anchor = AnchorStyles.Right };
                     var cmbLaunchEffect = new ComboBox
@@ -886,14 +970,18 @@ namespace Desktop_Fences
                     };
                     cmbLaunchEffect.Items.AddRange(new string[] { "Zoom", "Bounce", "FadeOut", "SlideUp", "Rotate", "Agitate", "GrowAndFly", "Pulse", "Elastic", "Flip3D", "Spiral" });
                     cmbLaunchEffect.SelectedIndex = (int)SettingsManager.LaunchEffect;
-                    selectionsLayout.Controls.Add(lblLaunchEffect, 0, 5);
-                    selectionsLayout.Controls.Add(cmbLaunchEffect, 1, 5);
+                    selectionsLayout.Controls.Add(lblLaunchEffect, 0, 9);
+                    selectionsLayout.Controls.Add(cmbLaunchEffect, 1, 9);
 
                     groupBoxSelections.Controls.Add(selectionsLayout);
                     layoutPanel.Controls.Add(groupBoxSelections);
 
                     toolTip.SetToolTip(chkSingleClickToLaunch, "Enable to launch fence items with a single click instead of a double click.");
                     toolTip.SetToolTip(chkEnableSnap, "Enable to allow fences to snap to screen edges or other fences.");
+                    toolTip.SetToolTip(chkEnablePortalWatermark, "Enable to see the portal image background on portal fences  in order to seperate them from data fences.");
+                    toolTip.SetToolTip(chkEnableTrayIcon, "Enable to see the program tray icon. Disable to hide it.");
+                    toolTip.SetToolTip(chkUseRecycleBin, "Enable to delete items using windows recylce bin using right click menu. Disable to permanently delete items");
+
                     toolTip.SetToolTip(chkEnableDimensionSnap, "Enable to snap fence dimensions to the nearest multiple of 10 when resizing.");
                     toolTip.SetToolTip(numTint, "Adjust the tint level for fence backgrounds (1-100).");
                     toolTip.SetToolTip(cmbColor, "Select the background color for all fences.");
@@ -953,7 +1041,8 @@ namespace Desktop_Fences
 
                     var lblSpacer = new Label
                     {
-                        Text = "----------------------------------------------------",
+                        TextAlign= ContentAlignment.TopCenter,
+                        Text = "• ♥ • • • • • • • • • • • • • • • • • • • • ♥ •",
                         Dock = DockStyle.Fill,
                         AutoSize = true
                     };
@@ -1008,7 +1097,20 @@ namespace Desktop_Fences
                     };
                     btnSave.Click += (s, ev) =>
                     {
+                        bool tempPortalImageState = SettingsManager.ShowBackgroundImageOnPortalFences;
+                        if (tempPortalImageState != chkEnablePortalWatermark.Checked)
+                        {
+                            reloadAllFences();
+                            // Reload fences to apply the new portal watermark setting
+                            Log($"Portal watermark setting changed from {tempPortalImageState} to {chkEnablePortalWatermark.Checked}. Reloading fences.");
+                        }
+                        Showintray = chkEnableTrayIcon.Checked;
+                        UpdateTrayIcon();
+
                         SettingsManager.IsSnapEnabled = chkEnableSnap.Checked;
+                        SettingsManager.ShowInTray = chkEnableTrayIcon.Checked;
+                        SettingsManager.ShowBackgroundImageOnPortalFences = chkEnablePortalWatermark.Checked;
+                        SettingsManager.UseRecycleBin = chkUseRecycleBin.Checked;
                         SettingsManager.TintValue = (int)numTint.Value;
                         SettingsManager.SelectedColor = cmbColor.SelectedItem.ToString();
                         SettingsManager.IsLogEnabled = chkEnableLog.Checked;
@@ -1449,6 +1551,9 @@ namespace Desktop_Fences
 
         public void UpdateTrayIcon()
         {
+
+            if (Showintray == true) { 
+
             if (HiddenFences.Count > 0)
             {
 
@@ -1460,6 +1565,11 @@ namespace Desktop_Fences
             {
                 string exePath = Process.GetCurrentProcess().MainModule.FileName;
                 _trayIcon.Icon = Icon.ExtractAssociatedIcon(exePath);
+            }
+            }
+            else
+            {
+                _trayIcon.Icon = null; // Hide the icon if Showintray is false
             }
         }
 
@@ -1519,6 +1629,11 @@ namespace Desktop_Fences
                     waitWindow.Close();
                 }
             }
+        }
+
+        public static void ShowOKOnlyMessageBoxFormStatic(string msgboxMessage, string msgboxTitle)
+        {
+            Instance?.ShowOKOnlyMessageBoxForm(msgboxMessage, msgboxTitle);
         }
     }
 }
