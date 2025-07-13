@@ -1,7 +1,16 @@
 # Desktop Fences +
+<p align="center">
+<img src="https://img.shields.io/github/downloads/limbo666/DesktopFences/total?style=flat-square" alt="Total Downloads"/>
+<img src="https://img.shields.io/github/stars/limbo666/DesktopFences?style=flat-square" alt="Stars"/>
+  <img src="https://img.shields.io/github/forks/limbo666/DesktopFences?style=flat-square" alt="Forks"/>
+  <img src="https://img.shields.io/github/issues/limbo666/DesktopFences?style=flat-square" alt="Issues"/>
+  <img src="https://img.shields.io/github/license/limbo666/DesktopFences?style=flat-square" alt="License"/>
+  <img src="https://img.shields.io/github/last-commit/limbo666/DesktopFences?style=flat-square" alt="Last Commit"/>
+</p>
 
 <p align="center">
   <img src="https://github.com/limbo666/DesktopFences/blob/main/Imgs/Desktop_Fences_Social_Media_PNG.png" />
+  
 </p>
 
 
@@ -18,8 +27,7 @@ If you find this project helpful, consider supporting its development!
 Your contribution helps cover development time, new features, bug fixes, and overall project improvements.
 
  - Buy me a coffee
-
- - Help me pay AI subscription (yeah, development gets easier with AI but costs money)
+ - Help me pay my AI subscription (development is easier with AI but costs money)
 
 Every little bit helps and is greatly appreciated! 🙏
 
@@ -36,7 +44,7 @@ Every little bit helps and is greatly appreciated! 🙏
 -  **Program Icon** added
 -  **Error Handlers** for Move actions, Program execution, Empty or invalid JSON files
 
-##  New Functionalities
+##  First release added functionalities
 -  **Tray Icon** indicates the application is running
 -  **Program Exit Option** in the tray icon’s context menu
 -  **New Fence Creation** at mouse location for intuitive placement
@@ -83,7 +91,7 @@ Every little bit helps and is greatly appreciated! 🙏
 -  **Fixed**:  Bug on context menus items unchecking behavior
 -  **Fixed**:  Bug on customization where changes was not applied into fences under same name
 -  **Added**:  Random name generator for new fences instead of the dull "New Fence"
--  **Added**: custom delete confirmation message box
+-  **Added**:  Custom delete confirmation message box
 
 ##  2.5.0.30
 -  **Added**: Restore for previously backed up configurations 
