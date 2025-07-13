@@ -1,4 +1,5 @@
-# Desktop Fences +
+<h1 align="center">Desktop Fences +</h1>
+<p align="center"><i>Organize your desktop like magic!</i></p>
 <p align="center">
 <img src="https://img.shields.io/github/downloads/limbo666/DesktopFences/total?style=flat-square" alt="Total Downloads"/>
 <img src="https://img.shields.io/github/stars/limbo666/DesktopFences?style=flat-square" alt="Stars"/>
@@ -44,7 +45,7 @@ Every little bit helps and is greatly appreciated! 🙏
 -  **Program Icon** added
 -  **Error Handlers** for Move actions, Program execution, Empty or invalid JSON files
 
-##  First release added functionalities
+##  First release changes
 -  **Tray Icon** indicates the application is running
 -  **Program Exit Option** in the tray icon’s context menu
 -  **New Fence Creation** at mouse location for intuitive placement
