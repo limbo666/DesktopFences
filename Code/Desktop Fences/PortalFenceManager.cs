@@ -228,7 +228,8 @@ namespace Desktop_Fences
             catch (Exception ex)
             {
                 Log($"Failed to copy path for {path}: {ex.Message}");
-                MessageBox.Show("Unable to copy path.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                //  MessageBox.Show("Unable to copy path.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                TrayManager.Instance.ShowOKOnlyMessageBoxForm($"Unable to copy path.", "Error");
             }
         }
         // delete  item handler
@@ -268,8 +269,9 @@ namespace Desktop_Fences
             catch (Exception ex)
             {
                 Log($"Failed to move item {path} to recycle bin: {ex.Message}");
-                MessageBox.Show("Unable to move item to recycle bin.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
+                    //   MessageBox.Show("Unable to move item to recycle bin.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    TrayManager.Instance.ShowOKOnlyMessageBoxForm($"Unable to move item to recycle bin.", "Error");
+                }
             }
             else
             {
@@ -301,7 +303,8 @@ namespace Desktop_Fences
                 catch (Exception ex)
                 {
                     Log($"Failed to delete item {path}: {ex.Message}");
-                    MessageBox.Show("Unable to delete item.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    // MessageBox.Show("Unable to delete item.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    TrayManager.Instance.ShowOKOnlyMessageBoxForm($"Unable to delete item.", "Error");
                 }
 
             }

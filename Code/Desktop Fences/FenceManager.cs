@@ -482,15 +482,15 @@ namespace Desktop_Fences
         {
             Zoom,        // First effect
             Bounce,      // Scale up and down a few times
-            FadeOut,        // Fade out and back in
+            FadeOut,     // Fade out
             SlideUp,     // Slide up and return
             Rotate,      // Spin 360 degrees
-            Agitate, // Shake back and forth
-GrowAndFly,   // New effect - grow and fly away
-Pulse,
-Elastic,
-Flip3D,
-Spiral
+            Agitate,     // Shake back and forth
+            GrowAndFly,  // Grow and fly away
+            Pulse,       // Pulisng
+            Elastic,     // Elastic *****
+            Flip3D,     //Flip 3D
+            Spiral      // Spiral
 
         }
 
@@ -736,7 +736,8 @@ Spiral
                 SaveFenceData();
                 FenceManager.Log($"Saved updated fences.json after removing {invalidFences.Count} invalid Portal Fences");
             }
-            foreach (dynamic fence in _fenceData)
+      
+            foreach (dynamic fence in _fenceData.ToList()) 
             {
                 CreateFence(fence, targetChecker);
             }
@@ -796,7 +797,13 @@ Spiral
                         }
                         fenceDict["Items"] = items; // Ensure Items updates are captured
                     }
-
+                    // Migration: Add or validate IsLocked
+                    if (!fenceDict.ContainsKey("IsLocked"))
+                    {
+                        fenceDict["IsLocked"] = "false"; // Default to string "false"
+                        jsonModified = true;
+                        Log($"Added IsLocked=\"false\" to {fence.Title}");
+                    }
                     // Migration: Add or validate CustomColor
                     if (!fenceDict.ContainsKey("CustomColor"))
                     {
@@ -881,9 +888,62 @@ Spiral
                 Log($"Error migrating fences.json: {ex.Message}\nStackTrace: {ex.StackTrace}");
             }
         }
-        
 
-   private static void CreateFence(dynamic fence, TargetChecker targetChecker)
+
+
+
+
+        private static void UpdateLockState(TextBlock lockIcon, dynamic fence, bool? forceState = null, bool saveToJson = true)
+        {
+            // Get the actual fence from _fenceData using Id to ensure correct reference
+            string fenceId = fence.Id?.ToString();
+            if (string.IsNullOrEmpty(fenceId))
+            {
+                Log($"Fence '{fence.Title}' has no Id, cannot update lock state");
+                return;
+            }
+
+            int index = _fenceData.FindIndex(f => f.Id?.ToString() == fenceId);
+            if (index < 0)
+            {
+                Log($"Fence '{fence.Title}' not found in _fenceData, cannot update lock state");
+                return;
+            }
+
+            dynamic actualFence = _fenceData[index];
+            bool isLocked = forceState ?? (actualFence.IsLocked?.ToString().ToLower() == "true");
+
+            // Only update JSON if explicitly requested (e.g., during toggle, not initialization)
+            if (saveToJson)
+            {
+                UpdateFenceProperty(actualFence, "IsLocked", isLocked.ToString().ToLower(), $"Fence {(isLocked ? "locked" : "unlocked")}");
+            }
+
+            // Update UI on the main thread
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                // Update lock icon
+                lockIcon.Foreground = isLocked ? System.Windows.Media.Brushes.DeepPink : System.Windows.Media.Brushes.White;
+                lockIcon.ToolTip = isLocked ? "Fence is locked (click to unlock)" : "Fence is unlocked (click to lock)";
+
+                // Find the NonActivatingWindow
+                NonActivatingWindow win = FindVisualParent<NonActivatingWindow>(lockIcon);
+                if (win == null)
+                {
+                    Log($"Could not find NonActivatingWindow for fence '{actualFence.Title}'");
+                    return;
+                }
+
+                // Update ResizeMode
+                win.ResizeMode = isLocked ? ResizeMode.NoResize : ResizeMode.CanResizeWithGrip;
+                Log($"Set ResizeMode to {win.ResizeMode} for fence '{actualFence.Title}'");
+            });
+
+            Log($"Updated lock state for fence '{actualFence.Title}': IsLocked={isLocked}");
+        }
+
+
+        private static void CreateFence(dynamic fence, TargetChecker targetChecker)
         {
             // Check for valid Portal Fence target folder
             if (fence.ItemsType?.ToString() == "Portal")
@@ -939,10 +999,75 @@ Spiral
                 }
             };
 
-            ContextMenu cm = new ContextMenu();
-            MenuItem miNF = new MenuItem { Header = "New Fence" };
-            MenuItem miNP = new MenuItem { Header = "New Portal Fence" };
-            MenuItem miRF = new MenuItem { Header = "Delete Fence" };
+
+
+            // Add a protection symbol in top-right corner
+            TextBlock lockIcon = new TextBlock
+            {
+                Text = "🛡️",
+                FontSize = 14,
+                Foreground = fence.IsLocked?.ToString().ToLower() == "true" ? System.Windows.Media.Brushes.Red : System.Windows.Media.Brushes.White,
+                Margin = new Thickness(0, 3, 2, 0), // Adjusted for top-right positioning
+                HorizontalAlignment = HorizontalAlignment.Right,
+                VerticalAlignment = VerticalAlignment.Top,
+                Cursor = Cursors.Hand,
+                ToolTip = fence.IsLocked?.ToString().ToLower() == "true" ? "Fence is locked (click to unlock)" : "Fence is unlocked (click to lock)"
+                
+            };
+           
+
+            // Add to DockPanel
+          //  DockPanel.SetDock(lockIcon, Dock.Top); // Ensure it stays in the titlebar area
+          //  dp.Children.Add(lockIcon);
+
+            // Set initial state without saving to JSON
+            UpdateLockState(lockIcon, fence, null, saveToJson: false);
+
+         
+            // Lock icon click handler
+            lockIcon.MouseLeftButtonDown += (s, e) =>
+            {
+                if (e.ChangedButton == MouseButton.Left)
+                {
+                    // Get the NonActivatingWindow to find the fence by Id
+                    NonActivatingWindow win = FindVisualParent<NonActivatingWindow>(lockIcon);
+                    if (win == null)
+                    {
+                        Log($"Could not find NonActivatingWindow for lock icon click in fence '{fence.Title}'");
+                        return;
+                    }
+
+                    // Find the fence in _fenceData using the window's Tag (Id)
+                    string fenceId = win.Tag?.ToString();
+                    if (string.IsNullOrEmpty(fenceId))
+                    {
+                        Log($"Fence Id is missing for window '{win.Title}'");
+                        return;
+                    }
+
+                    dynamic currentFence = _fenceData.FirstOrDefault(f => f.Id?.ToString() == fenceId);
+                    if (currentFence == null)
+                    {
+                        Log($"Fence with Id '{fenceId}' not found in _fenceData");
+                        return;
+                    }
+
+                    // Toggle the lock state
+                    bool currentState = currentFence.IsLocked?.ToString().ToLower() == "true";
+                    bool newState = !currentState;
+
+                    // Update UI and JSON on the main thread
+                    Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        UpdateLockState(lockIcon, currentFence, newState, saveToJson: true);
+                    });
+                }
+            };
+
+            ContextMenu CnMnFenceManager = new ContextMenu();
+            MenuItem miNewFence = new MenuItem { Header = "New Fence" };
+            MenuItem miNewPortalFence = new MenuItem { Header = "New Portal Fence" };
+            MenuItem miRemoveFence = new MenuItem { Header = "Delete Fence" };
            // MenuItem miXT = new MenuItem { Header = "Exit" };
             MenuItem miHide = new MenuItem { Header = "Hide Fence" }; // New Hide Fence item
 
@@ -960,8 +1085,7 @@ Spiral
           
             // Add color options
             MenuItem miColorDefault = new MenuItem { Header = "Default", Tag = null };
-            //  miColorDefault.Click += (s, e) => UpdateFenceProperty(fence, "CustomColor", null, "Color set to Default");
-            miColorDefault.Click += (s, e) =>
+                 miColorDefault.Click += (s, e) =>
             {
                 // NEW: Uncheck all color items first
                 foreach (MenuItem item in miColors.Items)
@@ -1015,8 +1139,7 @@ Spiral
             {
                 MenuItem miEffect = new MenuItem { Header = effect, Tag = effect };
 
-                // miEffect.Click += (s, e) => UpdateFenceProperty(fence, "CustomLaunchEffect", effect, $"Launch Effect set to {effect}");
-                miEffect.Click += (s, e) =>
+                  miEffect.Click += (s, e) =>
                 {
                     // Uncheck all effect items
                     foreach (MenuItem item in miEffects.Items)
@@ -1035,10 +1158,10 @@ Spiral
             miCustomize.Items.Add(miColors);
             miCustomize.Items.Add(miEffects);
 
-       
-          //  cm.Items.Add(miNP);
-            cm.Items.Add(miRF);
-            cm.Items.Add(miHide); // Add Hide Fence
+
+           
+            CnMnFenceManager.Items.Add(miRemoveFence);
+            CnMnFenceManager.Items.Add(miHide); // Add Hide Fence
                                   // Add "Open Folder in Explorer" only for portal fences
             if (fence.ItemsType?.ToString() == "Portal")
             {
@@ -1065,17 +1188,17 @@ Spiral
                         MessageBox.Show("An error occurred while trying to open the folder.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     }
                 };
-                cm.Items.Add(miOpenFolder);
+                CnMnFenceManager.Items.Add(miOpenFolder);
             }
 
 
 
-            cm.Items.Add(new Separator());
-            cm.Items.Add(miCustomize); // Add Customize submenu
-                                       //  cm.Items.Add(new Separator());
+            CnMnFenceManager.Items.Add(new Separator());
+            CnMnFenceManager.Items.Add(miCustomize); // Add Customize submenu
+                                                     //  CnMnFenceManager.Items.Add(new Separator());
 
-            //   cm.Items.Add(new Separator());
-            //   cm.Items.Add(miXT);
+            //   CnMnFenceManager.Items.Add(new Separator());
+            //   CnMnFenceManager.Items.Add(miXT);
 
             // Handle both JObject and ExpandoObject access
             string isHiddenString = "false"; // Default value
@@ -1105,7 +1228,7 @@ Spiral
       
             NonActivatingWindow win = new NonActivatingWindow
             {
-                ContextMenu = cm,
+                ContextMenu = CnMnFenceManager,
                 AllowDrop = true,
                 AllowsTransparency = true,
                 Background = System.Windows.Media.Brushes.Transparent,
@@ -1113,21 +1236,23 @@ Spiral
                 ShowInTaskbar = false,
                 WindowStyle = WindowStyle.None,
                 Content = cborder,
-                ResizeMode = ResizeMode.CanResizeWithGrip,
+                ResizeMode = fence.IsLocked?.ToString().ToLower() == "true" ? ResizeMode.NoResize : ResizeMode.CanResizeWithGrip,
+                // ResizeMode = ResizeMode.CanResizeWithGrip,
                 Width = (double)fence.Width,
                 Height = (double)fence.Height,
                 Top = (double)fence.Y,
                 Left = (double)fence.X,
                 Tag = fence.Id?.ToString() ?? Guid.NewGuid().ToString() // Ensure ID exists
             };
+
             // Adjust the fence position to ensure it fits within screen bounds
             AdjustFencePositionToScreen(win);
-            // Log the IsHidden state for diagnostics
-            //   Log($"Fence '{fence.Title}' IsHidden state: {isHidden}");
-            // Show the window first
-            // Defer hiding until after the window is loaded
+     
             win.Loaded += (s, e) =>
             {
+                UpdateLockState(lockIcon, fence, null, saveToJson: false);
+                Log($"Applied lock state for fence '{fence.Title}' on load: IsLocked={fence.IsLocked?.ToString().ToLower()}");
+
                 if (isHidden)
                 {
                     win.Visibility = Visibility.Hidden;
@@ -1136,12 +1261,7 @@ Spiral
                 }
             };
 
-            //if (isHidden)
-            //{
-            //    win.Visibility = Visibility.Hidden;
-            //  //  TrayManager.AddHiddenFence(win);
-            //    Log($"Hid fence '{fence.Title}' at startup");
-            //}
+ 
 
             if (isHidden)
             {
@@ -1161,7 +1281,7 @@ Spiral
 
 
        
-            miRF.Click += (s, e) =>
+            miRemoveFence.Click += (s, e) =>
             {
                 bool result = TrayManager.Instance.ShowCustomMessageBoxForm(); // Call the method and store the result  
               //  System.Windows.Forms.MessageBox.Show(result.ToString()); // Display the result in a MessageBox  
@@ -1227,7 +1347,7 @@ Spiral
             };
 
 
-            miNF.Click += (s, e) =>
+            miNewFence.Click += (s, e) =>
             {
                 bool isLogEnabled = _options.IsLogEnabled ?? true;
                 void Log(string message)
@@ -1246,7 +1366,7 @@ Spiral
                 CreateNewFence("New Fence", "Data", absolutePosition.X, absolutePosition.Y);
             };
 
-            miNP.Click += (s, e) =>
+            miNewPortalFence.Click += (s, e) =>
             {
                 bool isLogEnabled = _options.IsLogEnabled ?? true;
                 void Log(string message)
@@ -1265,42 +1385,59 @@ Spiral
                 CreateNewFence("New Portal Fence", "Portal", absolutePosition.X, absolutePosition.Y);
             };
 
-         //   miXT.Click += (s, e) => Application.Current.Shutdown();
+            // Create a Grid for the titlebar
+            Grid titleGrid = new Grid
+            {
+                Background = new SolidColorBrush(System.Windows.Media.Color.FromArgb(20, 0, 0, 0))
+            };
+            titleGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            titleGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(0, GridUnitType.Pixel) }); // No left spacer
+            titleGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) }); // Title takes most space
+            titleGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(30, GridUnitType.Pixel) }); // Lock icon fixed width
 
             Label titlelabel = new Label
             {
                 Content = fence.Title.ToString(),
-                Background = new SolidColorBrush(System.Windows.Media.Color.FromArgb(20, 0, 0, 0)),
                 Foreground = System.Windows.Media.Brushes.White,
                 HorizontalContentAlignment = HorizontalAlignment.Center,
+                HorizontalAlignment = HorizontalAlignment.Stretch, // Stretch to fill column
                 Cursor = Cursors.SizeAll
             };
-            DockPanel.SetDock(titlelabel, Dock.Top);
-            dp.Children.Add(titlelabel);
+            Grid.SetColumn(titlelabel, 1);
+            titleGrid.Children.Add(titlelabel);
 
             TextBox titletb = new TextBox
             {
                 HorizontalContentAlignment = HorizontalAlignment.Center,
                 Visibility = Visibility.Collapsed
             };
-            DockPanel.SetDock(titletb, Dock.Top);
-            dp.Children.Add(titletb);
+            Grid.SetColumn(titletb, 1);
+            titleGrid.Children.Add(titletb);
 
-            //// Προσθήκη κουκίδας για Portal Fences
-            //if (fence.ItemsType?.ToString() == "Portal")
-            //{
-            //    Ellipse portalIndicator = new Ellipse
-            //    {
-            //        Width = 10,
-            //        Height = 10,
-            //        Fill = Brushes.WhiteSmoke,
-            //        Margin = new Thickness(2, 2, 0, 0), // Πάνω αριστερά, κοντά στο titlebar
-            //        HorizontalAlignment = HorizontalAlignment.Left,
-            //        VerticalAlignment = VerticalAlignment.Top
-            //    };
-            //    dp.Children.Add(portalIndicator);
-            //}
-        
+            // Move lockIcon to the Grid
+            Grid.SetColumn(lockIcon, 2);
+            Grid.SetRow(lockIcon, 0);
+            titleGrid.Children.Add(lockIcon);
+
+            // Add the titleGrid to the DockPanel
+            DockPanel.SetDock(titleGrid, Dock.Top);
+            dp.Children.Add(titleGrid);
+
+
+
+            string fenceId = win.Tag?.ToString();
+            if (string.IsNullOrEmpty(fenceId))
+            {
+                Log($"Fence Id is missing for window '{win.Title}'");
+                return;
+            }
+            dynamic currentFence = _fenceData.FirstOrDefault(f => f.Id?.ToString() == fenceId);
+            if (currentFence == null)
+            {
+                Log($"Fence with Id '{fenceId}' not found in _fenceData");
+                return;
+            }
+            bool isLocked = currentFence.IsLocked?.ToString().ToLower() == "true";
 
             titlelabel.MouseDown += (sender, e) =>
             {
@@ -1327,9 +1464,31 @@ Spiral
                     titletb.SelectAll();
                     FenceManager.Log($"Focus set to title textbox for fence: {fence.Title}");
                 }
+                //  else if (e.LeftButton == MouseButtonState.Pressed)
                 else if (e.LeftButton == MouseButtonState.Pressed)
                 {
-                    win.DragMove();
+                    string fenceId = win.Tag?.ToString();
+                    if (string.IsNullOrEmpty(fenceId))
+                    {
+                        Log($"Fence Id is missing for window '{win.Title}' during MouseDown");
+                        return;
+                    }
+                    dynamic currentFence = _fenceData.FirstOrDefault(f => f.Id?.ToString() == fenceId);
+                    if (currentFence == null)
+                    {
+                        Log($"Fence with Id '{fenceId}' not found in _fenceData during MouseDown");
+                        return;
+                    }
+                    bool isLocked = currentFence.IsLocked?.ToString().ToLower() == "true";
+                    if (!isLocked)
+                    {
+                        win.DragMove();
+                        Log($"Dragging fence '{currentFence.Title}'");
+                    }
+                    else
+                    {
+                        Log($"DragMove blocked for locked fence '{currentFence.Title}'");
+                    }
                 }
             };
 
@@ -1401,16 +1560,7 @@ Spiral
                      }
             }
 
-            //// Προσθήκη watermark για Portal Fences
-            //if (fence.ItemsType?.ToString() == "Portal")
-            //{
-            //    wpcontscr.Background = new ImageBrush
-            //    {
-            //        ImageSource = new BitmapImage(new Uri("pack://application:,,,/Resources/portal.png")),
-            //        Opacity = 0.2,
-            //        Stretch = Stretch.UniformToFill
-            //    };
-            //}
+     
 
             dp.Children.Add(wpcontscr);
 
@@ -1444,8 +1594,8 @@ Spiral
 
                                 ContextMenu mn = new ContextMenu();
                                 MenuItem miRunAsAdmin = new MenuItem { Header = "Run as administrator" };
-                                MenuItem miE = new MenuItem { Header = "Edit..." };
-                                MenuItem miM = new MenuItem { Header = "Move..." };
+                                MenuItem miEdit = new MenuItem { Header = "Edit..." };
+                                MenuItem miMove = new MenuItem { Header = "Move..." };
                                 MenuItem miRemove = new MenuItem { Header = "Remove" };
                                 MenuItem miFindTarget = new MenuItem { Header = "Open target folder..." };
                                 MenuItem miCopyPath = new MenuItem { Header = "Copy path" };
@@ -1454,8 +1604,8 @@ Spiral
                                 miCopyPath.Items.Add(miCopyFolder);
                                 miCopyPath.Items.Add(miCopyFullPath);
 
-                                mn.Items.Add(miE);
-                                mn.Items.Add(miM);
+                                mn.Items.Add(miEdit);
+                                mn.Items.Add(miMove);
                                 mn.Items.Add(miRemove);
                                 mn.Items.Add(new Separator());
                                 mn.Items.Add(miRunAsAdmin);
@@ -1465,8 +1615,8 @@ Spiral
                                 sp.ContextMenu = mn;
 
                                 miRunAsAdmin.IsEnabled = Utility.IsExecutableFile(filePath);
-                                miM.Click += (sender, e) => MoveItem(icon, fence, win.Dispatcher);
-                                miE.Click += (sender, e) => EditItem(icon, fence, win);
+                                miMove.Click += (sender, e) => MoveItem(icon, fence, win.Dispatcher);
+                                miEdit.Click += (sender, e) => EditItem(icon, fence, win);
                                 miRemove.Click += (sender, e) =>
                                 {
                                     var items = fence.Items as JArray;
@@ -1704,8 +1854,8 @@ Spiral
                                     // Προσθήκη Context Menu
                                     ContextMenu mn = new ContextMenu();
                                     MenuItem miRunAsAdmin = new MenuItem { Header = "Run as administrator" };
-                                    MenuItem miE = new MenuItem { Header = "Edit" };
-                                    MenuItem miM = new MenuItem { Header = "Move.." };
+                                    MenuItem miEdit = new MenuItem { Header = "Edit" };
+                                    MenuItem miMove = new MenuItem { Header = "Move.." };
                                     MenuItem miRemove = new MenuItem { Header = "Remove" };
                                     MenuItem miFindTarget = new MenuItem { Header = "Find target..." };
                                     MenuItem miCopyPath = new MenuItem { Header = "Copy path" };
@@ -1714,8 +1864,8 @@ Spiral
                                     miCopyPath.Items.Add(miCopyFolder);
                                     miCopyPath.Items.Add(miCopyFullPath);
 
-                                    mn.Items.Add(miE);
-                                    mn.Items.Add(miM);
+                                    mn.Items.Add(miEdit);
+                                    mn.Items.Add(miMove);
                                     mn.Items.Add(miRemove);
                                     mn.Items.Add(new Separator());
                                     mn.Items.Add(miRunAsAdmin);
@@ -1725,8 +1875,8 @@ Spiral
                                     sp.ContextMenu = mn;
 
                                     miRunAsAdmin.IsEnabled = Utility.IsExecutableFile(shortcutName);
-                                    miM.Click += (sender, e) => MoveItem(newItem, fence, win.Dispatcher);
-                                    miE.Click += (sender, e) => EditItem(newItem, fence, win);
+                                    miMove.Click += (sender, e) => MoveItem(newItem, fence, win.Dispatcher);
+                                    miEdit.Click += (sender, e) => EditItem(newItem, fence, win);
                                     miRemove.Click += (sender, e) =>
                                     {
                                         var items = fence.Items as JArray;
@@ -2246,7 +2396,11 @@ Spiral
             newFenceDict["CustomColor"] = customColor; // Use passed value
             newFenceDict["CustomLaunchEffect"] = customLaunchEffect; // Use passed value
             newFenceDict["IsHidden"] = false; // Use passed value
+           
+
+            newFenceDict["IsLocked"] = false; // Init ISLocked
             if (itemsType == "Portal")
+                if (itemsType == "Portal")
             {
                 using (var dialog = new System.Windows.Forms.FolderBrowserDialog())
                 {
@@ -2899,200 +3053,12 @@ Spiral
                 }
             });
         }
-        //private static void UpdateIcon(StackPanel sp, string filePath, bool isFolder)
-        //{
-        //    bool isLogEnabled = _options.IsLogEnabled ?? true;
-        //    void Log(string message)
-        //    {
-        //        if (isLogEnabled)
-        //        {
-        //            string logPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "Desktop_Fences.log");
-        //            System.IO.File.AppendAllText(logPath, $"{DateTime.Now}: {message}\n");
-        //        }
-        //    }
-
-        //    if (Application.Current == null)
-        //    {
-        //        Log("Application.Current is null, cannot update icon.");
-        //        return;
-        //    }
-
-        //    Application.Current.Dispatcher.Invoke(() =>
-        //    {
-        //        Image ico = sp.Children.OfType<Image>().FirstOrDefault();
-        //        if (ico == null)
-        //        {
-        //            Log($"No Image found in StackPanel for {filePath}");
-        //            return;
-        //        }
-
-        //        bool isShortcut = System.IO.Path.GetExtension(filePath).ToLower() == ".lnk";
-        //        string targetPath = isShortcut ? Utility.GetShortcutTarget(filePath) : filePath;
-        //        bool targetExists = System.IO.File.Exists(targetPath) || System.IO.Directory.Exists(targetPath);
-        //        bool isTargetFolder = System.IO.Directory.Exists(targetPath);
-
-        //        // Correct isFolder for shortcut to folder
-        //        if (isShortcut && isTargetFolder)
-        //        {
-        //            isFolder = true;
-        //            Log($"Corrected isFolder to true for shortcut {filePath} targeting folder {targetPath}");
-        //        }
-
-        //        ImageSource newIcon = null;
-
-        //        if (isShortcut)
-        //        {
-        //            WshShell shell = new WshShell();
-        //            IWshShortcut shortcut = (IWshShortcut)shell.CreateShortcut(filePath);
-
-        //            // Check for custom IconLocation
-        //            if (!string.IsNullOrEmpty(shortcut.IconLocation))
-        //            {
-        //                string[] iconParts = shortcut.IconLocation.Split(',');
-        //                string iconPath = iconParts[0];
-        //                int iconIndex = 0;
-        //                if (iconParts.Length == 2 && int.TryParse(iconParts[1], out int parsedIndex))
-        //                {
-        //                    iconIndex = parsedIndex;
-        //                }
-
-        //                if (System.IO.File.Exists(iconPath))
-        //                {
-        //                    try
-        //                    {
-        //                        IntPtr[] hIcon = new IntPtr[1];
-        //                        uint result = ExtractIconEx(iconPath, iconIndex, hIcon, null, 1);
-        //                        if (result > 0 && hIcon[0] != IntPtr.Zero)
-        //                        {
-        //                            try
-        //                            {
-        //                                newIcon = Imaging.CreateBitmapSourceFromHIcon(
-        //                                    hIcon[0],
-        //                                    Int32Rect.Empty,
-        //                                    BitmapSizeOptions.FromEmptyOptions()
-        //                                );
-        //                                Log($"Extracted custom icon at index {iconIndex} from {iconPath} for {filePath}");
-        //                            }
-        //                            finally
-        //                            {
-        //                                DestroyIcon(hIcon[0]);
-        //                            }
-        //                        }
-        //                        else
-        //                        {
-        //                            Log($"Failed to extract custom icon at index {iconIndex} from {iconPath} for {filePath}. Result: {result}");
-        //                        }
-        //                    }
-        //                    catch (Exception ex)
-        //                    {
-        //                        Log($"Error extracting custom icon from {iconPath} at index {iconIndex} for {filePath}: {ex.Message}");
-        //                    }
-        //                }
-        //                else
-        //                {
-        //                    Log($"Custom icon file not found: {iconPath} for {filePath}");
-        //                }
-        //            }
-
-        //            // Fallback only if no custom icon was extracted
-        //            if (newIcon == null)
-        //            {
-        //                if (targetExists)
-        //                {
-        //                    if (isTargetFolder)
-        //                    {
-        //                        newIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/folder-White.png"));
-        //                        Log($"Using folder-White.png for shortcut {filePath} targeting folder {targetPath}");
-        //                    }
-        //                    else
-        //                    {
-        //                        try
-        //                        {
-        //                            newIcon = System.Drawing.Icon.ExtractAssociatedIcon(targetPath).ToImageSource();
-        //                            Log($"Using target file icon for shortcut {filePath}: {targetPath}");
-        //                        }
-        //                        catch (Exception ex)
-        //                        {
-        //                            newIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/file-WhiteX.png"));
-        //                            Log($"Failed to extract target file icon for shortcut {filePath}: {ex.Message}");
-        //                        }
-        //                    }
-        //                }
-        //                else
-        //                {
-        //                    newIcon = isFolder
-        //                        ? new BitmapImage(new Uri("pack://application:,,,/Resources/folder-WhiteX.png"))
-        //                        : new BitmapImage(new Uri("pack://application:,,,/Resources/file-WhiteX.png"));
-        //                    Log($"Using missing icon for shortcut {filePath}: {(isFolder ? "folder-WhiteX.png" : "file-WhiteX.png")}");
-        //                }
-        //            }
-        //        }
-        //        else
-        //        {
-        //            // Non-shortcut handling
-        //            if (targetExists)
-        //            {
-        //                if (isTargetFolder)
-        //                {
-        //                    newIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/folder-White.png"));
-        //                    Log($"Using folder-White.png for {filePath}");
-        //                }
-        //                else
-        //                {
-        //                    try
-        //                    {
-        //                        newIcon = System.Drawing.Icon.ExtractAssociatedIcon(filePath).ToImageSource();
-        //                        Log($"Using file icon for {filePath}");
-        //                    }
-        //                    catch (Exception ex)
-        //                    {
-        //                        newIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/file-WhiteX.png"));
-        //                        Log($"Failed to extract icon for {filePath}: {ex.Message}");
-        //                    }
-        //                }
-        //            }
-        //            else
-        //            {
-        //                newIcon = isFolder
-        //                    ? new BitmapImage(new Uri("pack://application:,,,/Resources/folder-WhiteX.png"))
-        //                    : new BitmapImage(new Uri("pack://application:,,,/Resources/file-WhiteX.png"));
-        //                Log($"Using missing icon for {filePath}: {(isFolder ? "folder-WhiteX.png" : "file-WhiteX.png")}");
-        //            }
-        //        }
-
-        //        // Update icon only if different
-        //        if (ico.Source != newIcon)
-        //        {
-        //            ico.Source = newIcon;
-        //            // Update cache if used
-        //            if (iconCache.ContainsKey(filePath))
-        //            {
-        //                iconCache[filePath] = newIcon;
-        //                Log($"Updated icon cache for {filePath}");
-        //            }
-        //            Log($"Icon updated for {filePath}");
-        //        }
-        //        else
-        //        {
-        //            Log($"No icon update needed for {filePath}: same icon");
-        //        }
-        //    });
-        //}
-
+   
 
 
         public static void UpdateOptionsAndClickEvents()
         {
-            //bool isLogEnabled = SettingsManager.IsLogEnabled;
 
-            //void Log(string message)
-            //{
-            //    if (isLogEnabled)
-            //    {
-            //        string logPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "Desktop_Fences.log");
-            //        System.IO.File.AppendAllText(logPath, $"{DateTime.Now}: {message}\n");
-            //    }
-            //}
 
             Log($"Updating options, new singleClickToLaunch={SettingsManager.SingleClickToLaunch}");
 
@@ -3367,11 +3333,6 @@ private static void LaunchItem(StackPanel sp, string path, bool isFolder, string
                 break;
 
 
-
-
-
-
-
                     case LaunchEffect.GrowAndFly:
                         var growAnimation = new DoubleAnimation(1, 1.2, TimeSpan.FromSeconds(0.2));
                         growAnimation.Completed += (s, _) =>
@@ -3395,7 +3356,7 @@ private static void LaunchItem(StackPanel sp, string path, bool isFolder, string
                                 scaleTransform.ScaleY = 1.0;
                                 translateTransform.Y = 0;
 
-                                // Small delay before showing the icon again
+                                // Small delay before showing the icon again0
                                 var restoreTimer = new System.Windows.Threading.DispatcherTimer
                                 {
                                     Interval = TimeSpan.FromSeconds(0.1)
