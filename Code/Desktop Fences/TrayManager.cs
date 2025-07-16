@@ -13,6 +13,7 @@ using Desktop_Fences;
 using Microsoft.VisualBasic;
 using System.Diagnostics.Eventing.Reader;
 using System.Media;
+using Size = System.Windows.Size;
 
 namespace Desktop_Fences
 {
@@ -63,7 +64,7 @@ namespace Desktop_Fences
                     _tempHiddenFences.Add(fence);
                 }
                 _areFencesTempHidden = true;
-                Log($"Temporarily hid {visibleFences.Count} fences.");
+                FenceManager.Log(FenceManager.LogLevel.Debug, FenceManager.LogCategory.UI,$"Temporarily hid {visibleFences.Count} fences.");
             }
             else
             {
@@ -74,7 +75,7 @@ namespace Desktop_Fences
                 }
                 _tempHiddenFences.Clear();
                 _areFencesTempHidden = false;
-                Log($"Restored {count} temporarily hidden fences.");
+                FenceManager.Log(FenceManager.LogLevel.Debug, FenceManager.LogCategory.UI, $"Restored {count} temporarily hidden fences.");
             }
             UpdateTrayIcon();
         }
@@ -97,55 +98,7 @@ namespace Desktop_Fences
             trayMenu.Items.Add("Reload All Fences", null, async (s, e) =>
             {
                 reloadAllFences();
-                //var waitWindow = new Window
-                //{
-                //    Title = "Please Wait",
-                //    Content = new System.Windows.Controls.Label
-                //    {
-                //        Content = "Reloading all fences, please wait...",
-                //        HorizontalAlignment = System.Windows.HorizontalAlignment.Center,
-                //        VerticalAlignment = System.Windows.VerticalAlignment.Center,
-                //        FontFamily = new System.Windows.Media.FontFamily("Segoe UI"),
-                //        FontSize = 10
-                //    },
-                //    Width = 300,
-                //    Height = 150,
-                //    WindowStartupLocation = WindowStartupLocation.CenterScreen,
-                //    WindowStyle = WindowStyle.ToolWindow,
-                //    ResizeMode = ResizeMode.NoResize,
-                //    Topmost = true
-                //};
-
-                //waitWindow.Show();
-
-                //try
-                //{
-                //    await Task.Run(() =>
-                //    {
-                //        System.Windows.Application.Current.Dispatcher.Invoke(() =>
-                //        {
-                //            foreach (var fence in System.Windows.Application.Current.Windows.OfType<NonActivatingWindow>().ToList())
-                //            {
-                //                fence.Close();
-                //            }
-                //            FenceManager.ReloadFences();
-                //        });
-                //    });
-                //}
-                //catch (Exception ex)
-                //{
-                //    //System.Windows.MessageBox.Show(
-                //    //    $"An error occurred while reloading fences: {ex.Message}",
-                //    //    "Error",
-                //    //    System.Windows.MessageBoxButton.OK,
-                //    //    System.Windows.MessageBoxImage.Error
-                //    //);
-                //    ShowOKOnlyMessageBoxForm($"An error occurred while reloading fences: {ex.Message}", "Error");
-                //}
-                //finally
-                //{
-                //    waitWindow.Close();
-                //}
+   
             });
             trayMenu.Items.Add("-");
             _showHiddenFencesItem = new ToolStripMenuItem("Show Hidden Fences")
@@ -220,7 +173,7 @@ namespace Desktop_Fences
             {
                 HiddenFences.Add(new HiddenFence { Title = fence.Title, Window = fence });
                 fence.Visibility = System.Windows.Visibility.Hidden;
-                Log($"Added fence '{fence.Title}' to hidden list");
+                FenceManager.Log(FenceManager.LogLevel.Debug, FenceManager.LogCategory.UI, $"Added fence '{fence.Title}' to hidden list");
                 Instance?.UpdateHiddenFencesMenu();
                 Instance?.UpdateTrayIcon();
             }
@@ -244,7 +197,7 @@ namespace Desktop_Fences
                     FenceManager.UpdateFenceProperty(fenceData, "IsHidden", "false", $"Showed fence '{title}'");
                 }
                 HiddenFences.Remove(hiddenFence);
-                Log($"Showed fence '{title}'");
+                FenceManager.Log(FenceManager.LogLevel.Debug, FenceManager.LogCategory.UI, $"Showed fence '{title}'");
                 Instance?.UpdateHiddenFencesMenu();
                 Instance?.UpdateTrayIcon();
             }
@@ -379,7 +332,7 @@ namespace Desktop_Fences
             }
             catch (Exception ex)
             {
-                Log($"Error showing Diagnostics form: {ex.Message}");
+                FenceManager.Log(FenceManager.LogLevel.Error, FenceManager.LogCategory.UI, $"Error showing Diagnostics form: {ex.Message}");
                 // System.Windows.Forms.MessageBox.Show($"An error occurred: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 ShowOKOnlyMessageBoxForm($"An error occurred: {ex.Message}", "Error");
             }
@@ -474,14 +427,18 @@ namespace Desktop_Fences
                         AutoSize = false
                     };
 
-                    ///select costom for colors for specific colors
-                    Color argbGray = Color.FromArgb(255, 110, 110, 110);
-                    Color argbOrange = Color.FromArgb(255, 183, 84, 51);
-                    Color argbBismark = Color.FromArgb(255, 73, 105, 126);
+                    ///select custom for colors for specific colors
+                    Color argbGray = Color.FromArgb(255, 128, 128, 128);
+                    Color argbOrange = Color.FromArgb(255, 201, 102, 69);
+                    Color argbBismark = Color.FromArgb(255, 91, 123, 144);
+                    
+                    System.Windows.Forms.MessageBox.Show("Color: " + frmCustomMessageBox.BackColor);
+
                     if (argbGray.ToArgb() == frmCustomMessageBox.BackColor.ToArgb())
                     {
+                     System.Windows.Forms.MessageBox.Show("Exact ARGB match.");
                         // System.Windows.Forms.MessageBox.Show("Exact ARGB match.");
-                        lblMessage.ForeColor = Color.FromArgb(255, 0, 0, 0);
+                        lblMessage.ForeColor = Color.FromArgb(255, 250, 250, 50);
                     }
                     else if (argbOrange.ToArgb() == frmCustomMessageBox.BackColor.ToArgb())
                     {
@@ -562,13 +519,13 @@ namespace Desktop_Fences
                             }
                             else
                             {
-                                Log("Sound resource 'ding.wav' not found.");
+                                FenceManager.Log(FenceManager.LogLevel.Warn, FenceManager.LogCategory.UI, ("Sound resource 'ding.wav' not found."));
                             }
                         }
                     }
                     catch (Exception ex)
                     {
-                        Log($"Error playing sound: {ex.Message}");
+                        FenceManager.Log(FenceManager.LogLevel.Error, FenceManager.LogCategory.UI, $"Error playing sound: {ex.Message}");
                     }
                     frmCustomMessageBox.TopMost = true;
                    
@@ -579,7 +536,7 @@ namespace Desktop_Fences
             }
             catch (Exception ex)
             {
-                Log($"Error showing CustomMessageBox form: {ex.Message}");
+                FenceManager.Log(FenceManager.LogLevel.Error, FenceManager.LogCategory.UI, $"Error showing CustomMessageBox form: {ex.Message}");
                 System.Windows.Forms.MessageBox.Show($"An error occurred: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
 
@@ -662,10 +619,10 @@ namespace Desktop_Fences
                         AutoSize = false
                     };
 
-                    ///select costom for colors for specific colors
-                    Color argbGray = Color.FromArgb(255, 110, 110, 110);
-                    Color argbOrange = Color.FromArgb(255, 183, 84, 51);
-                    Color argbBismark = Color.FromArgb(255, 73, 105, 126);
+                    ///select custom for colors for specific colors
+                    Color argbGray = Color.FromArgb(255, 128, 128, 128);
+                    Color argbOrange = Color.FromArgb(255, 201, 102, 69);
+                    Color argbBismark = Color.FromArgb(255, 91, 123, 144);
                     if (argbGray.ToArgb() == frmCustomOKOnlyBox.BackColor.ToArgb())
                     {
                         // System.Windows.Forms.MessageBox.Show("Exact ARGB match.");
@@ -747,13 +704,13 @@ namespace Desktop_Fences
                             }
                             else
                             {
-                                Log("Sound resource 'ding.wav' not found.");
+                                FenceManager.Log(FenceManager.LogLevel.Warn, FenceManager.LogCategory.UI, ("Sound resource 'ding.wav' not found."));
                             }
                         }
                     }
                     catch (Exception ex)
                     {
-                        Log($"Error playing sound: {ex.Message}");
+                        FenceManager.Log(FenceManager.LogLevel.Error, FenceManager.LogCategory.UI, $"Error playing sound: {ex.Message}");
                     }
                     frmCustomOKOnlyBox.TopMost= true;
                     frmCustomOKOnlyBox.ShowDialog();
@@ -763,7 +720,7 @@ namespace Desktop_Fences
             }
             catch (Exception ex)
             {
-                Log($"Error showing CustomOKOnlyMessageBox form: {ex.Message}");
+                FenceManager.Log(FenceManager.LogLevel.Error, FenceManager.LogCategory.UI, ($"Error showing CustomOKOnlyMessageBox form: {ex.Message}"));
                  System.Windows.Forms.MessageBox.Show($"An error occurred: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 //ShowOKOnlyMessageBoxForm($"An error occurred: {ex.Message}", "Error");
 
@@ -780,14 +737,13 @@ namespace Desktop_Fences
             {
                 using (var frmOptions = new Form())
                 {
-                    frmOptions.Text = "Desktop Fences + Options";
-                    frmOptions.Size = new System.Drawing.Size(400, 640);
-                    frmOptions.StartPosition = FormStartPosition.CenterScreen;
-                    frmOptions.FormBorderStyle = FormBorderStyle.FixedDialog;
-                    frmOptions.MaximizeBox = false;
-                    frmOptions.MinimizeBox = false;
-                    frmOptions.AutoScaleMode = AutoScaleMode.Dpi;
-                    frmOptions.AutoScaleDimensions = new SizeF(96F, 96F);
+                    frmOptions.Text = "Desktop Fences + Options"; frmOptions.Size = new System.Drawing.Size(480, 640); 
+                    frmOptions.StartPosition = FormStartPosition.CenterScreen; 
+                    frmOptions.FormBorderStyle = FormBorderStyle.FixedDialog; 
+                    frmOptions.MaximizeBox = false; 
+                    frmOptions.MinimizeBox = false; 
+                    frmOptions.AutoScaleMode = AutoScaleMode.Dpi; 
+                    frmOptions.AutoScaleDimensions = new SizeF(96F, 96F); 
                     frmOptions.Icon = Icon.ExtractAssociatedIcon(Process.GetCurrentProcess().MainModule.FileName);
 
                     var toolTip = new ToolTip
@@ -802,20 +758,27 @@ namespace Desktop_Fences
                     {
                         Dock = DockStyle.Fill,
                         ColumnCount = 1,
+                        RowCount = 3,
                         AutoSize = true,
                         AutoSizeMode = AutoSizeMode.GrowAndShrink,
                         Padding = new Padding(10)
                     };
                     layoutPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
+                    layoutPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 80F)); // TabControl takes most space
+                    layoutPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // Buttons
+                    layoutPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // Donation panel
 
-                    var groupBoxGeneral = new GroupBox
+                    // Tab Control
+                    var tabControl = new TabControl
                     {
-                        Text = "General",
-                        Dock = DockStyle.Top,
-                        AutoSize = true,
-                        AutoSizeMode = AutoSizeMode.GrowAndShrink
+                        Dock = DockStyle.Fill,
+                        AutoSize = false,
+                        MinimumSize = new System.Drawing.Size(0, 400) // Ensure enough height for content
                     };
-                    var generalLayout = new TableLayoutPanel
+
+                    // General Tab
+                    var tabGeneral = new TabPage { Text = "General" };
+                    var generalTabLayout = new TableLayoutPanel
                     {
                         Dock = DockStyle.Fill,
                         ColumnCount = 1,
@@ -823,7 +786,24 @@ namespace Desktop_Fences
                         AutoSizeMode = AutoSizeMode.GrowAndShrink,
                         Padding = new Padding(5)
                     };
-                    generalLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
+                    generalTabLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
+
+                    var groupBoxStartup = new GroupBox
+                    {
+                        Text = "Startup",
+                        Dock = DockStyle.Top,
+                        AutoSize = true,
+                        AutoSizeMode = AutoSizeMode.GrowAndShrink
+                    };
+                    var startupLayout = new TableLayoutPanel
+                    {
+                        Dock = DockStyle.Fill,
+                        ColumnCount = 1,
+                        AutoSize = true,
+                        AutoSizeMode = AutoSizeMode.GrowAndShrink,
+                        Padding = new Padding(5)
+                    };
+                    startupLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
 
                     var chkStartWithWindows = new CheckBox
                     {
@@ -837,21 +817,19 @@ namespace Desktop_Fences
                         try
                         {
                             ToggleStartWithWindows(chkStartWithWindows.Checked);
-                            Log($"Set Start with Windows to {chkStartWithWindows.Checked} via Options");
+                            FenceManager.Log(FenceManager.LogLevel.Debug, FenceManager.LogCategory.UI, ($"Set Start with Windows to {chkStartWithWindows.Checked} via Options"));
                         }
                         catch (Exception ex)
                         {
-                            Log($"Error setting Start with Windows: {ex.Message}");
-                            //System.Windows.Forms.MessageBox.Show($"Error: {ex.Message}", "Startup Toggle Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                            FenceManager.Log(FenceManager.LogLevel.Error, FenceManager.LogCategory.UI, ($"Error setting Start with Windows: {ex.Message}"));
                             ShowOKOnlyMessageBoxForm($"Error: {ex.Message}", "Startup Toggle Error");
                             chkStartWithWindows.Checked = IsStartWithWindows;
                         }
                     };
-                    generalLayout.Controls.Add(chkStartWithWindows, 0, 0);
-                    groupBoxGeneral.Controls.Add(generalLayout);
-                    layoutPanel.Controls.Add(groupBoxGeneral);
+                    startupLayout.Controls.Add(chkStartWithWindows, 0, 0);
+                    groupBoxStartup.Controls.Add(startupLayout);
+                    generalTabLayout.Controls.Add(groupBoxStartup);
 
-                    toolTip.SetToolTip(chkStartWithWindows, "Enable to launch Desktop Fences + automatically when Windows starts.");
 
                     var groupBoxSelections = new GroupBox
                     {
@@ -864,7 +842,7 @@ namespace Desktop_Fences
                     {
                         Dock = DockStyle.Fill,
                         ColumnCount = 2,
-                        RowCount = 10, // Increased to accommodate new checkbox
+                        RowCount = 7,
                         AutoSize = true,
                         AutoSizeMode = AutoSizeMode.GrowAndShrink
                     };
@@ -911,8 +889,6 @@ namespace Desktop_Fences
                     selectionsLayout.Controls.Add(chkEnableTrayIcon, 0, 3);
                     selectionsLayout.SetColumnSpan(chkEnableTrayIcon, 2);
 
-
-
                     var chkEnablePortalWatermark = new CheckBox
                     {
                         Text = "Enable Portal Fences Watermark",
@@ -933,7 +909,30 @@ namespace Desktop_Fences
                     selectionsLayout.Controls.Add(chkUseRecycleBin, 0, 5);
                     selectionsLayout.SetColumnSpan(chkUseRecycleBin, 2);
 
+          
 
+                    // Style groupbox
+                    var groupBoxStyle = new GroupBox
+                    {
+                        Text = "Style",
+                        Dock = DockStyle.Top,
+                        AutoSize = true,
+                        AutoSizeMode = AutoSizeMode.GrowAndShrink
+                    };
+
+                    var styleLayout = new TableLayoutPanel
+                    {
+                        Dock = DockStyle.Fill,
+                        ColumnCount = 2,
+                        RowCount = 3,
+                        AutoSize = true,
+                        AutoSizeMode = AutoSizeMode.GrowAndShrink,
+                        Padding = new Padding(5)
+                    };
+                    styleLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
+                    styleLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
+
+                    // Move tint controls from selectionsLayout to styleLayout
                     var lblTint = new Label { Text = "Tint", Dock = DockStyle.Fill, AutoSize = true, Anchor = AnchorStyles.Right };
                     var numTint = new NumericUpDown
                     {
@@ -944,9 +943,10 @@ namespace Desktop_Fences
                         MaximumSize = new System.Drawing.Size(80, 0),
                         Anchor = AnchorStyles.Right
                     };
-                    selectionsLayout.Controls.Add(lblTint, 0, 7);
-                    selectionsLayout.Controls.Add(numTint, 1, 7);
+                    styleLayout.Controls.Add(lblTint, 0, 0);
+                    styleLayout.Controls.Add(numTint, 1, 0);
 
+                    // Move color controls from selectionsLayout to styleLayout
                     var lblColor = new Label { Text = "Color", Dock = DockStyle.Fill, AutoSize = true, Anchor = AnchorStyles.Right };
                     var cmbColor = new ComboBox
                     {
@@ -957,9 +957,10 @@ namespace Desktop_Fences
                     };
                     cmbColor.Items.AddRange(new string[] { "Gray", "Black", "White", "Beige", "Green", "Purple", "Fuchsia", "Yellow", "Orange", "Red", "Blue", "Bismark" });
                     cmbColor.SelectedItem = SettingsManager.SelectedColor;
-                    selectionsLayout.Controls.Add(lblColor, 0, 8);
-                    selectionsLayout.Controls.Add(cmbColor, 1, 8);
+                    styleLayout.Controls.Add(lblColor, 0, 1);
+                    styleLayout.Controls.Add(cmbColor, 1, 1);
 
+                    // Move launch effect controls from selectionsLayout to styleLayout
                     var lblLaunchEffect = new Label { Text = "Launch Effect", Dock = DockStyle.Fill, AutoSize = true, Anchor = AnchorStyles.Right };
                     var cmbLaunchEffect = new ComboBox
                     {
@@ -970,22 +971,35 @@ namespace Desktop_Fences
                     };
                     cmbLaunchEffect.Items.AddRange(new string[] { "Zoom", "Bounce", "FadeOut", "SlideUp", "Rotate", "Agitate", "GrowAndFly", "Pulse", "Elastic", "Flip3D", "Spiral" });
                     cmbLaunchEffect.SelectedIndex = (int)SettingsManager.LaunchEffect;
-                    selectionsLayout.Controls.Add(lblLaunchEffect, 0, 9);
-                    selectionsLayout.Controls.Add(cmbLaunchEffect, 1, 9);
+                    styleLayout.Controls.Add(lblLaunchEffect, 0, 2);
+                    styleLayout.Controls.Add(cmbLaunchEffect, 1, 2);
 
-                    groupBoxSelections.Controls.Add(selectionsLayout);
-                    layoutPanel.Controls.Add(groupBoxSelections);
+                    groupBoxStyle.Controls.Add(styleLayout);
+       
 
-                    toolTip.SetToolTip(chkSingleClickToLaunch, "Enable to launch fence items with a single click instead of a double click.");
-                    toolTip.SetToolTip(chkEnableSnap, "Enable to allow fences to snap to screen edges or other fences.");
-                    toolTip.SetToolTip(chkEnablePortalWatermark, "Enable to see the portal image background on portal fences  in order to seperate them from data fences.");
-                    toolTip.SetToolTip(chkEnableTrayIcon, "Enable to see the program tray icon. Disable to hide it.");
-                    toolTip.SetToolTip(chkUseRecycleBin, "Enable to delete items using windows recylce bin using right click menu. Disable to permanently delete items");
+          groupBoxSelections.Controls.Add(selectionsLayout);
+                    generalTabLayout.Controls.Add(groupBoxSelections);
+                    generalTabLayout.Controls.Add(groupBoxStyle);
+                    tabGeneral.Controls.Add(generalTabLayout);
+                    tabControl.TabPages.Add(tabGeneral);
 
-                    toolTip.SetToolTip(chkEnableDimensionSnap, "Enable to snap fence dimensions to the nearest multiple of 10 when resizing.");
-                    toolTip.SetToolTip(numTint, "Adjust the tint level for fence backgrounds (1-100).");
-                    toolTip.SetToolTip(cmbColor, "Select the background color for all fences.");
-                    toolTip.SetToolTip(cmbLaunchEffect, "Choose an animation effect when launching fence items.");
+                 
+
+               
+
+
+
+                    // Tools Tab
+                    var tabTools = new TabPage { Text = "Tools" };
+                    var toolsTabLayout = new TableLayoutPanel
+                    {
+                        Dock = DockStyle.Fill,
+                        ColumnCount = 1,
+                        AutoSize = true,
+                        AutoSizeMode = AutoSizeMode.GrowAndShrink,
+                        Padding = new Padding(5)
+                    };
+                    toolsTabLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
 
                     var groupBoxTools = new GroupBox
                     {
@@ -996,10 +1010,11 @@ namespace Desktop_Fences
                     };
                     var toolsLayout1 = new TableLayoutPanel
                     {
-                        Dock = DockStyle.Top,
+                        Dock = DockStyle.Fill, // Changed to Fill to ensure full content display
                         ColumnCount = 5,
                         AutoSize = true,
-                        AutoSizeMode = AutoSizeMode.GrowAndShrink
+                        AutoSizeMode = AutoSizeMode.GrowAndShrink,
+                         Padding = new Padding(0, 0, 0, 10)  // Added bottom padding
                     };
                     toolsLayout1.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 10F));
                     toolsLayout1.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 35F));
@@ -1029,25 +1044,87 @@ namespace Desktop_Fences
                     btnRestore.Click += (s, ev) => RestoreBackup();
                     toolsLayout1.Controls.Add(btnRestore, 3, 0);
 
-                    var toolsLayout2 = new TableLayoutPanel
-                    {
-                        Dock = DockStyle.Top,
-                        ColumnCount = 2,
-                        AutoSize = true,
-                        AutoSizeMode = AutoSizeMode.GrowAndShrink
-                    };
-                    toolsLayout2.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 60F));
-                    toolsLayout2.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 40F));
-
                     var lblSpacer = new Label
                     {
-                        TextAlign= ContentAlignment.TopCenter,
-                        Text = "• ♥ • • • • • • • • • • • • • • • • • • • • ♥ •",
+                        TextAlign = ContentAlignment.TopCenter,
+                        Text = "• ♥ •",
                         Dock = DockStyle.Fill,
                         AutoSize = true
                     };
-                    toolsLayout2.Controls.Add(lblSpacer, 0, 1);
-                    toolsLayout2.SetColumnSpan(lblSpacer, 2);
+                    toolsLayout1.Controls.Add(lblSpacer, 0, 1);
+                    toolsLayout1.SetColumnSpan(lblSpacer, 5);
+
+                    var btnOpenBackups = new Button
+                    {
+                        Text = "Open Backups Folder",
+                        AutoSize = false,
+                        Width = 150,  // Increased width to show full text
+                        Height = 25,
+                        Anchor = AnchorStyles.None,  // Changed from Left to None for centering
+                        Margin = new Padding(0, 5, 0, 5)  // Added some vertical margin
+                    };
+                    btnOpenBackups.Click += (s, ev) =>
+                    {
+                        try
+                        {
+                            string rootDir = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
+                            string backupsDir = Path.Combine(rootDir, "Backups");
+                            if (!Directory.Exists(backupsDir))
+                            {
+                                Directory.CreateDirectory(backupsDir);
+                            }
+                            Process.Start(new ProcessStartInfo
+                            {
+                                FileName = backupsDir,
+                                UseShellExecute = true
+                            });
+                        }
+                        catch (Exception ex)
+                        {
+                            ShowOKOnlyMessageBoxForm($"Error opening backups folder: {ex.Message}", "Error");
+                        }
+                    };
+                    // toolsLayout1.Controls.Add(btnOpenBackups, 1, 2);
+                    toolsLayout1.Controls.Add(btnOpenBackups, 0, 2);  // Assuming row 2 is after the spacer
+                    toolsLayout1.SetColumnSpan(btnOpenBackups, 5);  // Span all columns to center
+
+                    groupBoxTools.Controls.Add(toolsLayout1);
+                    toolsTabLayout.Controls.Add(groupBoxTools);
+                    tabTools.Controls.Add(toolsTabLayout);
+                    tabControl.TabPages.Add(tabTools);
+
+
+                    // Look Deeper Tab
+                    var tabLookDeeper = new TabPage { Text = "Look Deeper" };
+                    var lookDeeperTabLayout = new TableLayoutPanel
+                    {
+                        Dock = DockStyle.Fill,
+                        ColumnCount = 1,
+                        AutoSize = true,
+                        AutoSizeMode = AutoSizeMode.GrowAndShrink,
+                        Padding = new Padding(5)
+                    };
+                    lookDeeperTabLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
+
+                    var groupBoxLog = new GroupBox
+                    {
+                        Text = "Log",
+                        Dock = DockStyle.Top,
+                        AutoSize = true,
+                        AutoSizeMode = AutoSizeMode.GrowAndShrink
+                    };
+                    var toolsLayout2 = new TableLayoutPanel
+                    {
+                        Dock = DockStyle.Fill,
+                        ColumnCount = 2,
+                        RowCount = 2,
+                        AutoSize = true,
+                        AutoSizeMode = AutoSizeMode.GrowAndShrink
+                    };
+                    toolsLayout2.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
+                    toolsLayout2.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
+                    toolsLayout2.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+                    toolsLayout2.RowStyles.Add(new RowStyle(SizeType.AutoSize));
 
                     var chkEnableLog = new CheckBox
                     {
@@ -1056,16 +1133,163 @@ namespace Desktop_Fences
                         AutoSize = true,
                         Checked = SettingsManager.IsLogEnabled
                     };
-                    toolsLayout2.Controls.Add(chkEnableLog, 0, 2);
+                    toolsLayout2.Controls.Add(chkEnableLog, 0, 0);
 
-                    groupBoxTools.Controls.Add(toolsLayout2);
-                    groupBoxTools.Controls.Add(toolsLayout1);
-                    layoutPanel.Controls.Add(groupBoxTools);
+                    var btnOpenLog = new Button
+                    {
+                        Text = "Open Log",
+                        AutoSize = false,
+                        Width = 85,
+                        Height = 25,
+                        Anchor = AnchorStyles.Left
+                    };
+                    btnOpenLog.Click += (s, ev) =>
+                    {
+                        try
+                        {
+                            string logPath = Path.Combine(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "Desktop_Fences.log");
+                            if (File.Exists(logPath))
+                            {
+                                Process.Start(new ProcessStartInfo
+                                {
+                                    FileName = logPath,
+                                    UseShellExecute = true
+                                });
+                            }
+                            else
+                            {
+                                ShowOKOnlyMessageBoxForm("Log file does not exist.", "Information");
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            ShowOKOnlyMessageBoxForm($"Error opening log file: {ex.Message}", "Error");
+                        }
+                    };
+                    toolsLayout2.Controls.Add(btnOpenLog, 1, 0);
 
-                    toolTip.SetToolTip(btnBackup, "Create a backup of your fence settings and data.");
-                    toolTip.SetToolTip(btnRestore, "Restore fence settings and data from a backup file.");
-                    toolTip.SetToolTip(chkEnableLog, "Enable to log application events for troubleshooting.");
+                    var groupBoxLogConfig = new GroupBox
+                    {
+                        Text = "Log configuration",
+                        Dock = DockStyle.Top,
+                        AutoSize = true,
+                        AutoSizeMode = AutoSizeMode.GrowAndShrink
+                    };
+                    var logConfigLayout = new TableLayoutPanel
+                    {
+                        Dock = DockStyle.Fill,
+                        ColumnCount = 2,
+                        AutoSize = true,
+                        AutoSizeMode = AutoSizeMode.GrowAndShrink
+                    };
+                    logConfigLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
+                    logConfigLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
 
+                    var lblLogLevel = new Label
+                    {
+                        Text = "Minimum Log Level",
+                        Dock = DockStyle.Fill,
+                        AutoSize = true,
+                        Anchor = AnchorStyles.Left
+                    };
+                    var cmbLogLevel = new ComboBox
+                    {
+                        Dock = DockStyle.Fill,
+                        DropDownStyle = ComboBoxStyle.DropDownList,
+                        MaximumSize = new System.Drawing.Size(120, 0),
+                        Anchor = AnchorStyles.Left
+                    };
+                    cmbLogLevel.Items.AddRange(Enum.GetNames(typeof(FenceManager.LogLevel)));
+                    cmbLogLevel.SelectedItem = SettingsManager.MinLogLevel.ToString();
+                    logConfigLayout.Controls.Add(lblLogLevel, 0, 0);
+                    logConfigLayout.Controls.Add(cmbLogLevel, 1, 0);
+
+                    var lblLogCategories = new Label
+                    {
+                        Text = "Log Categories",
+                        Dock = DockStyle.Fill,
+                        AutoSize = true,
+                        Anchor = AnchorStyles.Left
+                    };
+                    logConfigLayout.Controls.Add(lblLogCategories, 0, 1);
+                    logConfigLayout.SetColumnSpan(lblLogCategories, 2);
+
+                    var categories = Enum.GetValues(typeof(FenceManager.LogCategory)).Cast<FenceManager.LogCategory>().ToList();
+                    int categoriesPerColumn = (int)Math.Ceiling(categories.Count / 2.0);
+                    int rowIndex = 2;
+
+                    for (int i = 0; i < categoriesPerColumn; i++)
+                    {
+                        if (i < categories.Count)
+                        {
+                            var category = categories[i];
+                            var chkCategory = new CheckBox
+                            {
+                                Text = category.ToString(),
+                                Dock = DockStyle.Fill,
+                                AutoSize = true,
+                                Checked = SettingsManager.EnabledLogCategories.Contains(category)
+                            };
+                            chkCategory.CheckedChanged += (s, e) =>
+                            {
+                                var cats = SettingsManager.EnabledLogCategories;
+                                if (chkCategory.Checked && !cats.Contains(category))
+                                {
+                                    cats.Add(category);
+                                    SettingsManager.SetEnabledLogCategories(cats);
+                                }
+                                else if (!chkCategory.Checked && cats.Contains(category))
+                                {
+                                    cats.Remove(category);
+                                    SettingsManager.SetEnabledLogCategories(cats);
+                                }
+                            };
+                            logConfigLayout.Controls.Add(chkCategory, 0, rowIndex);
+                            toolTip.SetToolTip(chkCategory, $"Enable to log {category} events for troubleshooting.");
+                        }
+
+                        if (i + categoriesPerColumn < categories.Count)
+                        {
+                            var category = categories[i + categoriesPerColumn];
+                            var chkCategory = new CheckBox
+                            {
+                                Text = category.ToString(),
+                                Dock = DockStyle.Fill,
+                                AutoSize = true,
+                                Checked = SettingsManager.EnabledLogCategories.Contains(category)
+                            };
+                            chkCategory.CheckedChanged += (s, e) =>
+                            {
+                                var cats = SettingsManager.EnabledLogCategories;
+                                if (chkCategory.Checked && !cats.Contains(category))
+                                {
+                                    cats.Add(category);
+                                    SettingsManager.SetEnabledLogCategories(cats);
+                                }
+                                else if (!chkCategory.Checked && cats.Contains(category))
+                                {
+                                    cats.Remove(category);
+                                    SettingsManager.SetEnabledLogCategories(cats);
+                                }
+                            };
+                            logConfigLayout.Controls.Add(chkCategory, 1, rowIndex);
+                            toolTip.SetToolTip(chkCategory, $"Enable to log {category} events for troubleshooting.");
+                        }
+
+                        rowIndex++;
+                    }
+
+                    groupBoxLogConfig.Controls.Add(logConfigLayout);
+                    toolsLayout2.Controls.Add(groupBoxLogConfig, 0, 1);
+                    toolsLayout2.SetColumnSpan(groupBoxLogConfig, 2);
+
+                    groupBoxLog.Controls.Add(toolsLayout2);
+                    lookDeeperTabLayout.Controls.Add(groupBoxLog);
+                    tabLookDeeper.Controls.Add(lookDeeperTabLayout);
+                    tabControl.TabPages.Add(tabLookDeeper);
+                    layoutPanel.Controls.Add(tabControl, 0, 0);
+
+                    // Buttons (Cancel and Save)
                     var buttonsLayout = new TableLayoutPanel
                     {
                         Dock = DockStyle.Top,
@@ -1101,8 +1325,6 @@ namespace Desktop_Fences
                         if (tempPortalImageState != chkEnablePortalWatermark.Checked)
                         {
                             reloadAllFences();
-                            // Reload fences to apply the new portal watermark setting
-                            Log($"Portal watermark setting changed from {tempPortalImageState} to {chkEnablePortalWatermark.Checked}. Reloading fences.");
                         }
                         Showintray = chkEnableTrayIcon.Checked;
                         UpdateTrayIcon();
@@ -1116,8 +1338,13 @@ namespace Desktop_Fences
                         SettingsManager.IsLogEnabled = chkEnableLog.Checked;
                         SettingsManager.SingleClickToLaunch = chkSingleClickToLaunch.Checked;
                         SettingsManager.LaunchEffect = (FenceManager.LaunchEffect)cmbLaunchEffect.SelectedIndex;
-                        SettingsManager.EnableDimensionSnap = chkEnableDimensionSnap.Checked; // Save new setting
+                        SettingsManager.EnableDimensionSnap = chkEnableDimensionSnap.Checked;
                         IsStartWithWindows = chkStartWithWindows.Checked;
+
+                        if (Enum.TryParse<FenceManager.LogLevel>(cmbLogLevel.SelectedItem?.ToString(), out var logLevel))
+                        {
+                            SettingsManager.SetMinLogLevel(logLevel);
+                        }
 
                         SettingsManager.SaveSettings();
                         FenceManager.UpdateOptionsAndClickEvents();
@@ -1130,12 +1357,10 @@ namespace Desktop_Fences
                                 string customColor = fenceData.CustomColor?.ToString();
                                 string appliedColor = string.IsNullOrEmpty(customColor) ? SettingsManager.SelectedColor : customColor;
                                 Utility.ApplyTintAndColorToFence(fence, appliedColor);
-                                Log($"Applied color '{appliedColor}' with global tint '{SettingsManager.TintValue}' to fence '{fence.Title}'");
                             }
                             else
                             {
                                 Utility.ApplyTintAndColorToFence(fence, SettingsManager.SelectedColor);
-                                Log($"Applied global color '{SettingsManager.SelectedColor}' with global tint '{SettingsManager.TintValue}' to unknown fence '{fence.Title}'");
                             }
                         }
 
@@ -1146,15 +1371,12 @@ namespace Desktop_Fences
                     buttonsLayout.Controls.Add(emptySpacer, 0, 0);
                     buttonsLayout.Controls.Add(btnCancel, 1, 0);
                     buttonsLayout.Controls.Add(btnSave, 2, 0);
+                    layoutPanel.Controls.Add(buttonsLayout, 0, 1);
 
-                    layoutPanel.Controls.Add(buttonsLayout);
-
-                    toolTip.SetToolTip(btnCancel, "Close the options form without saving changes.");
-                    toolTip.SetToolTip(btnSave, "Save changes and apply them to all fences.");
-
+                    // Bottom Panel (Donation)
                     var bottomPanel = new Panel
                     {
-                        Dock = DockStyle.Bottom,
+                        Dock = DockStyle.Top, // Changed to Top to stack below buttons
                         Height = 80,
                         Padding = new Padding(10),
                         BackColor = SimilarColor(frmOptions.BackColor, 220)
@@ -1180,21 +1402,6 @@ namespace Desktop_Fences
                         Cursor = Cursors.Hand,
                         Anchor = AnchorStyles.Top
                     };
-
-                    var donateLabel = new Label
-                    {
-                        Text = "Donate to help development",
-                        Font = new Font("Segoe UI", 9),
-                        TextAlign = ContentAlignment.MiddleCenter,
-                        AutoSize = true,
-                        Anchor = AnchorStyles.Top
-                    };
-
-                    donateTablePanel.Controls.Add(donatePictureBox, 0, 0);
-                    donateTablePanel.Controls.Add(donateLabel, 0, 1);
-                    bottomPanel.Controls.Add(donateTablePanel);
-                    layoutPanel.Controls.Add(bottomPanel);
-
                     donatePictureBox.Click += (s, e) =>
                     {
                         try
@@ -1207,13 +1414,116 @@ namespace Desktop_Fences
                         }
                         catch (Exception ex)
                         {
-                            Log($"Error opening donation link: {ex.Message}");
-                            // System.Windows.Forms.MessageBox.Show($"Error opening donation link: {ex.Message}",
-                            //     "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                            FenceManager.Log(FenceManager.LogLevel.Error, FenceManager.LogCategory.UI, ($"Error opening donation link: {ex.Message}"));
                             ShowOKOnlyMessageBoxForm($"Error opening donation link: {ex.Message}", "Error");
                         }
                     };
 
+                    // effect
+
+                    //var originalSize = new Size(75, 55); // Store original size
+                    //var maxSize = new Size((int)(75 * 1.1), (int)(55 * 1.1)); // 10% larger
+                    //var heartbeatTimer = new Timer { Interval = 100 }; // 50ms for smoother steps
+                    //float animationProgress = 0f; // Tracks animation from 0 to 1
+                    //bool isGrowing = true; // Direction of animation
+                    //int steps = 12; // Number of steps for 300ms phase (300ms / 50ms = 6 steps)
+
+                    //heartbeatTimer.Tick += (s, e) =>
+                    //{
+                    //    animationProgress += isGrowing ? (1f / steps) : -(1f / steps);
+
+                    //    // Clamp progress to [0, 1]
+                    //    animationProgress = Math.Max(0f, Math.Min(1f, animationProgress));
+
+                    //    // Linearly interpolate between originalSize and maxSize
+                    //    int currentWidth = (int)(originalSize.Width + (maxSize.Width - originalSize.Width) * animationProgress);
+                    //    int currentHeight = (int)(originalSize.Height + (maxSize.Height - originalSize.Height) * animationProgress);
+                    //    donatePictureBox.Size = new System.Drawing.Size(currentWidth, currentHeight);
+
+                    //    // Reverse direction at boundaries
+                    //    if (animationProgress >= 1f) isGrowing = false;
+                    //    if (animationProgress <= 0f) isGrowing = true;
+                    //};
+
+                    //// Start the timer when the form is shown
+                    //frmOptions.Shown += (s, e) => heartbeatTimer.Start();
+
+                    //// Stop the timer when the form is closing
+                    //frmOptions.FormClosing += (s, e) =>
+                    //{
+                    //    heartbeatTimer.Stop();
+                    //    heartbeatTimer.Dispose();
+                    //};
+
+
+                    //var originalSize = new System.Drawing.Size(75, 55); // Store original size
+                    //var heartbeatTimer = new Timer
+                    //{
+                    //    Interval = 500 // 300ms for each phase (grow/shrink)
+                    //};
+                    //bool isGrowing = true;
+
+                    //heartbeatTimer.Tick += (s, e) =>
+                    //{
+                    //    if (isGrowing)
+                    //    {
+                    //        donatePictureBox.Size = new System.Drawing.Size((int)(originalSize.Width * 1.1), (int)(originalSize.Height * 1.1)); // Grow by 10%
+                    //        isGrowing = false;
+                    //    }
+                    //    else
+                    //    {
+                    //        donatePictureBox.Size = originalSize; // Shrink back to original size
+                    //        isGrowing = true;
+                    //    }
+                    //};
+
+                    //// Start the timer when the form is shown
+                    //frmOptions.Shown += (s, e) => heartbeatTimer.Start();
+
+                    //// Stop the timer when the form is closing
+                    //frmOptions.FormClosing += (s, e) =>
+                    //{
+                    //    heartbeatTimer.Stop();
+                    //    heartbeatTimer.Dispose();
+                    //};
+
+
+                    //end of effect
+
+                    var donateLabel = new Label
+                    {
+                        Text = "Donate to help development",
+                        Font = new Font("Segoe UI", 9),
+                        TextAlign = ContentAlignment.MiddleCenter,
+                        AutoSize = true,
+                        Anchor = AnchorStyles.Top
+                    };
+                    donateTablePanel.Controls.Add(donatePictureBox, 0, 0);
+                    donateTablePanel.Controls.Add(donateLabel, 0, 1);
+                    bottomPanel.Controls.Add(donateTablePanel);
+                    layoutPanel.Controls.Add(bottomPanel, 0, 2);
+
+                    // Tooltips
+                    toolTip.SetToolTip(chkStartWithWindows, "Enable to launch Desktop Fences + automatically when Windows starts.");
+                    toolTip.SetToolTip(chkSingleClickToLaunch, "Enable to launch fence items with a single click instead of a double click.");
+                    toolTip.SetToolTip(chkEnableSnap, "Enable to allow fences to snap to screen edges or other fences.");
+                    toolTip.SetToolTip(chkEnableDimensionSnap, "Enable to snap fence dimensions to the nearest multiple of 10 when resizing.");
+                    toolTip.SetToolTip(chkEnableTrayIcon, "Enable to see the program tray icon. Disable to hide it.");
+                    toolTip.SetToolTip(chkEnablePortalWatermark, "Enable to see the portal image background on portal fences to separate them from data fences.");
+                    toolTip.SetToolTip(chkUseRecycleBin, "Enable to delete items using Windows Recycle Bin via right-click menu. Disable to permanently delete items.");
+                    toolTip.SetToolTip(numTint, "Adjust the tint level for fence backgrounds (1-100).");
+                    toolTip.SetToolTip(cmbColor, "Select the background color for all fences.");
+                    toolTip.SetToolTip(cmbLaunchEffect, "Choose an animation effect when launching fence items.");
+                    toolTip.SetToolTip(btnBackup, "Create a backup of your fence settings and data.");
+                    toolTip.SetToolTip(btnRestore, "Restore fence settings and data from a backup file.");
+                    toolTip.SetToolTip(lblSpacer, "Separates tools from other options.");
+                    toolTip.SetToolTip(btnOpenBackups, "Open the Backups folder in File Explorer.");
+                    toolTip.SetToolTip(chkEnableLog, "Enable to log application events for troubleshooting.");
+                    toolTip.SetToolTip(btnOpenLog, "Open the current log file in the default text editor.");
+                    toolTip.SetToolTip(cmbLogLevel, "Select the minimum log level to capture (Debug: verbose, Info: general, Warn: issues, Error: critical).");
+                    toolTip.SetToolTip(lblLogCategories, "Select which categories of events to log for troubleshooting.");
+                    toolTip.SetToolTip(btnCancel, "Close the options form without saving changes.");
+                    toolTip.SetToolTip(btnSave, "Save changes and apply them to all fences.");
                     toolTip.SetToolTip(donatePictureBox, "Click to donate via PayPal and support Desktop Fences + development.");
                     toolTip.SetToolTip(donateLabel, "Click the image above to donate via PayPal and support Desktop Fences + development.");
 
@@ -1223,11 +1533,13 @@ namespace Desktop_Fences
             }
             catch (Exception ex)
             {
-                Log($"Error showing Options form: {ex.Message}");
-                //  System.Windows.Forms.MessageBox.Show($"An error occurred: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                FenceManager.Log(FenceManager.LogLevel.Error, FenceManager.LogCategory.UI, $"Error showing Options form: {ex.Message}");
                 ShowOKOnlyMessageBoxForm($"An error occurred: {ex.Message}", "Error");
             }
+
         }
+
+
 
         public void ShowAboutForm()
         {
@@ -1335,7 +1647,7 @@ namespace Desktop_Fences
                         }
                         catch (Exception ex)
                         {
-                            Log($"Error opening GitHub link: {ex.Message}");
+                            FenceManager.Log(FenceManager.LogLevel.Error, FenceManager.LogCategory.UI, $"Error opening GitHub link: {ex.Message}");
                             // System.Windows.Forms.MessageBox.Show($"Error opening GitHub link: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                             ShowOKOnlyMessageBoxForm($"Error opening GitHub link: {ex.Message}", "Error");
                         }
@@ -1390,7 +1702,7 @@ namespace Desktop_Fences
                         }
                         catch (Exception ex)
                         {
-                            Log($"Error opening donation link: {ex.Message}");
+                            FenceManager.Log(FenceManager.LogLevel.Error, FenceManager.LogCategory.UI, $"Error opening donation link: {ex.Message}");
                             //   System.Windows.Forms.MessageBox.Show($"Error opening donation link: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                             ShowOKOnlyMessageBoxForm($"Error opening donation link: {ex.Message}", "Error");
                         }
@@ -1413,7 +1725,7 @@ namespace Desktop_Fences
             }
             catch (Exception ex)
             {
-                Log($"Error showing About form: {ex.Message}");
+                FenceManager.Log(FenceManager.LogLevel.Error, FenceManager.LogCategory.UI, $"Error showing About form: {ex.Message}");
                 //  System.Windows.Forms.MessageBox.Show($"An error occurred: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 ShowOKOnlyMessageBoxForm($"An error occurred: {ex.Message}", "Error");
             }
@@ -1481,18 +1793,18 @@ namespace Desktop_Fences
                     shortcut.Description = "Desktop Fences Startup Shortcut";
                     shortcut.Save();
                     IsStartWithWindows = true;
-                    Log("Added Desktop Fences to Startup folder with working directory: " + workingDir);
+                    FenceManager.Log(FenceManager.LogLevel.Debug, FenceManager.LogCategory.UI, "Added Desktop Fences to Startup folder with working directory: " + workingDir);
                 }
                 else if (!enable && IsInStartupFolder())
                 {
                     File.Delete(shortcutPath);
                     IsStartWithWindows = false;
-                    Log("Removed Desktop Fences from Startup folder");
+                    FenceManager.Log(FenceManager.LogLevel.Debug, FenceManager.LogCategory.UI, "Removed Desktop Fences from Startup folder");
                 }
             }
             catch (Exception ex)
             {
-                Log($"Failed to toggle Start with Windows: {ex.Message}");
+                FenceManager.Log(FenceManager.LogLevel.Error, FenceManager.LogCategory.UI, $"Failed to toggle Start with Windows: {ex.Message}");
                 IsStartWithWindows = IsInStartupFolder();
                 throw;
             }
@@ -1507,14 +1819,14 @@ namespace Desktop_Fences
             _disposed = true;
         }
 
-        private static void Log(string message)
-        {
-            if (SettingsManager.IsLogEnabled)
-            {
-                string logPath = Path.Combine(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "Desktop_Fences.log");
-                File.AppendAllText(logPath, $"{DateTime.Now}: {message}\n");
-            }
-        }
+        //private static void Log(string message)
+        //{
+        //    if (SettingsManager.IsLogEnabled)
+        //    {
+        //        string logPath = Path.Combine(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "Desktop_Fences.log");
+        //        File.AppendAllText(logPath, $"{DateTime.Now}: {message}\n");
+        //    }
+        //}
 
         private Icon GenerateIconWithNumber(int count)
         {
@@ -1617,6 +1929,7 @@ namespace Desktop_Fences
                         }
                         FenceManager.LoadAndCreateFences(new TargetChecker(1000));
                     });
+                    ShowOKOnlyMessageBoxForm($"Backup restored", "Success");
                 }
                 catch (Exception ex)
                 {

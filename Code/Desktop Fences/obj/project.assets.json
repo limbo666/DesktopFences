@@ -56,13 +56,13 @@
     "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages": {}
   },
   "project": {
-    "version": "2.5.1.50",
+    "version": "2.5.1.58",
     "restore": {
-      "projectUniqueName": "C:\\Users\\Nikos\\Desktop\\2.5.1.50\\Desktop Fences\\Desktop Fences.csproj",
+      "projectUniqueName": "C:\\Users\\Nikos\\Desktop\\Code\\Desktop Fences\\Desktop Fences.csproj",
       "projectName": "Desktop Fences",
-      "projectPath": "C:\\Users\\Nikos\\Desktop\\2.5.1.50\\Desktop Fences\\Desktop Fences.csproj",
+      "projectPath": "C:\\Users\\Nikos\\Desktop\\Code\\Desktop Fences\\Desktop Fences.csproj",
       "packagesPath": "C:\\Users\\Nikos\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\Nikos\\Desktop\\2.5.1.50\\Desktop Fences\\obj\\",
+      "outputPath": "C:\\Users\\Nikos\\Desktop\\Code\\Desktop Fences\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

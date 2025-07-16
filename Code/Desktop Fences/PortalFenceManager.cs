@@ -22,7 +22,8 @@ namespace Desktop_Fences
         private readonly Dispatcher _dispatcher;
         private readonly Dictionary<string, (FileSystemEventArgs Args, string OldPath)> _pendingEvents = new();
         private readonly DispatcherTimer _debounceTimer;
-
+    
+       
         public PortalFenceManager(dynamic fence, WrapPanel wpcont)
         {
             _fence = fence;
@@ -90,16 +91,17 @@ namespace Desktop_Fences
                     {
                         case WatcherChangeTypes.Created:
                             AddIcon(evt.Args.FullPath);
-                            Log($"Processed queued Created event for {evt.Args.FullPath}");
+                            FenceManager.Log(FenceManager.LogLevel.Debug, FenceManager.LogCategory.General, $"Processed queued Created event for {evt.Args.FullPath}");
+                          //  FenceManager.Log(FenceManager.LogLevel.Info, FenceManager.LogCategory.General, $"Processed queued Created event for {evt.Args.FullPath}");
                             break;
                         case WatcherChangeTypes.Deleted:
                             RemoveIcon(evt.Args.FullPath);
-                            Log($"Processed queued Deleted event for {evt.Args.FullPath}");
+                            FenceManager.Log(FenceManager.LogLevel.Debug, FenceManager.LogCategory.General, $"Processed queued Deleted event for {evt.Args.FullPath}");
                             break;
                         case WatcherChangeTypes.Renamed:
                             RemoveIcon(evt.OldPath);
                             AddIcon(evt.Args.FullPath);
-                            Log($"Processed queued Renamed event: {evt.OldPath} -> {evt.Args.FullPath}");
+                            FenceManager.Log(FenceManager.LogLevel.Debug, FenceManager.LogCategory.General, $"Processed queued Renamed event: {evt.OldPath} -> {evt.Args.FullPath}");
                             break;
                     }
                 }
@@ -117,14 +119,14 @@ namespace Desktop_Fences
                     AddIcon(path);
                 }
             }
-            Log($"Initialized fence contents for {_targetFolderPath} with {_wpcont.Children.Count} items");
+            FenceManager.Log(FenceManager.LogLevel.Debug, FenceManager.LogCategory.General, $"Initialized fence contents for {_targetFolderPath} with {_wpcont.Children.Count} items");
         }
 
         private void VerifyFenceContents()
         {
             if (!Directory.Exists(_targetFolderPath))
             {
-                Log($"Target folder {_targetFolderPath} does not exist, skipping verification");
+                FenceManager.Log(FenceManager.LogLevel.Warn, FenceManager.LogCategory.General, $"Target folder {_targetFolderPath} does not exist, skipping verification");
                 return;
             }
 
@@ -137,7 +139,7 @@ namespace Desktop_Fences
             foreach (var sp in panelsToRemove)
             {
                 _wpcont.Children.Remove(sp);
-                Log($"Removed stale icon for {sp.Tag.GetType().GetProperty("FilePath")?.GetValue(sp.Tag)} during verification");
+                FenceManager.Log(FenceManager.LogLevel.Info, FenceManager.LogCategory.General, $"Removed stale icon for {sp.Tag.GetType().GetProperty("FilePath")?.GetValue(sp.Tag)} during verification");
             }
 
             var existingPaths = _wpcont.Children.OfType<StackPanel>()
@@ -149,7 +151,7 @@ namespace Desktop_Fences
                 if (!existingPaths.Contains(path))
                 {
                     AddIcon(path);
-                    Log($"Added missing icon for {path} during verification");
+                    FenceManager.Log(FenceManager.LogLevel.Debug, FenceManager.LogCategory.General, $"Added missing icon for {path} during verification");
                 }
             }
         }
@@ -223,11 +225,11 @@ namespace Desktop_Fences
 
                 // Copy to clipboard
                 Clipboard.SetText(pathToCopy);
-                Log($"Copied path to clipboard: {pathToCopy}");
+                FenceManager.Log(FenceManager.LogLevel.Debug, FenceManager.LogCategory.UI, $"Copied path to clipboard: {pathToCopy}");
             }
             catch (Exception ex)
             {
-                Log($"Failed to copy path for {path}: {ex.Message}");
+                FenceManager.Log(FenceManager.LogLevel.Error, FenceManager.LogCategory.UI, $"Failed to copy path for {path}: {ex.Message}");
                 //  MessageBox.Show("Unable to copy path.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 TrayManager.Instance.ShowOKOnlyMessageBoxForm($"Unable to copy path.", "Error");
             }
@@ -243,7 +245,7 @@ namespace Desktop_Fences
                 // First, check if the item exists
                 if (!Directory.Exists(path) && !System.IO.File.Exists(path))
                 {
-                    Log($"Item not found for deletion: {path}");
+                        FenceManager.Log(FenceManager.LogLevel.Debug, FenceManager.LogCategory.General, $"Item not found for deletion: {path}");
                     return;
                 }
 
@@ -260,15 +262,15 @@ namespace Desktop_Fences
                     throw new Exception($"Failed to move to recycle bin (error code: {result})");
                 }
 
-                Log($"Moved to recycle bin: {path}");
+                    FenceManager.Log(FenceManager.LogLevel.Info, FenceManager.LogCategory.UI, $"Moved to recycle bin: {path}");
 
                 // Remove the icon from the UI
                 _wpcont.Children.Remove(sp);
-                Log($"Removed icon for {path} from UI");
+                    FenceManager.Log(FenceManager.LogLevel.Debug, FenceManager.LogCategory.UI, ($"Removed icon for {path} from UI"));
             }
             catch (Exception ex)
             {
-                Log($"Failed to move item {path} to recycle bin: {ex.Message}");
+                    FenceManager.Log(FenceManager.LogLevel.Error, FenceManager.LogCategory.General, $"Failed to move item {path} to recycle bin: {ex.Message}");
                     //   MessageBox.Show("Unable to move item to recycle bin.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     TrayManager.Instance.ShowOKOnlyMessageBoxForm($"Unable to move item to recycle bin.", "Error");
                 }
@@ -282,27 +284,27 @@ namespace Desktop_Fences
                     {
                         // Delete folder
                         Directory.Delete(path, true); // true for recursive deletion
-                        Log($"Deleted folder: {path}");
+                        FenceManager.Log(FenceManager.LogLevel.Debug, FenceManager.LogCategory.General, $"Deleted folder: {path}");
                     }
                     else if (System.IO.File.Exists(path))
                     {
                         // Delete file
                         System.IO.File.Delete(path);
-                        Log($"Deleted file: {path}");
+                        FenceManager.Log(FenceManager.LogLevel.Debug, FenceManager.LogCategory.General, $"Deleted file: {path}");
                     }
                     else
                     {
-                        Log($"Item not found for deletion: {path}");
+                        FenceManager.Log(FenceManager.LogLevel.Debug, FenceManager.LogCategory.General, $"Item not found for deletion: {path}");
                         return;
                     }
 
                     // Remove the icon from the UI
                     _wpcont.Children.Remove(sp);
-                    Log($"Removed icon for {path} from UI");
+                    FenceManager.Log(FenceManager.LogLevel.Debug, FenceManager.LogCategory.General, $"Removed icon for {path} from UI");
                 }
                 catch (Exception ex)
                 {
-                    Log($"Failed to delete item {path}: {ex.Message}");
+                    FenceManager.Log(FenceManager.LogLevel.Debug, FenceManager.LogCategory.General, $"Failed to delete item {path}: {ex.Message}");
                     // MessageBox.Show("Unable to delete item.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     TrayManager.Instance.ShowOKOnlyMessageBoxForm($"Unable to delete item.", "Error");
                 }
@@ -344,22 +346,27 @@ namespace Desktop_Fences
             if (sp != null)
             {
                 _wpcont.Children.Remove(sp);
-                Log($"Successfully removed icon for {path}");
+                FenceManager.Log(FenceManager.LogLevel.Debug, FenceManager.LogCategory.General, $"Successfully removed icon for {path}");
             }
             else
             {
-                Log($"Failed to find StackPanel for {path} in RemoveIcon");
+                FenceManager.Log(FenceManager.LogLevel.Debug, FenceManager.LogCategory.General, $"Failed to find StackPanel for {path} in RemoveIcon");
             }
         }
-
-        private void Log(string message)
+        public void Dispose()
         {
-            bool isLogEnabled = true;
-            if (isLogEnabled)
-            {
-                string logPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "Desktop_Fences.log");
-                System.IO.File.AppendAllText(logPath, $"{DateTime.Now}: {message}\n");
-            }
+            _watcher?.Dispose();
+            _debounceTimer?.Stop();
+            _debounceTimer.Tick -= ProcessPendingEvents;
         }
+        //private void Log(string message)
+        //{
+        //    bool isLogEnabled = true;
+        //    if (isLogEnabled)
+        //    {
+        //        string logPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "Desktop_Fences.log");
+        //        System.IO.File.AppendAllText(logPath, $"{DateTime.Now}: {message}\n");
+        //    }
+        //}
     }
 }

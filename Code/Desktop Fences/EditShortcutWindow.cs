@@ -151,7 +151,7 @@ public partial class EditShortcutWindow : Window
         }
         catch (Exception ex)
         {
-            Log($"Error setting initial icon preview: {ex.Message}");
+            FenceManager.Log(FenceManager.LogLevel.Debug, FenceManager.LogCategory.General, $"Error setting initial icon preview: {ex.Message}");
         }
 
         groupBox.Content = innerGrid;
@@ -205,50 +205,50 @@ public partial class EditShortcutWindow : Window
     {
         try
         {
-            Log($"Entering Default_Click for {shortcutPath}");
+            FenceManager.Log(FenceManager.LogLevel.Debug, FenceManager.LogCategory.General, $"Entering Default_Click for {shortcutPath}");
             if (nameBox == null || iconPathBox == null)
             {
                 throw new InvalidOperationException("TextBox controls not initialized.");
             }
-            Log("TextBox controls confirmed initialized");
+             FenceManager.Log(FenceManager.LogLevel.Debug, FenceManager.LogCategory.General, "TextBox controls confirmed initialized");
 
             string defaultName = System.IO.Path.GetFileNameWithoutExtension(shortcutPath);
             nameBox.Text = defaultName;
             NewDisplayName = defaultName;
-            Log($"Set default name to {defaultName}");
+            FenceManager.Log(FenceManager.LogLevel.Debug, FenceManager.LogCategory.General, $"Set default name to {defaultName}");
 
             WshShell shell = new WshShell();
-            Log("WshShell created");
+            FenceManager.Log(FenceManager.LogLevel.Debug, FenceManager.LogCategory.General, "WshShell created");
             IWshShortcut shortcut = (IWshShortcut)shell.CreateShortcut(shortcutPath);
-            Log("IWshShortcut created");
+            FenceManager.Log(FenceManager.LogLevel.Debug, FenceManager.LogCategory.General, "IWshShortcut created");
 
             string targetPath = shortcut.TargetPath;
             if (string.IsNullOrEmpty(targetPath) || !System.IO.File.Exists(targetPath))
             {
-                Log($"Target path invalid or missing: {targetPath}, resetting without icon change");
+                FenceManager.Log(FenceManager.LogLevel.Debug, FenceManager.LogCategory.General, $"Target path invalid or missing: {targetPath}, resetting without icon change");
                 // Optionally handle missing targets differently if needed
             }
             else
             {
                 shortcut.IconLocation = targetPath; // Use target's default icon
-                Log($"Set IconLocation to target: {targetPath}");
+                FenceManager.Log(FenceManager.LogLevel.Debug, FenceManager.LogCategory.General, $"Set IconLocation to target: {targetPath}");
             }
             shortcut.Save();
-            Log("Shortcut saved");
+            FenceManager.Log(FenceManager.LogLevel.Debug, FenceManager.LogCategory.General, "Shortcut saved");
 
             iconPathBox.Text = "Default";
             UpdateIconPreview(); // Update the icon preview
-            Log($"Restored default icon and name for {shortcutPath}");
+            FenceManager.Log(FenceManager.LogLevel.Debug, FenceManager.LogCategory.General, $"Restored default icon and name for {shortcutPath}");
         }
         catch (Exception ex)
         {
-            Log($"Failed to restore defaults for {shortcutPath}: {ex.Message}\nStackTrace: {ex.StackTrace}");
+            FenceManager.Log(FenceManager.LogLevel.Error, FenceManager.LogCategory.General, $"Failed to restore defaults for {shortcutPath}: {ex.Message}\nStackTrace: {ex.StackTrace}");
             //      MessageBox.Show($"Failed to restore defaults: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             TrayManager.Instance.ShowOKOnlyMessageBoxForm($"Failed to restore defaults: {ex.Message}", "Error");
         }
         finally
         {
-            Log("Exiting Default_Click");
+            FenceManager.Log(FenceManager.LogLevel.Debug, FenceManager.LogCategory.General, "Exiting Default_Click");
         }
     }
 
@@ -329,7 +329,7 @@ public partial class EditShortcutWindow : Window
         }
         catch (Exception ex)
         {
-            Log($"Error extracting icon from {iconLocation}: {ex.Message}");
+            FenceManager.Log(FenceManager.LogLevel.Debug, FenceManager.LogCategory.General, $"Error extracting icon from {iconLocation}: {ex.Message}");
         }
 
         return null;
@@ -352,7 +352,7 @@ public partial class EditShortcutWindow : Window
         }
         catch (Exception ex)
         {
-            Log($"Error getting current icon location: {ex.Message}");
+            FenceManager.Log(FenceManager.LogLevel.Debug, FenceManager.LogCategory.General, $"Error getting current icon location: {ex.Message}");
             return "Default";
         }
     }
@@ -375,7 +375,7 @@ public partial class EditShortcutWindow : Window
                 var picker = new IconPickerDialog(selectedPath);
                 if (picker.ShowDialog() == true && picker.SelectedIndex >= 0)
                 {
-                    Log($"User selected icon index: {picker.SelectedIndex} from {selectedPath}");
+                    FenceManager.Log(FenceManager.LogLevel.Debug, FenceManager.LogCategory.General, $"User selected icon index: {picker.SelectedIndex} from {selectedPath}");
                     iconPathBox.Text = $"{selectedPath},{picker.SelectedIndex}";
                     UpdateIconPreview(); // Update the icon preview
                 }
@@ -395,7 +395,7 @@ public partial class EditShortcutWindow : Window
     {
         if (!System.IO.File.Exists(iconPath))
         {
-            Log($"Icon file not found for preview: {iconPath}");
+            FenceManager.Log(FenceManager.LogLevel.Debug, FenceManager.LogCategory.General, $"Icon file not found for preview: {iconPath}");
             return null;
         }
 
@@ -421,13 +421,13 @@ public partial class EditShortcutWindow : Window
             }
             else
             {
-                Log($"ExtractIconEx failed for {iconPath} at index {iconIndex}. Result: {result}");
+                FenceManager.Log(FenceManager.LogLevel.Debug, FenceManager.LogCategory.General, $"ExtractIconEx failed for {iconPath} at index {iconIndex}. Result: {result}");
                 return null;
             }
         }
         catch (Exception ex)
         {
-            Log($"Error extracting icon for preview from {iconPath} at index {iconIndex}: {ex.Message}");
+            FenceManager.Log(FenceManager.LogLevel.Error, FenceManager.LogCategory.General, $"Error extracting icon for preview from {iconPath} at index {iconIndex}: {ex.Message}");
             return null;
         }
     }
@@ -437,49 +437,49 @@ public partial class EditShortcutWindow : Window
     {
         try
         {
-            Log("Save_Click started");
+            FenceManager.Log(FenceManager.LogLevel.Debug, FenceManager.LogCategory.General, "Save_Click started");
 
             NewDisplayName = string.IsNullOrWhiteSpace(nameBox.Text)
                 ? System.IO.Path.GetFileNameWithoutExtension(shortcutPath)
                 : nameBox.Text;
 
-            Log($"New display name: {NewDisplayName}");
+            FenceManager.Log(FenceManager.LogLevel.Debug, FenceManager.LogCategory.General, $"New display name: {NewDisplayName}");
 
             WshShell shell = new WshShell();
             IWshShortcut shortcut = (IWshShortcut)shell.CreateShortcut(shortcutPath);
 
             string iconPath = iconPathBox?.Text;
-            Log($"Icon path from textbox: {iconPath}");
+            FenceManager.Log(FenceManager.LogLevel.Debug, FenceManager.LogCategory.General, $"Icon path from textbox: {iconPath}");
 
             if (!string.IsNullOrEmpty(iconPath) && iconPath != "Default")
             {
                 // Don't modify the iconPath value - use it exactly as stored
                 // It should already be in the correct format (path,index)
                 shortcut.IconLocation = iconPath;
-                Log($"Set shortcut.IconLocation to: {shortcut.IconLocation}");
+                FenceManager.Log(FenceManager.LogLevel.Debug, FenceManager.LogCategory.General, $"Set shortcut.IconLocation to: {shortcut.IconLocation}");
             }
 
             shortcut.Save();
-            Log("Shortcut saved successfully");
+            FenceManager.Log(FenceManager.LogLevel.Debug, FenceManager.LogCategory.General, "Shortcut saved successfully");
 
             this.DialogResult = true;
         }
         catch (Exception ex)
         {
-            Log($"Failed to save shortcut: {ex.Message}\nStack trace: {ex.StackTrace}");
+            FenceManager.Log(FenceManager.LogLevel.Error, FenceManager.LogCategory.General, $"Failed to save shortcut: {ex.Message}\nStack trace: {ex.StackTrace}");
             //  MessageBox.Show($"Failed to save shortcut: {ex.Message}", "Error",
             //                  MessageBoxButton.OK, MessageBoxImage.Error);
             TrayManager.Instance.ShowOKOnlyMessageBoxForm($"Failed to save shortcut: {ex.Message}", "Error");
         }
     }
 
-    private void Log(string message)
-    {
-        bool isLogEnabled = true; // Adjust based on your _options
-        if (isLogEnabled)
-        {
-            string logPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly().Location), "desktop_fences.log");
-            System.IO.File.AppendAllText(logPath, $"{DateTime.Now}: {message}\n");
-        }
-    }
+    //private void Log(string message)
+    //{
+    //    bool isLogEnabled = true; // Adjust based on your _options
+    //    if (isLogEnabled)
+    //    {
+    //        string logPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly().Location), "desktop_fences.log");
+    //        System.IO.File.AppendAllText(logPath, $"{DateTime.Now}: {message}\n");
+    //    }
+    //}
 }

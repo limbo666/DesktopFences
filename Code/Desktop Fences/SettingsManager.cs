@@ -1,6 +1,9 @@
 ﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace Desktop_Fences
 {
@@ -49,6 +52,22 @@ namespace Desktop_Fences
         /// </summary>
         /// 
 
+
+        /// <summary>
+        /// Gets or sets the minimum log level for logging (Debug, Info, Warn, Error).
+        /// </summary>
+        public static FenceManager.LogLevel MinLogLevel { get; set; } = FenceManager.LogLevel.Info; // Default to Info for production
+
+        /// <summary>
+        /// Gets or sets the list of enabled log categories.
+        /// </summary>
+        public static List<FenceManager.LogCategory> EnabledLogCategories { get; set; } = new List<FenceManager.LogCategory>
+{
+    FenceManager.LogCategory.General,
+    FenceManager.LogCategory.Error,
+    FenceManager.LogCategory.ImportExport,
+    FenceManager.LogCategory.Settings
+}; // Default categories for production
         public static bool EnableDimensionSnap { get; set; } = false;
 
         public static bool SingleClickToLaunch { get; set; } = true;
@@ -71,7 +90,7 @@ namespace Desktop_Fences
 
                     // Update settings with values from the file, using defaults if values are missing
                     IsSnapEnabled = optionsData.IsSnapEnabled ?? true;
-                    ShowBackgroundImageOnPortalFences= optionsData.ShowBackgroundImageOnPortalFences ?? true;
+                    ShowBackgroundImageOnPortalFences = optionsData.ShowBackgroundImageOnPortalFences ?? true;
                     ShowInTray = optionsData.ShowInTray ?? true;
                     UseRecycleBin = optionsData.UseRecycleBin ?? true;
                     TintValue = optionsData.TintValue ?? 60;
@@ -83,6 +102,23 @@ namespace Desktop_Fences
                     LaunchEffect = optionsData.LaunchEffect != null
                         ? Enum.Parse(typeof(FenceManager.LaunchEffect), optionsData.LaunchEffect.ToString())
                         : FenceManager.LaunchEffect.Zoom;
+                    // Load MinLogLevel, parsing from string if present
+                    MinLogLevel = optionsData.MinLogLevel != null
+                        ? Enum.Parse(typeof(FenceManager.LogLevel), optionsData.MinLogLevel.ToString())
+                        : FenceManager.LogLevel.Info;
+                    // Load EnabledLogCategories, parsing from array if present
+                    EnabledLogCategories = optionsData.EnabledLogCategories != null
+                        ? ((JArray)optionsData.EnabledLogCategories)
+                            .Select(c => Enum.Parse(typeof(FenceManager.LogCategory), c.ToString()))
+                            .Cast<FenceManager.LogCategory>()
+                            .ToList()
+                        : new List<FenceManager.LogCategory>
+                        {
+                    FenceManager.LogCategory.General,
+                    FenceManager.LogCategory.Error,
+                    FenceManager.LogCategory.ImportExport,
+                    FenceManager.LogCategory.Settings
+                        };
                 }
                 else
                 {
@@ -120,7 +156,9 @@ namespace Desktop_Fences
                     IsLogEnabled,
                     SingleClickToLaunch,
                     EnableDimensionSnap,
-                    LaunchEffect = LaunchEffect.ToString() // Save as string for JSON compatibility
+                    LaunchEffect = LaunchEffect.ToString(), // Save as string for JSON compatibility
+                    MinLogLevel = MinLogLevel.ToString(), // Save as string for JSON compatibility
+                    EnabledLogCategories = EnabledLogCategories.Select(c => c.ToString()).ToList()
                 };
 
                 // Serialize to JSON with indentation for readability
@@ -134,6 +172,25 @@ namespace Desktop_Fences
                 // Log any errors during save (console for simplicity; could be expanded to a file log)
                 Console.WriteLine($"Error saving settings: {ex.Message}");
             }
+        }
+
+
+        /// <summary>
+        /// Sets the minimum log level and saves the settings.
+        /// </summary>
+        public static void SetMinLogLevel(FenceManager.LogLevel level)
+        {
+            MinLogLevel = level;
+            SaveSettings();
+        }
+
+        /// <summary>
+        /// Sets the enabled log categories and saves the settings.
+        /// </summary>
+        public static void SetEnabledLogCategories(List<FenceManager.LogCategory> categories)
+        {
+            EnabledLogCategories = categories;
+            SaveSettings();
         }
     }
 }

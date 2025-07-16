@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "8Q07oPoq5zk=",
+  "dgSpecHash": "YU49YvwxQFY=",
   "success": true,
-  "projectFilePath": "C:\\Users\\Nikos\\Desktop\\2.5.1.50\\Desktop Fences\\Desktop Fences.csproj",
+  "projectFilePath": "C:\\Users\\Nikos\\Desktop\\Code\\Desktop Fences\\Desktop Fences.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\Nikos\\.nuget\\packages\\newtonsoft.json\\13.0.1\\newtonsoft.json.13.0.1.nupkg.sha512",
     "C:\\Users\\Nikos\\.nuget\\packages\\microsoft.windowsdesktop.app.ref\\8.0.17\\microsoft.windowsdesktop.app.ref.8.0.17.nupkg.sha512",

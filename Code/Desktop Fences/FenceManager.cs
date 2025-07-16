@@ -55,6 +55,19 @@ namespace Desktop_Fences
         // Add near other static fields
         private static TargetChecker _currentTargetChecker;
 
+        public enum LogLevel { Debug, Info, Warn, Error }
+        public enum LogCategory
+        {
+            General,
+            FenceCreation,
+            FenceUpdate,
+            UI,
+            IconHandling,
+            Error,
+            ImportExport,
+            Settings
+        }
+
         // Add this new method
         public static void ReloadFences()
         {
@@ -74,7 +87,7 @@ namespace Desktop_Fences
             }
             catch (Exception ex)
             {
-                Log($"Error reloading fences: {ex.Message}");
+                Log(LogLevel.Warn, LogCategory.Error, $"Error reloading fences: {ex.Message}");
                 throw;
             }
         }
@@ -120,7 +133,7 @@ namespace Desktop_Fences
             }
             catch (Exception ex)
             {
-                Log($"Restore failed: {ex.Message}");
+                Log(LogLevel.Warn, LogCategory.Error, $"Restore failed: {ex.Message}");
                 //    MessageBox.Show($"Restore failed: {ex.Message}", "Error",
                 //               MessageBoxButton.OK, MessageBoxImage.Error);
 
@@ -189,7 +202,7 @@ namespace Desktop_Fences
             }
             catch (Exception ex)
             {
-                Log($"Export failed: {ex.Message}");
+                Log(LogLevel.Warn, LogCategory.Error, $"Export failed: {ex.Message}");
                 //   MessageBox.Show($"Export failed: {ex.Message}", "Error",
                 //                  MessageBoxButton.OK, MessageBoxImage.Error);
                 TrayManager.Instance.ShowOKOnlyMessageBoxForm($"Export failed: {ex.Message}", "Error");
@@ -263,7 +276,7 @@ namespace Desktop_Fences
             {
                 win.Left = newLeft;
                 win.Top = newTop;
-                FenceManager.Log($"Adjusted fence '{win.Title}' position to ({newLeft}, {newTop}) to fit within screen bounds.");
+                FenceManager.Log(LogLevel.Debug, LogCategory.ImportExport, $"Adjusted fence '{win.Title}' position to ({newLeft}, {newTop}) to fit within screen bounds.");
             }
             SaveFenceData();
         }
@@ -364,7 +377,7 @@ namespace Desktop_Fences
             }
             catch (Exception ex)
             {
-                Log($"Fence import failed: {ex.Message}");
+                Log(LogLevel.Warn, LogCategory.Error, $"Fence import failed: {ex.Message}");
                 // MessageBox.Show($"Failed to import fence: {ex.Message}", "Import Error",
                 //              MessageBoxButton.OK, MessageBoxImage.Error);
 
@@ -403,7 +416,7 @@ namespace Desktop_Fences
             newFenceItem.Click += (s, e) =>
             {
                 var mousePosition = System.Windows.Forms.Cursor.Position;
-                Log($"Creating new fence at mouse position: X={mousePosition.X}, Y={mousePosition.Y}");
+                Log(LogLevel.Info, LogCategory.FenceUpdate, $"Creating new fence at mouse position: X={mousePosition.X}, Y={mousePosition.Y}");
                 //CreateNewFence("New Fence", "Data", mousePosition.X, mousePosition.Y);
                 CreateNewFence("", "Data", mousePosition.X, mousePosition.Y);
             };
@@ -414,7 +427,7 @@ namespace Desktop_Fences
             newPortalFenceItem.Click += (s, e) =>
             {
                 var mousePosition = System.Windows.Forms.Cursor.Position;
-                Log($"Creating new portal fence at mouse position: X={mousePosition.X}, Y={mousePosition.Y}");
+                Log(LogLevel.Info, LogCategory.FenceUpdate, $"Creating new portal fence at mouse position: X={mousePosition.X}, Y={mousePosition.Y}");
                 CreateNewFence("New Portal Fence", "Portal", mousePosition.X, mousePosition.Y);
             };
             menu.Items.Add(newPortalFenceItem);
@@ -463,19 +476,15 @@ namespace Desktop_Fences
                     if (heart != null)
                     {
                         heart.ContextMenu = BuildHeartContextMenu(fence);
-                        Log($"Updated heart ContextMenu for fence '{fence.Title}'");
+                        Log(LogLevel.Info, LogCategory.FenceUpdate, $"Updated heart ContextMenu for fence '{fence.Title}'");
                     }
                     else
                     {
-                        Log($"Skipped update for fence '{fence.Title}': heart TextBlock is null");
+                        Log(LogLevel.Info, LogCategory.FenceUpdate, $"Skipped update for fence '{fence.Title}': heart TextBlock is null");
                     }
                 }
             });
         }
-
-
-
-
 
 
         public enum LaunchEffect
@@ -494,20 +503,88 @@ namespace Desktop_Fences
 
         }
 
-        // add here:
         public static List<dynamic> GetFenceData()
         {
             return _fenceData;
         }
-        private static void Log(string message)
+
+        /// <summary>
+        /// Logs a message with the specified level and category.
+        /// 
+        /// LogLevel:
+        /// Debug: Verbose logs (e.g., UI updates, icon caching, position changes).
+        /// Info: General operations (e.g., fence creation, property updates).
+        /// Warn: Non-critical issues (e.g., missing files, invalid settings).
+        /// Error: Critical failures (e.g., exceptions).
+        /// 
+        /// LogCategory:
+        /// General: Miscellaneous or uncategorized logs.
+        /// FenceCreation: Logs related to creating or initializing fences.
+        /// FenceUpdate: Logs for updating fence properties or content.
+        /// UI: Logs for UI interactions (e.g., mouse events, context menus).
+        /// IconHandling: Logs for icon loading, updating, or removal.
+        /// Error: Logs for errors or exceptions.
+        /// ImportExport: Logs for importing/exporting fences.
+        /// Settings: Logs for settings changes.
+        /// </summary>
+        /// <param name="level"></param>
+        /// <param name="category"></param>
+        /// <param name="message"></param>
+
+
+        public static void Log(LogLevel level, LogCategory category, string message)
         {
-            bool isLogEnabled = _options?.IsLogEnabled ?? true;
-            if (isLogEnabled)
+            // Check if logging is enabled and if the level/category is allowed
+            if (!(_options?.IsLogEnabled ?? true))
+                return;
+
+            LogLevel minLevel = SettingsManager.MinLogLevel; // New setting
+            List<LogCategory> enabledCategories = SettingsManager.EnabledLogCategories; // New setting
+
+            if (level < minLevel || !enabledCategories.Contains(category))
+                return;
+
+            string logPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "Desktop_Fences.log");
+
+            // Implement log rotation
+            const long maxFileSize = 5 * 1024 * 1024; // 5MB
+            if (System.IO.File.Exists(logPath))
             {
-                string logPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "Desktop_Fences.log");
-                System.IO.File.AppendAllText(logPath, $"{DateTime.Now}: {message}\n");
+                FileInfo fileInfo = new FileInfo(logPath);
+                if (fileInfo.Length > maxFileSize)
+                {
+                    string archivePath = System.IO.Path.Combine(
+                        System.IO.Path.GetDirectoryName(logPath),
+                        $"Desktop_Fences_{DateTime.Now:yyyyMMdd_HHmmss}.log");
+                    System.IO.File.Move(logPath, archivePath);
+
+                    // Clean up old logs (keep last 5)
+                    var logFiles = Directory.GetFiles(System.IO.Path.GetDirectoryName(logPath), "Desktop_Fences_*.log")
+                        .OrderByDescending(f => System.IO.File.GetCreationTime(f))
+                        .Skip(5);
+                    foreach (var oldLog in logFiles)
+                    {
+                        try
+                        {
+                            System.IO.File.Delete(oldLog);
+                        }
+                        catch (Exception ex)
+                        {
+                            // Log deletion failure to a minimal fallback log
+                            System.IO.File.AppendAllText(
+                                System.IO.Path.Combine(System.IO.Path.GetDirectoryName(logPath), "Desktop_Fences_Fallback.log"),
+                                $"{DateTime.Now}: Failed to delete old log {oldLog}: {ex.Message}\n");
+                        }
+                    }
+                }
             }
+
+            // Write log with level and category
+            string logMessage = $"{DateTime.Now:yyyy-MM-dd HH:mm:ss} [{level}][{category}] {message}\n";
+            System.IO.File.AppendAllText(logPath, logMessage);
         }
+
+
         // Update fence property, save to JSON, and apply runtime changes
 
         public static void UpdateFenceProperty(dynamic fence, string propertyName, string value, string logMessage)
@@ -523,7 +600,7 @@ namespace Desktop_Fences
                 string fenceId = fence.Id?.ToString();
                 if (string.IsNullOrEmpty(fenceId))
                 {
-                    Log($"Fence '{fence.Title}' has no Id");
+                    Log (LogLevel.Info, LogCategory.FenceUpdate, $"Fence '{fence.Title}' has no Id");
                     return;
                 }
 
@@ -553,7 +630,7 @@ namespace Desktop_Fences
                     // Update the fence in _fenceData
                     _fenceData[index] = JObject.FromObject(fenceDict);
                     SaveFenceData();
-                    Log($"{logMessage} for fence '{fence.Title}'");
+                    Log(LogLevel.Info,LogCategory.FenceUpdate,$"{logMessage} for fence '{fence.Title}'");
 
                     // Find the window to apply runtime changes
                     var windows = System.Windows.Application.Current.Windows.OfType<NonActivatingWindow>();
@@ -565,14 +642,14 @@ namespace Desktop_Fences
                         if (propertyName == "CustomColor")
                         {
                             Utility.ApplyTintAndColorToFence(win, string.IsNullOrEmpty(value) ? _options.SelectedColor : value);
-                            Log($"Applied color '{value ?? "Default"}' to fence '{fence.Title}' at runtime");
+                             Log(LogLevel.Info,LogCategory.FenceUpdate,$"Applied color '{value ?? "Default"}' to fence '{fence.Title}' at runtime");
                         }
                         else if (propertyName == "IsHidden")
                         {
                             // Update visibility based on IsHidden
                             bool isHidden = value?.ToLower() == "true";
                             win.Visibility = isHidden ? Visibility.Hidden : Visibility.Visible;
-                            Log($"Set visibility to {(isHidden ? "Hidden" : "Visible")} for fence '{fence.Title}'");
+                             Log(LogLevel.Info,LogCategory.FenceUpdate,$"Set visibility to {(isHidden ? "Hidden" : "Visible")} for fence '{fence.Title}'");
                         }
 
                         // Update context menu checkmarks
@@ -596,17 +673,17 @@ namespace Desktop_Fences
                     }
                     else
                     {
-                        Log($"Failed to find window for fence '{fence.Title}' to apply {propertyName}");
+                         Log(LogLevel.Warn,LogCategory.FenceUpdate,$"Failed to find window for fence '{fence.Title}' to apply {propertyName}");
                     }
                 }
                 else
                 {
-                    Log($"Failed to find fence '{fence.Title}' in _fenceData for {propertyName} update");
+                    Log(LogLevel.Warn, LogCategory.FenceUpdate, $"Failed to find fence '{fence.Title}' in _fenceData for {propertyName} update");
                 }
             }
             catch (Exception ex)
             {
-                Log($"Error updating {propertyName} for fence '{fence.Title}': {ex.Message}");
+                Log(LogLevel.Error, LogCategory.FenceUpdate, $"Error updating {propertyName} for fence '{fence.Title}': {ex.Message}");
             }
         }
 
@@ -639,7 +716,7 @@ namespace Desktop_Fences
             UpdateAllHeartContextMenus();
 
 
-            Log("Fence restored successfully.");
+            Log(LogLevel.Info, LogCategory.ImportExport, "Fence restored successfully.");
         }
 
         public static void CleanLastDeletedFolder()
@@ -720,7 +797,7 @@ namespace Desktop_Fences
                     if (string.IsNullOrEmpty(targetPath) || !System.IO.Directory.Exists(targetPath))
                     {
                         invalidFences.Add(fence);
-                        FenceManager.Log($"Marked Portal Fence '{fence.Title}' for removal due to missing target folder: {targetPath ?? "null"}");
+                        FenceManager.Log(LogLevel.Warn, LogCategory.FenceCreation, $"Marked Portal Fence '{fence.Title}' for removal due to missing target folder: {targetPath ?? "null"}");
                     }
                 }
             }
@@ -731,10 +808,10 @@ namespace Desktop_Fences
                 foreach (var fence in invalidFences)
                 {
                     _fenceData.Remove(fence);
-                    FenceManager.Log($"Removed Portal Fence '{fence.Title}' from _fenceData");
+                    FenceManager.Log(LogLevel.Debug, LogCategory.FenceCreation, $"Removed Portal Fence '{fence.Title}' from _fenceData");
                 }
                 SaveFenceData();
-                FenceManager.Log($"Saved updated fences.json after removing {invalidFences.Count} invalid Portal Fences");
+                FenceManager.Log(LogLevel.Debug, LogCategory.FenceCreation, $"Saved updated fences.json after removing {invalidFences.Count} invalid Portal Fences");
             }
       
             foreach (dynamic fence in _fenceData.ToList()) 
@@ -742,14 +819,15 @@ namespace Desktop_Fences
                 CreateFence(fence, targetChecker);
             }
         }
-       
 
-        private static void InitializeDefaultFence()
+
+            private static void InitializeDefaultFence()
         {
-            string defaultJson = "[{\"Title\":\"New Fence\",\"X\":20,\"Y\":20,\"Width\":230,\"Height\":130,\"ItemsType\":\"Data\",\"Items\":[]}]";
+            string defaultJson = "[{\"Id\":\"" + Guid.NewGuid().ToString() + "\",\"Title\":\"New Fence\",\"X\":20,\"Y\":20,\"Width\":230,\"Height\":130,\"ItemsType\":\"Data\",\"Items\":[],\"IsLocked\":\"false\",\"IsHidden\":\"false\",\"CustomColor\":null,\"CustomLaunchEffect\":null}]";
             System.IO.File.WriteAllText(_jsonFilePath, defaultJson);
             _fenceData = JsonConvert.DeserializeObject<List<dynamic>>(defaultJson);
         }
+
         private static void MigrateLegacyJson()
         {
             try
@@ -768,7 +846,7 @@ namespace Desktop_Fences
                     {
                         fenceDict["Id"] = Guid.NewGuid().ToString();
                         jsonModified = true;
-                        Log($"Added Id to {fence.Title}");
+                        Log(LogLevel.Debug, LogCategory.General, $"Added Id to {fence.Title}");
                     }
 
                     // Existing migration: Handle Portal Fence ItemsType
@@ -779,7 +857,7 @@ namespace Desktop_Fences
                         {
                             fenceDict["IsFolder"] = true;
                             jsonModified = true;
-                            Log($"Migrated legacy portal fence {fence.Title}: Added IsFolder=true");
+                            Log(LogLevel.Debug, LogCategory.General, $"Migrated legacy portal fence {fence.Title}: Added IsFolder=true");
                         }
                     }
                     else
@@ -792,7 +870,7 @@ namespace Desktop_Fences
                                 string path = item["Filename"]?.ToString();
                                 item["IsFolder"] = System.IO.Directory.Exists(path);
                                 jsonModified = true;
-                                Log($"Migrated item in {fence.Title}: Added IsFolder for {path}");
+                                Log(LogLevel.Debug, LogCategory.General, $"Migrated item in {fence.Title}: Added IsFolder for {path}");
                             }
                         }
                         fenceDict["Items"] = items; // Ensure Items updates are captured
@@ -802,21 +880,21 @@ namespace Desktop_Fences
                     {
                         fenceDict["IsLocked"] = "false"; // Default to string "false"
                         jsonModified = true;
-                        Log($"Added IsLocked=\"false\" to {fence.Title}");
+                        Log(LogLevel.Debug, LogCategory.General, $"Added IsLocked=\"false\" to {fence.Title}");
                     }
                     // Migration: Add or validate CustomColor
                     if (!fenceDict.ContainsKey("CustomColor"))
                     {
                         fenceDict["CustomColor"] = null;
                         jsonModified = true;
-                        Log($"Added CustomColor=null to {fence.Title}");
+                        Log(LogLevel.Debug, LogCategory.General, $"Added CustomColor=null to {fence.Title}");
                     }
                     else
                     {
                         string customColor = fenceDict["CustomColor"]?.ToString();
                         if (!string.IsNullOrEmpty(customColor) && !validColors.Contains(customColor))
                         {
-                            Log($"Invalid CustomColor '{customColor}' in {fence.Title}, resetting to null");
+                            Log(LogLevel.Debug, LogCategory.General, $"Invalid CustomColor '{customColor}' in {fence.Title}, resetting to null");
                             fenceDict["CustomColor"] = null;
                             jsonModified = true;
                         }
@@ -827,14 +905,14 @@ namespace Desktop_Fences
                     {
                         fenceDict["CustomLaunchEffect"] = null;
                         jsonModified = true;
-                        Log($"Added CustomLaunchEffect=null to {fence.Title}");
+                        Log(LogLevel.Debug, LogCategory.General, $"Added CustomLaunchEffect=null to {fence.Title}");
                     }
                     else
                     {
                         string customEffect = fenceDict["CustomLaunchEffect"]?.ToString();
                         if (!string.IsNullOrEmpty(customEffect) && !validEffects.Contains(customEffect))
                         {
-                            Log($"Invalid CustomLaunchEffect '{customEffect}' in {fence.Title}, resetting to null");
+                            Log(LogLevel.Debug, LogCategory.General, $"Invalid CustomLaunchEffect '{customEffect}' in {fence.Title}, resetting to null");
                             fenceDict["CustomLaunchEffect"] = null;
                             jsonModified = true;
                         }
@@ -845,7 +923,7 @@ namespace Desktop_Fences
                     {
                         fenceDict["IsHidden"] = "false"; // Default to string "false"
                         jsonModified = true;
-                        Log($"Added IsHidden=\"false\" to {fence.Title}");
+                        Log(LogLevel.Debug, LogCategory.General, $"Added IsHidden=\"false\" to {fence.Title}");
                     }
                     else
                     {
@@ -861,12 +939,12 @@ namespace Desktop_Fences
                         }
                         else
                         {
-                            Log($"Invalid IsHidden value '{fenceDict["IsHidden"]}' in {fence.Title}, resetting to \"false\"");
+                            Log(LogLevel.Debug, LogCategory.General, $"Invalid IsHidden value '{fenceDict["IsHidden"]}' in {fence.Title}, resetting to \"false\"");
                             isHidden = false;
                             jsonModified = true;
                         }
                         fenceDict["IsHidden"] = isHidden.ToString().ToLower(); // Store as "true" or "false"
-                        Log($"Preserved IsHidden: \"{isHidden.ToString().ToLower()}\" for {fence.Title}");
+                        Log(LogLevel.Debug, LogCategory.General, $"Preserved IsHidden: \"{isHidden.ToString().ToLower()}\" for {fence.Title}");
                     }
 
                     // Update the original fence in _fenceData with the modified dictionary
@@ -876,16 +954,16 @@ namespace Desktop_Fences
                 if (jsonModified)
                 {
                     SaveFenceData();
-                    Log("Migrated fences.json with updated fields");
+                    Log(LogLevel.Info, LogCategory.General, "Migrated fences.json with updated fields");
                 }
                 else
                 {
-                    Log("No migration needed for fences.json");
+                    Log(LogLevel.Debug, LogCategory.General, "No migration needed for fences.json");
                 }
             }
             catch (Exception ex)
             {
-                Log($"Error migrating fences.json: {ex.Message}\nStackTrace: {ex.StackTrace}");
+                Log(LogLevel.Warn, LogCategory.Error,$"Error migrating fences.json: {ex.Message}\nStackTrace: {ex.StackTrace}");
             }
         }
 
@@ -899,14 +977,14 @@ namespace Desktop_Fences
             string fenceId = fence.Id?.ToString();
             if (string.IsNullOrEmpty(fenceId))
             {
-                Log($"Fence '{fence.Title}' has no Id, cannot update lock state");
+                Log(LogLevel.Info, LogCategory.FenceUpdate, $"Fence '{fence.Title}' has no Id, cannot update lock state");
                 return;
             }
 
             int index = _fenceData.FindIndex(f => f.Id?.ToString() == fenceId);
             if (index < 0)
             {
-                Log($"Fence '{fence.Title}' not found in _fenceData, cannot update lock state");
+                Log(LogLevel.Info, LogCategory.FenceUpdate, $"Fence '{fence.Title}' not found in _fenceData, cannot update lock state");
                 return;
             }
 
@@ -930,16 +1008,16 @@ namespace Desktop_Fences
                 NonActivatingWindow win = FindVisualParent<NonActivatingWindow>(lockIcon);
                 if (win == null)
                 {
-                    Log($"Could not find NonActivatingWindow for fence '{actualFence.Title}'");
+                    Log(LogLevel.Info, LogCategory.UI, $"Could not find NonActivatingWindow for fence '{actualFence.Title}'");
                     return;
                 }
 
                 // Update ResizeMode
                 win.ResizeMode = isLocked ? ResizeMode.NoResize : ResizeMode.CanResizeWithGrip;
-                Log($"Set ResizeMode to {win.ResizeMode} for fence '{actualFence.Title}'");
+                Log(LogLevel.Info, LogCategory.FenceUpdate, $"Set ResizeMode to {win.ResizeMode} for fence '{actualFence.Title}'");
             });
 
-            Log($"Updated lock state for fence '{actualFence.Title}': IsLocked={isLocked}");
+            Log(LogLevel.Debug, LogCategory.UI, $"Updated lock state for fence '{actualFence.Title}': IsLocked={isLocked}");
         }
 
 
@@ -951,7 +1029,7 @@ namespace Desktop_Fences
                 string targetPath = fence.Path?.ToString();
                 if (string.IsNullOrEmpty(targetPath) || !System.IO.Directory.Exists(targetPath))
                 {
-                    FenceManager.Log($"Skipping creation of Portal Fence '{fence.Title}' due to missing target folder: {targetPath ?? "null"}");
+                    FenceManager.Log(LogLevel.Info, LogCategory.FenceCreation, $"Skipping creation of Portal Fence '{fence.Title}' due to missing target folder: {targetPath ?? "null"}");
                     _fenceData.Remove(fence);
                     SaveFenceData();
                     return;
@@ -1033,7 +1111,7 @@ namespace Desktop_Fences
                     NonActivatingWindow win = FindVisualParent<NonActivatingWindow>(lockIcon);
                     if (win == null)
                     {
-                        Log($"Could not find NonActivatingWindow for lock icon click in fence '{fence.Title}'");
+                        Log(LogLevel.Warn, LogCategory.Error, $"Could not find NonActivatingWindow for lock icon click in fence '{fence.Title}'");
                         return;
                     }
 
@@ -1041,14 +1119,14 @@ namespace Desktop_Fences
                     string fenceId = win.Tag?.ToString();
                     if (string.IsNullOrEmpty(fenceId))
                     {
-                        Log($"Fence Id is missing for window '{win.Title}'");
+                        Log(LogLevel.Warn, LogCategory.Error, $"Fence Id is missing for window '{win.Title}'");
                         return;
                     }
 
                     dynamic currentFence = _fenceData.FirstOrDefault(f => f.Id?.ToString() == fenceId);
                     if (currentFence == null)
                     {
-                        Log($"Fence with Id '{fenceId}' not found in _fenceData");
+                        Log(LogLevel.Info, LogCategory.FenceUpdate, $"Fence with Id '{fenceId}' not found in _fenceData");
                         return;
                     }
 
@@ -1159,10 +1237,112 @@ namespace Desktop_Fences
             miCustomize.Items.Add(miEffects);
 
 
-           
             CnMnFenceManager.Items.Add(miRemoveFence);
             CnMnFenceManager.Items.Add(miHide); // Add Hide Fence
-                                  // Add "Open Folder in Explorer" only for portal fences
+
+          
+            NonActivatingWindow win = new NonActivatingWindow
+            {
+                ContextMenu = CnMnFenceManager,
+                AllowDrop = true,
+                AllowsTransparency = true,
+                Background = System.Windows.Media.Brushes.Transparent,
+                Title = fence.Title?.ToString() ?? "New Fence", // Handle null title
+                ShowInTaskbar = false,
+                WindowStyle = WindowStyle.None,
+                Content = cborder,
+                ResizeMode = fence.IsLocked?.ToString().ToLower() == "true" ? ResizeMode.NoResize : ResizeMode.CanResizeWithGrip,
+                // ResizeMode = ResizeMode.CanResizeWithGrip,
+                Width = (double)fence.Width,
+                Height = (double)fence.Height,
+                Top = (double)fence.Y,
+                Left = (double)fence.X,
+                Tag = fence.Id?.ToString() ?? Guid.NewGuid().ToString() // Ensure ID exists
+            };
+
+
+
+
+
+
+            //Peek behind fence
+
+            MenuItem miPeekBehind = new MenuItem { Header = "Peek Behind" };
+            CnMnFenceManager.Items.Add(miPeekBehind);
+
+            miPeekBehind.Click += (s, e) =>
+            {
+                Log(LogLevel.Info, LogCategory.UI, $"Initiating Peek Behind for fence '{fence.Title}'");
+
+                // Create a separate transparent window for the countdown
+                var countdownWindow = new Window
+                {
+                    Width = 60,
+                    Height = 40,
+                    WindowStyle = WindowStyle.None,
+                    AllowsTransparency = true,
+                    Background = System.Windows.Media.Brushes.Transparent,
+                    ShowInTaskbar = false,
+                    Topmost = true,
+                    Left = win.Left + (win.Width - 60) / 2, // Center horizontally
+                    Top = win.Top + (win.Height - 40) / 2   // Center vertically
+                };
+
+                // Create countdown label
+                Label countdownLabel = new Label
+                {
+                    Content = "10",
+                    Foreground = System.Windows.Media.Brushes.White,
+                    Background = System.Windows.Media.Brushes.Black,
+                    Opacity = 0.7,
+                    FontSize = 12,
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    VerticalAlignment = VerticalAlignment.Center,
+                    Padding = new Thickness(4)
+                };
+                countdownWindow.Content = countdownLabel;
+
+                // Show the countdown window
+                countdownWindow.Show();
+                Log(LogLevel.Debug, LogCategory.UI, $"Created countdown window for fence '{fence.Title}' at ({countdownWindow.Left}, {countdownWindow.Top})");
+
+                // Fade out animation for the fence
+                var fadeOut = new DoubleAnimation(1, 0, TimeSpan.FromSeconds(0.3))
+                {
+                    EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseIn }
+                };
+
+                // Countdown timer
+                int countdownSeconds = 10;
+                var timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
+                timer.Tick += (timerSender, timerArgs) =>
+                {
+                    countdownSeconds--;
+                    countdownLabel.Content = countdownSeconds.ToString();
+                    if (countdownSeconds <= 0)
+                    {
+                        timer.Stop();
+                        // Fade in animation for the fence
+                        var fadeIn = new DoubleAnimation(0, 1, TimeSpan.FromSeconds(0.8))
+                        {
+                            EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut }
+                        };
+                        win.BeginAnimation(UIElement.OpacityProperty, fadeIn);
+                        // Close the countdown window
+                        countdownWindow.Close();
+                        Log(LogLevel.Info, LogCategory.UI, $"Peek Behind completed for fence '{fence.Title}'");
+                    }
+                };
+
+                // Start fade out and timer
+                win.BeginAnimation(UIElement.OpacityProperty, fadeOut);
+                timer.Start();
+                Log(LogLevel.Debug, LogCategory.UI, $"Started Peek Behind fade-out and countdown for fence '{fence.Title}'");
+            };
+
+
+
+            // Add "Open Folder in Explorer" only for portal fences
             if (fence.ItemsType?.ToString() == "Portal")
             {
                 MenuItem miOpenFolder = new MenuItem { Header = "Open fence folder" };
@@ -1174,22 +1354,25 @@ namespace Desktop_Fences
                         if (!string.IsNullOrEmpty(folderPath) && Directory.Exists(folderPath))
                         {
                             Process.Start("explorer.exe", folderPath);
-                            Log($"Opened folder in Explorer: {folderPath}");
+                            Log(LogLevel.Debug, LogCategory.General, $"Opened folder in Explorer: {folderPath}");
                         }
                         else
                         {
-                            Log($"Folder path is invalid or does not exist: {folderPath}");
+                            Log(LogLevel.Info, LogCategory.General, $"Folder path is invalid or does not exist: {folderPath}");
                             MessageBox.Show("The folder path is invalid or does not exist.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                         }
                     }
                     catch (Exception ex)
                     {
-                        Log($"Error opening folder in Explorer: {ex.Message}");
+                        Log(LogLevel.Warn, LogCategory.Error,     $"Error opening folder in Explorer: {ex.Message}");
                         MessageBox.Show("An error occurred while trying to open the folder.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     }
                 };
                 CnMnFenceManager.Items.Add(miOpenFolder);
             }
+
+
+
 
 
 
@@ -1217,33 +1400,16 @@ namespace Desktop_Fences
             }
             catch (Exception ex)
             {
-                Log($"Error reading IsHidden: {ex.Message}");
+                Log(LogLevel.Warn, LogCategory.Error, $"Error reading IsHidden: {ex.Message}");
             }
 
             bool isHidden = isHiddenString == "true";
-            Log($"Fence '{fence.Title}' IsHidden state: {isHidden}");
+            Log(LogLevel.Debug, LogCategory.Settings, $"Fence '{fence.Title}' IsHidden state: {isHidden}");
+ 
+  
 
-            
 
-      
-            NonActivatingWindow win = new NonActivatingWindow
-            {
-                ContextMenu = CnMnFenceManager,
-                AllowDrop = true,
-                AllowsTransparency = true,
-                Background = System.Windows.Media.Brushes.Transparent,
-                Title = fence.Title?.ToString() ?? "New Fence", // Handle null title
-                ShowInTaskbar = false,
-                WindowStyle = WindowStyle.None,
-                Content = cborder,
-                ResizeMode = fence.IsLocked?.ToString().ToLower() == "true" ? ResizeMode.NoResize : ResizeMode.CanResizeWithGrip,
-                // ResizeMode = ResizeMode.CanResizeWithGrip,
-                Width = (double)fence.Width,
-                Height = (double)fence.Height,
-                Top = (double)fence.Y,
-                Left = (double)fence.X,
-                Tag = fence.Id?.ToString() ?? Guid.NewGuid().ToString() // Ensure ID exists
-            };
+
 
             // Adjust the fence position to ensure it fits within screen bounds
             AdjustFencePositionToScreen(win);
@@ -1251,13 +1417,13 @@ namespace Desktop_Fences
             win.Loaded += (s, e) =>
             {
                 UpdateLockState(lockIcon, fence, null, saveToJson: false);
-                Log($"Applied lock state for fence '{fence.Title}' on load: IsLocked={fence.IsLocked?.ToString().ToLower()}");
+                Log(LogLevel.Debug, LogCategory.FenceCreation, $"Applied lock state for fence '{fence.Title}' on load: IsLocked={fence.IsLocked?.ToString().ToLower()}");
 
                 if (isHidden)
                 {
                     win.Visibility = Visibility.Hidden;
                     TrayManager.AddHiddenFence(win);
-                    Log($"Hid fence '{fence.Title}' after loading at startup");
+                    Log(LogLevel.Info, LogCategory.FenceCreation, $"Hid fence '{fence.Title}' after loading at startup");
                 }
             };
 
@@ -1266,7 +1432,7 @@ namespace Desktop_Fences
             if (isHidden)
             {
                 TrayManager.AddHiddenFence(win);
-                Log($"Added fence '{fence.Title}' to hidden list at startup");
+                Log(LogLevel.Debug, LogCategory.FenceCreation, $"Added fence '{fence.Title}' to hidden list at startup");
             }
 
             // Hide click
@@ -1274,7 +1440,7 @@ namespace Desktop_Fences
             {
                 UpdateFenceProperty(fence, "IsHidden", "true", $"Hid fence '{fence.Title}'");
                 TrayManager.AddHiddenFence(win);
-                Log($"Triggered Hide Fence for '{fence.Title}'");
+                Log(LogLevel.Debug, LogCategory.General, $"Triggered Hide Fence for '{fence.Title}'");
             };
 
             win.Show();
@@ -1323,7 +1489,7 @@ namespace Desktop_Fences
                                 }
                                 else
                                 {
-                                    Log($"Skipped backing up missing file: {itemFilePath}");
+                                    Log(LogLevel.Debug, LogCategory.FenceCreation, $"Skipped backing up missing file: {itemFilePath}");
                                 }
                             }
                         }
@@ -1338,50 +1504,51 @@ namespace Desktop_Fences
                     _heartTextBlocks.Remove(fence);
                     if (_portalFences.ContainsKey(fence))
                     {
+                        _portalFences[fence].Dispose();
                         _portalFences.Remove(fence);
                     }
                     SaveFenceData();
                     win.Close();
-                    Log($"Fence {fence.Title} removed successfully");
+                    Log(LogLevel.Debug, LogCategory.FenceCreation, $"Fence {fence.Title} removed successfully");
                 }
             };
 
 
             miNewFence.Click += (s, e) =>
             {
-                bool isLogEnabled = _options.IsLogEnabled ?? true;
-                void Log(string message)
-                {
-                    if (isLogEnabled)
-                    {
-                        string logPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "Desktop_Fences.log");
-                        System.IO.File.AppendAllText(logPath, $"{DateTime.Now}: {message}\n");
-                    }
-                }
+             //   bool isLogEnabled = _options.IsLogEnabled ?? true;
+                //void Log(string message)
+                //{
+                //    if (isLogEnabled)
+                //    {
+                //        string logPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "Desktop_Fences.log");
+                //        System.IO.File.AppendAllText(logPath, $"{DateTime.Now}: {message}\n");
+                //    }
+                //}
 
                 System.Windows.Point mousePosition = win.PointToScreen(new System.Windows.Point(0, 0));
                 mousePosition = Mouse.GetPosition(win);
                 System.Windows.Point absolutePosition = win.PointToScreen(mousePosition);
-                FenceManager.Log($"Creating new fence at position: X={absolutePosition.X}, Y={absolutePosition.Y}");
+                FenceManager.Log(LogLevel.Debug, LogCategory.FenceCreation, $"Creating new fence at position: X={absolutePosition.X}, Y={absolutePosition.Y}");
                 CreateNewFence("New Fence", "Data", absolutePosition.X, absolutePosition.Y);
             };
 
             miNewPortalFence.Click += (s, e) =>
             {
-                bool isLogEnabled = _options.IsLogEnabled ?? true;
-                void Log(string message)
-                {
-                    if (isLogEnabled)
-                    {
-                        string logPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "Desktop_Fences.log");
-                        System.IO.File.AppendAllText(logPath, $"{DateTime.Now}: {message}\n");
-                    }
-                }
+               // bool isLogEnabled = _options.IsLogEnabled ?? true;
+                //void Log(string message)
+                //{
+                //    if (isLogEnabled)
+                //    {
+                //        string logPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "Desktop_Fences.log");
+                //        System.IO.File.AppendAllText(logPath, $"{DateTime.Now}: {message}\n");
+                //    }
+                //}
 
                 System.Windows.Point mousePosition = win.PointToScreen(new System.Windows.Point(0, 0));
                 mousePosition = Mouse.GetPosition(win);
                 System.Windows.Point absolutePosition = win.PointToScreen(mousePosition);
-                FenceManager.Log($"Creating new portal fence at position: X={absolutePosition.X}, Y={absolutePosition.Y}");
+                FenceManager.Log(LogLevel.Debug, LogCategory.FenceCreation, $"Creating new portal fence at position: X={absolutePosition.X}, Y={absolutePosition.Y}");
                 CreateNewFence("New Portal Fence", "Portal", absolutePosition.X, absolutePosition.Y);
             };
 
@@ -1428,13 +1595,13 @@ namespace Desktop_Fences
             string fenceId = win.Tag?.ToString();
             if (string.IsNullOrEmpty(fenceId))
             {
-                Log($"Fence Id is missing for window '{win.Title}'");
+                Log(LogLevel.Debug, LogCategory.FenceCreation, $"Fence Id is missing for window '{win.Title}'");
                 return;
             }
             dynamic currentFence = _fenceData.FirstOrDefault(f => f.Id?.ToString() == fenceId);
             if (currentFence == null)
             {
-                Log($"Fence with Id '{fenceId}' not found in _fenceData");
+                Log(LogLevel.Debug, LogCategory.FenceCreation, $"Fence with Id '{fenceId}' not found in _fenceData");
                 return;
             }
             bool isLocked = currentFence.IsLocked?.ToString().ToLower() == "true";
@@ -1443,17 +1610,17 @@ namespace Desktop_Fences
             {
                 if (e.ClickCount == 2)
                 {
-                    bool isLogEnabled = _options.IsLogEnabled ?? true;
-                    void Log(string message)
-                    {
-                        if (isLogEnabled)
-                        {
-                            string logPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "Desktop_Fences.log");
-                            System.IO.File.AppendAllText(logPath, $"{DateTime.Now}: {message}\n");
-                        }
-                    }
+                    //bool isLogEnabled = _options.IsLogEnabled ?? true;
+                    //void Log(string message)
+                    //{
+                    //    if (isLogEnabled)
+                    //    {
+                    //        string logPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "Desktop_Fences.log");
+                    //        System.IO.File.AppendAllText(logPath, $"{DateTime.Now}: {message}\n");
+                    //    }
+                    //}
 
-                    FenceManager.Log($"Entering edit mode for fence: {fence.Title}");
+                    FenceManager.Log(LogLevel.Debug, LogCategory.FenceCreation, $"Entering edit mode for fence: {fence.Title}");
 
                     titletb.Text = titlelabel.Content.ToString();
                     titlelabel.Visibility = Visibility.Collapsed;
@@ -1462,7 +1629,7 @@ namespace Desktop_Fences
                     win.Activate();
                     Keyboard.Focus(titletb);
                     titletb.SelectAll();
-                    FenceManager.Log($"Focus set to title textbox for fence: {fence.Title}");
+                    FenceManager.Log(LogLevel.Debug, LogCategory.FenceCreation, $"Focus set to title textbox for fence: {fence.Title}");
                 }
                 //  else if (e.LeftButton == MouseButtonState.Pressed)
                 else if (e.LeftButton == MouseButtonState.Pressed)
@@ -1470,24 +1637,24 @@ namespace Desktop_Fences
                     string fenceId = win.Tag?.ToString();
                     if (string.IsNullOrEmpty(fenceId))
                     {
-                        Log($"Fence Id is missing for window '{win.Title}' during MouseDown");
+                        Log(LogLevel.Debug, LogCategory.FenceCreation, $"Fence Id is missing for window '{win.Title}' during MouseDown");
                         return;
                     }
                     dynamic currentFence = _fenceData.FirstOrDefault(f => f.Id?.ToString() == fenceId);
                     if (currentFence == null)
                     {
-                        Log($"Fence with Id '{fenceId}' not found in _fenceData during MouseDown");
+                        Log(LogLevel.Debug, LogCategory.FenceCreation, $"Fence with Id '{fenceId}' not found in _fenceData during MouseDown");
                         return;
                     }
                     bool isLocked = currentFence.IsLocked?.ToString().ToLower() == "true";
                     if (!isLocked)
                     {
                         win.DragMove();
-                        Log($"Dragging fence '{currentFence.Title}'");
+                        Log(LogLevel.Debug, LogCategory.FenceCreation, $"Dragging fence '{currentFence.Title}'");
                     }
                     else
                     {
-                        Log($"DragMove blocked for locked fence '{currentFence.Title}'");
+                        Log(LogLevel.Debug, LogCategory.FenceCreation, $"DragMove blocked for locked fence '{currentFence.Title}'");
                     }
                 }
             };
@@ -1496,15 +1663,15 @@ namespace Desktop_Fences
             {
                 if (e.Key == Key.Enter)
                 {
-                    bool isLogEnabled = _options.IsLogEnabled ?? true;
-                    void Log(string message)
-                    {
-                        if (isLogEnabled)
-                        {
-                            string logPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "Desktop_Fences.log");
-                            System.IO.File.AppendAllText(logPath, $"{DateTime.Now}: {message}\n");
-                        }
-                    }
+                    //bool isLogEnabled = _options.IsLogEnabled ?? true;
+                    //void Log(string message)
+                    //{
+                    //    if (isLogEnabled)
+                    //    {
+                    //        string logPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "Desktop_Fences.log");
+                    //        System.IO.File.AppendAllText(logPath, $"{DateTime.Now}: {message}\n");
+                    //    }
+                    //}
 
                     fence.Title = titletb.Text;
                     titlelabel.Content = titletb.Text;
@@ -1513,22 +1680,22 @@ namespace Desktop_Fences
                     titlelabel.Visibility = Visibility.Visible;
                     SaveFenceData();
                     win.ShowActivated = false;
-                    FenceManager.Log($"Exited edit mode via Enter, new title for fence: {fence.Title}");
+                    FenceManager.Log(LogLevel.Debug, LogCategory.FenceCreation, $"Exited edit mode via Enter, new title for fence: {fence.Title}");
                     win.Focus();
                 }
             };
 
             titletb.LostFocus += (sender, e) =>
             {
-                bool isLogEnabled = _options.IsLogEnabled ?? true;
-                void Log(string message)
-                {
-                    if (isLogEnabled)
-                    {
-                        string logPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "Desktop_Fences.log");
-                        System.IO.File.AppendAllText(logPath, $"{DateTime.Now}: {message}\n");
-                    }
-                }
+                //bool isLogEnabled = _options.IsLogEnabled ?? true;
+                //void Log(string message)
+                //{
+                //    if (isLogEnabled)
+                //    {
+                //        string logPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "Desktop_Fences.log");
+                //        System.IO.File.AppendAllText(logPath, $"{DateTime.Now}: {message}\n");
+                //    }
+                //}
 
                 fence.Title = titletb.Text;
                 titlelabel.Content = titletb.Text;
@@ -1537,7 +1704,7 @@ namespace Desktop_Fences
                 titlelabel.Visibility = Visibility.Visible;
                 SaveFenceData();
                 win.ShowActivated = false;
-                FenceManager.Log($"Exited edit mode via click, new title for fence: {fence.Title}");
+                FenceManager.Log(LogLevel.Debug, LogCategory.FenceCreation, $"Exited edit mode via click, new title for fence: {fence.Title}");
             };
 
             WrapPanel wpcont = new WrapPanel();
@@ -1625,16 +1792,16 @@ namespace Desktop_Fences
                                         var itemToRemove = items.FirstOrDefault(i => i["Filename"]?.ToString() == filePath);
                                         if (itemToRemove != null)
                                         {
-                                            bool isLogEnabled = _options.IsLogEnabled ?? true;
-                                            void Log(string message)
-                                            {
-                                                if (isLogEnabled)
-                                                {
-                                                    string logPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "Desktop_Fences.log");
-                                                    System.IO.File.AppendAllText(logPath, $"{DateTime.Now}: {message}\n");
-                                                }
-                                            }
-                                            FenceManager.Log($"Removing icon for {filePath} from fence");
+                                            //bool isLogEnabled = _options.IsLogEnabled ?? true;
+                                            //void Log(string message)
+                                            //{
+                                            //    if (isLogEnabled)
+                                            //    {
+                                            //        string logPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "Desktop_Fences.log");
+                                            //        System.IO.File.AppendAllText(logPath, $"{DateTime.Now}: {message}\n");
+                                            //    }
+                                            //}
+                                            FenceManager.Log(LogLevel.Debug, LogCategory.FenceCreation, $"Removing icon for {filePath} from fence");
                                             var fade = new DoubleAnimation(1, 0, TimeSpan.FromSeconds(0.3));
                                             fade.Completed += (s, a) =>
                                             {
@@ -1649,11 +1816,11 @@ namespace Desktop_Fences
                                                     try
                                                     {
                                                         System.IO.File.Delete(shortcutPath);
-                                                        FenceManager.Log($"Deleted shortcut: {shortcutPath}");
+                                                        FenceManager.Log(LogLevel.Debug, LogCategory.FenceCreation, $"Deleted shortcut: {shortcutPath}");
                                                     }
                                                     catch (Exception ex)
                                                     {
-                                                        FenceManager.Log($"Failed to delete shortcut {shortcutPath}: {ex.Message}");
+                                                        FenceManager.Log(LogLevel.Error, LogCategory.General, $"Failed to delete shortcut {shortcutPath}: {ex.Message}");
                                                     }
                                                 }
                                                 // Delete backup shortcut if it exists
@@ -1664,11 +1831,11 @@ namespace Desktop_Fences
                                                     try
                                                     {
                                                         System.IO.File.Delete(backupPath);
-                                                        Log($"Deleted backup shortcut: {backupPath}");
+                                                        FenceManager.Log(LogLevel.Debug, LogCategory.General,$"Deleted backup shortcut: {backupPath}");
                                                     }
                                                     catch (Exception ex)
                                                     {
-                                                        Log($"Failed to delete backup shortcut {backupPath}: {ex.Message}");
+                                                        FenceManager.Log(LogLevel.Error, LogCategory.General,$"Failed to delete backup shortcut {backupPath}: {ex.Message}");
                                                     }
                                                 }
 
@@ -1734,16 +1901,16 @@ namespace Desktop_Fences
                                     if (!string.IsNullOrEmpty(runArguments))
                                     {
                                         psi.Arguments = runArguments;
-                                        Log($"Run as admin with arguments: {runArguments} for {filePath}");
+                                        Log(LogLevel.Debug, LogCategory.FenceCreation, $"Run as admin with arguments: {runArguments} for {filePath}");
                                     }
                                     try
                                     {
                                         Process.Start(psi);
-                                        Log($"Successfully launched {targetPath} as admin");
+                                        Log(LogLevel.Debug, LogCategory.FenceCreation, $"Successfully launched {targetPath} as admin");
                                     }
                                     catch (Exception ex)
                                     {
-                                        Log($"Failed to launch {targetPath} as admin: {ex.Message}");
+                                        Log(LogLevel.Error, LogCategory.General, $"Failed to launch {targetPath} as admin: {ex.Message}");
                                         // MessageBox.Show($"Error running as admin: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                                         TrayManager.Instance.ShowOKOnlyMessageBoxForm($"Error running as admin: {ex.Message}", "Error");
                                     }
@@ -1778,7 +1945,7 @@ namespace Desktop_Fences
                     {
                         try
                         {
-                            Debug.WriteLine($"Dropped file: {droppedFile}");
+                          //  Debug.WriteLine($"Dropped file: {droppedFile}");
                             if (!System.IO.File.Exists(droppedFile) && !System.IO.Directory.Exists(droppedFile))
                             {
                                 //  MessageBox.Show($"Invalid file or directory: {droppedFile}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
@@ -1786,15 +1953,15 @@ namespace Desktop_Fences
                                 continue;
                             }
 
-                            bool isLogEnabled = _options.IsLogEnabled ?? true;
-                            void Log(string message)
-                            {
-                                if (isLogEnabled)
-                                {
-                                    string logPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "Desktop_Fences.log");
-                                    System.IO.File.AppendAllText(logPath, $"{DateTime.Now}: {message}\n");
-                                }
-                            }
+                            //bool isLogEnabled = _options.IsLogEnabled ?? true;
+                            //void Log(string message)
+                            //{
+                            //    if (isLogEnabled)
+                            //    {
+                            //        string logPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "Desktop_Fences.log");
+                            //        System.IO.File.AppendAllText(logPath, $"{DateTime.Now}: {message}\n");
+                            //    }
+                            //}
 
                             if (fence.ItemsType?.ToString() == "Data")
                             {
@@ -1820,7 +1987,7 @@ namespace Desktop_Fences
                                     IWshShortcut shortcut = (IWshShortcut)shell.CreateShortcut(shortcutName);
                                     shortcut.TargetPath = droppedFile;
                                     shortcut.Save();
-                                    FenceManager.Log($"Created unique shortcut: {shortcutName}");
+                                    FenceManager.Log(LogLevel.Debug, LogCategory.FenceCreation, $"Created unique shortcut: {shortcutName}");
                                 }
                                 else
                                 {
@@ -1830,7 +1997,7 @@ namespace Desktop_Fences
                                         counter++;
                                     }
                                     System.IO.File.Copy(droppedFile, shortcutName, false);
-                                    FenceManager.Log($"Copied unique shortcut: {shortcutName}");
+                                    FenceManager.Log(LogLevel.Debug, LogCategory.FenceCreation, $"Copied unique shortcut: {shortcutName}");
                                 }
 
                                 dynamic newItem = new System.Dynamic.ExpandoObject();
@@ -1885,7 +2052,7 @@ namespace Desktop_Fences
                                             var itemToRemove = items.FirstOrDefault(i => i["Filename"]?.ToString() == shortcutName);
                                             if (itemToRemove != null)
                                             {
-                                                FenceManager.Log($"Removing icon for {shortcutName} from fence");
+                                                FenceManager.Log(LogLevel.Debug, LogCategory.FenceCreation, $"Removing icon for {shortcutName} from fence");
                                                 var fade = new DoubleAnimation(1, 0, TimeSpan.FromSeconds(0.3));
                                                 fade.Completed += (s, a) =>
                                                 {
@@ -1900,11 +2067,11 @@ namespace Desktop_Fences
                                                         try
                                                         {
                                                             System.IO.File.Delete(shortcutPath);
-                                                            FenceManager.Log($"Deleted shortcut: {shortcutPath}");
+                                                            FenceManager.Log(LogLevel.Debug, LogCategory.FenceCreation, $"Deleted shortcut: {shortcutPath}");
                                                         }
                                                         catch (Exception ex)
                                                         {
-                                                            FenceManager.Log($"Failed to delete shortcut {shortcutPath}: {ex.Message}");
+                                                            FenceManager.Log(LogLevel.Error, LogCategory.General, $"Failed to delete shortcut {shortcutPath}: {ex.Message}");
                                                         }
                                                     }
                                                 };
@@ -1926,14 +2093,14 @@ namespace Desktop_Fences
                                     {
                                         string folderPath = System.IO.Path.GetDirectoryName(Utility.GetShortcutTarget(shortcutName));
                                         Clipboard.SetText(folderPath);
-                                        FenceManager.Log($"Copied target folder path to clipboard: {folderPath}");
+                                        FenceManager.Log(LogLevel.Debug, LogCategory.FenceCreation, $"Copied target folder path to clipboard: {folderPath}");
                                     };
 
                                     miCopyFullPath.Click += (sender, e) =>
                                     {
                                         string targetPath = Utility.GetShortcutTarget(shortcutName);
                                         Clipboard.SetText(targetPath);
-                                        FenceManager.Log($"Copied target full path to clipboard: {targetPath}");
+                                        FenceManager.Log(LogLevel.Debug, LogCategory.FenceCreation, $"Copied target full path to clipboard: {targetPath}");
                                     };
 
                                     miRunAsAdmin.Click += (sender, e) =>
@@ -1946,7 +2113,7 @@ namespace Desktop_Fences
                                         });
                                     };
                                 }
-                                FenceManager.Log($"Added shortcut to Data Fence: {shortcutName}");
+                                FenceManager.Log(LogLevel.Debug, LogCategory.FenceCreation, $"Added shortcut to Data Fence: {shortcutName}");
                             }
                             else if (fence.ItemsType?.ToString() == "Portal")
                             {
@@ -1958,7 +2125,7 @@ namespace Desktop_Fences
                                 {
                                     //MessageBox.Show($"No destination folder defined for this Portal Fence. Please recreate the fence.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                                     TrayManager.Instance.ShowOKOnlyMessageBoxForm($"No destination folder defined for this Portal Fence. Please recreate the fence.", "Error");
-                                    FenceManager.Log($"No Path defined for Portal Fence: {fence.Title}");
+                                    FenceManager.Log(LogLevel.Warn, LogCategory.FenceCreation, $"No Path defined for Portal Fence: {fence.Title}");
                                     continue;
                                 }
 
@@ -1966,7 +2133,7 @@ namespace Desktop_Fences
                                 {
                                     // MessageBox.Show($"The destination folder '{destinationFolder}' no longer exists. Please update the Portal Fence settings.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                                     TrayManager.Instance.ShowOKOnlyMessageBoxForm($"The destination folder '{destinationFolder}' no longer exists. Please update the Portal Fence settings.", "Error");
-                                    FenceManager.Log($"Destination folder missing for Portal Fence: {destinationFolder}");
+                                    FenceManager.Log(LogLevel.Warn, LogCategory.FenceCreation, $"Destination folder missing for Portal Fence: {destinationFolder}");
                                     continue;
                                 }
 
@@ -1984,20 +2151,21 @@ namespace Desktop_Fences
                                 if (System.IO.File.Exists(droppedFile))
                                 {
                                     System.IO.File.Copy(droppedFile, destinationPath, false);
-                                    FenceManager.Log($"Copied file to Portal Fence: {destinationPath}");
+                                    FenceManager.Log(LogLevel.Debug, LogCategory.FenceCreation, $"Copied file to Portal Fence: {destinationPath}");
                                 }
                                 else if (System.IO.Directory.Exists(droppedFile))
                                 {
                                     CopyDirectory(droppedFile, destinationPath);
-                                    FenceManager.Log($"Copied directory to Portal Fence: {destinationPath}");
+                                    FenceManager.Log(LogLevel.Debug, LogCategory.FenceCreation, $"Copied directory to Portal Fence: {destinationPath}");
                                 }
                             }
                         }
                         catch (Exception ex)
                         {
-                            Debug.WriteLine($"Error in drop: {ex.Message}");
+                           // Debug.WriteLine($"Error in drop: {ex.Message}");
                             //  MessageBox.Show($"Failed to add {droppedFile}: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                             TrayManager.Instance.ShowOKOnlyMessageBoxForm($"Failed to add {droppedFile}: {ex.Message}", "Error");
+                            FenceManager.Log(LogLevel.Error, LogCategory.FenceCreation, $"Failed to add {droppedFile}: {ex.Message}");
                         }
                     }
                     SaveFenceData(); // Αποθηκεύουμε τις αλλαγές στο JSON
@@ -2208,7 +2376,7 @@ namespace Desktop_Fences
                                         Int32Rect.Empty,
                                         BitmapSizeOptions.FromEmptyOptions()
                                     );
-                                    Log($"Extracted icon at index {iconIndex} from {iconPath} for {filePath}");
+                                    Log(LogLevel.Info, LogCategory.IconHandling, $"Extracted icon at index {iconIndex} from {iconPath} for {filePath}");
                                 }
                                 finally
                                 {
@@ -2217,17 +2385,17 @@ namespace Desktop_Fences
                             }
                             else
                             {
-                                Log($"Failed to extract icon at index {iconIndex} from {iconPath} for {filePath}. Result: {result}");
+                                Log(LogLevel.Warn, LogCategory.IconHandling, $"Failed to extract icon at index {iconIndex} from {iconPath} for {filePath}. Result: {result}");
                             }
                         }
                         catch (Exception ex)
                         {
-                            Log($"Error extracting icon from {iconPath} at index {iconIndex} for {filePath}: {ex.Message}");
+                            Log(LogLevel.Error, LogCategory.IconHandling, $"Error extracting icon from {iconPath} at index {iconIndex} for {filePath}: {ex.Message}");
                         }
                     }
                     else
                     {
-                        Log($"Icon file not found: {iconPath} for {filePath}");
+                        Log(LogLevel.Info, LogCategory.IconHandling, $"Icon file not found: {iconPath} for {filePath}");
                     }
                 }
 
@@ -2237,19 +2405,19 @@ namespace Desktop_Fences
                     if (System.IO.Directory.Exists(targetPath))
                     {
                         shortcutIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/folder-White.png"));
-                        Log($"Using folder-White.png for shortcut {filePath} targeting folder {targetPath}");
+                        Log(LogLevel.Debug, LogCategory.IconHandling, $"Using folder-White.png for shortcut {filePath} targeting folder {targetPath}");
                     }
                     else if (System.IO.File.Exists(targetPath))
                     {
                         try
                         {
                             shortcutIcon = System.Drawing.Icon.ExtractAssociatedIcon(targetPath).ToImageSource();
-                            Log($"Using target file icon for {filePath}: {targetPath}");
+                            Log(LogLevel.Debug, LogCategory.IconHandling, $"Using target file icon for {filePath}: {targetPath}");
                         }
                         catch (Exception ex)
                         {
                             shortcutIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/file-WhiteX.png"));
-                            Log($"Failed to extract target file icon for {filePath}: {ex.Message}");
+                            Log(LogLevel.Warn, LogCategory.IconHandling, $"Failed to extract target file icon for {filePath}: {ex.Message}");
                         }
                     }
                     else
@@ -2257,7 +2425,7 @@ namespace Desktop_Fences
                         shortcutIcon = isFolder
                             ? new BitmapImage(new Uri("pack://application:,,,/Resources/folder-WhiteX.png"))
                             : new BitmapImage(new Uri("pack://application:,,,/Resources/file-WhiteX.png"));
-                        Log($"Using missing icon for {filePath}: {(isFolder ? "folder-WhiteX.png" : "file-WhiteX.png")}");
+                        Log(LogLevel.Debug, LogCategory.IconHandling, $"Using missing icon for {filePath}: {(isFolder ? "folder-WhiteX.png" : "file-WhiteX.png")}");
                     }
                 }
             }
@@ -2267,19 +2435,19 @@ namespace Desktop_Fences
                 if (System.IO.Directory.Exists(filePath))
                 {
                     shortcutIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/folder-White.png"));
-                    Log($"Using folder-White.png for {filePath}");
+                    Log(LogLevel.Debug, LogCategory.IconHandling, $"Using folder-White.png for {filePath}");
                 }
                 else if (System.IO.File.Exists(filePath))
                 {
                     try
                     {
                         shortcutIcon = System.Drawing.Icon.ExtractAssociatedIcon(filePath).ToImageSource();
-                        Log($"Using file icon for {filePath}");
+                        Log(LogLevel.Debug, LogCategory.IconHandling, $"Using file icon for {filePath}");
                     }
                     catch (Exception ex)
                     {
                         shortcutIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/file-WhiteX.png"));
-                        Log($"Failed to extract icon for {filePath}: {ex.Message}");
+                        Log(LogLevel.Warn, LogCategory.IconHandling, $"Failed to extract icon for {filePath}: {ex.Message}");
                     }
                 }
                 else
@@ -2287,7 +2455,7 @@ namespace Desktop_Fences
                     shortcutIcon = isFolder
                         ? new BitmapImage(new Uri("pack://application:,,,/Resources/folder-WhiteX.png"))
                         : new BitmapImage(new Uri("pack://application:,,,/Resources/file-WhiteX.png"));
-                    Log($"Using missing icon for {filePath}: {(isFolder ? "folder-WhiteX.png" : "file-WhiteX.png")}");
+                    Log(LogLevel.Debug, LogCategory.IconHandling, $"Using missing icon for {filePath}: {(isFolder ? "folder-WhiteX.png" : "file-WhiteX.png")}");
                 }
             }
 
@@ -2368,7 +2536,7 @@ namespace Desktop_Fences
             // Serialize with indented formatting
             string formattedJson = JsonConvert.SerializeObject(serializedData, Formatting.Indented);
             System.IO.File.WriteAllText(_jsonFilePath, formattedJson);
-            Log($"Saved fences.json with consistent IsHidden string format");
+            Log(LogLevel.Debug, LogCategory.Settings, $"Saved fences.json with consistent IsHidden string format");
         }
         //public static void SaveFenceData()
         //{
@@ -2421,15 +2589,15 @@ namespace Desktop_Fences
         }
         private static void MoveItem(dynamic item, dynamic sourceFence, Dispatcher dispatcher)
         {
-            bool isLogEnabled = _options.IsLogEnabled ?? true;
-            void Log(string message)
-            {
-                if (isLogEnabled)
-                {
-                    string logPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "Desktop_Fences.log");
-                    System.IO.File.AppendAllText(logPath, $"{DateTime.Now}: {message}\n");
-                }
-            }
+            //bool isLogEnabled = _options.IsLogEnabled ?? true;
+            //void Log(string message)
+            //{
+            //    if (isLogEnabled)
+            //    {
+            //        string logPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "Desktop_Fences.log");
+            //        System.IO.File.AppendAllText(logPath, $"{DateTime.Now}: {message}\n");
+            //    }
+            //}
 
             var moveWindow = new Window
             {
@@ -2458,7 +2626,7 @@ namespace Desktop_Fences
                             IDictionary<string, object> itemDict = item is IDictionary<string, object> dict ? dict : ((JObject)item).ToObject<IDictionary<string, object>>();
                             string filename = itemDict.ContainsKey("Filename") ? itemDict["Filename"].ToString() : "Unknown";
 
-                            Log($"Moving item {filename} from {sourceFence.Title} to {fence.Title}");
+                            Log(LogLevel.Info,LogCategory.IconHandling,$"Moving item {filename} from {sourceFence.Title} to {fence.Title}");
 
                             // Find the JToken in sourceItems that matches the Filename
                             var itemToRemove = sourceItems.FirstOrDefault(i =>
@@ -2474,7 +2642,7 @@ namespace Desktop_Fences
                             }
                             else
                             {
-                                Log($"Item {filename} not found in source fence '{sourceFence.Title}'");
+                                Log(LogLevel.Warn, LogCategory.IconHandling, $"Item {filename} not found in source fence '{sourceFence.Title}'");
                             }
 
                             moveWindow.Close();
@@ -2522,12 +2690,12 @@ namespace Desktop_Fences
                                     Application.Current.Windows.OfType<NonActivatingWindow>().ToList().ForEach(w => w.Close());
                                     LoadAndCreateFences(new TargetChecker(1000));
                                     waitWindow.Close();
-                                    Log($"Item moved successfully to {fence.Title}");
+                                    Log(LogLevel.Info, LogCategory.IconHandling, $"Item moved successfully to {fence.Title}");
                                 }
                                 else
                                 {
                                     waitWindow.Close();
-                                    Log($"Skipped fence reload due to application shutdown");
+                                    Log(LogLevel.Warn, LogCategory.General, $"Skipped fence reload due to application shutdown");
                                 }
                             }, DispatcherPriority.Background);
                         }
@@ -2543,14 +2711,14 @@ namespace Desktop_Fences
             // Prevent infinite recursion
             if (parent == null || depth > maxDepth)
             {
-                Log($"FindWrapPanel: Reached max depth {maxDepth} or null parent at depth {depth}");
+                Log(LogLevel.Debug, LogCategory.IconHandling, $"FindWrapPanel: Reached max depth {maxDepth} or null parent at depth {depth}");
                 return null;
             }
 
             // Check if current element is a WrapPanel
             if (parent is WrapPanel wrapPanel)
             {
-                Log($"FindWrapPanel: Found WrapPanel at depth {depth}");
+                Log(LogLevel.Debug, LogCategory.General, $"FindWrapPanel: Found WrapPanel at depth {depth}");
                 return wrapPanel;
             }
 
@@ -2558,7 +2726,7 @@ namespace Desktop_Fences
             for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
             {
                 var child = VisualTreeHelper.GetChild(parent, i);
-                Log($"FindWrapPanel: Checking child {i} at depth {depth}, type: {child?.GetType()?.Name ?? "null"}");
+                Log(LogLevel.Debug, LogCategory.General, $"FindWrapPanel: Checking child {i} at depth {depth}, type: {child?.GetType()?.Name ?? "null"}");
                 var result = FindWrapPanel(child, depth + 1, maxDepth);
                 if (result != null)
                 {
@@ -2566,7 +2734,7 @@ namespace Desktop_Fences
                 }
             }
 
-            Log($"FindWrapPanel: No WrapPanel found under parent {parent?.GetType()?.Name ?? "null"} at depth {depth}");
+            Log(LogLevel.Debug, LogCategory.General, $"FindWrapPanel: No WrapPanel found under parent {parent?.GetType()?.Name ?? "null"} at depth {depth}");
             return null;
         }
 
@@ -2590,7 +2758,7 @@ namespace Desktop_Fences
             {
                 string newDisplayName = editWindow.NewDisplayName;
                 iconDict["DisplayName"] = newDisplayName;
-                Log($"Updated DisplayName for {filePath} to {newDisplayName}");
+                Log(LogLevel.Debug, LogCategory.IconHandling, $"Updated DisplayName for {filePath} to {newDisplayName}");
 
                 // Update fence data
                 var items = fence.Items as JArray;
@@ -2601,69 +2769,69 @@ namespace Desktop_Fences
                     {
                         itemToUpdate["DisplayName"] = newDisplayName;
                         SaveFenceData();
-                        Log($"Fence data updated for {filePath}");
+                        Log(LogLevel.Debug, LogCategory.IconHandling, $"Fence data updated for {filePath}");
                     }
                     else
                     {
-                        Log($"Failed to find item {filePath} in fence items for update");
+                        Log(LogLevel.Debug, LogCategory.IconHandling, $"Failed to find item {filePath} in fence items for update");
                     }
                 }
 
                 // Update UI
                 if (win == null)
                 {
-                    Log($"Window is null for fence when updating {filePath}");
+                    Log(LogLevel.Debug, LogCategory.IconHandling, $"Window is null for fence when updating {filePath}");
                     return;
                 }
 
                 // Attempt to find WrapPanel directly
-                Log($"Starting UI update for {filePath}. Window content type: {win.Content?.GetType()?.Name ?? "null"}");
+                Log(LogLevel.Debug, LogCategory.IconHandling, $"Starting UI update for {filePath}. Window content type: {win.Content?.GetType()?.Name ?? "null"}");
                 WrapPanel wpcont = null;
                 var border = win.Content as Border;
                 if (border != null)
                 {
-                    Log($"Found Border. Child type: {border.Child?.GetType()?.Name ?? "null"}");
+                    Log(LogLevel.Debug, LogCategory.General, $"Found Border. Child type: {border.Child?.GetType()?.Name ?? "null"}");
                     var dockPanel = border.Child as DockPanel;
                     if (dockPanel != null)
                     {
-                        Log($"Found DockPanel. Checking for ScrollViewer...");
+                        Log(LogLevel.Warn, LogCategory.General, $"Found DockPanel. Checking for ScrollViewer...");
                         var scrollViewer = dockPanel.Children.OfType<ScrollViewer>().FirstOrDefault();
                         if (scrollViewer != null)
                         {
-                            Log($"Found ScrollViewer. Content type: {scrollViewer.Content?.GetType()?.Name ?? "null"}");
+                            Log(LogLevel.Debug, LogCategory.General, $"Found ScrollViewer. Content type: {scrollViewer.Content?.GetType()?.Name ?? "null"}");
                             wpcont = scrollViewer.Content as WrapPanel;
                         }
                         else
                         {
-                            Log($"ScrollViewer not found in DockPanel for {filePath}");
+                            Log(LogLevel.Debug, LogCategory.General, $"ScrollViewer not found in DockPanel for {filePath}");
                         }
                     }
                     else
                     {
-                        Log($"DockPanel not found in Border for {filePath}");
+                        Log(LogLevel.Debug, LogCategory.General, $"DockPanel not found in Border for {filePath}");
                     }
                 }
                 else
                 {
-                    Log($"Border not found in window content for {filePath}");
+                    Log(LogLevel.Debug, LogCategory.General, $"Border not found in window content for {filePath}");
                 }
 
                 // Fallback to visual tree traversal if direct lookup fails
                 if (wpcont == null)
                 {
-                    Log($"Direct WrapPanel lookup failed, attempting visual tree traversal for {filePath}");
+                    Log(LogLevel.Debug, LogCategory.IconHandling, $"Direct WrapPanel lookup failed, attempting visual tree traversal for {filePath}");
                     wpcont = FindWrapPanel(win);
                 }
 
                 if (wpcont != null)
                 {
-                    Log($"Found WrapPanel. Checking for StackPanel with Tag.FilePath: {filePath}");
+                    Log(LogLevel.Debug, LogCategory.IconHandling, $"Found WrapPanel. Checking for StackPanel with Tag.FilePath: {filePath}");
                     // Access Tag.FilePath to match ClickEventAdder's anonymous object
                     var sp = wpcont.Children.OfType<StackPanel>()
                         .FirstOrDefault(s => s.Tag != null && s.Tag.GetType().GetProperty("FilePath")?.GetValue(s.Tag)?.ToString() == filePath);
                     if (sp != null)
                     {
-                        Log($"Found StackPanel for {filePath}. Tag: {sp.Tag?.ToString() ?? "null"}");
+                        Log(LogLevel.Debug, LogCategory.IconHandling, $"Found StackPanel for {filePath}. Tag: {sp.Tag?.ToString() ?? "null"}");
                         var lbl = sp.Children.OfType<TextBlock>().FirstOrDefault();
                         if (lbl != null)
                         {
@@ -2677,11 +2845,11 @@ namespace Desktop_Fences
                             }
                             lbl.Text = displayText;
                             lbl.InvalidateVisual(); // Force UI refresh
-                            Log($"Updated TextBlock for {filePath} to '{displayText}'");
+                            Log(LogLevel.Debug, LogCategory.IconHandling, $"Updated TextBlock for {filePath} to '{displayText}'");
                         }
                         else
                         {
-                            Log($"TextBlock not found in StackPanel for {filePath}. Children: {string.Join(", ", sp.Children.OfType<FrameworkElement>().Select(c => c.GetType().Name))}");
+                            Log(LogLevel.Debug, LogCategory.IconHandling, $"TextBlock not found in StackPanel for {filePath}. Children: {string.Join(", ", sp.Children.OfType<FrameworkElement>().Select(c => c.GetType().Name))}");
                         }
                         var ico = sp.Children.OfType<System.Windows.Controls.Image>().FirstOrDefault();
                         if (ico != null)
@@ -2715,7 +2883,7 @@ namespace Desktop_Fences
                                                     Int32Rect.Empty,
                                                     BitmapSizeOptions.FromEmptyOptions()
                                                 );
-                                                Log($"Extracted icon at index {iconIndex} from {iconPath} for {filePath}");
+                                                Log(LogLevel.Debug, LogCategory.IconHandling, $"Extracted icon at index {iconIndex} from {iconPath} for {filePath}");
                                             }
                                             finally
                                             {
@@ -2724,17 +2892,17 @@ namespace Desktop_Fences
                                         }
                                         else
                                         {
-                                            Log($"Failed to extract icon at index {iconIndex} from {iconPath} for {filePath}. Result: {result}");
+                                            Log(LogLevel.Debug, LogCategory.IconHandling, $"Failed to extract icon at index {iconIndex} from {iconPath} for {filePath}. Result: {result}");
                                         }
                                     }
                                     catch (Exception ex)
                                     {
-                                        Log($"Error extracting icon from {iconPath} at index {iconIndex} for {filePath}: {ex.Message}");
+                                        Log(LogLevel.Error, LogCategory.IconHandling, $"Error extracting icon from {iconPath} at index {iconIndex} for {filePath}: {ex.Message}");
                                     }
                                 }
                                 else
                                 {
-                                    Log($"Icon file not found: {iconPath} for {filePath}");
+                                    Log(LogLevel.Error, LogCategory.IconHandling, $"Icon file not found: {iconPath} for {filePath}");
                                 }
                             }
 
@@ -2747,49 +2915,49 @@ namespace Desktop_Fences
                                     try
                                     {
                                         shortcutIcon = System.Drawing.Icon.ExtractAssociatedIcon(targetPath).ToImageSource();
-                                        Log($"No custom icon, using target icon for {filePath}: {targetPath}");
+                                        Log(LogLevel.Debug, LogCategory.IconHandling, $"No custom icon, using target icon for {filePath}: {targetPath}");
                                     }
                                     catch (Exception ex)
                                     {
-                                        Log($"Failed to extract target icon for {filePath}: {ex.Message}");
+                                        Log(LogLevel.Debug, LogCategory.IconHandling, $"Failed to extract target icon for {filePath}: {ex.Message}");
                                     }
                                 }
                                 else if (System.IO.Directory.Exists(targetPath))
                                 {
                                     shortcutIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/folder-White.png"));
-                                    Log($"No custom icon, using folder-White.png for {filePath}");
+                                    Log(LogLevel.Debug, LogCategory.IconHandling, $"No custom icon, using folder-White.png for {filePath}");
                                 }
                                 else
                                 {
                                     shortcutIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/file-WhiteX.png"));
-                                    Log($"No custom icon or valid target, using file-WhiteX.png for {filePath}");
+                                    Log(LogLevel.Debug, LogCategory.IconHandling, $"No custom icon or valid target, using file-WhiteX.png for {filePath}");
                                 }
                             }
 
                             ico.Source = shortcutIcon;
                             iconCache[filePath] = shortcutIcon;
-                            Log($"Updated icon for {filePath}");
+                            Log(LogLevel.Debug, LogCategory.IconHandling, $"Updated icon for {filePath}");
                         }
 
  
                         else
                         {
-                            Log($"Image not found in StackPanel for {filePath}");
+                            Log(LogLevel.Error, LogCategory.IconHandling, $"Image not found in StackPanel for {filePath}");
                         }
                     }
                     else
                     {
-                        Log($"StackPanel not found for {filePath} in WrapPanel. Available Tag.FilePaths: {string.Join(", ", wpcont.Children.OfType<StackPanel>().Select(s => s.Tag != null ? (s.Tag.GetType().GetProperty("FilePath")?.GetValue(s.Tag)?.ToString() ?? "null") : "null"))}");
+                        Log(LogLevel.Debug, LogCategory.IconHandling, $"StackPanel not found for {filePath} in WrapPanel. Available Tag.FilePaths: {string.Join(", ", wpcont.Children.OfType<StackPanel>().Select(s => s.Tag != null ? (s.Tag.GetType().GetProperty("FilePath")?.GetValue(s.Tag)?.ToString() ?? "null") : "null"))}");
 
                         // Fallback: Rebuild single icon
-                        Log($"Attempting to rebuild icon for {filePath}");
+                        Log(LogLevel.Debug, LogCategory.IconHandling, $"Attempting to rebuild icon for {filePath}");
                         // Remove existing StackPanel if present (in case Tag lookup failed due to corruption)
                         var oldSp = wpcont.Children.OfType<StackPanel>()
                             .FirstOrDefault(s => s.Tag != null && s.Tag.GetType().GetProperty("FilePath")?.GetValue(s.Tag)?.ToString() == filePath);
                         if (oldSp != null)
                         {
                             wpcont.Children.Remove(oldSp);
-                            Log($"Removed old StackPanel for {filePath}");
+                            Log(LogLevel.Debug, LogCategory.IconHandling, $"Removed old StackPanel for {filePath}");
                         }
 
                         // Re-add icon
@@ -2806,31 +2974,31 @@ namespace Desktop_Fences
                                 arguments = shortcut.Arguments;
                             }
                             ClickEventAdder(newSp, filePath, isFolder, arguments);
-                            Log($"Rebuilt icon for {filePath} with new StackPanel");
+                            Log(LogLevel.Debug, LogCategory.IconHandling, $"Rebuilt icon for {filePath} with new StackPanel");
                         }
                         else
                         {
-                            Log($"Failed to rebuild icon for {filePath}: No new StackPanel created");
+                            Log(LogLevel.Debug, LogCategory.IconHandling, $"Failed to rebuild icon for {filePath}: No new StackPanel created");
                         }
                     }
                 }
                 else
                 {
-                    Log($"WrapPanel not found for {filePath}. UI update skipped.");
+                    Log(LogLevel.Debug, LogCategory.IconHandling, $"WrapPanel not found for {filePath}. UI update skipped.");
                 }
             }
         }
         private static void BackupOrRestoreShortcut(string filePath, bool targetExists, bool isFolder)
         {
-            bool isLogEnabled = _options.IsLogEnabled ?? true;
-            void Log(string message)
-            {
-                if (isLogEnabled)
-                {
-                    string logPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "Desktop_Fences.log");
-                    System.IO.File.AppendAllText(logPath, $"{DateTime.Now}: {message}\n");
-                }
-            }
+            //bool isLogEnabled = _options.IsLogEnabled ?? true;
+            //void Log(string message)
+            //{
+            //    if (isLogEnabled)
+            //    {
+            //        string logPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "Desktop_Fences.log");
+            //        System.IO.File.AppendAllText(logPath, $"{DateTime.Now}: {message}\n");
+            //    }
+            //}
 
             string exeDir = System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
             string tempShortcutsDir = System.IO.Path.Combine(exeDir, "Temp Shortcuts");
@@ -2843,7 +3011,7 @@ namespace Desktop_Fences
                 if (!Directory.Exists(tempShortcutsDir))
                 {
                     Directory.CreateDirectory(tempShortcutsDir);
-                    Log($"Created TempShortcuts directory: {tempShortcutsDir}");
+                    Log(LogLevel.Debug, LogCategory.General, $"Created TempShortcuts directory: {tempShortcutsDir}");
                 }
 
                 if (!targetExists)
@@ -2852,7 +3020,7 @@ namespace Desktop_Fences
                     if (System.IO.File.Exists(filePath) && !System.IO.File.Exists(backupPath))
                     {
                         System.IO.File.Copy(filePath, backupPath, true);
-                        Log($"Backed up shortcut {filePath} to {backupPath}");
+                        Log(LogLevel.Debug, LogCategory.General, $"Backed up shortcut {filePath} to {backupPath}");
                     }
                 }
                 else
@@ -2866,35 +3034,35 @@ namespace Desktop_Fences
                         if (!string.IsNullOrEmpty(backupShortcut.IconLocation))
                         {
                             System.IO.File.Copy(backupPath, filePath, true);
-                            Log($"Restored shortcut {filePath} from {backupPath} with custom icon");
+                            Log(LogLevel.Debug, LogCategory.General, $"Restored shortcut {filePath} from {backupPath} with custom icon");
                         }
                         // Delete backup
                         System.IO.File.Delete(backupPath);
-                        Log($"Deleted backup {backupPath} after restoration");
+                        Log(LogLevel.Debug, LogCategory.General, $"Deleted backup {backupPath} after restoration");
                     }
                 }
             }
             catch (Exception ex)
             {
-                Log($"Error in BackupOrRestoreShortcut for {filePath}: {ex.Message}");
+                Log(LogLevel.Error, LogCategory.General, $"Error in BackupOrRestoreShortcut for {filePath}: {ex.Message}");
             }
         }
 
         private static void UpdateIcon(StackPanel sp, string filePath, bool isFolder)
         {
-            bool isLogEnabled = _options.IsLogEnabled ?? true;
-            void Log(string message)
-            {
-                if (isLogEnabled)
-                {
-                    string logPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "Desktop_Fences.log");
-                    System.IO.File.AppendAllText(logPath, $"{DateTime.Now}: {message}\n");
-                }
-            }
+            //bool isLogEnabled = _options.IsLogEnabled ?? true;
+            //void Log(string message)
+            //{
+            //    if (isLogEnabled)
+            //    {
+            //        string logPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "Desktop_Fences.log");
+            //        System.IO.File.AppendAllText(logPath, $"{DateTime.Now}: {message}\n");
+            //    }
+            //}
 
             if (Application.Current == null)
             {
-                Log("Application.Current is null, cannot update icon.");
+                Log(LogLevel.Error, LogCategory.IconHandling, "Application.Current is null, cannot update icon.");
                 return;
             }
 
@@ -2903,7 +3071,7 @@ namespace Desktop_Fences
                 System.Windows.Controls.Image ico = sp.Children.OfType<System.Windows.Controls.Image>().FirstOrDefault();
                 if (ico == null)
                 {
-                    Log($"No Image found in StackPanel for {filePath}");
+                    Log(LogLevel.Debug, LogCategory.IconHandling, $"No Image found in StackPanel for {filePath}");
                     return;
                 }
 
@@ -2916,7 +3084,7 @@ namespace Desktop_Fences
                 if (isShortcut && isTargetFolder)
                 {
                     isFolder = true;
-                    Log($"Corrected isFolder to true for shortcut {filePath} targeting folder {targetPath}");
+                    Log(LogLevel.Debug, LogCategory.IconHandling, $"Corrected isFolder to true for shortcut {filePath} targeting folder {targetPath}");
                 }
 
                 ImageSource newIcon = null;
@@ -2933,12 +3101,13 @@ namespace Desktop_Fences
                     newIcon = isFolder
                         ? new BitmapImage(new Uri("pack://application:,,,/Resources/folder-WhiteX.png"))
                         : new BitmapImage(new Uri("pack://application:,,,/Resources/file-WhiteX.png"));
-                    Log($"Using missing icon for {filePath}: {(isFolder ? "folder-WhiteX.png" : "file-WhiteX.png")}");
+                    Log(LogLevel.Debug, LogCategory.IconHandling, $"Using missing icon for {filePath}: {(isFolder ? "folder-WhiteX.png" : "file-WhiteX.png")}");
                 }
                 else if (isShortcut)
                 {
                     WshShell shell = new WshShell();
-                    IWshShortcut shortcut = (IWshShortcut)shell.CreateShortcut(filePath);
+                 
+                        IWshShortcut shortcut = (IWshShortcut)shell.CreateShortcut(filePath);
 
                     // Check for custom IconLocation
                     if (!string.IsNullOrEmpty(shortcut.IconLocation))
@@ -2966,7 +3135,7 @@ namespace Desktop_Fences
                                             Int32Rect.Empty,
                                             BitmapSizeOptions.FromEmptyOptions()
                                         );
-                                        Log($"Extracted custom icon at index {iconIndex} from {iconPath} for {filePath}");
+                                        Log(LogLevel.Debug, LogCategory.IconHandling, $"Extracted custom icon at index {iconIndex} from {iconPath} for {filePath}");
                                     }
                                     finally
                                     {
@@ -2975,19 +3144,24 @@ namespace Desktop_Fences
                                 }
                                 else
                                 {
-                                    Log($"Failed to extract custom icon at index {iconIndex} from {iconPath} for {filePath}. Result: {result}");
+                                    Log(LogLevel.Debug, LogCategory.IconHandling, $"Failed to extract custom icon at index {iconIndex} from {iconPath} for {filePath}. Result: {result}");
                                 }
                             }
                             catch (Exception ex)
                             {
-                                Log($"Error extracting custom icon from {iconPath} at index {iconIndex} for {filePath}: {ex.Message}");
+                                Log(LogLevel.Debug, LogCategory.IconHandling, $"Error extracting custom icon from {iconPath} at index {iconIndex} for {filePath}: {ex.Message}");
                             }
                         }
                         else
                         {
-                            Log($"Custom icon file not found: {iconPath} for {filePath}");
+                            Log(LogLevel.Debug, LogCategory.IconHandling, $"Custom icon file not found: {iconPath} for {filePath}");
                         }
+
+
                     }
+
+
+
 
                     // Fallback if no custom icon
                     if (newIcon == null)
@@ -2995,19 +3169,19 @@ namespace Desktop_Fences
                         if (isTargetFolder)
                         {
                             newIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/folder-White.png"));
-                            Log($"Using folder-White.png for shortcut {filePath} targeting folder {targetPath}");
+                            Log(LogLevel.Debug, LogCategory.IconHandling, $"Using folder-White.png for shortcut {filePath} targeting folder {targetPath}");
                         }
                         else
                         {
                             try
                             {
                                 newIcon = System.Drawing.Icon.ExtractAssociatedIcon(targetPath).ToImageSource();
-                                Log($"Using target file icon for shortcut {filePath}: {targetPath}");
+                                Log(LogLevel.Debug, LogCategory.IconHandling, $"Using target file icon for shortcut {filePath}: {targetPath}");
                             }
                             catch (Exception ex)
                             {
                                 newIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/file-WhiteX.png"));
-                                Log($"Failed to extract target file icon for shortcut {filePath}: {ex.Message}");
+                                Log(LogLevel.Error, LogCategory.IconHandling, $"Failed to extract target file icon for shortcut {filePath}: {ex.Message}");
                             }
                         }
                     }
@@ -3018,19 +3192,19 @@ namespace Desktop_Fences
                     if (isTargetFolder)
                     {
                         newIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/folder-White.png"));
-                        Log($"Using folder-White.png for {filePath}");
+                        Log(LogLevel.Debug, LogCategory.IconHandling, $"Using folder-White.png for {filePath}");
                     }
                     else
                     {
                         try
                         {
                             newIcon = System.Drawing.Icon.ExtractAssociatedIcon(filePath).ToImageSource();
-                            Log($"Using file icon for {filePath}");
+                            Log(LogLevel.Debug, LogCategory.IconHandling, $"Using file icon for {filePath}");
                         }
                         catch (Exception ex)
                         {
                             newIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/file-WhiteX.png"));
-                            Log($"Failed to extract icon for {filePath}: {ex.Message}");
+                            Log(LogLevel.Error, LogCategory.IconHandling, $"Failed to extract icon for {filePath}: {ex.Message}");
                         }
                     }
                 }
@@ -3043,13 +3217,13 @@ namespace Desktop_Fences
                     if (iconCache.ContainsKey(filePath))
                     {
                         iconCache[filePath] = newIcon;
-                        Log($"Updated icon cache for {filePath}");
+                        Log(LogLevel.Debug, LogCategory.IconHandling, $"Updated icon cache for {filePath}");
                     }
-                    Log($"Icon updated for {filePath}");
+                    Log(LogLevel.Debug, LogCategory.IconHandling, $"Icon updated for {filePath}");
                 }
                 else
                 {
-                    Log($"No icon update needed for {filePath}: same icon");
+                    Log(LogLevel.Debug, LogCategory.IconHandling, $"No icon update needed for {filePath}: same icon");
                 }
             });
         }
@@ -3060,7 +3234,7 @@ namespace Desktop_Fences
         {
 
 
-            Log($"Updating options, new singleClickToLaunch={SettingsManager.SingleClickToLaunch}");
+            Log(LogLevel.Debug, LogCategory.Settings, $"Updating options, new singleClickToLaunch={SettingsManager.SingleClickToLaunch}");
 
             // Update _options
             _options = new
@@ -3108,12 +3282,12 @@ namespace Desktop_Fences
                         }
                     }
                 }
-                Log($"Updated click events for {updatedItems} items");
+                Log(LogLevel.Debug, LogCategory.Settings, $"Updated click events for {updatedItems} items");
             });
             }
                 else
                 {
-                    Log("Application.Current is null, cannot update icon.");
+                    Log(LogLevel.Debug, LogCategory.Settings, "Application.Current is null, cannot update icon.");
                 }
         }
 
@@ -3128,7 +3302,7 @@ namespace Desktop_Fences
             // Store only path, isFolder, and arguments in Tag
             sp.Tag = new { FilePath = path, IsFolder = isFolder, Arguments = arguments };
 
-            Log($"Attaching handler for {path}, initial singleClickToLaunch={_options.singleClickToLaunch}");
+            Log(LogLevel.Debug, LogCategory.General, $"Attaching handler for {path}, initial singleClickToLaunch={_options.singleClickToLaunch}");
 
             // Check if path is a shortcut and correct isFolder for folder shortcuts
             bool isShortcut = System.IO.Path.GetExtension(path).ToLower() == ".lnk";
@@ -3136,7 +3310,7 @@ namespace Desktop_Fences
             if (isShortcut && System.IO.Directory.Exists(targetPath))
             {
                 isFolder = true;
-                Log($"Corrected isFolder to true for shortcut {path} targeting folder {targetPath}");
+                Log(LogLevel.Debug, LogCategory.General, $"Corrected isFolder to true for shortcut {path} targeting folder {targetPath}");
             }
 
             void MouseDownHandler(object sender, MouseButtonEventArgs e)
@@ -3144,7 +3318,7 @@ namespace Desktop_Fences
                 if (e.ChangedButton != MouseButton.Left) return;
 
                 bool singleClickToLaunch = _options.singleClickToLaunch ?? true;
-                Log($"MouseDown on {path}, ClickCount={e.ClickCount}, singleClickToLaunch={singleClickToLaunch}");
+                Log(LogLevel.Debug, LogCategory.General, $"MouseDown on {path}, ClickCount={e.ClickCount}, singleClickToLaunch={singleClickToLaunch}");
 
                 try
                 {
@@ -3162,30 +3336,30 @@ namespace Desktop_Fences
                         targetExists = isFolder ? System.IO.Directory.Exists(path) : System.IO.File.Exists(path);
                     }
 
-                    Log($"Target check: Path={path}, ResolvedPath={resolvedPath}, IsShortcut={isShortcutLocal}, IsFolder={isFolder}, TargetExists={targetExists}");
+                    Log(LogLevel.Debug, LogCategory.General, $"Target check: Path={path}, ResolvedPath={resolvedPath}, IsShortcut={isShortcutLocal}, IsFolder={isFolder}, TargetExists={targetExists}");
 
                     if (!targetExists)
                     {
-                        Log($"Target not found: {resolvedPath}");
+                        Log(LogLevel.Warn, LogCategory.General, $"Target not found: {resolvedPath}");
                         return;
                     }
 
                     if (singleClickToLaunch && e.ClickCount == 1)
                     {
-                        Log($"Single click launching {path}");
+                        Log(LogLevel.Debug, LogCategory.General, $"Single click launching {path}");
                         LaunchItem(sp, path, isFolder, arguments);
                         e.Handled = true;
                     }
                     else if (!singleClickToLaunch && e.ClickCount == 2)
                     {
-                        Log($"Double click launching {path}");
+                        Log(LogLevel.Debug, LogCategory.General, $"Double click launching {path}");
                         LaunchItem(sp, path, isFolder, arguments);
                         e.Handled = true;
                     }
                 }
                 catch (Exception ex)
                 {
-                    Log($"Error checking target existence: {ex.Message}");
+                    Log(LogLevel.Error, LogCategory.General, $"Error checking target existence: {ex.Message}");
                 }
             }
 
@@ -3208,15 +3382,15 @@ namespace Desktop_Fences
 
 private static void LaunchItem(StackPanel sp, string path, bool isFolder, string arguments)
 {
-    bool isLogEnabled = _options.IsLogEnabled ?? true;
-    void Log(string message)
-    {
-        if (isLogEnabled)
-        {
-            string logPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "Desktop_Fences.log");
-            System.IO.File.AppendAllText(logPath, $"{DateTime.Now}: {message}\n");
-        }
-    }
+    //bool isLogEnabled = _options.IsLogEnabled ?? true;
+    //void Log(string message)
+    //{
+    //    if (isLogEnabled)
+    //    {
+    //        string logPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "Desktop_Fences.log");
+    //        System.IO.File.AppendAllText(logPath, $"{DateTime.Now}: {message}\n");
+    //    }
+    //}
 
     try
     {
@@ -3229,29 +3403,29 @@ private static void LaunchItem(StackPanel sp, string path, bool isFolder, string
 
         if (fence == null)
         {
-            Log($"Failed to find fence for {path}, using default effect");
+            Log(LogLevel.Debug, LogCategory.General, $"Failed to find fence for {path}, using default effect");
             effect = defaultEffect;
         }
         else if (string.IsNullOrEmpty(customEffect))
         {
             effect = defaultEffect;
-            Log($"No CustomLaunchEffect for {path} in fence '{fence.Title}', using default: {effect}");
+            Log(LogLevel.Debug, LogCategory.General, $"No CustomLaunchEffect for {path} in fence '{fence.Title}', using default: {effect}");
         }
         else
         {
             try
             {
                 effect = (LaunchEffect)Enum.Parse(typeof(LaunchEffect), customEffect, true);
-                Log($"Using CustomLaunchEffect for {path} in fence '{fence.Title}': {effect}");
+                Log(LogLevel.Debug, LogCategory.General, $"Using CustomLaunchEffect for {path} in fence '{fence.Title}': {effect}");
             }
             catch (Exception ex)
             {
                 effect = defaultEffect;
-                Log($"Failed to parse CustomLaunchEffect '{customEffect}' for {path} in fence '{fence.Title}', falling back to {effect}: {ex.Message}");
+                Log(LogLevel.Debug, LogCategory.General, $"Failed to parse CustomLaunchEffect '{customEffect}' for {path} in fence '{fence.Title}', falling back to {effect}: {ex.Message}");
             }
         }
 
-        Log($"LaunchItem called for {path} with effect {effect}");
+        Log(LogLevel.Debug, LogCategory.General, $"LaunchItem called for {path} with effect {effect}");
 
         // Ensure transform is set up
         if (sp.RenderTransform == null || !(sp.RenderTransform is TransformGroup))
@@ -3508,8 +3682,8 @@ private static void LaunchItem(StackPanel sp, string path, bool isFolder, string
         bool isTargetFolder = System.IO.Directory.Exists(targetPath);
         bool targetExists = System.IO.File.Exists(targetPath) || System.IO.Directory.Exists(targetPath);
 
-        Log($"Target path resolved to: {targetPath}");
-        Log($"Target exists: {targetExists}, IsFolder: {isTargetFolder}");
+        Log(LogLevel.Debug, LogCategory.General, $"Target path resolved to: {targetPath}");
+        Log(LogLevel.Debug, LogCategory.General, $"Target exists: {targetExists}, IsFolder: {isTargetFolder}");
 
         if (targetExists)
         {
@@ -3522,16 +3696,16 @@ private static void LaunchItem(StackPanel sp, string path, bool isFolder, string
             if (!string.IsNullOrEmpty(arguments))
             {
                 psi.Arguments = arguments;
-                Log($"Arguments: {arguments}");
+                Log(LogLevel.Debug, LogCategory.General, $"Arguments: {arguments}");
             }
 
-            Log($"Attempting to launch {targetPath}");
+            Log(LogLevel.Debug, LogCategory.General, $"Attempting to launch {targetPath}");
             Process.Start(psi);
-            Log($"Successfully launched {targetPath}");
+            Log(LogLevel.Debug, LogCategory.General, $"Successfully launched {targetPath}");
         }
         else
         {
-            Log($"Target not found: {targetPath}");
+            Log(LogLevel.Error, LogCategory.General, $"Target not found: {targetPath}");
                     //    MessageBox.Show($"Target '{targetPath}' was not found.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     TrayManager.Instance.ShowOKOnlyMessageBoxForm($"Target '{targetPath}' was not found.", "Error");
 
@@ -3539,7 +3713,7 @@ private static void LaunchItem(StackPanel sp, string path, bool isFolder, string
     }
     catch (Exception ex)
     {
-        Log($"Error in LaunchItem for {path}: {ex.Message}");
+        Log(LogLevel.Error, LogCategory.General, $"Error in LaunchItem for {path}: {ex.Message}");
                 //  MessageBox.Show($"Error opening item: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 TrayManager.Instance.ShowOKOnlyMessageBoxForm($"Error opening item: {ex.Message}", "Error");
             }
