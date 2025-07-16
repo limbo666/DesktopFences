@@ -117,7 +117,16 @@ Every little bit helps and is greatly appreciated! 🙏
  ## 2.5.1.42 
 -  **Fixed**: Bug on `Portal Fences` created by misuse of FileSystemWatcher. The program now updates target files as renamed, removed. https://github.com/limbo666/DesktopFences/issues/3
 -  **Added**: Context menu items for `Portal Fences` and items. Now user is able to copy target file path or shortcut destination path and open `Portal Fence` target folder from right click.
-  
+
+ ## 2.5.1.58 Release 6
+ - **Added** Option to show/hide tray icon (requested on https://github.com/limbo666/DesktopFences/issues/9). Attention: Hidding tray icon means you don't have access to: showing hidden fences and hidding/showiing fences by double clicking on tray icon. 
+-  **Added** Option to show/hide portal fences watermark (requested on https://github.com/limbo666/DesktopFences/issues/11).
+-  **Added** Option to use recycle bin when deleting files or folders using portal fences right click menu.
+-  **Added** Lock function to fences (requested on https://github.com/limbo666/DesktopFences/issues/9).
+-  **Changed** Large refactoring on Log code to orgranize and filter logs. 
+-  **Changed** Options window redesigned for better user experience.
+-  **Fixed** Bug on custom message box with wrong color selection.
+-  **Added** "Peek Behind" right click selection to make fences to reveal contents behind them for 10 seconds.	  
 ---
 
 ##  Summary
