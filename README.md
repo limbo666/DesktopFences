@@ -132,6 +132,10 @@ Every little bit helps and is greatly appreciated! 🙏
 -  **Added**: Rollup function when `Ctrl + Click` on Fence title
 -  **Added**: Function to avoid displaying hidden files on Portal Fences.
 
+## 2.5.1.65
+-  **Changed**: Delete Fence menu moved to heart menu
+
+
 ---
 
 ##  Summary
