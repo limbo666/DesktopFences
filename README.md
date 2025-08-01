@@ -112,7 +112,7 @@ Every little bit helps and is greatly appreciated! 🙏
  ## 2.5.1.40 
 -  **Fixed**: Bug on `Start with Windows`. The program now displays shortcuts correctly https://github.com/limbo666/DesktopFences/issues/6
 -  **Fixed**: Bug with `Options` and `About` screen that misplaced controls on scaled displays https://github.com/limbo666/DesktopFences/issues/5
--  **Added**: Function to display fences which are saved out of screen bounds (restored from other systems)
+-  **Added**: Function to display fences which are saved out of screen bounds (restored from other systems).
 
  ## 2.5.1.42 
 -  **Fixed**: Bug on `Portal Fences` created by misuse of FileSystemWatcher. The program now updates target files as renamed, removed. https://github.com/limbo666/DesktopFences/issues/3
@@ -129,11 +129,11 @@ Every little bit helps and is greatly appreciated! 🙏
 -  **Added**: "Peek Behind" right click selection to make fences to reveal desktop contents behind them for 10 seconds.
 
 ## 2.5.1.64
--  **Added**: Rollup function when `Ctrl + Click` on Fence title
--  **Added**: Function to avoid displaying hidden files on Portal Fences.
+-  **Added**: Rollup function when `Ctrl + Click` on Fence title.
+-  **Added**: Function to filter hidden files on Portal Fences (request https://github.com/limbo666/DesktopFences/issues/13 and possibly fixing https://github.com/limbo666/DesktopFences/issues/14 as well).
 
 ## 2.5.1.65
--  **Changed**: Delete Fence menu moved to heart menu
+-  **Changed**: `Delete Fence` option moved to Heart context menu
 
 
 ---
