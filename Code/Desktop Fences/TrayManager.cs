@@ -28,10 +28,10 @@ namespace Desktop_Fences
 
         private bool _areFencesTempHidden = false;
         private List<NonActivatingWindow> _tempHiddenFences = new List<NonActivatingWindow>();
-      
+
         private bool Showintray = SettingsManager.ShowInTray;
-        
-        
+
+
         private class HiddenFence
         {
             public string Title { get; set; }
@@ -64,7 +64,7 @@ namespace Desktop_Fences
                     _tempHiddenFences.Add(fence);
                 }
                 _areFencesTempHidden = true;
-                FenceManager.Log(FenceManager.LogLevel.Debug, FenceManager.LogCategory.UI,$"Temporarily hid {visibleFences.Count} fences.");
+                FenceManager.Log(FenceManager.LogLevel.Debug, FenceManager.LogCategory.UI, $"Temporarily hid {visibleFences.Count} fences.");
             }
             else
             {
@@ -98,7 +98,7 @@ namespace Desktop_Fences
             trayMenu.Items.Add("Reload All Fences", null, async (s, e) =>
             {
                 reloadAllFences();
-   
+
             });
             trayMenu.Items.Add("-");
             _showHiddenFencesItem = new ToolStripMenuItem("Show Hidden Fences")
@@ -159,7 +159,7 @@ namespace Desktop_Fences
                 waitWindow.Close();
             }
 
-           // TrayManager.ShowOKOnlyMessageBoxFormStatic($"An error occurred while reloading fences: {ex.Message}", "Error");
+            // TrayManager.ShowOKOnlyMessageBoxFormStatic($"An error occurred while reloading fences: {ex.Message}", "Error");
         }
         public static void AddHiddenFence(NonActivatingWindow fence)
         {
@@ -431,12 +431,12 @@ namespace Desktop_Fences
                     Color argbGray = Color.FromArgb(255, 128, 128, 128);
                     Color argbOrange = Color.FromArgb(255, 201, 102, 69);
                     Color argbBismark = Color.FromArgb(255, 91, 123, 144);
-                    
-                    System.Windows.Forms.MessageBox.Show("Color: " + frmCustomMessageBox.BackColor);
+
+                    // System.Windows.Forms.MessageBox.Show("Color: " + frmCustomMessageBox.BackColor);
 
                     if (argbGray.ToArgb() == frmCustomMessageBox.BackColor.ToArgb())
                     {
-                     System.Windows.Forms.MessageBox.Show("Exact ARGB match.");
+                        //   System.Windows.Forms.MessageBox.Show("Exact ARGB match.");
                         // System.Windows.Forms.MessageBox.Show("Exact ARGB match.");
                         lblMessage.ForeColor = Color.FromArgb(255, 250, 250, 50);
                     }
@@ -450,12 +450,12 @@ namespace Desktop_Fences
                         //System.Windows.Forms.MessageBox.Show("Exact ARGB match.");
                         lblMessage.ForeColor = Color.FromArgb(255, 10, 0, 250);
                     }
-                 
-                    
 
 
 
-               
+
+
+
                     layoutPanel.Controls.Add(lblMessage, 0, 0);
 
                     var buttonsPanel = new FlowLayoutPanel
@@ -528,9 +528,9 @@ namespace Desktop_Fences
                         FenceManager.Log(FenceManager.LogLevel.Error, FenceManager.LogCategory.UI, $"Error playing sound: {ex.Message}");
                     }
                     frmCustomMessageBox.TopMost = true;
-                   
+
                     frmCustomMessageBox.ShowDialog();
-                    
+
 
                 }
             }
@@ -547,13 +547,13 @@ namespace Desktop_Fences
 
         public void ShowOKOnlyMessageBoxForm(string msgboxMessage, string msgboxTitle)
         {
-           // bool result = false;
+            // bool result = false;
 
             try
             {
                 using (var frmCustomOKOnlyBox = new Form())
                 {
-                    frmCustomOKOnlyBox.Text = msgboxTitle ;
+                    frmCustomOKOnlyBox.Text = msgboxTitle;
                     frmCustomOKOnlyBox.Size = new System.Drawing.Size(350, 135);
                     frmCustomOKOnlyBox.StartPosition = FormStartPosition.CenterScreen;
                     frmCustomOKOnlyBox.FormBorderStyle = FormBorderStyle.None;
@@ -664,7 +664,7 @@ namespace Desktop_Fences
                     btnYes.ForeColor = SimilarColor(btnYes.BackColor, 140);
                     btnYes.Click += (s, ev) =>
                     {
-                       // result = true;
+                        // result = true;
                         frmCustomOKOnlyBox.Close();
                     };
 
@@ -688,7 +688,7 @@ namespace Desktop_Fences
                     // buttonsPanel.Controls.Add(btnYes);
 
                     layoutPanel.Controls.Add(buttonsPanel, 0, 1);
-                                        frmCustomOKOnlyBox.Controls.Add(layoutPanel);
+                    frmCustomOKOnlyBox.Controls.Add(layoutPanel);
 
                     // Play the ding.wav sound from embedded resource
                     try
@@ -712,21 +712,21 @@ namespace Desktop_Fences
                     {
                         FenceManager.Log(FenceManager.LogLevel.Error, FenceManager.LogCategory.UI, $"Error playing sound: {ex.Message}");
                     }
-                    frmCustomOKOnlyBox.TopMost= true;
+                    frmCustomOKOnlyBox.TopMost = true;
                     frmCustomOKOnlyBox.ShowDialog();
-                  
+
 
                 }
             }
             catch (Exception ex)
             {
                 FenceManager.Log(FenceManager.LogLevel.Error, FenceManager.LogCategory.UI, ($"Error showing CustomOKOnlyMessageBox form: {ex.Message}"));
-                 System.Windows.Forms.MessageBox.Show($"An error occurred: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                System.Windows.Forms.MessageBox.Show($"An error occurred: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 //ShowOKOnlyMessageBoxForm($"An error occurred: {ex.Message}", "Error");
 
             }
 
-           // return result;
+            // return result;
         }
 
 
@@ -737,13 +737,13 @@ namespace Desktop_Fences
             {
                 using (var frmOptions = new Form())
                 {
-                    frmOptions.Text = "Desktop Fences + Options"; frmOptions.Size = new System.Drawing.Size(480, 640); 
-                    frmOptions.StartPosition = FormStartPosition.CenterScreen; 
-                    frmOptions.FormBorderStyle = FormBorderStyle.FixedDialog; 
-                    frmOptions.MaximizeBox = false; 
-                    frmOptions.MinimizeBox = false; 
-                    frmOptions.AutoScaleMode = AutoScaleMode.Dpi; 
-                    frmOptions.AutoScaleDimensions = new SizeF(96F, 96F); 
+                    frmOptions.Text = "Desktop Fences + Options"; frmOptions.Size = new System.Drawing.Size(480, 640);
+                    frmOptions.StartPosition = FormStartPosition.CenterScreen;
+                    frmOptions.FormBorderStyle = FormBorderStyle.FixedDialog;
+                    frmOptions.MaximizeBox = false;
+                    frmOptions.MinimizeBox = false;
+                    frmOptions.AutoScaleMode = AutoScaleMode.Dpi;
+                    frmOptions.AutoScaleDimensions = new SizeF(96F, 96F);
                     frmOptions.Icon = Icon.ExtractAssociatedIcon(Process.GetCurrentProcess().MainModule.FileName);
 
                     var toolTip = new ToolTip
@@ -909,7 +909,7 @@ namespace Desktop_Fences
                     selectionsLayout.Controls.Add(chkUseRecycleBin, 0, 5);
                     selectionsLayout.SetColumnSpan(chkUseRecycleBin, 2);
 
-          
+
 
                     // Style groupbox
                     var groupBoxStyle = new GroupBox
@@ -975,17 +975,17 @@ namespace Desktop_Fences
                     styleLayout.Controls.Add(cmbLaunchEffect, 1, 2);
 
                     groupBoxStyle.Controls.Add(styleLayout);
-       
 
-          groupBoxSelections.Controls.Add(selectionsLayout);
+
+                    groupBoxSelections.Controls.Add(selectionsLayout);
                     generalTabLayout.Controls.Add(groupBoxSelections);
                     generalTabLayout.Controls.Add(groupBoxStyle);
                     tabGeneral.Controls.Add(generalTabLayout);
                     tabControl.TabPages.Add(tabGeneral);
 
-                 
 
-               
+
+
 
 
 
@@ -1014,7 +1014,7 @@ namespace Desktop_Fences
                         ColumnCount = 5,
                         AutoSize = true,
                         AutoSizeMode = AutoSizeMode.GrowAndShrink,
-                         Padding = new Padding(0, 0, 0, 10)  // Added bottom padding
+                        Padding = new Padding(0, 0, 0, 10)  // Added bottom padding
                     };
                     toolsLayout1.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 10F));
                     toolsLayout1.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 35F));
@@ -1864,20 +1864,21 @@ namespace Desktop_Fences
         public void UpdateTrayIcon()
         {
 
-            if (Showintray == true) { 
-
-            if (HiddenFences.Count > 0)
+            if (Showintray == true)
             {
 
-               
+                if (HiddenFences.Count > 0)
+                {
 
-                _trayIcon.Icon = GenerateIconWithNumber(HiddenFences.Count + _tempHiddenFences.Count);
-            }
-            else
-            {
-                string exePath = Process.GetCurrentProcess().MainModule.FileName;
-                _trayIcon.Icon = Icon.ExtractAssociatedIcon(exePath);
-            }
+
+
+                    _trayIcon.Icon = GenerateIconWithNumber(HiddenFences.Count + _tempHiddenFences.Count);
+                }
+                else
+                {
+                    string exePath = Process.GetCurrentProcess().MainModule.FileName;
+                    _trayIcon.Icon = Icon.ExtractAssociatedIcon(exePath);
+                }
             }
             else
             {

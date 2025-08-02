@@ -119,7 +119,7 @@ public partial class EditShortcutWindow : Window
             BorderBrush = Brushes.Gray,           // visible outline
             BorderThickness = new Thickness(3),
             Padding = new Thickness(2),       // so the Image inside doesn’t fill the whole thing
-                        Child = iconPreview
+            Child = iconPreview
         };
 
         iconStack.Children.Add(iconPathBox);
@@ -186,7 +186,7 @@ public partial class EditShortcutWindow : Window
     }
 
 
- 
+
 
     private void UpdateIconPreview()
     {
@@ -210,7 +210,7 @@ public partial class EditShortcutWindow : Window
             {
                 throw new InvalidOperationException("TextBox controls not initialized.");
             }
-             FenceManager.Log(FenceManager.LogLevel.Debug, FenceManager.LogCategory.General, "TextBox controls confirmed initialized");
+            FenceManager.Log(FenceManager.LogLevel.Debug, FenceManager.LogCategory.General, "TextBox controls confirmed initialized");
 
             string defaultName = System.IO.Path.GetFileNameWithoutExtension(shortcutPath);
             nameBox.Text = defaultName;
@@ -334,7 +334,7 @@ public partial class EditShortcutWindow : Window
 
         return null;
     }
-    
+
     private string GetTargetPath(string shortcutPath)
     {
         WshShell shell = new WshShell();

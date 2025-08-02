@@ -22,8 +22,8 @@ namespace Desktop_Fences
         private readonly Dispatcher _dispatcher;
         private readonly Dictionary<string, (FileSystemEventArgs Args, string OldPath)> _pendingEvents = new();
         private readonly DispatcherTimer _debounceTimer;
-    
-       
+
+
         public PortalFenceManager(dynamic fence, WrapPanel wpcont)
         {
             _fence = fence;
@@ -92,7 +92,7 @@ namespace Desktop_Fences
                         case WatcherChangeTypes.Created:
                             AddIcon(evt.Args.FullPath);
                             FenceManager.Log(FenceManager.LogLevel.Debug, FenceManager.LogCategory.General, $"Processed queued Created event for {evt.Args.FullPath}");
-                          //  FenceManager.Log(FenceManager.LogLevel.Info, FenceManager.LogCategory.General, $"Processed queued Created event for {evt.Args.FullPath}");
+                            //  FenceManager.Log(FenceManager.LogLevel.Info, FenceManager.LogCategory.General, $"Processed queued Created event for {evt.Args.FullPath}");
                             break;
                         case WatcherChangeTypes.Deleted:
                             RemoveIcon(evt.Args.FullPath);
@@ -109,76 +109,142 @@ namespace Desktop_Fences
             });
         }
 
-        private void InitializeFenceContents()
-        {
-            _wpcont.Children.Clear();
-            if (Directory.Exists(_targetFolderPath))
-            {
-                foreach (string path in Directory.GetFileSystemEntries(_targetFolderPath))
-                {
-                    AddIcon(path);
-                }
-            }
-            FenceManager.Log(FenceManager.LogLevel.Debug, FenceManager.LogCategory.General, $"Initialized fence contents for {_targetFolderPath} with {_wpcont.Children.Count} items");
-        }
+        //private void InitializeFenceContents()
+        //{
+        //    _wpcont.Children.Clear();
+        //    if (Directory.Exists(_targetFolderPath))
+        //    {
+        //        foreach (string path in Directory.GetFileSystemEntries(_targetFolderPath))
+        //        {
+        //            AddIcon(path);
+        //        }
+        //    }
+        //    FenceManager.Log(FenceManager.LogLevel.Debug, FenceManager.LogCategory.General, $"Initialized fence contents for {_targetFolderPath} with {_wpcont.Children.Count} items");
+        //}
 
-        private void VerifyFenceContents()
-        {
-            if (!Directory.Exists(_targetFolderPath))
-            {
-                FenceManager.Log(FenceManager.LogLevel.Warn, FenceManager.LogCategory.General, $"Target folder {_targetFolderPath} does not exist, skipping verification");
-                return;
-            }
+        //private void VerifyFenceContents()
+        //{
+        //    if (!Directory.Exists(_targetFolderPath))
+        //    {
+        //        FenceManager.Log(FenceManager.LogLevel.Warn, FenceManager.LogCategory.General, $"Target folder {_targetFolderPath} does not exist, skipping verification");
+        //        return;
+        //    }
 
-            var currentFiles = Directory.GetFileSystemEntries(_targetFolderPath).ToHashSet(StringComparer.OrdinalIgnoreCase);
-            var panelsToRemove = _wpcont.Children.OfType<StackPanel>()
-                .Where(sp => sp.Tag != null &&
-                             sp.Tag.GetType().GetProperty("FilePath")?.GetValue(sp.Tag) is string filePath &&
-                             !currentFiles.Contains(filePath))
-                .ToList();
-            foreach (var sp in panelsToRemove)
-            {
-                _wpcont.Children.Remove(sp);
-                FenceManager.Log(FenceManager.LogLevel.Info, FenceManager.LogCategory.General, $"Removed stale icon for {sp.Tag.GetType().GetProperty("FilePath")?.GetValue(sp.Tag)} during verification");
-            }
+        //    var currentFiles = Directory.GetFileSystemEntries(_targetFolderPath).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        //    var panelsToRemove = _wpcont.Children.OfType<StackPanel>()
+        //        .Where(sp => sp.Tag != null &&
+        //                        sp.Tag.GetType().GetProperty("FilePath")?.GetValue(sp.Tag) is string filePath &&
+        //                        !currentFiles.Contains(filePath))
+        //        .ToList();
+        //    foreach (var sp in panelsToRemove)
+        //    {
+        //        _wpcont.Children.Remove(sp);
+        //        FenceManager.Log(FenceManager.LogLevel.Info, FenceManager.LogCategory.General, $"Removed stale icon for {sp.Tag.GetType().GetProperty("FilePath")?.GetValue(sp.Tag)} during verification");
+        //    }
 
-            var existingPaths = _wpcont.Children.OfType<StackPanel>()
-                .Select(sp => sp.Tag?.GetType().GetProperty("FilePath")?.GetValue(sp.Tag)?.ToString())
-                .Where(p => p != null)
-                .ToHashSet(StringComparer.OrdinalIgnoreCase);
-            foreach (var path in currentFiles)
-            {
-                if (!existingPaths.Contains(path))
-                {
-                    AddIcon(path);
-                    FenceManager.Log(FenceManager.LogLevel.Debug, FenceManager.LogCategory.General, $"Added missing icon for {path} during verification");
-                }
-            }
-        }
+        //    var existingPaths = _wpcont.Children.OfType<StackPanel>()
+        //        .Select(sp => sp.Tag?.GetType().GetProperty("FilePath")?.GetValue(sp.Tag)?.ToString())
+        //        .Where(p => p != null)
+        //        .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        //    foreach (var path in currentFiles)
+        //    {
+        //        if (!existingPaths.Contains(path))
+        //        {
+        //            AddIcon(path);
+        //            FenceManager.Log(FenceManager.LogLevel.Debug, FenceManager.LogCategory.General, $"Added missing icon for {path} during verification");
+        //        }
+        //    }
+        //}
+
+        //private void AddIcon(string path)
+        //{
+        //    dynamic icon = new System.Dynamic.ExpandoObject();
+        //    IDictionary<string, object> iconDict = icon;
+        //    iconDict["Filename"] = path;
+        //    iconDict["IsFolder"] = Directory.Exists(path);
+        //    iconDict["DisplayName"] = Path.GetFileNameWithoutExtension(path);
+
+
+
+
+
+        //    //FenceManager.AddIcon(icon, _wpcont);
+        //    //StackPanel sp = _wpcont.Children[_wpcont.Children.Count - 1] as StackPanel;
+        //    //if (sp != null)
+        //    //{
+        //    //    FenceManager.ClickEventAdder(sp, path, Directory.Exists(path));
+        //    //    Log($"Added icon for {path}");
+        //    //}
+        //    //else
+        //    //{
+        //    //    Log($"Failed to add StackPanel for {path}");
+        //    //}
+
+        //    FenceManager.AddIcon(icon, _wpcont);
+        //    StackPanel sp = _wpcont.Children[_wpcont.Children.Count - 1] as StackPanel;
+        //    if (sp != null)
+        //    {
+        //        FenceManager.ClickEventAdder(sp, path, Directory.Exists(path));
+
+        //        // Create and attach context menu
+        //        ContextMenu contextMenu = new ContextMenu();
+
+        //        // "Copy path (or target)" menu item
+        //        MenuItem copyPathItem = new MenuItem { Header = "Copy path" };
+        //        copyPathItem.Click += (s, e) => CopyPathOrTarget(path);
+        //        contextMenu.Items.Add(copyPathItem);
+
+        //        // "Delete item" menu item
+        //        MenuItem deleteItem = new MenuItem { Header = "Delete item" };
+        //        deleteItem.Click += (s, e) => DeleteItem(path, sp);
+        //        contextMenu.Items.Add(deleteItem);
+
+        //        sp.ContextMenu = contextMenu;
+        //    }
+
+        //}
+
+
+
+
+
+
+
+
 
         private void AddIcon(string path)
         {
+            // FILTER OUT HIDDEN FILES AND FOLDERS
+            try
+            {
+                FileAttributes attributes = System.IO.File.GetAttributes(path);
+
+                // Skip hidden files and folders
+                if ((attributes & FileAttributes.Hidden) == FileAttributes.Hidden)
+                {
+                    FenceManager.Log(FenceManager.LogLevel.Debug, FenceManager.LogCategory.General, $"Skipping hidden item: {path}");
+                    return;
+                }
+
+                // Optional: Also skip system files if desired
+                if ((attributes & FileAttributes.System) == FileAttributes.System)
+                {
+                    FenceManager.Log(FenceManager.LogLevel.Debug, FenceManager.LogCategory.General, $"Skipping system item: {path}");
+                    return;
+                }
+            }
+            catch (Exception ex)
+            {
+                // If we can't get attributes, log and continue (file might be inaccessible)
+                FenceManager.Log(FenceManager.LogLevel.Debug, FenceManager.LogCategory.General, $"Cannot check attributes for {path}: {ex.Message}");
+                return;
+            }
+
             dynamic icon = new System.Dynamic.ExpandoObject();
             IDictionary<string, object> iconDict = icon;
             iconDict["Filename"] = path;
             iconDict["IsFolder"] = Directory.Exists(path);
             iconDict["DisplayName"] = Path.GetFileNameWithoutExtension(path);
-
-
-
-
-
-            //FenceManager.AddIcon(icon, _wpcont);
-            //StackPanel sp = _wpcont.Children[_wpcont.Children.Count - 1] as StackPanel;
-            //if (sp != null)
-            //{
-            //    FenceManager.ClickEventAdder(sp, path, Directory.Exists(path));
-            //    Log($"Added icon for {path}");
-            //}
-            //else
-            //{
-            //    Log($"Failed to add StackPanel for {path}");
-            //}
 
             FenceManager.AddIcon(icon, _wpcont);
             StackPanel sp = _wpcont.Children[_wpcont.Children.Count - 1] as StackPanel;
@@ -201,8 +267,110 @@ namespace Desktop_Fences
 
                 sp.ContextMenu = contextMenu;
             }
-
         }
+
+        // Also update InitializeFenceContents to filter hidden files during initialization
+        private void InitializeFenceContents()
+        {
+            _wpcont.Children.Clear();
+            if (Directory.Exists(_targetFolderPath))
+            {
+                foreach (string path in Directory.GetFileSystemEntries(_targetFolderPath))
+                {
+                    // Filter out hidden files during initialization too
+                    try
+                    {
+                        FileAttributes attributes = System.IO.File.GetAttributes(path);
+
+                        // Skip hidden and system files
+                        if ((attributes & FileAttributes.Hidden) == FileAttributes.Hidden ||
+                            (attributes & FileAttributes.System) == FileAttributes.System)
+                        {
+                            continue;
+                        }
+                    }
+                    catch
+                    {
+                        // Skip files we can't read attributes for
+                        continue;
+                    }
+
+                    AddIcon(path);
+                }
+            }
+            FenceManager.Log(FenceManager.LogLevel.Debug, FenceManager.LogCategory.General, $"Initialized fence contents for {_targetFolderPath} with {_wpcont.Children.Count} items (hidden files excluded)");
+        }
+
+        // Update VerifyFenceContents to also filter hidden files
+        private void VerifyFenceContents()
+        {
+            if (!Directory.Exists(_targetFolderPath))
+            {
+                FenceManager.Log(FenceManager.LogLevel.Warn, FenceManager.LogCategory.General, $"Target folder {_targetFolderPath} does not exist, skipping verification");
+                return;
+            }
+
+            // Get only non-hidden files
+            var currentFiles = Directory.GetFileSystemEntries(_targetFolderPath)
+                .Where(path =>
+                {
+                    try
+                    {
+                        FileAttributes attributes = System.IO.File.GetAttributes(path);
+                        return (attributes & FileAttributes.Hidden) != FileAttributes.Hidden &&
+                               (attributes & FileAttributes.System) != FileAttributes.System;
+                    }
+                    catch
+                    {
+                        return false; // Skip files we can't read
+                    }
+                })
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            var panelsToRemove = _wpcont.Children.OfType<StackPanel>()
+                .Where(sp => sp.Tag != null &&
+                             sp.Tag.GetType().GetProperty("FilePath")?.GetValue(sp.Tag) is string filePath &&
+                             !currentFiles.Contains(filePath))
+                .ToList();
+
+            foreach (var sp in panelsToRemove)
+            {
+                _wpcont.Children.Remove(sp);
+                FenceManager.Log(FenceManager.LogLevel.Info, FenceManager.LogCategory.General, $"Removed stale icon for {sp.Tag.GetType().GetProperty("FilePath")?.GetValue(sp.Tag)} during verification");
+            }
+
+            var existingPaths = _wpcont.Children.OfType<StackPanel>()
+                .Select(sp => sp.Tag?.GetType().GetProperty("FilePath")?.GetValue(sp.Tag)?.ToString())
+                .Where(p => p != null)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var path in currentFiles)
+            {
+                if (!existingPaths.Contains(path))
+                {
+                    AddIcon(path);
+                    FenceManager.Log(FenceManager.LogLevel.Debug, FenceManager.LogCategory.General, $"Added missing icon for {path} during verification");
+                }
+            }
+        }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
         private void CopyPathOrTarget(string path)
@@ -237,39 +405,40 @@ namespace Desktop_Fences
         // delete  item handler
         private void DeleteItem(string path, StackPanel sp)
         {
-           bool  UseRecycleBin= SettingsManager.UseRecycleBin; //  UseRecycleBin is a property in SettingsManager
-            if (UseRecycleBin== true) { 
-            
-            try
+            bool UseRecycleBin = SettingsManager.UseRecycleBin; //  UseRecycleBin is a property in SettingsManager
+            if (UseRecycleBin == true)
             {
-                // First, check if the item exists
-                if (!Directory.Exists(path) && !System.IO.File.Exists(path))
+
+                try
                 {
+                    // First, check if the item exists
+                    if (!Directory.Exists(path) && !System.IO.File.Exists(path))
+                    {
                         FenceManager.Log(FenceManager.LogLevel.Debug, FenceManager.LogCategory.General, $"Item not found for deletion: {path}");
-                    return;
-                }
+                        return;
+                    }
 
-                // Use SHFileOperation to move to recycle bin
-                SHFILEOPSTRUCT shf = new SHFILEOPSTRUCT();
-                shf.wFunc = FO_DELETE;
-                shf.fFlags = FOF_ALLOWUNDO | FOF_NOCONFIRMATION;
-                shf.pFrom = path + '\0' + '\0'; // Double null-terminated string
+                    // Use SHFileOperation to move to recycle bin
+                    SHFILEOPSTRUCT shf = new SHFILEOPSTRUCT();
+                    shf.wFunc = FO_DELETE;
+                    shf.fFlags = FOF_ALLOWUNDO | FOF_NOCONFIRMATION;
+                    shf.pFrom = path + '\0' + '\0'; // Double null-terminated string
 
-                int result = SHFileOperation(ref shf);
+                    int result = SHFileOperation(ref shf);
 
-                if (result != 0)
-                {
-                    throw new Exception($"Failed to move to recycle bin (error code: {result})");
-                }
+                    if (result != 0)
+                    {
+                        throw new Exception($"Failed to move to recycle bin (error code: {result})");
+                    }
 
                     FenceManager.Log(FenceManager.LogLevel.Info, FenceManager.LogCategory.UI, $"Moved to recycle bin: {path}");
 
-                // Remove the icon from the UI
-                _wpcont.Children.Remove(sp);
+                    // Remove the icon from the UI
+                    _wpcont.Children.Remove(sp);
                     FenceManager.Log(FenceManager.LogLevel.Debug, FenceManager.LogCategory.UI, ($"Removed icon for {path} from UI"));
-            }
-            catch (Exception ex)
-            {
+                }
+                catch (Exception ex)
+                {
                     FenceManager.Log(FenceManager.LogLevel.Error, FenceManager.LogCategory.General, $"Failed to move item {path} to recycle bin: {ex.Message}");
                     //   MessageBox.Show("Unable to move item to recycle bin.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     TrayManager.Instance.ShowOKOnlyMessageBoxForm($"Unable to move item to recycle bin.", "Error");

@@ -9,6 +9,7 @@ namespace Desktop_Fences
     {
         private readonly Timer _timer;
         private readonly Dictionary<string, (Action checkAction, bool isFolder)> _checkActions;
+        private readonly object _lockObject = new object();
 
         public TargetChecker(double interval)
         {
@@ -30,27 +31,78 @@ namespace Desktop_Fences
 
         public void AddCheckAction(string key, Action checkAction, bool isFolder)
         {
-            if (!_checkActions.ContainsKey(key))
+            if (checkAction == null) return;
+
+            lock (_lockObject)
             {
-                _checkActions.Add(key, (checkAction, isFolder));
-                checkAction.Invoke(); // Run immediately on add
+                if (!_checkActions.ContainsKey(key))
+                {
+                    _checkActions.Add(key, (checkAction, isFolder));
+                }
+            }
+
+            // Run immediately outside the lock to prevent potential deadlocks
+            try
+            {
+                checkAction.Invoke();
+            }
+            catch (Exception ex)
+            {
+                FenceManager.Log(FenceManager.LogLevel.Warn, FenceManager.LogCategory.Error,
+                    $"Error in immediate target check for {key}: {ex.Message}");
             }
         }
-
         public void RemoveCheckAction(string key)
         {
-            if (_checkActions.ContainsKey(key))
+            lock (_lockObject)
             {
-                _checkActions.Remove(key);
+                if (_checkActions.ContainsKey(key))
+                {
+                    _checkActions.Remove(key);
+                }
             }
         }
 
         private void OnTimedEvent(object sender, ElapsedEventArgs e)
         {
-            var actionsSnapshot = _checkActions.Values.ToList();
-            foreach (var (checkAction, isFolder) in actionsSnapshot)
+            try
             {
-                checkAction.Invoke();
+                List<(Action checkAction, bool isFolder)> actionsSnapshot;
+
+                // Create a thread-safe snapshot of the actions
+               // lock (_checkActions)
+                    lock (_lockObject)
+                    {
+                    if (_checkActions.Count == 0)
+                        return;
+
+                    actionsSnapshot = new List<(Action, bool)>(_checkActions.Count);
+                    foreach (var kvp in _checkActions)
+                    {
+                        actionsSnapshot.Add(kvp.Value);
+                    }
+                }
+
+                // Execute actions outside the lock to prevent deadlocks
+                foreach (var (checkAction, isFolder) in actionsSnapshot)
+                {
+                    try
+                    {
+                        checkAction?.Invoke();
+                    }
+                    catch (Exception actionEx)
+                    {
+                        // Log individual action errors but continue with other actions
+                        FenceManager.Log(FenceManager.LogLevel.Warn, FenceManager.LogCategory.Error,
+                            $"Error in target check action: {actionEx.Message}");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                // Log timer event errors
+                FenceManager.Log(FenceManager.LogLevel.Error, FenceManager.LogCategory.Error,
+                    $"Error in TargetChecker timer event: {ex.Message}");
             }
         }
     }
