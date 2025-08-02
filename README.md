@@ -134,7 +134,8 @@ Every little bit helps and is greatly appreciated! 🙏
 
 ## 2.5.1.65
 -  **Changed**: `Delete Fence` option moved to Heart context menu
-
+-  **Fixed**:  Bug on handling shortcuts targeting web links.
+-  **Added**: New icon for shortcuts targeting web links.
 
 ---
 
