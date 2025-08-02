@@ -149,8 +149,11 @@ Even small contributions mean a lot. Thank you for keeping this project alive an
 -  **Fixed**: Bug on handling shortcuts targeting web links.
 -  **Added**: New icon for shortcuts targeting web links.
 -  **Changed**: Target check mechanism to prevent errors.
--  **Added**:  Indicator for network based files.
+-  **Added**:  Indicator for network based files.\
 
+
+## 2.5.1.67
+-  **Added**: Function to re-order icons within a fence (https://github.com/limbo666/DesktopFences/issues/15).
 ---
 
 ##  Summary
