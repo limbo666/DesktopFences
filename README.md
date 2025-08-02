@@ -29,11 +29,11 @@ If this project has helped you, please consider supporting its development! Your
 
 Maintaining and improving this tool takes time, effort, and resources. Donations help me:
 
-Dedicate more time to fixing bugs and adding features
+ - Dedicate more time to fixing bugs and adding features
 
-Cover the cost of tools (like AI assistance that speeds up development)
+ - Cover the cost of tools (like AI assistance that speeds up development)
 
-Stay motivated and keep pushing the project forward
+ - Stay motivated and keep pushing the project forward
 
 
 🚀 Your support literally drives the pace of development — the more help I get, the more I can deliver!
