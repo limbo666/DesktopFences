@@ -24,14 +24,26 @@ Desktop Fences + creates **virtual fences** on your desktop, allowing you to gro
 ---
 
 ##  Support
-If you find this project helpful, consider supporting its development!
-Your contribution helps cover development time, new features, bug fixes, and overall project improvements.
 
- - Buy me a coffee
- - Help me pay my AI subscription (development is easier with AI but costs money)
+If this project has helped you, please consider supporting its development! Your contribution directly impacts how fast and far this project grows.
 
-Every little bit helps and is greatly appreciated! 🙏
+Maintaining and improving this tool takes time, effort, and resources. Donations help me:
 
+Dedicate more time to fixing bugs and adding features
+
+Cover the cost of tools (like AI assistance that speeds up development)
+
+Stay motivated and keep pushing the project forward
+
+
+🚀 Your support literally drives the pace of development — the more help I get, the more I can deliver!
+
+☕ Buy me a coffee
+
+💡 Help cover my AI subscription
+
+
+Even small contributions mean a lot. Thank you for keeping this project alive and evolving! 🙏
 
 [![Donate](https://github.com/limbo666/DesktopFences/blob/main/Imgs/donate.png)](https://www.paypal.com/donate/?hosted_button_id=M8H4M4R763RBE)
 
