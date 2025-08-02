@@ -136,6 +136,8 @@ Every little bit helps and is greatly appreciated! 🙏
 -  **Changed**: `Delete Fence` option moved to Heart context menu
 -  **Fixed**: Bug on handling shortcuts targeting web links.
 -  **Added**: New icon for shortcuts targeting web links.
+-  **Changed**: Target check mechanism to prevent errors.
+-  **Added**:  Indicator for network based files.
 
 ---
 
