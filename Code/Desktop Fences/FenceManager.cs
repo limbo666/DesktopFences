@@ -2258,72 +2258,6 @@ namespace Desktop_Fences
 
 
 
-            //miRemoveFence.Click += (s, e) =>
-            //{
-            //    bool result = TrayManager.Instance.ShowCustomMessageBoxForm(); // Call the method and store the result  
-            //                                                                   //  System.Windows.Forms.MessageBox.Show(result.ToString()); // Display the result in a MessageBox  
-
-            //    //   var result = MessageBox.Show("Are you sure you want to remove this fence?", "Confirm", MessageBoxButton.YesNo);
-            //    //   if (result == MessageBoxResult.Yes)
-            //    if (result == true)
-            //    {
-            //        // Ensure the backup folder exists
-            //        _lastDeletedFolderPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "Last Fence Deleted");
-            //        if (!Directory.Exists(_lastDeletedFolderPath))
-            //        {
-            //            Directory.CreateDirectory(_lastDeletedFolderPath);
-            //        }
-
-            //        // Clear previous backup
-            //        foreach (var file in Directory.GetFiles(_lastDeletedFolderPath))
-            //        {
-            //            System.IO.File.Delete(file);
-            //        }
-
-            //        // Backup the fence and its shortcuts
-            //        _lastDeletedFence = fence;
-            //        _isRestoreAvailable = true;
-            //        UpdateAllHeartContextMenus();
-
-            //        if (fence.ItemsType?.ToString() == "Data")
-            //        {
-            //            var items = fence.Items as JArray;
-            //            if (items != null)
-            //            {
-            //                foreach (var item in items)
-            //                {
-            //                    string itemFilePath = item["Filename"]?.ToString();
-            //                    if (!string.IsNullOrEmpty(itemFilePath) && System.IO.File.Exists(itemFilePath))
-            //                    {
-            //                        string shortcutPath = System.IO.Path.Combine(_lastDeletedFolderPath, System.IO.Path.GetFileName(itemFilePath));
-            //                        System.IO.File.Copy(itemFilePath, shortcutPath, true);
-            //                    }
-            //                    else
-            //                    {
-            //                        Log(LogLevel.Debug, LogCategory.FenceCreation, $"Skipped backing up missing file: {itemFilePath}");
-            //                    }
-            //                }
-            //            }
-            //        }
-
-            //        // Save fence info to JSON
-            //        string fenceJsonPath = System.IO.Path.Combine(_lastDeletedFolderPath, "fence.json");
-            //        System.IO.File.WriteAllText(fenceJsonPath, JsonConvert.SerializeObject(fence, Formatting.Indented));
-
-            //        // Proceed with deletion
-            //        _fenceData.Remove(fence);
-            //        _heartTextBlocks.Remove(fence);
-            //        if (_portalFences.ContainsKey(fence))
-            //        {
-            //            _portalFences[fence].Dispose();
-            //            _portalFences.Remove(fence);
-            //        }
-            //        SaveFenceData();
-            //        win.Close();
-            //        Log(LogLevel.Debug, LogCategory.FenceCreation, $"Fence {fence.Title} removed successfully");
-            //    }
-            //};
-
 
             miNewFence.Click += (s, e) =>
             {
@@ -2525,18 +2459,7 @@ namespace Desktop_Fences
                                 }
                                 ClickEventAdder(sp, filePath, isFolder, arguments);
 
-                                // targetChecker.AddCheckAction(filePath, () => UpdateIcon(sp, filePath, isFolder), isFolder);
-                                // Only add to TargetChecker if it's not a web link
-                                //bool itemIsLink = iconDict.ContainsKey("IsLink") && (bool)iconDict["IsLink"];
-                                //if (!itemIsLink)
-                                //{
-                                //    targetChecker.AddCheckAction(filePath, () => UpdateIcon(sp, filePath, isFolder), isFolder);
-                                //}
-                                //else
-                                //{
-                                //    Log(LogLevel.Debug, LogCategory.IconHandling, $"Excluded web link {filePath} from target checking");
-                                //}
-                                // Only add to TargetChecker based on type and settings
+                                            // Only add to TargetChecker based on type and settings
                                 bool itemIsLink = iconDict.ContainsKey("IsLink") && (bool)iconDict["IsLink"];
                                 bool itemIsNetwork = iconDict.ContainsKey("IsNetwork") && (bool)iconDict["IsNetwork"];
                                 bool allowNetworkChecking = _options.CheckNetworkPaths ?? false;
@@ -3167,10 +3090,7 @@ namespace Desktop_Fences
         {
             StackPanel sp = new StackPanel { Margin = new Thickness(5), Width = 60 };
             System.Windows.Controls.Image ico = new System.Windows.Controls.Image { Width = 40, Height = 40, Margin = new Thickness(5) };
-            //IDictionary<string, object> iconDict = icon is IDictionary<string, object> dict ? dict : ((JObject)icon).ToObject<IDictionary<string, object>>();
-            //string filePath = iconDict.ContainsKey("Filename") ? (string)iconDict["Filename"] : "Unknown";
-            //bool isFolder = iconDict.ContainsKey("IsFolder") && (bool)iconDict["IsFolder"];
-
+       
             IDictionary<string, object> iconDict = icon is IDictionary<string, object> dict ? dict : ((JObject)icon).ToObject<IDictionary<string, object>>();
             string filePath = iconDict.ContainsKey("Filename") ? (string)iconDict["Filename"] : "Unknown";
             bool isFolder = iconDict.ContainsKey("IsFolder") && (bool)iconDict["IsFolder"];
