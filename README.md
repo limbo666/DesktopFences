@@ -155,8 +155,8 @@ Even small contributions mean a lot. Thank you for keeping this project alive an
 ## 2.5.1.67
 -  **Added**: Function to re-order icons within a fence (https://github.com/limbo666/DesktopFences/issues/15).
 
-## 2.5.1.69
--  **Changed**: Code refactoring.
+## 2.5.1.70
+-  **Changed**: Major code refactoring.
 -  **Added**: Four new launch effects.
 ---
 
