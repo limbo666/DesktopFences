@@ -153,8 +153,7 @@ Even small contributions mean a lot. Thank you for keeping this project alive an
 -  **Fixed**: Bug on handling shortcuts targeting web links.
 -  **Added**: New icon for shortcuts targeting web links.
 -  **Changed**: Target check mechanism to prevent errors.
--  **Added**:  Indicator for network based files.\
-
+-  **Added**: Indicator for network based files.
 
 ## 2.5.1.67
 -  **Added**: Function to re-order icons within a fence (https://github.com/limbo666/DesktopFences/issues/15).
@@ -162,6 +161,14 @@ Even small contributions mean a lot. Thank you for keeping this project alive an
 ## 2.5.1.70
 -  **Changed**: Major code refactoring.
 -  **Added**: Four new launch effects.
+
+## 2.5.1.75
+-  **Added**: Error Handles on JSON loading for better stability against corrupted `fences.json` files
+-  **Changed**: Portal Fences are named after the target folder upnon creation.
+-  **Changed**: Minor interface impovements for systems with resolution scaling enabled.
+-  **Fixed**: Handling of shortcuts with unicode characters.
+
+ 
 ---
 
 ##  Summary
