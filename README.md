@@ -164,11 +164,12 @@ Even small contributions mean a lot. Thank you for keeping this project alive an
 
 ## 2.5.1.75
 -  **Added**: Error Handles on JSON loading for better stability against corrupted `fences.json` files
--  **Changed**: Portal Fences are named after the target folder upnon creation.
+-  **Changed**: Portal Fences are named after the target folder upon creation.
 -  **Changed**: Minor interface impovements for systems with resolution scaling enabled.
 -  **Fixed**: Handling of shortcuts with unicode characters.
 -  **Changed**: Improved stability of filesystem watcher for portal fences.
--  **Added**: `Rename` option for files on portal fences. 
+-  **Added**: `Rename` option for files on portal fences.
+-   **Added**: Lot of tweaks user can set by editing JSON files.
 
  
 ---
