@@ -171,6 +171,12 @@ Even small contributions mean a lot. Thank you for keeping this project alive an
 -  **Added**: `Rename` option for files on portal fences.
 -   **Added**: Lot of tweaks user can set by editing JSON files.
 
+## 2.5.2.86
+-  **Changed**: Major changes to existing windows messages and other forms.
+-  **Changed**: Another massive source code refactoring.
+-  **Added**: Customize window, available on fence context menu of each fence that allow user to tweak all available options.
+-  **Removed**: Customization submenus from context menu.
+-  **Fixed**: Bug on Unicode folder icon.
  
 ---
 
