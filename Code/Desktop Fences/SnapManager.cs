@@ -1,20 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Windows;
 using System.Windows.Forms; // For Screen.AllScreens
-using System.Windows.Input;
 
 namespace Desktop_Fences
 {
     public static class SnapManager
     {
-        private const double SnapDistance = 20;
+        private const double SnapDistance = 40;
         private const double SnapThreshold = 30;
         private const double InternalSnapThreshold = 15;
-        private const double MinGap = 8;
+        private const double MinGap = 15;
 
         public static void AddSnapping(NonActivatingWindow win, IDictionary<string, object> fenceData)
         {

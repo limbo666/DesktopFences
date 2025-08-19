@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Timers;
 
 namespace Desktop_Fences
@@ -48,7 +47,7 @@ namespace Desktop_Fences
             }
             catch (Exception ex)
             {
-                FenceManager.Log(FenceManager.LogLevel.Warn, FenceManager.LogCategory.Error,
+                LogManager.Log(LogManager.LogLevel.Warn, LogManager.LogCategory.Error,
                     $"Error in immediate target check for {key}: {ex.Message}");
             }
         }
@@ -70,9 +69,9 @@ namespace Desktop_Fences
                 List<(Action checkAction, bool isFolder)> actionsSnapshot;
 
                 // Create a thread-safe snapshot of the actions
-               // lock (_checkActions)
-                    lock (_lockObject)
-                    {
+                // lock (_checkActions)
+                lock (_lockObject)
+                {
                     if (_checkActions.Count == 0)
                         return;
 
@@ -93,7 +92,7 @@ namespace Desktop_Fences
                     catch (Exception actionEx)
                     {
                         // Log individual action errors but continue with other actions
-                        FenceManager.Log(FenceManager.LogLevel.Warn, FenceManager.LogCategory.Error,
+                        LogManager.Log(LogManager.LogLevel.Warn, LogManager.LogCategory.Error,
                             $"Error in target check action: {actionEx.Message}");
                     }
                 }
@@ -101,7 +100,7 @@ namespace Desktop_Fences
             catch (Exception ex)
             {
                 // Log timer event errors
-                FenceManager.Log(FenceManager.LogLevel.Error, FenceManager.LogCategory.Error,
+                LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.Error,
                     $"Error in TargetChecker timer event: {ex.Message}");
             }
         }

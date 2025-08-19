@@ -1,5 +1,4 @@
 ﻿using IWshRuntimeLibrary;
-using System.IO;
 
 namespace Desktop_Fences
 {

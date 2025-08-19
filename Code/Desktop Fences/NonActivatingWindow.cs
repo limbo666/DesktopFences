@@ -1,7 +1,7 @@
-﻿using System.Runtime.InteropServices;
-using System.Windows.Interop;
+﻿using System;
+using System.Runtime.InteropServices;
 using System.Windows;
-using System;
+using System.Windows.Interop;
 using Desktop_Fences;
 
 public class NonActivatingWindow : Window

@@ -1,18 +1,111 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices; // Added for DeleteObject
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Forms.VisualStyles;
 using System.Windows.Media;
-using IWshRuntimeLibrary;
+using System.Windows.Media.Effects;
 using System.Windows.Media.Imaging; // Added for ImageSource
-using System.Runtime.InteropServices; // Added for DeleteObject
-using Desktop_Fences; // Ensure this is included for Utility extensions
+using IWshRuntimeLibrary;
 
 namespace Desktop_Fences
 {
     public static class Utility
     {
+
+        public static Effect CreateIconEffect(IconVisibilityEffect effectType, string fenceColor = null)
+        {
+            switch (effectType)
+            {
+                case IconVisibilityEffect.Glow:
+                    return new DropShadowEffect
+                    {
+                        Color = Colors.White,
+                        Direction = 0,
+                        ShadowDepth = 0,
+                        BlurRadius = 8,
+                        Opacity = 0.6
+                    };
+
+                case IconVisibilityEffect.Shadow:
+                    return new DropShadowEffect
+                    {
+                        Color = Colors.Black,
+                        Direction = 315,
+                        ShadowDepth = 3,
+                        BlurRadius = 5,
+                        Opacity = 0.7
+                    };
+
+                case IconVisibilityEffect.Outline:
+                    return new DropShadowEffect
+                    {
+                        Color = Colors.White,
+                        Direction = 0,
+                        ShadowDepth = 0,
+                        BlurRadius = 2,
+                        Opacity = 0.8
+                    };
+
+                case IconVisibilityEffect.StrongShadow:
+                    return new DropShadowEffect
+                    {
+                        Color = Colors.Black,
+                        Direction = 315,
+                        ShadowDepth = 5,
+                        BlurRadius = 10,
+                        Opacity = 0.9
+                    };
+
+                case IconVisibilityEffect.ColoredGlow:
+                    var glowColor = string.IsNullOrEmpty(fenceColor)
+                        ? Colors.White
+                        : GetColorFromName(fenceColor);
+                    return new DropShadowEffect
+                    {
+                        Color = glowColor,
+                        Direction = 0,
+                        ShadowDepth = 0,
+                        BlurRadius = 6,
+                        Opacity = 0.5
+                    };
+
+                //case IconVisibilityEffect.AngelGlow:
+                //    // This would require a different approach with Border/Ellipse
+                //    //  return null; // Handle separately if needed
+                //    // Brighten effect - makes icons appear brighter/more visible
+                //    return new System.Windows.Media.Effects.DropShadowEffect
+                //    {
+                //        Color = System.Windows.Media.Colors.Blue,
+                //        Direction = 0,
+                //        ShadowDepth = 0,
+                //        BlurRadius = 36,
+                //        Opacity = 1.0
+                //    };
+                case Desktop_Fences.IconVisibilityEffect.AngelGlow:
+                    return new System.Windows.Media.Effects.DropShadowEffect
+                    {
+                        Color = System.Windows.Media.Colors.Snow,
+                        Direction = 0,
+                        ShadowDepth = 0,
+                        BlurRadius = 5,
+                        Opacity = 1.0
+                    };
+
+
+
+                case IconVisibilityEffect.None:
+                default:
+                    return null;
+            }
+        }
+
+
+
+
+
 
 
 
@@ -22,7 +115,11 @@ namespace Desktop_Fences
             if (fenceControl == null) return;
 
             string effectiveColor = colorName ?? SettingsManager.SelectedColor; // Fallback to global
-                                                                                // Use TintValue from SettingsManager to determine if tint is applied
+
+            LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.Settings,
+                $"ApplyTintAndColorToFence: TintValue={SettingsManager.TintValue}, Color={effectiveColor}, Opacity={SettingsManager.TintValue / 100.0}");
+
+            // Use TintValue from SettingsManager to determine if tint is applied
             fenceControl.Background = SettingsManager.TintValue > 0
                 ? new SolidColorBrush(GetColorFromName(effectiveColor)) { Opacity = SettingsManager.TintValue / 100.0 }
                 : Brushes.Transparent;
@@ -60,7 +157,7 @@ namespace Desktop_Fences
 
         public static bool IsExecutableFile(string filePath)
         {
-            string[] executableExtensions = { ".exe", ".bat", ".cmd", ".vbs", ".ps1", ".hta",".msi" };
+            string[] executableExtensions = { ".exe", ".bat", ".cmd", ".vbs", ".ps1", ".hta", ".msi" };
             if (Path.GetExtension(filePath).ToLower() == ".lnk")
             {
                 try
@@ -135,5 +232,15 @@ namespace Desktop_Fences
 
         [DllImport("gdi32.dll")]
         private static extern bool DeleteObject(IntPtr hObject);
+
+
+
+
+
+
+
     }
-}
+
+   
+
+    }

@@ -1,12 +1,21 @@
-﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Windows.Forms.VisualStyles;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace Desktop_Fences
 {
+
+
+    public enum IconVisibilityEffect
+    {
+        None, Glow, Shadow, Outline, AngelGlow, ColoredGlow, StrongShadow
+    }
+
+
     /// <summary>
     /// Manages the application's settings, including snapping, tint, color, and logging preferences.
     /// Loads settings from and saves them to a JSON file (options.json) in the application directory.
@@ -26,7 +35,7 @@ namespace Desktop_Fences
         /// Gets or sets whether the portal fence deletion method will use the recycle bin.
         /// </summary>
         public static bool UseRecycleBin { get; set; } = true;
-       
+
         /// <summary>
         /// Gets or sets whether the tray icon will be shown.
         /// </summary>
@@ -47,33 +56,79 @@ namespace Desktop_Fences
         /// </summary>
         public static bool IsLogEnabled { get; set; } = false;
 
+
         /// <summary>
-        /// Loads settings from options.json if it exists, otherwise saves and uses default settings.
+        /// Gets or sets the maximum number of characters to display before truncating with "...".
+        /// Valid range: 5-50 characters.
         /// </summary>
-        /// 
+        public static int MaxDisplayNameLength { get; set; } = 20; // Default to current behavior
+
+        /// <summary>
+        /// Gets or sets the opacity of the portal fence background image (0-100).
+        /// </summary>
+        public static int PortalBackgroundOpacity { get; set; } = 0; // Default to existing opacity
+
+        /// <summary>
+        /// Gets or sets whether icon glow effect is enabled for better visibility.
+        /// </summary>
+        public static bool EnableIconGlowEffect { get; set; } = true; // Default disabled
+
+
+
+        /// <summary>
+        /// Gets or sets whether to delete the previous log file on application startup.
+        /// </summary>
+        public static bool DeletePreviousLogOnStart { get; set; } = false; // Default disabled
+
+
+        /// <summary>
+        /// Gets or sets the icon visibility effect type.
+        /// Valid values: None, Glow, Shadow, Outline, AngelGlow, ColoredGlow, StrongShadow
+        /// </summary>
+
+        public static IconVisibilityEffect IconVisibilityEffect { get; set; } = IconVisibilityEffect.None;
+
+
+
 
 
         /// <summary>
         /// Gets or sets the minimum log level for logging (Debug, Info, Warn, Error).
         /// </summary>
-        public static FenceManager.LogLevel MinLogLevel { get; set; } = FenceManager.LogLevel.Info; // Default to Info for production
+        //        public static LogManager.LogLevel MinLogLevel { get; set; } = LogManager.LogLevel.Info; // Default to Info for production
 
-        /// <summary>
-        /// Gets or sets the list of enabled log categories.
-        /// </summary>
-        public static List<FenceManager.LogCategory> EnabledLogCategories { get; set; } = new List<FenceManager.LogCategory>
+        //        /// <summary>
+        //        /// Gets or sets the list of enabled log categories.
+        //        /// </summary>
+        //        public static List<LogManager.LogCategory> EnabledLogCategories { get; set; } = new List<LogManager.LogCategory>
+        //{
+        //    LogManager.LogCategory.General,
+        //    LogManager.LogCategory.Error,
+        //    LogManager.LogCategory.ImportExport,
+        //    LogManager.LogCategory.Settings
+        //}; 
+
+
+        public static LogManager.LogLevel MinLogLevel { get; set; } = LogManager.LogLevel.Info;
+        public static List<LogManager.LogCategory> EnabledLogCategories { get; set; } = new List<LogManager.LogCategory>
 {
-    FenceManager.LogCategory.General,
-    FenceManager.LogCategory.Error,
-    FenceManager.LogCategory.ImportExport,
-    FenceManager.LogCategory.Settings
-}; // Default categories for production
+    LogManager.LogCategory.General,
+    LogManager.LogCategory.Error,
+    LogManager.LogCategory.ImportExport,
+    LogManager.LogCategory.Settings
+};
+
+        // Default categories for production
         public static bool EnableDimensionSnap { get; set; } = false;
 
         public static bool SingleClickToLaunch { get; set; } = true;
 
         // Add LaunchEffect property
-        public static FenceManager.LaunchEffect LaunchEffect { get; set; } = FenceManager.LaunchEffect.Zoom; // Default to Zoom
+        public static LaunchEffectsManager.LaunchEffect LaunchEffect { get; set; } = LaunchEffectsManager.LaunchEffect.Zoom; // Default to Zoom
+
+
+
+
 
         public static void LoadSettings()
         {
@@ -84,41 +139,134 @@ namespace Desktop_Fences
             {
                 if (System.IO.File.Exists(optionsFilePath))
                 {
-                    // Read and deserialize the JSON content
+                    // Read and validate JSON content
                     string jsonContent = File.ReadAllText(optionsFilePath);
-                    dynamic optionsData = JsonConvert.DeserializeObject(jsonContent);
 
-                    // Update settings with values from the file, using defaults if values are missing
-                    IsSnapEnabled = optionsData.IsSnapEnabled ?? true;
-                    ShowBackgroundImageOnPortalFences = optionsData.ShowBackgroundImageOnPortalFences ?? true;
-                    ShowInTray = optionsData.ShowInTray ?? true;
-                    UseRecycleBin = optionsData.UseRecycleBin ?? true;
-                    TintValue = optionsData.TintValue ?? 60;
-                    SelectedColor = optionsData.SelectedColor ?? "Gray";
-                    IsLogEnabled = optionsData.IsLogEnabled ?? false;
-                    SingleClickToLaunch = optionsData.SingleClickToLaunch ?? true;
-                    EnableDimensionSnap = optionsData.EnableDimensionSnap ?? false;
-                    // Load LaunchEffect, parsing from string if present
-                    LaunchEffect = optionsData.LaunchEffect != null
-                        ? Enum.Parse(typeof(FenceManager.LaunchEffect), optionsData.LaunchEffect.ToString())
-                        : FenceManager.LaunchEffect.Zoom;
-                    // Load MinLogLevel, parsing from string if present
-                    MinLogLevel = optionsData.MinLogLevel != null
-                        ? Enum.Parse(typeof(FenceManager.LogLevel), optionsData.MinLogLevel.ToString())
-                        : FenceManager.LogLevel.Info;
-                    // Load EnabledLogCategories, parsing from array if present
-                    EnabledLogCategories = optionsData.EnabledLogCategories != null
-                        ? ((JArray)optionsData.EnabledLogCategories)
-                            .Select(c => Enum.Parse(typeof(FenceManager.LogCategory), c.ToString()))
-                            .Cast<FenceManager.LogCategory>()
-                            .ToList()
-                        : new List<FenceManager.LogCategory>
+                    // Validate JSON structure before parsing
+                    if (string.IsNullOrWhiteSpace(jsonContent))
+                    {
+                        SaveSettings();
+                        return;
+                    }
+
+                    dynamic optionsData;
+                    try
+                    {
+                        optionsData = JsonConvert.DeserializeObject(jsonContent);
+                        if (optionsData == null)
                         {
-                    FenceManager.LogCategory.General,
-                    FenceManager.LogCategory.Error,
-                    FenceManager.LogCategory.ImportExport,
-                    FenceManager.LogCategory.Settings
-                        };
+                            SaveSettings();
+                            return;
+                        }
+                    }
+                    catch (JsonException)
+                    {
+                        // JSON is corrupted, recreate with defaults
+                        SaveSettings();
+                        return;
+                    }
+
+                    // Load settings with individual property protection
+                    try { IsSnapEnabled = optionsData.IsSnapEnabled ?? true; } catch { IsSnapEnabled = true; }
+                    try { ShowBackgroundImageOnPortalFences = optionsData.ShowBackgroundImageOnPortalFences ?? true; } catch { ShowBackgroundImageOnPortalFences = true; }
+                    try { ShowInTray = optionsData.ShowInTray ?? true; } catch { ShowInTray = true; }
+                    try { UseRecycleBin = optionsData.UseRecycleBin ?? true; } catch { UseRecycleBin = true; }
+                    try { TintValue = optionsData.TintValue ?? 60; } catch { TintValue = 60; }
+                    try { SelectedColor = optionsData.SelectedColor ?? "Gray"; } catch { SelectedColor = "Gray"; }
+                    try { IsLogEnabled = optionsData.IsLogEnabled ?? false; } catch { IsLogEnabled = false; }
+                    try { SingleClickToLaunch = optionsData.SingleClickToLaunch ?? true; } catch { SingleClickToLaunch = true; }
+                    try { EnableDimensionSnap = optionsData.EnableDimensionSnap ?? false; } catch { EnableDimensionSnap = false; }
+                    try { PortalBackgroundOpacity = optionsData.PortalBackgroundOpacity ?? 20; } catch { PortalBackgroundOpacity = 20; }
+                    //   try { MaxDisplayNameLength = optionsData.MaxDisplayNameLength ?? 20; } catch { MaxDisplayNameLength = 20; }
+                    try
+                    {
+                        int value = optionsData.MaxDisplayNameLength ?? 20;
+                        MaxDisplayNameLength = Math.Max(5, Math.Min(50, value)); // Clamp between 5-50
+                    }
+                    catch
+                    {
+                        MaxDisplayNameLength = 20;
+                    }
+
+
+                    try
+                    {
+                        string effectName = optionsData.IconVisibilityEffect?.ToString() ?? "None";
+
+                        LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.General, "effectName is: " + effectName);
+                        if (Enum.TryParse<IconVisibilityEffect>(effectName, true, out IconVisibilityEffect parsedEffect))
+                        {
+                            IconVisibilityEffect = parsedEffect;
+                        }
+                        else
+                        {
+                            IconVisibilityEffect = IconVisibilityEffect.None;
+                        }
+
+                        LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.General, "IconVisibilityEffect is: " + IconVisibilityEffect);
+                    }
+                    catch
+                    {
+                        IconVisibilityEffect = IconVisibilityEffect.None;
+                    }
+
+
+                    // Load LaunchEffect with protection
+                    try
+                    {
+                        LaunchEffect = optionsData.LaunchEffect != null
+                            ? Enum.Parse(typeof(LaunchEffectsManager.LaunchEffect), optionsData.LaunchEffect.ToString())
+                            : LaunchEffectsManager.LaunchEffect.Zoom;
+                    }
+                    catch
+                    {
+                        LaunchEffect = LaunchEffectsManager.LaunchEffect.Zoom;
+                    }
+
+                    // Load DeletePreviousLogOnStart with protection
+                    try { DeletePreviousLogOnStart = optionsData.DeletePreviousLogOnStart ?? false; }
+                    catch { DeletePreviousLogOnStart = false; }
+
+
+
+                    // Load MinLogLevel with protection
+                    try
+                    {
+                        MinLogLevel = optionsData.MinLogLevel != null
+                            ? Enum.Parse(typeof(LogManager.LogLevel), optionsData.MinLogLevel.ToString())
+                            : LogManager.LogLevel.Info;
+                    }
+                    catch
+                    {
+                        MinLogLevel = LogManager.LogLevel.Info;
+                    }
+
+                    // Load EnabledLogCategories with protection
+                    try
+                    {
+                        EnabledLogCategories = optionsData.EnabledLogCategories != null
+                            ? ((JArray)optionsData.EnabledLogCategories)
+                                .Select(c => Enum.Parse(typeof(LogManager.LogCategory), c.ToString()))
+                                .Cast<LogManager.LogCategory>()
+                                .ToList()
+                            : new List<LogManager.LogCategory>
+                            {
+                        LogManager.LogCategory.General,
+                        LogManager.LogCategory.Error,
+                        LogManager.LogCategory.ImportExport,
+                        LogManager.LogCategory.Settings
+                            };
+                    }
+                    catch
+                    {
+                        EnabledLogCategories = new List<LogManager.LogCategory>
+                {
+                    LogManager.LogCategory.General,
+                    LogManager.LogCategory.Error,
+                    LogManager.LogCategory.ImportExport,
+                    LogManager.LogCategory.Settings
+                };
+                    }
                 }
                 else
                 {
@@ -134,9 +282,8 @@ namespace Desktop_Fences
             }
         }
 
-        /// <summary>
-        /// Saves the current settings to options.json in a formatted JSON structure.
-        /// </summary>
+
+
         public static void SaveSettings()
         {
             // Determine the path to options.json
@@ -156,9 +303,13 @@ namespace Desktop_Fences
                     IsLogEnabled,
                     SingleClickToLaunch,
                     EnableDimensionSnap,
+                    PortalBackgroundOpacity,
+                    MaxDisplayNameLength,
+                    IconVisibilityEffect = IconVisibilityEffect.ToString(),
                     LaunchEffect = LaunchEffect.ToString(), // Save as string for JSON compatibility
                     MinLogLevel = MinLogLevel.ToString(), // Save as string for JSON compatibility
-                    EnabledLogCategories = EnabledLogCategories.Select(c => c.ToString()).ToList()
+                    EnabledLogCategories = EnabledLogCategories.Select(c => c.ToString()).ToList(),
+                    DeletePreviousLogOnStart 
                 };
 
                 // Serialize to JSON with indentation for readability
@@ -169,28 +320,33 @@ namespace Desktop_Fences
             }
             catch (Exception ex)
             {
-                // Log any errors during save (console for simplicity; could be expanded to a file log)
-                Console.WriteLine($"Error saving settings: {ex.Message}");
+
             }
         }
 
 
-        /// <summary>
+
         /// Sets the minimum log level and saves the settings.
-        /// </summary>
-        public static void SetMinLogLevel(FenceManager.LogLevel level)
+
+        public static void SetMinLogLevel(LogManager.LogLevel level)
         {
             MinLogLevel = level;
             SaveSettings();
         }
 
-        /// <summary>
+
+
+
         /// Sets the enabled log categories and saves the settings.
-        /// </summary>
-        public static void SetEnabledLogCategories(List<FenceManager.LogCategory> categories)
+
+        public static void SetEnabledLogCategories(List<LogManager.LogCategory> categories)
         {
             EnabledLogCategories = categories;
             SaveSettings();
         }
+
+
+
+
     }
 }
