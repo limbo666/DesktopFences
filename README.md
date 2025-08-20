@@ -177,6 +177,9 @@ Even small contributions mean a lot. Thank you for keeping this project alive an
 -  **Added**: Customize window, available on fence context menu of each fence that allow user to tweak all available options.
 -  **Removed**: Customization submenus from context menu.
 -  **Fixed**: Bug on Unicode folder icon.
+
+## 2.5.2.95
+-  **Fixed**: A majority of minor bugs and annoyances 
  
 ---
 
