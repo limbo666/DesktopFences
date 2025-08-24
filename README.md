@@ -27,6 +27,13 @@ Desktop Fences+ has been significantly enhanced and optimized for improved perfo
 
 ---
 
+##  Manual
+
+**A simple how to use guide is located here:** https://github.com/limbo666/DesktopFences/blob/main/desktop_fences_simple_manual.md
+<br> Read it before starting an issue. 
+
+---
+
 ##  Support
 
 If this project has helped you, please consider supporting its development! Your contribution directly impacts how fast and far this project grows.
