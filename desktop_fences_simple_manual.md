@@ -126,7 +126,9 @@ When you click on items in fences, choose from these visual effects:
 - **Teleport**: Items teleport with particle effects
 
 
+## Change Icon Order
 
+Hold down the CTRL button and drag the icon to its new position within the fence.
 
 
 ## Customize Shortcuts
