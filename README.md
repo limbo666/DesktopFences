@@ -195,7 +195,7 @@ Even small contributions mean a lot. Thank you for keeping this project alive an
 -  **Added**: "Copy and Paste" options to copy items across fences.
 -  **Fixed**: Almost all forms were redesigned and made dpi aware to work under monitors with scaling enabled.
 -  **Added**: Message boxes accepted Enter and Esc as validation.
--  **Added**: Variables can be set on `options.json` to manual tweak program.
+-  **Added**: Variables can be set on `options.json` to manual tweak program. See [tweaks](https://github.com/limbo666/DesktopFences/blob/main/tweaks.md).
 -  **Changed**: Target launch mechanism.
 -  **Changed**: Another source code refactoring. 
  
