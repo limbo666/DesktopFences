@@ -163,7 +163,7 @@ Even small contributions mean a lot. Thank you for keeping this project alive an
 -  **Added**: Indicator for network based files.
 
 ## 2.5.1.67
--  **Added**: Function to re-order icons within a fence (https://github.com/limbo666/DesktopFences/issues/15).
+-  **Added**: Function to re-order icons within a fence (https://github.com/limbo666/DesktopFences/issues/15) (Use CTRL + drag).
 
 ## 2.5.1.70
 -  **Changed**: Major code refactoring.
@@ -186,7 +186,18 @@ Even small contributions mean a lot. Thank you for keeping this project alive an
 -  **Fixed**: Bug on Unicode folder icon.
 
 ## 2.5.2.95
--  **Fixed**: A majority of minor bugs and annoyances 
+-  **Fixed**: A majority of minor bugs and annoyances
+
+  ## 2.5.2.111
+-  **Added**: Single instance limitation.
+-  **Added**: "Clear Dead Shortcuts" right click option to remove all not valid shortcust from a fence.
+-  **Added**: "Send To Desktop" right click option to copy a shortcut to desktop (Use CTRL + right click).
+-  **Added**: "Copy and Paste" options to copy items across fences.
+-  **Fixed**: Almost all forms were redesigned and made dpi aware to work under monitors with scaling enabled.
+-  **Added**: Message boxes accepted Enter and Esc as validation.
+-  **Added**: Variables can be set on `options.json` to manual tweak program.
+-  **Changed**: Target launch mechanism.
+-  **Changed**: Another source code refactoring. 
  
 ---
 
