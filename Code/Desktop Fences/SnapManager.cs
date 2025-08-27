@@ -23,9 +23,11 @@ namespace Desktop_Fences
                 win.Top = newTop;
                 fenceData["X"] = newLeft;
                 fenceData["Y"] = newTop;
-                FenceManager.SaveFenceData();
+                FenceDataManager.SaveFenceData();
             };
         }
+
+        //CHECKPOINT: Step 2 Complete!
 
         private static (double, double) SnapToClosestFence(NonActivatingWindow currentFence, List<NonActivatingWindow> allFences)
         {

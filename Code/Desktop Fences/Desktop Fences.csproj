@@ -7,9 +7,9 @@
 		<Nullable>enable</Nullable>
 		<UseWPF>true</UseWPF>
 		<UseWindowsForms>True</UseWindowsForms>
-		<AssemblyVersion>2.5.2.78</AssemblyVersion>
-		<FileVersion>2.5.2.78</FileVersion>
-		<Version>2.5.2.78</Version>
+		<AssemblyVersion>2.5.2.111</AssemblyVersion>
+		<FileVersion>2.5.2.111</FileVersion>
+		<Version>2.5.2.111</Version>
 		<ApplicationIcon>Resources\logo2.ico</ApplicationIcon>
 	</PropertyGroup>
 
@@ -23,10 +23,13 @@
 		<None Remove="portal.png" />
 		<None Remove="Resources\ding.wav" />
 		<None Remove="Resources\donate.png" />
+		<None Remove="Resources\dragon.png" />
 		<None Remove="Resources\Feed.png" />
 		<None Remove="Resources\HWP_Logo.png" />
 		<None Remove="Resources\link-White.png" />
 		<None Remove="Resources\logo_blue.ico" />
+		<None Remove="Resources\sweep-sound-effect-240243.wav" />
+		<None Remove="Resources\ui-8-warning-sound-effect-336254.wav" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -62,10 +65,13 @@
 
 	<ItemGroup>
 		<EmbeddedResource Include="Resources\ding.wav" />
+		<EmbeddedResource Include="Resources\dragon.png" />
 		<EmbeddedResource Include="Resources\logo1.png" />
 	</ItemGroup>
 	<ItemGroup>
 		<EmbeddedResource Include="Resources\donate.png" />
+		<EmbeddedResource Include="Resources\sweep-sound-effect-240243.wav" />
+		<EmbeddedResource Include="Resources\ui-8-warning-sound-effect-336254.wav" />
 	</ItemGroup>
 	<ItemGroup>
 		<Resource Include="Resources\donate.png">

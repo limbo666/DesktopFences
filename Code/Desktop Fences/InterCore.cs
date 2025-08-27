@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Media;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Windows;
@@ -340,7 +343,7 @@ namespace Desktop_Fences
 
                 foreach (var window in fenceWindows)
                 {
-                    var wrapPanel = FindWrapPanel(window);
+                    var wrapPanel = FenceUtilities.FindWrapPanel(window);
                     if (wrapPanel != null)
                     {
                         allIcons.AddRange(wrapPanel.Children.OfType<StackPanel>());
@@ -468,7 +471,7 @@ namespace Desktop_Fences
 
                 foreach (var window in fenceWindows)
                 {
-                    var wrapPanel = FindWrapPanel(window);
+                    var wrapPanel = FenceUtilities.FindWrapPanel(window);
                     if (wrapPanel != null)
                     {
                         var icons = wrapPanel.Children.OfType<StackPanel>().ToList();
@@ -948,6 +951,196 @@ namespace Desktop_Fences
 
         #endregion
 
+
+        #region Private Methods - Lighthouse Sweep (Single Instance Effect)
+
+        private static bool _isLighthouseSweepActive = false;
+
+        /// <summary>
+        /// Activates lighthouse sweep effect across all visible fences
+        /// Called when registry monitor detects another instance attempt
+        /// Creates a wave of golden glow that sweeps across all fences
+        /// </summary>
+        /// 
+
+        public static void ActivateLighthouseSweep()
+        {
+            if (_isLighthouseSweepActive)
+            {
+                LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI,
+                    "InterCore: Lighthouse sweep already active, skipping");
+                return;
+            }
+
+            _isLighthouseSweepActive = true;
+
+            try
+            {
+                LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.UI,
+                    "InterCore: Lighthouse Sweep effect activated - another instance detected!");
+              
+                // Get all visible fence windows
+                var allFences = Application.Current.Windows.OfType<NonActivatingWindow>()
+                    .Where(w => w.Visibility == Visibility.Visible)
+                    .OrderBy(w => w.Left) // Order by horizontal position for wave effect
+                    .ToList();
+
+                if (allFences.Count == 0)
+                {
+                    LogManager.Log(LogManager.LogLevel.Warn, LogManager.LogCategory.UI,
+                        "InterCore: No visible fences found for Lighthouse Sweep");
+                    _isLighthouseSweepActive = false;
+                    return;
+                }
+
+                LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.UI,
+                    $"InterCore: Starting Lighthouse Sweep on {allFences.Count} fences");
+
+                // Store original opacities
+                var originalOpacities = new Dictionary<NonActivatingWindow, double>();
+                foreach (var fence in allFences)
+                {
+                    originalOpacities[fence] = fence.Opacity;
+
+                    // If fence has high tint (low opacity), fade it to 0.4
+                    if (fence.Opacity > 0.4)
+                    {
+                        var fadeOut = new DoubleAnimation
+                        {
+                            To = 0.4,
+                            Duration = TimeSpan.FromMilliseconds(400), // smooth transition
+                            FillBehavior = FillBehavior.HoldEnd
+                        };
+                        fence.BeginAnimation(UIElement.OpacityProperty, fadeOut);
+
+                        LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI,
+                            $"InterCore: Fading opacity for fence '{fence.Title}' from {originalOpacities[fence]:F2} to 0.40");
+                    }
+                }
+                PlaySweepSound();
+                // Create wave effect across fences
+                for (int i = 0; i < allFences.Count; i++)
+                {
+                    var fence = allFences[i];
+                    int delay = i * 150; // 150ms delay between each fence for wave effect
+
+                    var delayTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(delay) };
+                    delayTimer.Tick += (s, e) =>
+                    {
+                        ApplyLighthouseGlowToFence(fence);
+                        ((DispatcherTimer)s).Stop();
+                    };
+                    delayTimer.Start();
+                }
+
+                // Restore original opacities with fade-in
+                var restoreTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(3) };
+                restoreTimer.Tick += (s, e) =>
+                {
+                    try
+                    {
+                        foreach (var fence in allFences)
+                        {
+                            if (originalOpacities.ContainsKey(fence))
+                            {
+                                var fadeIn = new DoubleAnimation
+                                {
+                                    To = originalOpacities[fence],
+                                    Duration = TimeSpan.FromMilliseconds(400),
+                                    FillBehavior = FillBehavior.HoldEnd
+                                };
+                                fence.BeginAnimation(UIElement.OpacityProperty, fadeIn);
+
+                                LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI,
+                                    $"InterCore: Restoring opacity for fence '{fence.Title}' to {originalOpacities[fence]:F2}");
+                            }
+                        }
+
+                        _isLighthouseSweepActive = false;
+                        restoreTimer.Stop();
+
+                        LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI,
+                            "InterCore: Lighthouse Sweep effect completed and tint restored");
+                    }
+                    catch (Exception ex)
+                    {
+                        LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI,
+                            $"InterCore: Error restoring opacities: {ex.Message}");
+                        _isLighthouseSweepActive = false;
+                    }
+                };
+                restoreTimer.Start();
+            }
+            catch (Exception ex)
+            {
+                LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI,
+                    $"InterCore: Error in Lighthouse Sweep activation: {ex.Message}");
+                _isLighthouseSweepActive = false;
+            }
+        }
+
+        /// <summary>
+        /// Applies lighthouse glow effect to a single fence window
+        /// Creates bright golden glow that pulses 3 times around the fence border
+        /// </summary>
+        private static void ApplyLighthouseGlowToFence(NonActivatingWindow fence)
+        {
+            try
+            {
+                // Create bright golden glow effect
+                var lighthouseGlow = new DropShadowEffect
+                {
+                    Color = Color.FromRgb(255, 215, 0), // Gold color
+                    BlurRadius = 25,
+                    ShadowDepth = 0,
+                    Opacity = 0
+                };
+
+                // Store original effect to restore later
+                var originalEffect = fence.Effect;
+                fence.Effect = lighthouseGlow;
+
+                // Create pulsing animation - 3 strong pulses
+                var pulseAnimation = new DoubleAnimation
+                {
+                    From = 0,
+                    To = 0.9, // Bright but not overwhelming
+                    Duration = TimeSpan.FromMilliseconds(200),
+                    AutoReverse = true,
+                    RepeatBehavior = new RepeatBehavior(3) // Pulse 3 times
+                };
+
+                // Restore original effect when animation completes
+                pulseAnimation.Completed += (s, e) =>
+                {
+                    try
+                    {
+                        fence.Effect = originalEffect;
+                        LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI,
+                            $"InterCore: Lighthouse glow completed on fence '{fence.Title}'");
+                    }
+                    catch (Exception ex)
+                    {
+                        LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI,
+                            $"InterCore: Error restoring fence effect: {ex.Message}");
+                    }
+                };
+
+                // Start the glow animation
+                lighthouseGlow.BeginAnimation(DropShadowEffect.OpacityProperty, pulseAnimation);
+
+                LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI,
+                    $"InterCore: Applied lighthouse glow to fence '{fence.Title}'");
+            }
+            catch (Exception ex)
+            {
+                LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI,
+                    $"InterCore: Error applying lighthouse glow to fence '{fence?.Title}': {ex.Message}");
+            }
+        }
+
+        #endregion
+
         #region Helper Methods
 
 
@@ -983,6 +1176,33 @@ namespace Desktop_Fences
 
             return new SolidColorBrush(colors[random.Next(colors.Length)]);
         }
+
+        private static void PlaySweepSound()
+        {
+            try
+            {
+                using (Stream soundStream = Assembly.GetExecutingAssembly().GetManifestResourceStream("Desktop_Fences.Resources.sweep-sound-effect-240243.wav"))
+                {
+                    if (soundStream != null)
+                    {
+                        using (SoundPlayer player = new SoundPlayer(soundStream))
+                        {
+                            player.Play();
+                        }
+                    }
+                    else
+                    {
+                        LogManager.Log(LogManager.LogLevel.Warn, LogManager.LogCategory.UI, "Sound resource 'ding.wav' not found.");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI, $"Error playing sound: {ex.Message}");
+            }
+        }
+
+
 
         #endregion
     }

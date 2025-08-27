@@ -16,7 +16,6 @@ namespace Desktop_Fences
     {
 
         // Available launch effect types
-
         public enum LaunchEffect
         {
             Zoom,        // First effect
@@ -151,7 +150,6 @@ namespace Desktop_Fences
 
 
         // Ensures the StackPanel has the proper transform setup for animations
-
         private static void EnsureTransformSetup(StackPanel stackPanel)
         {
             if (stackPanel.RenderTransform == null || !(stackPanel.RenderTransform is TransformGroup))
@@ -171,7 +169,6 @@ namespace Desktop_Fences
 
 
         //  Zoom effect
-
         private static void ExecuteZoomEffect(ScaleTransform scaleTransform)
         {
             var zoomScale = new DoubleAnimation(1, 1.2, TimeSpan.FromSeconds(0.1)) { AutoReverse = true };
@@ -181,7 +178,6 @@ namespace Desktop_Fences
 
 
         //  Bounce effect
-
         private static void ExecuteBounceEffect(ScaleTransform scaleTransform)
         {
             var bounceScale = new DoubleAnimationUsingKeyFrames
@@ -201,7 +197,6 @@ namespace Desktop_Fences
 
 
         //  FadeOut effect
-
         private static void ExecuteFadeOutEffect(StackPanel stackPanel)
         {
             var fade = new DoubleAnimation(1, 0, TimeSpan.FromSeconds(0.2)) { AutoReverse = true };
@@ -210,7 +205,6 @@ namespace Desktop_Fences
 
 
         //  SlideUp effect
-
         private static void ExecuteSlideUpEffect(TranslateTransform translateTransform)
         {
             var slideUp = new DoubleAnimation(0, -20, TimeSpan.FromSeconds(0.2)) { AutoReverse = true };
@@ -219,7 +213,6 @@ namespace Desktop_Fences
 
 
         //  Rotate effect
-
         private static void ExecuteRotateEffect(RotateTransform rotateTransform)
         {
             var rotate = new DoubleAnimation(0, 360, TimeSpan.FromSeconds(0.4))
@@ -231,7 +224,6 @@ namespace Desktop_Fences
 
 
         //  Agitate effect
-
         private static void ExecuteAgitateEffect(TranslateTransform translateTransform)
         {
             var agitateTranslate = new DoubleAnimationUsingKeyFrames
@@ -251,7 +243,6 @@ namespace Desktop_Fences
 
 
         //  GrowAndFly effect
-
         private static void ExecuteGrowAndFlyEffect(StackPanel stackPanel, ScaleTransform scaleTransform, TranslateTransform translateTransform)
         {
             var growAnimation = new DoubleAnimation(1, 1.2, TimeSpan.FromSeconds(0.2));
@@ -306,7 +297,6 @@ namespace Desktop_Fences
 
 
         //  Pulse effect
-
         private static void ExecutePulseEffect(StackPanel stackPanel, ScaleTransform scaleTransform)
         {
             // Creates a pulsing effect with color change
@@ -343,7 +333,6 @@ namespace Desktop_Fences
 
 
         //  Elastic effect
-
         private static void ExecuteElasticEffect(ScaleTransform scaleTransform)
         {
             // Creates a stretchy, elastic effect
@@ -373,7 +362,6 @@ namespace Desktop_Fences
 
 
         //  Flip3D effect
-
         private static void ExecuteFlip3DEffect(StackPanel stackPanel, ScaleTransform scaleTransform, RotateTransform rotateTransform)
         {
             // Creates a 3D flip effect
@@ -407,7 +395,6 @@ namespace Desktop_Fences
 
 
         //  Spiral effect
-
         private static void ExecuteSpiralEffect(ScaleTransform scaleTransform, RotateTransform rotateTransform)
         {
             // Combines rotation with a zoom effect
@@ -429,12 +416,9 @@ namespace Desktop_Fences
             scaleTransform.BeginAnimation(ScaleTransform.ScaleXProperty, spiralScale);
             scaleTransform.BeginAnimation(ScaleTransform.ScaleYProperty, spiralScale);
         }
-        // CORRECTED Launch Effects with proper DPI scaling and positioning
-        // Replace the four effect methods in LaunchEffectsManager.cs with these corrected versions:
 
 
         // Gets DPI scale factor for proper positioning
-
         private static double GetDpiScaleFactor()
         {
             try
@@ -452,7 +436,6 @@ namespace Desktop_Fences
 
 
         // Gets the absolute screen position of a UI element
-
         private static Point GetElementScreenPosition(FrameworkElement element)
         {
             try
@@ -481,7 +464,6 @@ namespace Desktop_Fences
 
 
         // Creates a positioned overlay window for effects
-
         private static Window CreateEffectOverlay(StackPanel iconStackPanel, double width, double height)
         {
             try
@@ -526,8 +508,7 @@ namespace Desktop_Fences
         }
 
 
-        //  Shockwave effect - Creates expanding rings like a ripple in water (CORRECTED)
-
+        //  Shockwave effect - Creates expanding rings like a ripple in water 
         private static void ExecuteShockwaveEffect(StackPanel stackPanel, ScaleTransform scaleTransform)
         {
             try
@@ -624,8 +605,7 @@ namespace Desktop_Fences
         }
 
 
-        //  Matrix effect - Digital glitch with cascading particles (CORRECTED)
-
+        //  Matrix effect - Digital glitch with cascading particles 
         private static void ExecuteMatrixEffect(StackPanel stackPanel, ScaleTransform scaleTransform, RotateTransform rotateTransform)
         {
             try
@@ -747,8 +727,7 @@ namespace Desktop_Fences
         }
 
 
-        //  Supernova effect - Explosive burst with radiating particles (CORRECTED)
-
+        //  Supernova effect - Explosive burst with radiating particles
         private static void ExecuteSupernovaEffect(StackPanel stackPanel, ScaleTransform scaleTransform)
         {
             try
@@ -886,8 +865,7 @@ namespace Desktop_Fences
         }
 
 
-        //  Teleport effect - Sci-fi beam up/down effect with energy rings (CORRECTED)
-
+        //  Teleport effect - Sci-fi beam up/down effect with energy rings
         private static void ExecuteTeleportEffect(StackPanel stackPanel, ScaleTransform scaleTransform, TranslateTransform translateTransform)
         {
             try

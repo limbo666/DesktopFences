@@ -55,13 +55,20 @@ public partial class EditShortcutWindow : Window
         //    Direction = 270
         //};
 
+        // Create main container like CustomizeFenceForm
+        Grid mainContainer = new Grid
+        {
+            Background = new SolidColorBrush(Color.FromRgb(248, 249, 250)),
+            Margin = new Thickness(8)
+        };
+
+        // Create main card border (like CustomizeFenceForm mainCard)
         Border mainBorder = new Border
         {
             Background = Brushes.White,
-            CornerRadius = new CornerRadius(8),
             BorderBrush = new SolidColorBrush(Color.FromRgb(218, 220, 224)),
-            BorderThickness = new Thickness(1, 1, 1, 1),
-            Margin = new Thickness(0, 0, 0, 0)  // Remove margin when using transparency
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(0) // No rounded corners like CustomizeFenceForm
         };
 
         Grid rootGrid = new Grid();
@@ -74,64 +81,100 @@ public partial class EditShortcutWindow : Window
         CreateModernFooter(rootGrid);
 
         mainBorder.Child = rootGrid;
-        Content = mainBorder;
+        mainContainer.Children.Add(mainBorder);
+        Content = mainContainer;
 
         // Initialize with current values
         LoadCurrentValues();
+
+        // Add keyboard support for Enter/Escape keys
+        this.KeyDown += EditShortcutWindow_KeyDown;
+        this.Focusable = true;
+        this.Focus();
+    }
+
+    /// <summary>
+    /// Handles keyboard input for EditShortcutWindow
+    /// Enter = Save, Escape = Cancel
+    /// </summary>
+    private void EditShortcutWindow_KeyDown(object sender, KeyEventArgs e)
+    {
+        switch (e.Key)
+        {
+            case Key.Enter:
+                // Trigger Save button logic
+                Save_Click(this, new RoutedEventArgs());
+                e.Handled = true;
+                break;
+            case Key.Escape:
+                // Trigger Cancel button logic
+                DialogResult = false;
+                Close();
+                e.Handled = true;
+                break;
+        }
     }
 
     private void CreateModernHeader(Grid rootGrid)
     {
-        Grid headerGrid = new Grid
+        // Header with accent color background (same as CustomizeFenceForm)
+        Border headerBorder = new Border
         {
-            Background = new SolidColorBrush(Color.FromRgb(248, 249, 250)),
-            Height = 50
+            Height = 50,
+            Background = GetAccentColorBrush(), // Use user's selected theme color
+            CornerRadius = new CornerRadius(0) // No rounded corners like CustomizeFenceForm
         };
+
+        Grid headerGrid = new Grid();
         headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
+        // Title label with white text (same as CustomizeFenceForm)
         TextBlock titleText = new TextBlock
         {
             Text = "Edit Shortcut",
-            FontSize = 16,
-            FontWeight = FontWeights.SemiBold,
-            Foreground = new SolidColorBrush(Color.FromRgb(32, 33, 36)),
+            FontSize = 14,
+            FontWeight = FontWeights.Bold, // Bold like CustomizeFenceForm
+            Foreground = Brushes.White, // White text on colored background
             VerticalAlignment = VerticalAlignment.Center,
-            Margin = new Thickness(20, 0, 0, 0)
+            Margin = new Thickness(16, 0, 0, 0)
         };
 
+        // Close button with hover effects (same as CustomizeFenceForm)
         Button closeButton = new Button
         {
-            Width = 36,
-            Height = 36,
+            Content = "✕",
+            Width = 32,
+            Height = 32,
+            FontSize = 12,
+            FontWeight = FontWeights.Bold,
+            Foreground = Brushes.White,
             Background = Brushes.Transparent,
-            BorderThickness = new Thickness(0, 0, 0, 0),
-            Margin = new Thickness(0, 0, 10, 0),
+            BorderBrush = Brushes.Transparent,
             Cursor = Cursors.Hand,
-            VerticalAlignment = VerticalAlignment.Center,
-            Content = new TextBlock
-            {
-                Text = "✕",
-                FontSize = 16,
-                Foreground = new SolidColorBrush(Color.FromRgb(95, 99, 104)),
-                HorizontalAlignment = HorizontalAlignment.Center,
-                VerticalAlignment = VerticalAlignment.Center
-            }
+            Margin = new Thickness(0, 0, 9, 0),
+            VerticalAlignment = VerticalAlignment.Center
         };
+
+        // Add hover effect like CustomizeFenceForm
+        closeButton.MouseEnter += (s, e) => closeButton.Background = new SolidColorBrush(Color.FromArgb(50, 255, 255, 255));
+        closeButton.MouseLeave += (s, e) => closeButton.Background = Brushes.Transparent;
         closeButton.Click += (s, e) => { DialogResult = false; Close(); };
 
         headerGrid.Children.Add(titleText);
         headerGrid.Children.Add(closeButton);
         Grid.SetColumn(closeButton, 1);
 
-        Grid.SetRow(headerGrid, 0);
-        rootGrid.Children.Add(headerGrid);
+        headerBorder.Child = headerGrid;
+        Grid.SetRow(headerBorder, 0);
+        rootGrid.Children.Add(headerBorder);
     }
 
     private void CreateModernContent(Grid rootGrid)
     {
         Border contentBorder = new Border
         {
+            Background = Brushes.White,
             Padding = new Thickness(20, 10, 20, 10)
         };
 
@@ -334,9 +377,9 @@ public partial class EditShortcutWindow : Window
         {
             Background = new SolidColorBrush(Color.FromRgb(248, 249, 250)),
             BorderBrush = new SolidColorBrush(Color.FromRgb(218, 220, 224)),
-            BorderThickness = new Thickness(0, 1, 0, 0),
+            BorderThickness = new Thickness(0, 1, 0, 0), // Only top border
             Padding = new Thickness(20, 16, 20, 16),
-            CornerRadius = new CornerRadius(0, 0, 8, 8)
+            CornerRadius = new CornerRadius(0) // No rounded corners
         };
 
         StackPanel buttonPanel = new StackPanel
@@ -345,15 +388,41 @@ public partial class EditShortcutWindow : Window
             HorizontalAlignment = HorizontalAlignment.Right
         };
 
-        Button defaultButton = CreateModernButton("Default", false);
-        defaultButton.Margin = new Thickness(0, 0, 10, 0);
+        // Green default button (same as CustomizeFenceForm)
+        Button defaultButton = new Button
+        {
+            Content = "Default",
+            Height = 36,
+            MinWidth = 80,
+            FontSize = 13,
+            FontWeight = FontWeights.Bold,
+            Cursor = Cursors.Hand,
+            BorderThickness = new Thickness(0),
+            Padding = new Thickness(16, 0, 16, 0),
+            Background = new SolidColorBrush(Color.FromArgb(255,34, 139, 34)), // Green like CustomizeFenceForm
+            Foreground = Brushes.White,
+            Margin = new Thickness(0, 0, 10, 0)
+        };
         defaultButton.Click += Default_Click;
 
         Button cancelButton = CreateModernButton("Cancel", false);
         cancelButton.Margin = new Thickness(0, 0, 10, 0);
         cancelButton.Click += (s, e) => { DialogResult = false; Close(); };
 
-        _saveButton = CreateModernButton("Save", true);
+        // Save button with accent color (same as CustomizeFenceForm)
+        _saveButton = new Button
+        {
+            Content = "Save",
+            Height = 36,
+            MinWidth = 80,
+            FontSize = 13,
+            FontWeight = FontWeights.Bold,
+            Cursor = Cursors.Hand,
+            BorderThickness = new Thickness(0),
+            Padding = new Thickness(16, 0, 16, 0),
+            Background = GetAccentColorBrush(), // Use user's selected theme color
+            Foreground = Brushes.White
+        };
         _saveButton.Click += Save_Click;
 
         buttonPanel.Children.Add(defaultButton);
@@ -405,7 +474,9 @@ public partial class EditShortcutWindow : Window
             targetPathBox.Text = GetCurrentTargetPath();
             argumentsBox.Text = GetCurrentArguments();
             iconPathBox.Text = GetCurrentIconLocation();
-            // Icon preview will be implemented later
+
+            // Load the actual icon being used on the fence
+            LoadActualFenceIcon();
         }
         catch (Exception ex)
         {
@@ -487,7 +558,7 @@ public partial class EditShortcutWindow : Window
         catch (Exception ex)
         {
             LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI, $"Error in target browse dialog: {ex.Message}");
-            TrayManager.Instance.ShowOKOnlyMessageBoxForm($"Error opening file browser: {ex.Message}", "Browse Error");
+            MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Error opening file browser: {ex.Message}", "Browse Error");
         }
     }
 
@@ -511,11 +582,13 @@ public partial class EditShortcutWindow : Window
                 {
                     LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.General, $"User selected icon index: {picker.SelectedIndex} from {selectedPath}");
                     iconPathBox.Text = $"{selectedPath},{picker.SelectedIndex}";
+                    LoadIconPreview(iconPathBox.Text);
                 }
             }
             else
             {
                 iconPathBox.Text = selectedPath;
+                LoadIconPreview(iconPathBox.Text);
             }
         }
     }
@@ -537,12 +610,15 @@ public partial class EditShortcutWindow : Window
             argumentsBox.Text = "";
             iconPathBox.Text = "Default";
 
+            // Update icon preview to show default icon
+            LoadIconPreview("Default");
+
             LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI, "Default values restored successfully");
         }
         catch (Exception ex)
         {
             LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI, $"Error restoring defaults: {ex.Message}");
-            TrayManager.Instance.ShowOKOnlyMessageBoxForm($"Error restoring default values: {ex.Message}", "Default Error");
+            MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Error restoring default values: {ex.Message}", "Default Error");
         }
     }
 
@@ -559,32 +635,90 @@ public partial class EditShortcutWindow : Window
 
             if (string.IsNullOrWhiteSpace(newDisplayName))
             {
-                TrayManager.Instance.ShowOKOnlyMessageBoxForm("Display name cannot be empty.", "Validation Error");
+                MessageBoxesManager.ShowOKOnlyMessageBoxForm("Display name cannot be empty.", "Validation Error");
                 return;
             }
 
             if (string.IsNullOrWhiteSpace(newTargetPath))
             {
-                TrayManager.Instance.ShowOKOnlyMessageBoxForm("Target path cannot be empty.", "Validation Error");
+                MessageBoxesManager.ShowOKOnlyMessageBoxForm("Target path cannot be empty.", "Validation Error");
                 return;
             }
+
+
+
+
 
             WshShell shell = new WshShell();
             IWshShortcut shortcut = (IWshShortcut)shell.CreateShortcut(shortcutPath);
 
-            shortcut.TargetPath = newTargetPath;
-            shortcut.Arguments = newArguments;
+            // Only update properties that have valid values
+            if (!string.IsNullOrEmpty(newTargetPath))
+            {
+                shortcut.TargetPath = newTargetPath;
 
+                // Set working directory only if target path is valid
+                try
+                {
+                    if (System.IO.File.Exists(newTargetPath))
+                    {
+                        string workingDir = System.IO.Path.GetDirectoryName(newTargetPath);
+                        if (!string.IsNullOrEmpty(workingDir))
+                        {
+                            shortcut.WorkingDirectory = workingDir;
+                        }
+                    }
+                    else if (System.IO.Directory.Exists(newTargetPath))
+                    {
+                        shortcut.WorkingDirectory = newTargetPath;
+                    }
+                }
+                catch (Exception dirEx)
+                {
+                    LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI, $"Could not set working directory: {dirEx.Message}");
+                    // Don't set working directory if there's an issue
+                }
+            }
+
+            // Handle arguments - only set if not null
+            if (newArguments != null)
+            {
+                shortcut.Arguments = newArguments;
+            }
+
+
+
+            // Handle icon location 
             if (!string.IsNullOrEmpty(newIconPath) && newIconPath != "Default")
             {
                 shortcut.IconLocation = newIconPath;
+                LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI, $"Set custom icon: {newIconPath}");
+            }
+            else if (newIconPath == "Default")
+            {
+                // For default icon, set IconLocation to target executable at index 0
+                if (!string.IsNullOrEmpty(newTargetPath) && System.IO.File.Exists(newTargetPath))
+                {
+                    shortcut.IconLocation = $"{newTargetPath},0";
+                    LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI, $"Set default icon to target: {newTargetPath},0");
+                }
+                else
+                {
+                    shortcut.IconLocation = "";
+                    LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI, "Target doesn't exist, clearing icon location");
+                }
             }
             else
             {
                 shortcut.IconLocation = "";
+                LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI, "Cleared icon location");
             }
 
-            shortcut.Save();
+
+
+   
+                shortcut.Save();
+        
 
             NewDisplayName = newDisplayName;
 
@@ -600,7 +734,136 @@ public partial class EditShortcutWindow : Window
         catch (Exception ex)
         {
             LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI, $"Error saving shortcut: {ex.Message}");
-            TrayManager.Instance.ShowOKOnlyMessageBoxForm($"Failed to save shortcut: {ex.Message}", "Save Error");
+            MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Failed to save shortcut: {ex.Message}", "Save Error");
+        }
+    }
+
+    /// <summary>
+    /// Loads and displays the icon in the preview Image control
+    /// </summary>
+    private void LoadIconPreview(string iconPath)
+    {
+        try
+        {
+            ImageSource iconSource = null;
+
+            // Handle different icon path formats
+            if (string.IsNullOrEmpty(iconPath) || iconPath == "Default")
+            {
+                // Load icon from target executable
+                string targetPath = GetCurrentTargetPath();
+                if (!string.IsNullOrEmpty(targetPath) && System.IO.File.Exists(targetPath))
+                {
+                    iconSource = IconManager.ExtractIconFromFile(targetPath, 0);
+                }
+            }
+            else if (iconPath.Contains(","))
+            {
+                // Handle format: "path,index"
+                string[] parts = iconPath.Split(',');
+                string filePath = parts[0];
+                int iconIndex = 0;
+
+                if (parts.Length == 2 && int.TryParse(parts[1], out int parsedIndex))
+                {
+                    iconIndex = parsedIndex;
+                }
+
+                if (System.IO.File.Exists(filePath))
+                {
+                    iconSource = IconManager.ExtractIconFromFile(filePath, iconIndex);
+                }
+            }
+            else
+            {
+                // Handle direct icon file path
+                if (System.IO.File.Exists(iconPath))
+                {
+                    string extension = System.IO.Path.GetExtension(iconPath).ToLower();
+                    if (extension == ".ico")
+                    {
+                        iconSource = new BitmapImage(new Uri(iconPath));
+                    }
+                    else if (extension == ".exe" || extension == ".dll")
+                    {
+                        iconSource = IconManager.ExtractIconFromFile(iconPath, 0);
+                    }
+                }
+            }
+
+            // Apply the icon to preview or show default
+            if (iconSource != null)
+            {
+                iconPreview.Source = iconSource;
+                LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI, $"Loaded icon preview for: {iconPath}");
+            }
+            else
+            {
+                // Show default application icon as fallback
+                iconPreview.Source = new BitmapImage(new Uri("pack://application:,,,/Resources/file-WhiteX.png"));
+                LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI, "Loaded fallback icon for preview");
+            }
+        }
+        catch (Exception ex)
+        {
+            LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI, $"Error loading icon preview: {ex.Message}");
+            // Show fallback icon on error
+            iconPreview.Source = new BitmapImage(new Uri("pack://application:,,,/Resources/file-WhiteX.png"));
+        }
+    }
+
+    /// <summary>
+    /// Loads the actual icon being used on the fence (same logic as fence display)
+    /// </summary>
+    private void LoadActualFenceIcon()
+    {
+        try
+        {
+            string targetPath = GetCurrentTargetPath();
+            bool isShortcut = System.IO.Path.GetExtension(shortcutPath).ToLower() == ".lnk";
+            bool isFolder = !isShortcut && System.IO.Directory.Exists(targetPath);
+            bool isLink = System.IO.Path.GetExtension(shortcutPath).ToLower() == ".url";
+
+            // Use the same icon extraction logic as the fence
+            ImageSource fenceIcon = IconManager.GetIconForFile(targetPath, shortcutPath, isFolder, isLink, isShortcut, null);
+
+            if (fenceIcon != null)
+            {
+                iconPreview.Source = fenceIcon;
+                LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI, $"Loaded actual fence icon for: {shortcutPath}");
+            }
+            else
+            {
+                // Fallback to LoadIconPreview method
+                LoadIconPreview(iconPathBox.Text);
+                LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI, "Using LoadIconPreview fallback");
+            }
+        }
+        catch (Exception ex)
+        {
+            LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI, $"Error loading fence icon: {ex.Message}, using fallback");
+            // Fallback to the original method
+            LoadIconPreview(iconPathBox.Text);
+        }
+    }
+
+
+    /// <summary>
+    /// Gets the user's selected accent color (same method as CustomizeFenceForm)
+    /// </summary>
+    private SolidColorBrush GetAccentColorBrush()
+    {
+        try
+        {
+            string selectedColorName = SettingsManager.SelectedColor;
+            var mediaColor = Utility.GetColorFromName(selectedColorName);
+            return new SolidColorBrush(mediaColor);
+        }
+        catch (Exception ex)
+        {
+            LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI, $"Error getting accent color: {ex.Message}");
+            // Fallback to blue
+            return new SolidColorBrush(Color.FromRgb(66, 133, 244));
         }
     }
 

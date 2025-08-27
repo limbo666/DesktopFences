@@ -47,8 +47,11 @@ namespace Desktop_Fences
             }
             catch (Exception ex)
             {
-                LogManager.Log(LogManager.LogLevel.Warn, LogManager.LogCategory.Error,
-                    $"Error in immediate target check for {key}: {ex.Message}");
+                if (SettingsManager.EnableBackgroundValidationLogging)
+                {
+                    LogManager.Log(LogManager.LogLevel.Warn, LogManager.LogCategory.BackgroundValidation,
+                        $"Error in immediate target check for {key}: {ex.Message}");
+                }
             }
         }
         public void RemoveCheckAction(string key)
@@ -91,17 +94,22 @@ namespace Desktop_Fences
                     }
                     catch (Exception actionEx)
                     {
-                        // Log individual action errors but continue with other actions
-                        LogManager.Log(LogManager.LogLevel.Warn, LogManager.LogCategory.Error,
-                            $"Error in target check action: {actionEx.Message}");
+                        if (SettingsManager.EnableBackgroundValidationLogging)
+                        {
+                            LogManager.Log(LogManager.LogLevel.Warn, LogManager.LogCategory.BackgroundValidation,
+                                $"Error in target check action: {actionEx.Message}");
+                        }
                     }
                 }
             }
             catch (Exception ex)
             {
                 // Log timer event errors
-                LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.Error,
-                    $"Error in TargetChecker timer event: {ex.Message}");
+                if (SettingsManager.EnableBackgroundValidationLogging)
+                {
+                    LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.BackgroundValidation,
+                        $"Error in TargetChecker timer event: {ex.Message}");
+                }
             }
         }
     }

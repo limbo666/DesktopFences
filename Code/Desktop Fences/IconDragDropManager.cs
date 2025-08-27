@@ -842,7 +842,7 @@ namespace Desktop_Fences
                 }
 
                 // Save changes to JSON
-                FenceManager.SaveFenceData();
+                FenceDataManager.SaveFenceData();
 
                 // Refresh the UI to reflect new order
                 RefreshFenceUI();
@@ -1032,7 +1032,7 @@ namespace Desktop_Fences
                                                     {
                                                         wrapPanel.Children.Remove(sp);
                                                     }
-                                                    FenceManager.SaveFenceData();
+                                                    FenceDataManager.SaveFenceData();
                                                 }
                                                 catch (Exception ex)
                                                 {

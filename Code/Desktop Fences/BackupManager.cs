@@ -94,14 +94,14 @@ namespace Desktop_Fences
                 }
 
                 // Notify the user of successful backup
-                TrayManager.Instance.ShowOKOnlyMessageBoxForm("Backup completed successfully.", "Backup");
+                MessageBoxesManager.ShowOKOnlyMessageBoxForm("Backup completed successfully.", "Backup");
                 LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.ImportExport, $"Complete data backup finished successfully: {backupFolderPath}");
             }
             catch (Exception ex)
             {
                 // Handle any errors during the backup process and inform the user
                 LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.ImportExport, $"Backup failed: {ex.Message}\nStack trace: {ex.StackTrace}");
-                TrayManager.Instance.ShowOKOnlyMessageBoxForm($"An error occurred during backup: {ex.Message}", "Error");
+                MessageBoxesManager.ShowOKOnlyMessageBoxForm($"An error occurred during backup: {ex.Message}", "Error");
             }
         }
         #endregion
@@ -125,7 +125,7 @@ namespace Desktop_Fences
                 {
                     string errorMsg = "Invalid backup folder - missing required files (fences.json or Shortcuts folder)";
                     LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.ImportExport, errorMsg);
-                    TrayManager.Instance.ShowOKOnlyMessageBoxForm(errorMsg, "Restore Error");
+                    MessageBoxesManager.ShowOKOnlyMessageBoxForm(errorMsg, "Restore Error");
                     return;
                 }
 
@@ -163,7 +163,7 @@ namespace Desktop_Fences
             catch (Exception ex)
             {
                 LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.ImportExport, $"Restore failed: {ex.Message}\nStack trace: {ex.StackTrace}");
-                TrayManager.Instance.ShowOKOnlyMessageBoxForm($"Restore failed: {ex.Message}", "Error");
+                MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Restore failed: {ex.Message}", "Error");
                 throw; // Re-throw to allow calling code to handle
             }
         }
@@ -178,7 +178,7 @@ namespace Desktop_Fences
                 if (!_isRestoreAvailable || string.IsNullOrEmpty(_lastDeletedFolderPath) || _lastDeletedFence == null)
                 {
                     LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.ImportExport, "No fence available to restore");
-                    TrayManager.Instance.ShowOKOnlyMessageBoxForm("No fence to restore", "Restore");
+                    MessageBoxesManager.ShowOKOnlyMessageBoxForm("No fence to restore", "Restore");
                     return;
                 }
 
@@ -207,7 +207,7 @@ namespace Desktop_Fences
                 // Restore fence data to the main fence collection
                 var fenceData = FenceManager.GetFenceData();
                 fenceData.Add(_lastDeletedFence);
-                FenceManager.SaveFenceData();
+                FenceDataManager.SaveFenceData();
 
                 // Create the fence UI
                 FenceManager.CreateFence(_lastDeletedFence, new TargetChecker(1000));
@@ -224,7 +224,7 @@ namespace Desktop_Fences
             catch (Exception ex)
             {
                 LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.ImportExport, $"Error restoring last deleted fence: {ex.Message}");
-                TrayManager.Instance.ShowOKOnlyMessageBoxForm($"Error restoring fence: {ex.Message}", "Restore Error");
+                MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Error restoring fence: {ex.Message}", "Restore Error");
             }
         }
         #endregion
@@ -312,12 +312,12 @@ namespace Desktop_Fences
                 Directory.Delete(exportFolder, true);
 
                 LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.ImportExport, $"Fence exported successfully to: {fencePath}");
-                TrayManager.Instance.ShowOKOnlyMessageBoxForm($"Fence exported to:\n{fencePath}", "Export Successful");
+                MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Fence exported to:\n{fencePath}", "Export Successful");
             }
             catch (Exception ex)
             {
                 LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.ImportExport, $"Export failed: {ex.Message}\nStack trace: {ex.StackTrace}");
-                TrayManager.Instance.ShowOKOnlyMessageBoxForm($"Export failed: {ex.Message}", "Error");
+                MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Export failed: {ex.Message}", "Error");
             }
         }
 
@@ -431,10 +431,10 @@ namespace Desktop_Fences
                     var fenceData = FenceManager.GetFenceData();
                     fenceData.Add(importedFence);
                     FenceManager.CreateFence(importedFence, new TargetChecker(1000));
-                    FenceManager.SaveFenceData();
+                    FenceDataManager.SaveFenceData();
 
                     LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.ImportExport, $"Fence '{importedFence.Title}' imported successfully");
-                    TrayManager.Instance.ShowOKOnlyMessageBoxForm("Fence imported successfully!", "Import Complete");
+                    MessageBoxesManager.ShowOKOnlyMessageBoxForm("Fence imported successfully!", "Import Complete");
                 }
                 finally
                 {
@@ -449,7 +449,7 @@ namespace Desktop_Fences
             catch (Exception ex)
             {
                 LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.ImportExport, $"Fence import failed: {ex.Message}\nStack trace: {ex.StackTrace}");
-                TrayManager.Instance.ShowOKOnlyMessageBoxForm($"Failed to import fence: {ex.Message}", "Import Error");
+                MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Failed to import fence: {ex.Message}", "Import Error");
             }
         }
         #endregion

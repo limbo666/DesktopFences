@@ -23,8 +23,14 @@ namespace Desktop_Fences
             IconHandling,
             Error,
             ImportExport,
-            Settings
+            Settings,
+            BackgroundValidation
         }
+
+        // temp line
+        // Test line - can be removed after verification
+        private static LogCategory _testCategory = LogCategory.BackgroundValidation;
+
 
         private static readonly object _logLock = new object();
         private static string _logFilePath;

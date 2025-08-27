@@ -64,7 +64,7 @@ namespace Desktop_Fences
         private void QueueEvent(FileSystemEventArgs e, string oldPath = null)
         {
             // Filter out Excel and other temporary files immediately
-            if (IsTemporaryFile(e.FullPath))
+            if (CoreUtilities.IsTemporaryFile(e.FullPath))
             {
                 LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.General, $"Ignoring temporary file: {e.FullPath}");
                 return;
@@ -78,56 +78,7 @@ namespace Desktop_Fences
             }
         }
 
-        private bool IsTemporaryFile(string filePath)
-        {
-            if (string.IsNullOrEmpty(filePath))
-                return true;
-
-            string fileName = Path.GetFileName(filePath);
-
-            // Excel temporary files (this is the main fix for your issue)
-            if (fileName.StartsWith("~$"))
-                return true;
-
-            // Word temporary files
-            if (fileName.StartsWith("~WRL") || fileName.StartsWith("~WRD"))
-                return true;
-
-            // PowerPoint temporary files  
-            if (fileName.StartsWith("~PPT"))
-                return true;
-
-            // General temporary patterns
-            if (fileName.StartsWith(".tmp") || fileName.EndsWith(".tmp") ||
-                fileName.StartsWith("tmp") || fileName.EndsWith(".temp"))
-                return true;
-
-            // System files
-            if (fileName == "Thumbs.db" || fileName == "desktop.ini" || fileName == ".DS_Store")
-                return true;
-
-            // Try to check file attributes if file exists
-            try
-            {
-                if (System.IO.File.Exists(filePath) || Directory.Exists(filePath))
-                {
-                    FileAttributes attributes = System.IO.File.GetAttributes(filePath);
-                    if ((attributes & FileAttributes.Hidden) == FileAttributes.Hidden ||
-                        (attributes & FileAttributes.System) == FileAttributes.System ||
-                        (attributes & FileAttributes.Temporary) == FileAttributes.Temporary)
-                    {
-                        return true;
-                    }
-                }
-            }
-            catch
-            {
-                // If we can't check attributes, continue with other checks
-            }
-
-            return false;
-        }
-
+     
         private void ProcessPendingEvents(object sender, EventArgs e)
         {
             _debounceTimer.Stop();
@@ -147,7 +98,7 @@ namespace Desktop_Fences
                         case WatcherChangeTypes.Created:
                             // Double-check file still exists and isn't temporary before adding
                             if ((System.IO.File.Exists(evt.Args.FullPath) || Directory.Exists(evt.Args.FullPath)) &&
-                                !IsTemporaryFile(evt.Args.FullPath))
+                                    !CoreUtilities.IsTemporaryFile(evt.Args.FullPath))
                             {
                                 AddIcon(evt.Args.FullPath);
                                 LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.General, $"Processed queued Created event for {evt.Args.FullPath}");
@@ -160,7 +111,7 @@ namespace Desktop_Fences
                         case WatcherChangeTypes.Renamed:
                             RemoveIcon(evt.OldPath);
                             if ((System.IO.File.Exists(evt.Args.FullPath) || Directory.Exists(evt.Args.FullPath)) &&
-                                !IsTemporaryFile(evt.Args.FullPath))
+                                !CoreUtilities.IsTemporaryFile(evt.Args.FullPath))
                             {
                                 AddIcon(evt.Args.FullPath);
                             }
@@ -184,7 +135,7 @@ namespace Desktop_Fences
                     return;
                 }
 
-                if (IsTemporaryFile(path))
+                if (CoreUtilities.IsTemporaryFile(path))
                 {
                     LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.General, $"Skipping temporary file: {path}");
                     return;
@@ -282,7 +233,7 @@ namespace Desktop_Fences
                 // Check if target name already exists
                 if (System.IO.File.Exists(newPath) || Directory.Exists(newPath))
                 {
-                    TrayManager.Instance.ShowOKOnlyMessageBoxForm("A file or folder with that name already exists.", "Rename Error");
+                    MessageBoxesManager.ShowOKOnlyMessageBoxForm("A file or folder with that name already exists.", "Rename Error");
                     return;
                 }
 
@@ -303,7 +254,7 @@ namespace Desktop_Fences
             catch (Exception ex)
             {
                 LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.General, $"Failed to rename {currentPath}: {ex.Message}");
-                TrayManager.Instance.ShowOKOnlyMessageBoxForm($"Failed to rename item: {ex.Message}", "Rename Error");
+                MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Failed to rename item: {ex.Message}", "Rename Error");
             }
         }
 
@@ -315,7 +266,7 @@ namespace Desktop_Fences
                 foreach (string path in Directory.GetFileSystemEntries(_targetFolderPath))
                 {
                     // Filter out temporary files during initialization
-                    if (IsTemporaryFile(path))
+                    if (CoreUtilities.IsTemporaryFile(path))
                         continue;
 
                     // Filter out hidden files during initialization too
@@ -354,7 +305,7 @@ namespace Desktop_Fences
             var currentFiles = Directory.GetFileSystemEntries(_targetFolderPath)
                 .Where(path =>
                 {
-                    if (IsTemporaryFile(path))
+                    if (CoreUtilities.IsTemporaryFile(path))
                         return false;
 
                     try
@@ -422,7 +373,7 @@ namespace Desktop_Fences
             catch (Exception ex)
             {
                 LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI, $"Failed to copy path for {path}: {ex.Message}");
-                TrayManager.Instance.ShowOKOnlyMessageBoxForm($"Unable to copy path.", "Error");
+                MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Unable to copy path.", "Error");
             }
         }
 
@@ -462,7 +413,7 @@ namespace Desktop_Fences
                 catch (Exception ex)
                 {
                     LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.General, $"Failed to move item {path} to recycle bin: {ex.Message}");
-                    TrayManager.Instance.ShowOKOnlyMessageBoxForm($"Unable to move item to recycle bin.", "Error");
+                    MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Unable to move item to recycle bin.", "Error");
                 }
             }
             else
@@ -494,7 +445,7 @@ namespace Desktop_Fences
                 catch (Exception ex)
                 {
                     LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.General, $"Failed to delete item {path}: {ex.Message}");
-                    TrayManager.Instance.ShowOKOnlyMessageBoxForm($"Unable to delete item.", "Error");
+                    MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Unable to delete item.", "Error");
                 }
             }
         }

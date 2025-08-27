@@ -45,23 +45,15 @@ namespace Desktop_Fences
             WindowStyle = WindowStyle.None;
             AllowsTransparency = false;
 
-            //Effect = new DropShadowEffect
-            //{
-            //    Color = Colors.Black,
-            //    Opacity = 0.15,
-            //    BlurRadius = 12,
-            //    ShadowDepth = 4,
-            //    Direction = 270
-            //};
+
 
             Border mainBorder = new Border
             {
                 Background = Brushes.White,
-                CornerRadius = new CornerRadius(8),
+                CornerRadius = new CornerRadius(0), // No rounded corners like other forms
                 BorderBrush = new SolidColorBrush(Color.FromRgb(218, 220, 224)),
                 BorderThickness = new Thickness(1, 1, 1, 1),
-                //Margin = new Thickness(8, 8, 8, 8)
-                Margin = new Thickness(0 , 0, 0,0)
+                Margin = new Thickness(0, 0, 0, 0)
             };
 
             Grid rootGrid = new Grid();
@@ -79,52 +71,58 @@ namespace Desktop_Fences
 
         private void CreateHeader(Grid rootGrid)
         {
-            Grid headerGrid = new Grid
+            // Header with accent color background (same as CustomizeFenceForm)
+            Border headerBorder = new Border
             {
-                Background = new SolidColorBrush(Color.FromRgb(248, 249, 250)),
-                Height = 50
+                Height = 50,
+                Background = GetAccentColorBrush(), // Use user's selected theme color
+                CornerRadius = new CornerRadius(0) // No rounded corners
             };
+
+            Grid headerGrid = new Grid();
             headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
+            // Title with white text (same as CustomizeFenceForm)
             TextBlock titleText = new TextBlock
             {
                 Text = "Select Icon",
-                FontSize = 16,
-                FontWeight = FontWeights.SemiBold,
-                Foreground = new SolidColorBrush(Color.FromRgb(32, 33, 36)),
+                FontSize = 14,
+                FontWeight = FontWeights.Bold, // Bold like CustomizeFenceForm
+                Foreground = Brushes.White, // White text on colored background
                 VerticalAlignment = VerticalAlignment.Center,
-                Margin = new Thickness(20, 0, 0, 0)
+                Margin = new Thickness(16, 0, 0, 0)
             };
 
+            // Close button with hover effects (same as CustomizeFenceForm)
             Button closeButton = new Button
             {
-                Width = 36,
-                Height = 36,
+                Content = "✕",
+                Width = 32,
+                Height = 32,
+                FontSize = 12,
+                FontWeight = FontWeights.Bold,
+                Foreground = Brushes.White,
                 Background = Brushes.Transparent,
-                BorderThickness = new Thickness(0, 0, 0, 0),
-                Margin = new Thickness(0, 0, 10, 0),
+                BorderBrush = Brushes.Transparent,
                 Cursor = Cursors.Hand,
-                VerticalAlignment = VerticalAlignment.Center,
-                Content = new TextBlock
-                {
-                    Text = "✕",
-                    FontSize = 16,
-                    Foreground = new SolidColorBrush(Color.FromRgb(95, 99, 104)),
-                    HorizontalAlignment = HorizontalAlignment.Center,
-                    VerticalAlignment = VerticalAlignment.Center
-                }
+                Margin = new Thickness(0, 0, 9, 0),
+                VerticalAlignment = VerticalAlignment.Center
             };
+
+            // Add hover effect like CustomizeFenceForm
+            closeButton.MouseEnter += (s, e) => closeButton.Background = new SolidColorBrush(Color.FromArgb(50, 255, 255, 255));
+            closeButton.MouseLeave += (s, e) => closeButton.Background = Brushes.Transparent;
             closeButton.Click += (s, e) => { DialogResult = false; Close(); };
 
             headerGrid.Children.Add(titleText);
             headerGrid.Children.Add(closeButton);
             Grid.SetColumn(closeButton, 1);
 
-            Grid.SetRow(headerGrid, 0);
-            rootGrid.Children.Add(headerGrid);
+            headerBorder.Child = headerGrid;
+            Grid.SetRow(headerBorder, 0);
+            rootGrid.Children.Add(headerBorder);
         }
-
         private void CreateContent(Grid rootGrid)
         {
             Border contentBorder = new Border
@@ -152,11 +150,31 @@ namespace Desktop_Fences
             {
                 Background = new SolidColorBrush(Color.FromRgb(248, 249, 250)),
                 BorderBrush = new SolidColorBrush(Color.FromRgb(218, 220, 224)),
-                BorderThickness = new Thickness(0, 1, 0, 0),
+                BorderThickness = new Thickness(0, 1, 0, 0), // Only top border
                 Padding = new Thickness(20, 16, 20, 16),
-                CornerRadius = new CornerRadius(0, 0, 8, 8)
+                CornerRadius = new CornerRadius(0) // No rounded corners
             };
 
+            // Use Grid to have text on left and buttons on right
+            Grid footerGrid = new Grid();
+            footerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) }); // Text area
+            footerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto }); // Buttons area
+
+            // Instruction text on the left
+            TextBlock instructionText = new TextBlock
+            {
+                Text = "Select an Icon from the available and click OK",
+                FontSize = 13,
+                FontWeight = FontWeights.Medium,
+                Foreground = new SolidColorBrush(Color.FromRgb(95, 99, 104)),
+                VerticalAlignment = VerticalAlignment.Center,
+                TextWrapping = TextWrapping.Wrap,
+                Height = 36, // Same height as buttons
+                Background = new SolidColorBrush(Color.FromRgb(248, 249, 250)), // Same as footer background
+                Margin = new Thickness(0, 0, 20, 0) // Space between text and buttons
+            };
+
+            // Buttons panel on the right
             StackPanel buttonPanel = new StackPanel
             {
                 Orientation = Orientation.Horizontal,
@@ -180,19 +198,19 @@ namespace Desktop_Fences
             };
             cancelButton.Click += (s, e) => { DialogResult = false; Close(); };
 
+            // OK button with accent color (same as Save button in other forms)
             _okButton = new Button
             {
                 Content = "OK",
                 Height = 36,
                 MinWidth = 80,
                 FontSize = 13,
-                FontWeight = FontWeights.Medium,
+                FontWeight = FontWeights.Bold, // Bold like other forms
                 Cursor = Cursors.Hand,
-                BorderThickness = new Thickness(1, 1, 1, 1),
+                BorderThickness = new Thickness(0), // No border like other forms
                 Padding = new Thickness(16, 0, 16, 0),
-                Background = new SolidColorBrush(Color.FromRgb(66, 133, 244)),
+                Background = GetAccentColorBrush(), // Use user's selected theme color
                 Foreground = Brushes.White,
-                BorderBrush = new SolidColorBrush(Color.FromRgb(66, 133, 244)),
                 IsEnabled = false
             };
             _okButton.Click += (s, e) =>
@@ -203,12 +221,16 @@ namespace Desktop_Fences
                     Close();
                 }
             };
-
             buttonPanel.Children.Add(cancelButton);
             buttonPanel.Children.Add(_okButton);
 
-            footerBorder.Child = buttonPanel;
+            // Add text and buttons to grid
+            footerGrid.Children.Add(instructionText);
+            footerGrid.Children.Add(buttonPanel);
+            Grid.SetColumn(instructionText, 0);
+            Grid.SetColumn(buttonPanel, 1);
 
+            footerBorder.Child = footerGrid;
             Grid.SetRow(footerBorder, 2);
             rootGrid.Children.Add(footerBorder);
         }
@@ -278,6 +300,25 @@ namespace Desktop_Fences
                         DestroyIcon(hIcon[0]);
                     }
                 }
+            }
+        }
+
+        /// <summary>
+        /// Gets the user's selected accent color (same method as CustomizeFenceForm)
+        /// </summary>
+        private SolidColorBrush GetAccentColorBrush()
+        {
+            try
+            {
+                string selectedColorName = SettingsManager.SelectedColor;
+                var mediaColor = Utility.GetColorFromName(selectedColorName);
+                return new SolidColorBrush(mediaColor);
+            }
+            catch (Exception ex)
+            {
+                LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI, $"Error getting accent color: {ex.Message}");
+                // Fallback to blue
+                return new SolidColorBrush(Color.FromRgb(66, 133, 244));
             }
         }
 

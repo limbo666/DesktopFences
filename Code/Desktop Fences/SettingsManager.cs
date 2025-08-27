@@ -73,6 +73,13 @@ namespace Desktop_Fences
         /// </summary>
         public static bool EnableIconGlowEffect { get; set; } = true; // Default disabled
 
+        /// <summary>
+        /// Gets or sets whether to disable single instance enforcement, allowing multiple instances to run simultaneously.
+        /// Hidden option - not exposed in GUI, manually configurable in options.json
+        /// When true, multiple instances can run without triggering effects or forced exits
+        /// Default: false (single instance enforced)
+        /// </summary>
+        public static bool DisableSingleInstance { get; set; } = false; // Default disabled (single instance enforced)
 
 
         /// <summary>
@@ -80,6 +87,28 @@ namespace Desktop_Fences
         /// </summary>
         public static bool DeletePreviousLogOnStart { get; set; } = false; // Default disabled
 
+        /// <summary>
+        /// Gets or sets whether to enable background validation logging (file existence checks, icon updates).
+        /// When disabled, reduces log volume by suppressing repetitive validation operations.
+        /// </summary>
+        public static bool EnableBackgroundValidationLogging { get; set; } = false; // Default disabled to reduce log noise
+
+
+        /// <summary>
+        /// Gets or sets whether to suppress launch warning messages for applications that return unusual exit codes
+        /// Useful for media players like PotPlayer that may trigger false error messages during successful launches
+        /// Hidden option - not exposed in GUI, manually configurable in options.json
+        /// </summary>
+        public static bool SuppressLaunchWarnings { get; set; } = false; // Default disabled
+
+
+
+        /// <summary>
+        /// Gets or sets whether to disable automatic scrollbars on fence content areas
+        /// When true, removes scrollbars from Data and Portal fences for a cleaner appearance
+        /// Hidden option - not exposed in GUI, manually configurable in options.json
+        /// </summary>
+        public static bool DisableFenceScrollbars { get; set; } = false; // Default disabled
 
         /// <summary>
         /// Gets or sets the icon visibility effect type.
@@ -90,23 +119,6 @@ namespace Desktop_Fences
 
 
 
-
-
-        /// <summary>
-        /// Gets or sets the minimum log level for logging (Debug, Info, Warn, Error).
-        /// </summary>
-        //        public static LogManager.LogLevel MinLogLevel { get; set; } = LogManager.LogLevel.Info; // Default to Info for production
-
-        //        /// <summary>
-        //        /// Gets or sets the list of enabled log categories.
-        //        /// </summary>
-        //        public static List<LogManager.LogCategory> EnabledLogCategories { get; set; } = new List<LogManager.LogCategory>
-        //{
-        //    LogManager.LogCategory.General,
-        //    LogManager.LogCategory.Error,
-        //    LogManager.LogCategory.ImportExport,
-        //    LogManager.LogCategory.Settings
-        //}; 
 
 
         public static LogManager.LogLevel MinLogLevel { get; set; } = LogManager.LogLevel.Info;
@@ -177,6 +189,8 @@ namespace Desktop_Fences
                     try { SingleClickToLaunch = optionsData.SingleClickToLaunch ?? true; } catch { SingleClickToLaunch = true; }
                     try { EnableDimensionSnap = optionsData.EnableDimensionSnap ?? false; } catch { EnableDimensionSnap = false; }
                     try { PortalBackgroundOpacity = optionsData.PortalBackgroundOpacity ?? 20; } catch { PortalBackgroundOpacity = 20; }
+                    try { DisableFenceScrollbars = optionsData.DisableFenceScrollbars ?? false; } catch { DisableFenceScrollbars = false; }
+
                     //   try { MaxDisplayNameLength = optionsData.MaxDisplayNameLength ?? 20; } catch { MaxDisplayNameLength = 20; }
                     try
                     {
@@ -187,6 +201,10 @@ namespace Desktop_Fences
                     {
                         MaxDisplayNameLength = 20;
                     }
+
+                    // Load DisableSingleInstance with protection  
+                    try { DisableSingleInstance = optionsData.DisableSingleInstance ?? false; }
+                    catch { DisableSingleInstance = false; }
 
 
                     try
@@ -227,7 +245,13 @@ namespace Desktop_Fences
                     try { DeletePreviousLogOnStart = optionsData.DeletePreviousLogOnStart ?? false; }
                     catch { DeletePreviousLogOnStart = false; }
 
+                    // Load SuppressLaunchWarnings with protection  
+                    try { SuppressLaunchWarnings = optionsData.SuppressLaunchWarnings ?? false; }
+                    catch { SuppressLaunchWarnings = false; }
 
+                    // Load EnableBackgroundValidationLogging with protection  
+                    try { EnableBackgroundValidationLogging = optionsData.EnableBackgroundValidationLogging ?? false; }
+                    catch { EnableBackgroundValidationLogging = false; }
 
                     // Load MinLogLevel with protection
                     try
@@ -309,7 +333,11 @@ namespace Desktop_Fences
                     LaunchEffect = LaunchEffect.ToString(), // Save as string for JSON compatibility
                     MinLogLevel = MinLogLevel.ToString(), // Save as string for JSON compatibility
                     EnabledLogCategories = EnabledLogCategories.Select(c => c.ToString()).ToList(),
-                    DeletePreviousLogOnStart 
+                    DeletePreviousLogOnStart,
+                    SuppressLaunchWarnings,
+                    EnableBackgroundValidationLogging, // 
+                    DisableSingleInstance, // Multiple instances option  
+                    DisableFenceScrollbars // Scrollbar control option
                 };
 
                 // Serialize to JSON with indentation for readability
@@ -345,6 +373,7 @@ namespace Desktop_Fences
             SaveSettings();
         }
 
+  
 
 
 
