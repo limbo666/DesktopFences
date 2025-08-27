@@ -193,12 +193,13 @@ Even small contributions mean a lot. Thank you for keeping this project alive an
 -  **Added**: "Clear Dead Shortcuts" right click option to remove all not valid shortcust from a fence.
 -  **Added**: "Send To Desktop" right click option to copy a shortcut to desktop (📝 Use CTRL + right click).
 -  **Added**: "Copy and Paste" options to copy items across fences.
--  **Fixed**: 🐛 Almost all forms were redesigned and made dpi aware to work under monitors with scaling enabled.
+-  **Fixed**: 🐛 All forms were redesigned and made dpi aware to work under monitors with scaling enabled.
 -  **Added**: Message boxes accepted Enter and Esc as validation.
 -  **Added**: Variables can be set on `options.json` to manual tweak program. 🐉 See [tweaks](https://github.com/limbo666/DesktopFences/blob/main/tweaks.md).
 -  **Changed**: Target launch mechanism. This probably will fix most common launch errors. https://github.com/limbo666/DesktopFences/issues/24
 -  **Changed**:  🔨🔩🔧 Another source code refactoring.
 -  **Added**: Option to disable Fence scrollbars. https://github.com/limbo666/DesktopFences/issues/21 
+-  **Fixed**: 🪲 🐛 Edit panel arguments preview/change, default settings application and icon preview bugs.
  
 ---
 
