@@ -24,7 +24,8 @@ This project is a continuation and substantial modification of the original Bird
 
 Desktop Fences+ has been significantly enhanced and optimized for improved performance, stability, and user experience, while respecting the terms of the original license and acknowledging the original author.
 
-
+---
+[![Video Title](https://img.youtube.com/vi/I-blY76kSP8/maxresdefault.jpg)](https://www.youtube.com/watch?v=I-blY76kSP8)
 ---
 
 ##  Manual
