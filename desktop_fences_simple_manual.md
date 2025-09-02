@@ -1,5 +1,12 @@
 # Desktop Fences + User Manual
 
+
+<div style="width:20%; margin: auto;">
+
+![blackboard fences](https://github.com/limbo666/DesktopFences/blob/main/Imgs/Fence2.png) 
+</div>
+
+
 ## Overview
 
 Desktop Fences + is a powerful desktop organization tool that creates virtual "fences" on your desktop, allowing you to group and organize icons in a clean and convenient way. Think of fences as visible containers that help you organize your desktop shortcuts, files, and folders into logical groups.
