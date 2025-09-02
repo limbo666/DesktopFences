@@ -225,6 +225,9 @@ Simply extract the executable and run it. The necessary configuration files (`fe
 >  No installation required — fully portable
 
 ---
+## Stargazers over time
+[![Stargazers over time](https://starchart.cc/limbo666/DesktopFences.svg?background=%23535050&axis=%23f172cb&line=%239c34f7)](https://starchart.cc/limbo666/DesktopFences)
+---
 
 ##  License
 
