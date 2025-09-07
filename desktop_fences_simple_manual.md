@@ -150,7 +150,7 @@ In the edit window you can set name, target path, arguments and icon for the sho
 
 The icons on the fences which are targeting files and folders are getting continuously checked for target validity. If target is missing or it is not accessible an icon indicate that this shortcut is not functioning, so you can check the target and fix it or delete the dead shortcut. You can right click on this icon and select "Remove".   
 
-**Clear Dead Shortcuts :** If you want to remove all dead shortcuts within a fence with just one move right click on the fence and select "Clear Dead Shortcuts"
+**Clear Dead Shortcuts:** If you want to remove all dead shortcuts within a fence with just one move right click on the fence and select "Clear Dead Shortcuts"
 
 
 
@@ -217,7 +217,8 @@ Access settings through the system tray icon → "Options":
 - **Enable Portal Fences Watermark:**  Enables the "portal" watermark image on portal fences
 
 - **Use Recycle Bin on Portal Fences 'Delete Item' command:** Send files to recycle bin instead of deleting them
-
+  
+- **Disable Fences Scrollbars:** Hides scrollbars from fences when contents exceed the aveilable display area
   
 
 **Style:**
@@ -346,7 +347,8 @@ The application version is displayed in the About dialog, accessible through the
 
 *This manual covers the core functionality of Desktop Fences +. The application includes many additional features and customization options discoverable through exploration and experimentation.*
 
-*Ctrl + Click is your friend*
+*Ctrl + Click is your friend* <br>
+
 
 Aug 2025 Nikos Georgousis
 Hand Water Pump
