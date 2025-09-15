@@ -200,7 +200,7 @@ Even small contributions mean a lot. Thank you for keeping this project alive an
 -  **Changed**: Target launch mechanism. This probably will fix most common launch errors. https://github.com/limbo666/DesktopFences/issues/24
 -  **Changed**:  🔨🔩🔧 Another source code refactoring.
 -  **Added**: Option to disable Fence scrollbars. https://github.com/limbo666/DesktopFences/issues/21 
--  **Fixed**: 🪲 🐛 Edit panel arguments preview/change, default settings application and icon preview bugs.
+-  **Fixed**: 🪲 🐛 Edit icon panel. Now arguments editing, icon preview, restore default settings bugs are eliminated.
  
 ---
 
