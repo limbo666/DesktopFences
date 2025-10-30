@@ -160,11 +160,11 @@ The icons on the fences which are targeting files and folders are getting contin
 
 **Peek Behind**: Right click a fence an select "Hide Fence". The fence hides for 10 second to help access the desktop behind the fence. This feature is helpful if for some reason you need to see behind the fence for a short time. A count down timer is shown in place.
 
-**Hide/Unhide All Fences **: Double click the tray icon. All fences will toggle. Note: This function doesn't change the status of hidden fences with teh above mentioned "Hide Fence" function.
+**Hide/Unhide All Fences**: Double click the tray icon. All fences will toggle. Note: This function doesn't change the status of hidden fences with teh above mentioned "Hide Fence" function.
 
-**Rollup/RollDown a fence** : Ctrl + Click on fence title. The fence will rollup into its title. To Roll down again to fence previous height Ctrl + Click again the title area.
+**Rollup/RollDown a fence**: Ctrl + Click on fence title. The fence will rollup into its title. To Roll down again to fence previous height Ctrl + Click again the title area.
 
-**Fence Lock :** Click on the shield icon🛡️on top right corner of the fence. This locks fence position and size. Rollup/Rolldown is still available when locked.
+**Fence Lock**: Click on the shield icon🛡️on top right corner of the fence. This locks fence position and size. Rollup/Rolldown is still available when locked.
 
 
 
