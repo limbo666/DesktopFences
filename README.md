@@ -202,7 +202,7 @@ Even small contributions mean a lot. Thank you for keeping this project alive an
 -  **Added**: Option to disable Fence scrollbars. https://github.com/limbo666/DesktopFences/issues/21 
 -  **Fixed**: 🪲 🐛 Edit icon panel. Now arguments editing, icon preview, restore default settings bugs are eliminated.
 
-2.5.2.125
+  ## 2.5.2.125
 -  **Fixed**: 🐛 Folder name display for folder with dots on their name.
 -  **Fixed**: 🐛 Steam shortcuts support finally fixed https://github.com/limbo666/DesktopFences/issues/25.
 -  **Added**: Function to override Win + D key combination. Fences now re-appearing after Win + D is pressed https://github.com/limbo666/DesktopFences/issues/26.
