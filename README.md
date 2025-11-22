@@ -164,7 +164,7 @@ Even small contributions mean a lot. Thank you for keeping this project alive an
 -  **Added**: Indicator for network based files.
 
 ## 2.5.1.67
--  **Added**: Function to re-order icons within a fence (https://github.com/limbo666/DesktopFences/issues/15) (📝 Use CTRL + drag).
+-  **Added**: Function to re-order icons within a fence (https://github.com/limbo666/DesktopFences/issues/15). 📝 Use `CTRL + drag`.
 
 ## 2.5.1.70
 -  **Changed**:  🔨🔩🔧 Major code refactoring.
@@ -218,12 +218,12 @@ Even small contributions mean a lot. Thank you for keeping this project alive an
 -  **Changed**: Portal fences background image.
 -  **Added**: ☑️ Controls to new customization functions.
 -  **Changed**: Options window. Controls re-arranged. Added function to remember last tab used on options menu (during runtime).
--  **Changed**: Start with Windows function replaced for more reliable approach. Now registry is used instead of startup folder. This possibly fixes the issue: 🐛 https://github.com/limbo666/DesktopFences/issues/29
--  **Fixed: 🐛 Failed to save new name bug. https://github.com/limbo666/DesktopFences/issues/45
--  **Added: Basic support for MS store based apps. This is a bare minimum implementation, no shortcut icon customization support. 🌵 Bugs expected to be found here. https://github.com/limbo666/DesktopFences/issues/34
--  **Fixed: 🐛 Bug with program stability. Caused by icon updates and introduced during code migration.
--  **Fixed: 🐛 Bug with lost context menu on fence customization and dead shortcut cleanup. https://github.com/limbo666/DesktopFences/issues/27
--  **Added: ✨🔎📣 Search pane to search and quick launnch shortcuts in all data fences. 🔥 Hotkey `CTRL + ` `
+-  **Changed**: Start with Windows function chnaged into a more reliable approach. Now registry is used instead of startup folder. This possibly fixes the issue: 🐛 https://github.com/limbo666/DesktopFences/issues/29
+-  **Fixed**: 🐛 Failed to save new name bug. https://github.com/limbo666/DesktopFences/issues/45
+-  **Added**: Basic support for MS store based apps. This is a bare minimum implementation, no shortcut icon customization support. 🐞 Bugs expected to be found on this. https://github.com/limbo666/DesktopFences/issues/34
+-  **Fixed**: 🐛 Bug with program stability. Caused by icon updates and introduced during code migration.
+-  **Fixed**: 🐛 Bug with lost context menu on fence customization and dead shortcut cleanup. https://github.com/limbo666/DesktopFences/issues/27
+-  **Added**: ✨🔎📣 Search pane to search and quick launnch shortcuts in all data fences. 🔥📝 Use hotkey ``CTRL+` ``
 - **Changed**: 🔩 Some code refactoring.
  
 ---
