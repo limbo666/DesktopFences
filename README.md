@@ -18,7 +18,7 @@
 Desktop Fences + creates **virtual fences** on your desktop, allowing you to group and organize icons in a clean and convenient way. With enhanced visual effects and right-click options, it aims to provide a more polished and customizable user interface.
 
 
-**Desktop Fences+** is an open-source alternative to Stardock Fences, originally created by [HakanKokcu](https://github.com/HakanKokcu) under the name BirdyFences.
+**Desktop Fences+** is an open-source alternative to Stardock Fences, originally created by HakanKokcu under the name BirdyFences.
 
 This project is a continuation and substantial modification of the original BirdyFences codebase, which was licensed under the MIT License at the time of forking. 
 
@@ -209,10 +209,22 @@ Even small contributions mean a lot. Thank you for keeping this project alive an
 -  **Added**: Opacity change effect on Heart menu and Lock icons https://github.com/limbo666/DesktopFences/issues/31.
 -  **Added**: Option to select Menu icon and Lock icon (4 icons for each one) https://github.com/limbo666/DesktopFences/issues/31.
 -  **Added**: Option to set shortcut to "Always run as admininstrator".
--  **Added**: Option to disable sound globaly. Requested on https://github.com/limbo666/DesktopFences/issues/40.
+-  **Added**: Option to disable sound globaly.🔇 Requested on https://github.com/limbo666/DesktopFences/issues/40.
 -  **Added**: 🎇 Note fences (still a bit buggy but working).
 -  **Changed**: Double click on fence title scrolls up/down. Ctrl + Click enters rename mode. Requested on https://github.com/limbo666/DesktopFences/issues/38.
 
+  ## 2.5.3.135
+-  **Fixed**: 🐛 Fences now are escaping the Windows Snap Assistant. https://github.com/limbo666/DesktopFences/issues/39
+-  **Changed**: Portal fences background image.
+-  **Added**: ☑️ Controls to new customization functions.
+-  **Changed**: Options window. Controls re-arranged. Added function to remember last tab used on options menu (during runtime).
+-  **Changed**: Start with Windows function replaced for more reliable approach. Now registry is used instead of startup folder. This possibly fixes the issue: 🐛 https://github.com/limbo666/DesktopFences/issues/29
+-  **Fixed: 🐛 Failed to save new name bug. https://github.com/limbo666/DesktopFences/issues/45
+-  **Added: Basic support for MS store based apps. This is a bare minimum implementation, no shortcut icon customization support. 🌵 Bugs expected to be found here. https://github.com/limbo666/DesktopFences/issues/34
+-  **Fixed: 🐛 Bug with program stability. Caused by icon updates and introduced during code migration.
+-  **Fixed: 🐛 Bug with lost context menu on fence customization and dead shortcut cleanup. https://github.com/limbo666/DesktopFences/issues/27
+-  **Added: ✨🔎📣 Search pane to search and quick launnch shortcuts in all data fences. 🔥 Hotkey `CTRL + ` `
+- **Changed**: 🔩 Some code refactoring.
  
 ---
 
@@ -232,6 +244,7 @@ https://github.com/limbo666/DesktopFences/releases
 ##  Installation
 
 Simply extract the executable and run it. The necessary configuration files (`fences.json`, `options.json`) will be created on first run.
+Attention: Only user-writable locations are compatible. See (https://github.com/limbo666/DesktopFences/issues/51)
 
 >  Compatible with Windows 10/11  
 >  No installation required — fully portable
@@ -249,7 +262,7 @@ This project is licensed under the [MIT License](License.md).
 
 ##  Credits
 
-Based on the original **BirdyFences** by [HakanKokcu](https://github.com/HakanKokcu)  
+Based on the original **BirdyFences** by HakanKokcu  
 Enhanced and maintained by the Desktop Fences + community.
 
 
