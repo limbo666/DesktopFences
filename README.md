@@ -189,7 +189,7 @@ Even small contributions mean a lot. Thank you for keeping this project alive an
 ## 2.5.2.95
 -  **Fixed**:  🐛 🪲 A majority of minor bugs and annoyances
 
-  ## 2.5.2.111
+  ## 2.5.2.111 Release 7
 -  **Added**: Program made single instance (with a twist 😃).
 -  **Added**: "Clear Dead Shortcuts" right click option to remove all not valid shortcust from a fence.
 -  **Added**: "Send To Desktop" right click option to copy a shortcut to desktop (📝 Use CTRL + right click).
