@@ -49,7 +49,7 @@ Fences are containers on your desktop that group related shortcuts and files tog
 
 **Rename a fence:**
 
-- Double click the fence title. Type your preferred name and click out of the edit area to finish.
+- ~~Double click~~ CTRL: + Click the fence title. Type your preferred name and click out of the edit area to finish. Changed on v2.5.2.125
 
 ### 2. Adding Items to Fences
 
@@ -162,16 +162,18 @@ The icons on the fences which are targeting files and folders are getting contin
 
 **Hide/Unhide All Fences**: Double click the tray icon. All fences will toggle. Note: This function doesn't change the status of hidden fences with teh above mentioned "Hide Fence" function.
 
-**Rollup/RollDown a fence**: Ctrl + Click on fence title. The fence will rollup into its title. To Roll down again to fence previous height Ctrl + Click again the title area.
+**Rollup/RollDown a fence**: ~~Ctrl + Click~~ Double click on fence title. The fence will rollup into its title. To Roll down again to fence previous height ~~Ctrl + Click~~ Double click again the title area. Changed on v2.5.2.125
 
 **Fence Lock**: Click on the shield icon🛡️on top right corner of the fence. This locks fence position and size. Rollup/Rolldown is still available when locked.
 
 
 
-## Advanced usage of shortcuts
+## Advanced usage
 
 Right clicking any shortcut the following usage options are available:
 **Run as Administrator :** Executes the target program using administrator rights. Note: This uses also the passed arguments on the icon.
+
+**Always run as Administrator :** Marks the shortcut to be executed using administrator rights on each launch. Note: This uses also the passed arguments on the icon.
 
 **Copy Path -> Folder Path** : Copies the target folder path
 
@@ -181,6 +183,8 @@ Right clicking any shortcut the following usage options are available:
 
 
 
+## Search (v2.5.2.135)
+Double click ta any enpty arean on any fence or ``CTRL + ``` to see the search window. Search is performed on all data fences and matching shortcuts are displayed below the search field.  
 
 
 ## Import/Export fences
@@ -206,7 +210,7 @@ Access settings through the system tray icon → "Options":
 
 **Selections:**
 
-- **Single Click to Launch:** Enables single click on icons, otherwise double click is needed
+- **Single Click to Launch:** Enables single click on icons, otherwise double click is needed. Change requires program restart. 
 
 - **Enable Snap Near Fences**: Automatically align fences to each other
 
@@ -214,18 +218,25 @@ Access settings through the system tray icon → "Options":
 
 - **Enable Tray Icon**: Display icon in system notification area
 
-- **Enable Portal Fences Watermark:**  Enables the "portal" watermark image on portal fences
-
 - **Use Recycle Bin on Portal Fences 'Delete Item' command:** Send files to recycle bin instead of deleting them
   
-- **Disable Fences Scrollbars:** Hides scrollbars from fences when contents exceed the aveilable display area
   
 
 **Style:**
 
-- **Tint **: Adjust overall fences tint (0-100%)
+- **Enable Portal Fences Watermark:** Enables the "portal" watermark image on portal fences
+- **Enable Note Fences Watermark:** To be added
+- **Disable Fences Scrollbars:** Hides scrollbars from fences when contents exceed the available display area
+- **Enable Sounds:**  Toggles program ability to make sound on message boxes 
+
+- **Fence Tint **: Adjust overall fences tint (0-100%)
+- **Menu Tint **: Adjust menu icons base tint (0-100%)
 - **Color**: Sets the default fences color
 - **Launch Effect**: Sets the default launch effect
+
+
+- **Menu Icon**: Select the  menu icon
+- **Lock Icon**: Select the lock icon
 
 ### Tools Tab
 
@@ -350,6 +361,6 @@ The application version is displayed in the About dialog, accessible through the
 *Ctrl + Click is your friend* <br>
 
 
-Aug 2025 Nikos Georgousis
+Nov 2025 Nikos Georgousis
 Hand Water Pump
 
