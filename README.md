@@ -227,9 +227,9 @@ Even small contributions mean a lot. Thank you for keeping this project alive an
 - **Changed**: 🔩 Some code refactoring.
 
   ## 2.5.3.137 Release 8
-- **Added: ☑️ Update checker engine
-- **Fixed: 🐛 Missing functions from drop icon restored.
-- **Added: ⚙️ Additional tweaks to automate icon extraction to desktop on fence deletion and icon removal from desktop on drop to fences
+- **Added**: ☑️ Update checker engine
+- **Fixed**: 🐛 Missing functions from drop icon restored.
+- **Added**: ⚙️ Additional tweaks to automate icon extraction to desktop on fence deletion and icon removal from desktop on drop to fences
 ---
 
 ##  Summary
