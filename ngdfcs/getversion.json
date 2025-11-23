@@ -1,23 +1,26 @@
 {
   "Meta": {
-    "LatestVersion": "2.5.3.137",
-    "CriticalUpdate": true,
-    "DownloadUrl": "https://github.com/limbo666/DesktopFences/releases",
+    "LatestVersion": "0.0.0.0",
+    "CriticalUpdate": false,
+    "DownloadUrl": "",
     "ForceKillSwitch": false
   },
   "Announcements": [
     {
-      "Id": "UPDATE_MSG137",
-      "Type": "Info",
-      "Title": "Update Available",
-      "Body": "A new version is available.",
+      "Id": "MSG_Temp_01",
+      "Type": "Alert",
+      "Title": "Did you know?",
+      "Body": "We added a new search feature. Press Ctrl+`.",
       "Link": "",
+      "TargetVersionMin": "0.0.0.0",
+      "TargetVersionMax": "99.9.9.9",
       "MaxDisplayCount": 3,
-      "AutoCloseSeconds": 20,
-      "CanUserDismiss": false
+      "AutoCloseSeconds": 0,
+      "CanUserDismiss": true
     }
   ],
   "RemoteSettings": {
-    "EnableBackgroundLogging": false
+    "EnableBackgroundLogging": false,
+    "SearchEngineUrl": ""
   }
 }
