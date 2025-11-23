@@ -1,23 +1,23 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\nikos.georgousis\\Desktop\\code\\Desktop Fences\\Desktop Fences.csproj": {}
+    "D:\\Develompent_Working_Folder\\05.C#\\DesktopFences\\code\\Desktop Fences\\Desktop Fences.csproj": {}
   },
   "projects": {
-    "C:\\Users\\nikos.georgousis\\Desktop\\code\\Desktop Fences\\Desktop Fences.csproj": {
-      "version": "2.5.2.111",
+    "D:\\Develompent_Working_Folder\\05.C#\\DesktopFences\\code\\Desktop Fences\\Desktop Fences.csproj": {
+      "version": "2.5.3.137",
       "restore": {
-        "projectUniqueName": "C:\\Users\\nikos.georgousis\\Desktop\\code\\Desktop Fences\\Desktop Fences.csproj",
+        "projectUniqueName": "D:\\Develompent_Working_Folder\\05.C#\\DesktopFences\\code\\Desktop Fences\\Desktop Fences.csproj",
         "projectName": "Desktop Fences",
-        "projectPath": "C:\\Users\\nikos.georgousis\\Desktop\\code\\Desktop Fences\\Desktop Fences.csproj",
-        "packagesPath": "C:\\Users\\nikos.georgousis\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\nikos.georgousis\\Desktop\\code\\Desktop Fences\\obj\\",
+        "projectPath": "D:\\Develompent_Working_Folder\\05.C#\\DesktopFences\\code\\Desktop Fences\\Desktop Fences.csproj",
+        "packagesPath": "C:\\Users\\admin\\.nuget\\packages\\",
+        "outputPath": "D:\\Develompent_Working_Folder\\05.C#\\DesktopFences\\code\\Desktop Fences\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\nikos.georgousis\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\admin\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
@@ -78,7 +78,7 @@
               "privateAssets": "none"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.304/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.306/PortableRuntimeIdentifierGraph.json"
         }
       }
     }

@@ -14,6 +14,8 @@ using System.Windows.Forms;
 using System.Windows.Input;
 using WinFormsMouseEventArgs = System.Windows.Forms.MouseEventArgs;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement;
+using Microsoft.Win32;
+
 
 namespace Desktop_Fences
 {
@@ -23,7 +25,11 @@ namespace Desktop_Fences
       
         private bool _disposed;
         public static bool IsStartWithWindows { get; private set; }
-        
+
+        private const string RUN_KEY_PATH = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Run";
+        private const string APP_NAME = "Desktop Fences";
+
+
         private static readonly List<HiddenFence> HiddenFences = new List<HiddenFence>();
     
         private ToolStripMenuItem _showHiddenFencesItem;
@@ -45,12 +51,24 @@ namespace Desktop_Fences
             public NonActivatingWindow Window { get; set; }
         }
 
+
+
         public TrayManager()
         {
-            IsStartWithWindows = IsInStartupFolder();
+            // 1. AUTO-MIGRATION: Check if we need to move from Shortcut to Registry
+            PerformStartupMigration();
+           
+            // 2. Check status using the NEW logic (Registry check + Shortcut fallback)
+            IsStartWithWindows = CheckIfStartWithWindowsEnabled();
+
+
+            // 3. Start Remote Info System (Runs 25s later)
+            RemoteInfoManager.Initialize();
+
             Instance = this; // Set singleton instance
         }
-          
+
+
         private void OnTrayIconDoubleClick(object sender, EventArgs e)
         {
             if (!_areFencesTempHidden)
@@ -180,9 +198,10 @@ namespace Desktop_Fences
             UpdateTrayIcon();
         }
 
+
+
         public static async Task reloadAllFences()
         {
-            // Keep WPF Window (original was correct) - just modernize styling with proper namespaces
             var waitWindow = new System.Windows.Window
             {
                 Title = "Desktop Fences +",
@@ -195,7 +214,6 @@ namespace Desktop_Fences
                 Topmost = true
             };
 
-            // Modern main container
             var mainBorder = new System.Windows.Controls.Border
             {
                 Background = System.Windows.Media.Brushes.White,
@@ -218,7 +236,6 @@ namespace Desktop_Fences
                 Orientation = System.Windows.Controls.Orientation.Vertical
             };
 
-            // App title
             var titleText = new System.Windows.Controls.TextBlock
             {
                 Text = "Desktop Fences +",
@@ -231,7 +248,6 @@ namespace Desktop_Fences
             };
             waitStack.Children.Add(titleText);
 
-            // Logo with fallback
             var logoImage = new System.Windows.Controls.Image
             {
                 Width = 32,
@@ -240,6 +256,7 @@ namespace Desktop_Fences
                 HorizontalAlignment = System.Windows.HorizontalAlignment.Center
             };
 
+            // FIX 1: Properly dispose the extracted GDI Icon to prevent memory leaks
             try
             {
                 var assembly = Assembly.GetExecutingAssembly();
@@ -249,23 +266,37 @@ namespace Desktop_Fences
                     var bitmap = new System.Windows.Media.Imaging.BitmapImage();
                     bitmap.BeginInit();
                     bitmap.StreamSource = resourceStream;
+                    bitmap.CacheOption = System.Windows.Media.Imaging.BitmapCacheOption.OnLoad; // Important for stream closing
                     bitmap.EndInit();
+                    bitmap.Freeze(); // Make it efficient
                     logoImage.Source = bitmap;
+                    resourceStream.Dispose(); // Close stream
                 }
                 else
                 {
                     string exePath = Assembly.GetEntryAssembly().Location;
-                    logoImage.Source = System.Drawing.Icon.ExtractAssociatedIcon(exePath).ToImageSource();
+                    using (var icon = System.Drawing.Icon.ExtractAssociatedIcon(exePath))
+                    {
+                        if (icon != null)
+                            logoImage.Source = icon.ToImageSource();
+                    }
                 }
             }
             catch
             {
-                string exePath = Assembly.GetEntryAssembly().Location;
-                logoImage.Source = System.Drawing.Icon.ExtractAssociatedIcon(exePath).ToImageSource();
+                // Fallback
+                try
+                {
+                    string exePath = Assembly.GetEntryAssembly().Location;
+                    using (var icon = System.Drawing.Icon.ExtractAssociatedIcon(exePath))
+                    {
+                        if (icon != null) logoImage.Source = icon.ToImageSource();
+                    }
+                }
+                catch { }
             }
             waitStack.Children.Add(logoImage);
 
-            // Wait message
             var waitText = new System.Windows.Controls.TextBlock
             {
                 Text = "Reloading all fences, please wait...",
@@ -279,17 +310,32 @@ namespace Desktop_Fences
             mainBorder.Child = waitStack;
             waitWindow.Content = mainBorder;
             waitWindow.Show();
+
             try
             {
-                await Task.Run(() =>
+                await Task.Run(async () =>
                 {
-                    System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                    // Allow UI to render the wait window
+                    await Task.Delay(100);
+
+                    await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
                     {
-                        foreach (var fence in System.Windows.Application.Current.Windows.OfType<NonActivatingWindow>().ToList())
+                        // 1. Close all windows
+                        var windows = System.Windows.Application.Current.Windows.OfType<NonActivatingWindow>().ToList();
+                        foreach (var fence in windows)
                         {
                             fence.Close();
                         }
+
+                        // 2. Reload Logic (This calls FenceManager)
                         FenceManager.ReloadFences();
+
+                        // FIX 2: Force Garbage Collection
+                        // Since we just closed heavy WPF windows, we force a collection to release 
+                        // the memory immediately before loading new ones.
+                        GC.Collect();
+                        GC.WaitForPendingFinalizers();
+                        GC.Collect();
                     });
                 });
             }
@@ -300,11 +346,13 @@ namespace Desktop_Fences
             finally
             {
                 waitWindow.Close();
+                // Ensure the wait window itself is collected
+                waitWindow = null;
+                GC.Collect();
             }
-
-            // TrayManager.ShowOKOnlyMessageBoxFormStatic($"An error occurred while reloading fences: {ex.Message}", "Error");
         }
-      
+
+
         public static void AddHiddenFence(NonActivatingWindow fence)
         {
             if (fence == null || string.IsNullOrEmpty(fence.Title)) return;
@@ -361,49 +409,108 @@ namespace Desktop_Fences
                 _showHiddenFencesItem.DropDownItems.Add(menuItem);
             }
         }
-     
-        private bool IsInStartupFolder()
-        {
-            string startupPath = Environment.GetFolderPath(Environment.SpecialFolder.Startup);
-            string shortcutPath = Path.Combine(startupPath, "Desktop Fences.lnk");
-            return File.Exists(shortcutPath);
-        }
 
+
+
+        // --- NEW METHODS START ---
+
+        // 1. The Public Toggle Method (Called by Options Form)
         public void ToggleStartWithWindows(bool enable)
         {
-            string startupPath = Environment.GetFolderPath(Environment.SpecialFolder.Startup);
-            string shortcutPath = Path.Combine(startupPath, "Desktop Fences.lnk");
-            string exePath = Process.GetCurrentProcess().MainModule.FileName;
-            string workingDir = Path.GetDirectoryName(exePath); // Ensure working directory is extracted
-
             try
             {
-                if (enable && !IsInStartupFolder())
-                {
-                    Type shellType = Type.GetTypeFromProgID("WScript.Shell");
-                    dynamic shell = Activator.CreateInstance(shellType);
-                    var shortcut = shell.CreateShortcut(shortcutPath);
-                    shortcut.TargetPath = exePath;
-                    shortcut.WorkingDirectory = workingDir; // Explicitly set working directory
-                    shortcut.Description = "Desktop Fences Startup Shortcut";
-                    shortcut.Save();
-                    IsStartWithWindows = true;
-                    LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI, "Added Desktop Fences to Startup folder with working directory: " + workingDir);
-                }
-                else if (!enable && IsInStartupFolder())
+                // A. Update the Registry (The new reliable way)
+                SetRegistryStartup(enable);
+
+                // B. AGGRESSIVE CLEANUP: Always try to delete the old shortcut 
+                // to ensure we never have double-launching or "ghost" shortcuts.
+                string startupPath = Environment.GetFolderPath(Environment.SpecialFolder.Startup);
+                string shortcutPath = Path.Combine(startupPath, "Desktop Fences.lnk");
+
+                if (File.Exists(shortcutPath))
                 {
                     File.Delete(shortcutPath);
-                    IsStartWithWindows = false;
-                    LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI, "Removed Desktop Fences from Startup folder");
+                    LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.General, "TrayManager: Legacy shortcut removed during toggle.");
                 }
+
+                IsStartWithWindows = enable;
+                LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.Settings, $"Start with Windows set to: {enable}");
             }
             catch (Exception ex)
             {
-                LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI, $"Failed to toggle Start with Windows: {ex.Message}");
-                IsStartWithWindows = IsInStartupFolder();
+                LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.General, $"Failed to toggle Start with Windows: {ex.Message}");
                 throw;
             }
         }
+
+        // 2. Migration Logic: Runs once on startup
+        private void PerformStartupMigration()
+        {
+            // If we already flagged this as done in RegistryHelper, stop here.
+            if (RegistryHelper.IsStartupMigrated()) return;
+
+            string startupPath = Environment.GetFolderPath(Environment.SpecialFolder.Startup);
+            string shortcutPath = Path.Combine(startupPath, "Desktop Fences.lnk");
+
+            // If the old shortcut exists, it means the user WANTED start-up enabled.
+            // We must transfer that intent to the Registry.
+            if (File.Exists(shortcutPath))
+            {
+                try
+                {
+                    SetRegistryStartup(true); // Create Registry Key
+                    File.Delete(shortcutPath); // Delete Old Shortcut
+                    LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, "TrayManager: Migrated startup from Shortcut to Registry.");
+                }
+                catch (Exception ex)
+                {
+                    LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.General, $"TrayManager: Migration Error: {ex.Message}");
+                }
+            }
+
+            // Mark as migrated so we don't run this logic again
+            RegistryHelper.SetStartupMigrated();
+        }
+
+        // 3. Helper to write/delete the Registry Key
+        private void SetRegistryStartup(bool enable)
+        {
+            using (RegistryKey key = Registry.CurrentUser.OpenSubKey(RUN_KEY_PATH, true))
+            {
+                if (key == null) return;
+
+                if (enable)
+                {
+                    // We wrap the path in quotes to be safe against spaces in path
+                    string exePath = Process.GetCurrentProcess().MainModule.FileName;
+                    key.SetValue(APP_NAME, $"\"{exePath}\"");
+                }
+                else
+                {
+                    // If disabling, remove the value
+                    key.DeleteValue(APP_NAME, false);
+                }
+            }
+        }
+
+        // 4. Status Checker (Replaces IsInStartupFolder)
+        private bool CheckIfStartWithWindowsEnabled()
+        {
+            // First, check if the Registry Key exists
+            using (RegistryKey key = Registry.CurrentUser.OpenSubKey(RUN_KEY_PATH, false))
+            {
+                if (key != null && key.GetValue(APP_NAME) != null)
+                {
+                    return true;
+                }
+            }
+
+            // Fallback: Check if the old shortcut exists (in case migration hasn't run yet)
+            string startupPath = Environment.GetFolderPath(Environment.SpecialFolder.Startup);
+            return File.Exists(Path.Combine(startupPath, "Desktop Fences.lnk"));
+        }
+        // --- NEW METHODS END ---
+
 
         public void Dispose()
         {

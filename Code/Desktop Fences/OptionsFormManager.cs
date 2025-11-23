@@ -12,33 +12,34 @@ using System.Windows.Media.Imaging;
 
 namespace Desktop_Fences
 {
-    /// <summary>
-    /// Manages the modern WPF Options form with tabbed interface and proper DPI scaling
-    /// Replaces the Windows Forms options dialog from TrayManager
-    /// </summary>
     public static class OptionsFormManager
     {
+
+
+        private static int _lastSelectedTabIndex = 0; // Default to 0 (General)
+
+
         private static TabControl _tabControl;
         private static Window _optionsWindow;
         private static Color _userAccentColor;
 
-        /// <summary>
-        /// Shows the modern Options form with DPI scaling and tabbed interface
-        /// </summary>
+        // Colors for tabs
+        private static readonly Color ColorGeneral = Utility.GetColorFromName(SettingsManager.SelectedColor); // Dynamic
+        private static readonly Color ColorStyle = Color.FromRgb(128, 0, 128); // Purple
+        private static readonly Color ColorTools = Color.FromRgb(34, 139, 34); // Green
+        private static readonly Color ColorLookDeeper = Color.FromRgb(220, 53, 69); // Red
+
         public static void ShowOptionsForm()
         {
             try
             {
-                // Get user's accent color for modern design elements
-                string selectedColorName = SettingsManager.SelectedColor;
-                var mediaColor = Utility.GetColorFromName(selectedColorName);
-                _userAccentColor = mediaColor;
+                _userAccentColor = Utility.GetColorFromName(SettingsManager.SelectedColor);
 
                 _optionsWindow = new Window
                 {
                     Title = "Desktop Fences + Options",
-                    Width = 750,
-                    Height = 800,
+                    Width = 800, // Slightly wider for side-by-side options if needed
+                    Height = 850,
                     WindowStartupLocation = WindowStartupLocation.CenterScreen,
                     ResizeMode = ResizeMode.NoResize,
                     WindowStyle = WindowStyle.None,
@@ -46,7 +47,7 @@ namespace Desktop_Fences
                     AllowsTransparency = true
                 };
 
-                // Set icon from executable
+                // Set icon
                 try
                 {
                     _optionsWindow.Icon = System.Windows.Interop.Imaging.CreateBitmapSourceFromHIcon(
@@ -55,44 +56,30 @@ namespace Desktop_Fences
                         BitmapSizeOptions.FromEmptyOptions()
                     );
                 }
-                catch { } // Ignore icon loading errors
+                catch { }
 
-                // Main container with white background and shadow
                 Border mainBorder = new Border
                 {
                     Background = Brushes.White,
                     CornerRadius = new CornerRadius(0),
                     Margin = new Thickness(8),
-                    Effect = new DropShadowEffect
-                    {
-                        Color = Colors.Black,
-                        Direction = 270,
-                        ShadowDepth = 2,
-                        BlurRadius = 10,
-                        Opacity = 0.2
-                    }
+                    Effect = new DropShadowEffect { Color = Colors.Black, Direction = 270, ShadowDepth = 2, BlurRadius = 10, Opacity = 0.2 }
                 };
 
-                // Main grid layout
                 Grid mainGrid = new Grid();
                 mainGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(40) }); // Header
                 mainGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) }); // Content
                 mainGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(60) }); // Footer
                 mainGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(80) }); // Donation
 
-                // Header with accent color
-                Border headerBorder = new Border
-                {
-                    Background = new SolidColorBrush(_userAccentColor),
-                    Height = 40
-                };
+                // Header
+                Border headerBorder = new Border { Background = new SolidColorBrush(_userAccentColor), Height = 40 };
                 Grid.SetRow(headerBorder, 0);
 
                 Grid headerGrid = new Grid();
                 headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
                 headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(40) });
 
-                // Header title
                 TextBlock titleBlock = new TextBlock
                 {
                     Text = "Options",
@@ -105,52 +92,34 @@ namespace Desktop_Fences
                 };
                 Grid.SetColumn(titleBlock, 0);
 
-                // Close button
                 Button closeButton = new Button
                 {
                     Content = "✕",
                     Width = 32,
                     Height = 32,
                     FontSize = 14,
-                    FontFamily = new FontFamily("Segoe UI"),
                     Foreground = Brushes.White,
                     Background = Brushes.Transparent,
                     BorderThickness = new Thickness(0),
-                    Cursor = Cursors.Hand,
-                    VerticalAlignment = VerticalAlignment.Center,
-                    HorizontalAlignment = System.Windows.HorizontalAlignment.Center
+                    Cursor = Cursors.Hand
                 };
                 closeButton.Click += (s, e) => _optionsWindow.Close();
-
-                // Close button hover effect
-                closeButton.MouseEnter += (s, e) => closeButton.Background = new SolidColorBrush(Color.FromArgb(50, 255, 255, 255));
-                closeButton.MouseLeave += (s, e) => closeButton.Background = Brushes.Transparent;
-
                 Grid.SetColumn(closeButton, 1);
 
                 headerGrid.Children.Add(titleBlock);
                 headerGrid.Children.Add(closeButton);
                 headerBorder.Child = headerGrid;
+                headerBorder.MouseLeftButtonDown += (sender, e) => { if (e.ButtonState == MouseButtonState.Pressed) _optionsWindow.DragMove(); };
 
-                // Create main content with tabs
                 CreateTabContent(mainGrid);
-
-                // Footer with buttons
                 CreateFooter(mainGrid);
-
-                // Donation section
                 CreateDonationSection(mainGrid);
-                // Assemble the window
+
                 mainGrid.Children.Add(headerBorder);
                 mainBorder.Child = mainGrid;
                 _optionsWindow.Content = mainBorder;
 
-                // Add keyboard support for Enter/Escape keys
                 _optionsWindow.KeyDown += OptionsForm_KeyDown;
-                _optionsWindow.Focusable = true;
-                _optionsWindow.Focus();
-
-                // Show the window
                 _optionsWindow.ShowDialog();
             }
             catch (Exception ex)
@@ -160,80 +129,53 @@ namespace Desktop_Fences
             }
         }
 
-        /// <summary>
-        /// Handles keyboard input for OptionsForm
-        /// Enter = Save, Escape = Cancel
-        /// </summary>
         private static void OptionsForm_KeyDown(object sender, KeyEventArgs e)
         {
-            switch (e.Key)
-            {
-                case Key.Enter:
-                    // Trigger Save button logic
-                    SaveOptions();
-                    e.Handled = true;
-                    break;
-                case Key.Escape:
-                    // Trigger Cancel button logic (close window)
-                    _optionsWindow.Close();
-                    e.Handled = true;
-                    break;
-            }
+            if (e.Key == Key.Enter) { SaveOptions(); e.Handled = true; }
+            else if (e.Key == Key.Escape) { _optionsWindow.Close(); e.Handled = true; }
         }
 
         private static void CreateTabContent(Grid mainGrid)
         {
-            // Main content grid with left tabs and right content
             Grid contentGrid = new Grid();
-            contentGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(170) }); // Left tab panel
-            contentGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) }); // Right content
+            contentGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(170) });
+            contentGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             Grid.SetRow(contentGrid, 1);
 
-            // Left tab panel with top margin for gap from header
-            StackPanel tabPanel = new StackPanel
-            {
-                Background = new SolidColorBrush(Color.FromRgb(240, 240, 240)),
-                Margin = new Thickness(0, 20, 0, 0) // Add top margin for gap
-            };
+            StackPanel tabPanel = new StackPanel { Background = new SolidColorBrush(Color.FromRgb(240, 240, 240)), Margin = new Thickness(0, 20, 0, 0) };
             Grid.SetColumn(tabPanel, 0);
 
-            // Right content area with top margin
             Border contentBorder = new Border
             {
                 Background = Brushes.White,
                 BorderBrush = new SolidColorBrush(Color.FromRgb(218, 220, 224)),
                 BorderThickness = new Thickness(1, 0, 0, 0),
                 Padding = new Thickness(20),
-                Margin = new Thickness(0, 20, 0, 0) // Add top margin for gap
+                Margin = new Thickness(0, 20, 0, 0)
             };
             Grid.SetColumn(contentBorder, 1);
 
-            // Create tab control for content switching
-            _tabControl = new TabControl
-            {
-                Background = Brushes.Transparent,
-                BorderThickness = new Thickness(0)
-            };
-
-            // Create custom template to hide default tab headers
+            _tabControl = new TabControl { Background = Brushes.Transparent, BorderThickness = new Thickness(0) };
             var template = new ControlTemplate(typeof(TabControl));
             var contentPresenter = new FrameworkElementFactory(typeof(ContentPresenter));
             contentPresenter.SetValue(ContentPresenter.ContentSourceProperty, "SelectedContent");
             template.VisualTree = contentPresenter;
             _tabControl.Template = template;
 
-            // Create tabs
+            // Create Tabs
             CreateGeneralTab();
+            CreateStyleTab();
             CreateToolsTab();
             CreateLookDeeperTab();
 
-            // Set initial tab selection
-            _tabControl.SelectedIndex = 0;
+            // --- CHANGE: Set the index from the static variable ---
+            _tabControl.SelectedIndex = _lastSelectedTabIndex;
 
-            // Create custom tab buttons with gaps
-            CreateTabButton(tabPanel, "General", 0, true);
-            CreateTabButton(tabPanel, "Tools", 1, false);
-            CreateTabButton(tabPanel, "Look Deeper", 2, false);
+            // --- CHANGE: Set the button state based on the variable ---
+            CreateTabButton(tabPanel, "General", 0, _lastSelectedTabIndex == 0);
+            CreateTabButton(tabPanel, "Style", 1, _lastSelectedTabIndex == 1);
+            CreateTabButton(tabPanel, "Tools", 2, _lastSelectedTabIndex == 2);
+            CreateTabButton(tabPanel, "Look Deeper", 3, _lastSelectedTabIndex == 3);
 
             contentBorder.Child = _tabControl;
             contentGrid.Children.Add(tabPanel);
@@ -252,107 +194,58 @@ namespace Desktop_Fences
                 FontWeight = FontWeights.Bold,
                 BorderThickness = new Thickness(0),
                 Cursor = Cursors.Hand,
-                HorizontalContentAlignment = System.Windows.HorizontalAlignment.Left,
+                HorizontalContentAlignment = HorizontalAlignment.Left,
                 Padding = new Thickness(20, 0, 0, 0),
                 Margin = new Thickness(0, 0, 0, 2)
             };
 
-            // Set initial colors based on selection state
             SetTabButtonColors(tabButton, title, isSelected);
-
             tabButton.Click += (s, e) => SelectTab(tabIndex, tabButton);
-
-            // Hover effects - ONLY for non-selected tabs
-            tabButton.MouseEnter += (s, e) =>
-            {
-                if (_tabControl.SelectedIndex != tabIndex) // Only if not selected
-                {
-                    SetTabButtonColors(tabButton, title, false, true); // true = hover state
-                }
-            };
-
-            tabButton.MouseLeave += (s, e) =>
-            {
-                if (_tabControl.SelectedIndex != tabIndex) // Only if not selected
-                {
-                    SetTabButtonColors(tabButton, title, false, false); // false = normal state
-                }
-            };
+            tabButton.MouseEnter += (s, e) => { if (_tabControl.SelectedIndex != tabIndex) SetTabButtonColors(tabButton, title, false, true); };
+            tabButton.MouseLeave += (s, e) => { if (_tabControl.SelectedIndex != tabIndex) SetTabButtonColors(tabButton, title, false, false); };
 
             parent.Children.Add(tabButton);
         }
 
         private static void SetTabButtonColors(Button button, string title, bool isSelected, bool isHover = false)
         {
-            Color buttonColor, textColor;
+            Color activeColor;
+            switch (title)
+            {
+                case "General": activeColor = _userAccentColor; break;
+                case "Style": activeColor = ColorStyle; break;
+                case "Tools": activeColor = ColorTools; break;
+                case "Look Deeper": activeColor = ColorLookDeeper; break;
+                default: activeColor = Colors.Gray; break;
+            }
 
             if (isSelected)
             {
-                // Selected state colors
-                if (title == "General")
-                {
-                    buttonColor = _userAccentColor;
-                    textColor = Colors.White;
-                }
-                else if (title == "Tools")
-                {
-                    buttonColor = Color.FromRgb(34, 139, 34); // Green
-                    textColor = Colors.White;
-                }
-                else // Look Deeper
-                {
-                    buttonColor = Color.FromRgb(220, 53, 69); // Red
-                    textColor = Colors.White;
-                }
+                button.Background = new SolidColorBrush(activeColor);
+                button.Foreground = Brushes.White;
             }
             else if (isHover)
             {
-                // Hover state colors - lighter version of selected color
-                if (title == "General")
-                {
-                    var accent = _userAccentColor;
-                    buttonColor = Color.FromRgb((byte)(accent.R + 30), (byte)(accent.G + 30), (byte)(accent.B + 30));
-                    textColor = Colors.White;
-                }
-                else if (title == "Tools")
-                {
-                    buttonColor = Color.FromRgb(64, 169, 64); // Lighter green
-                    textColor = Colors.White;
-                }
-                else // Look Deeper
-                {
-                    buttonColor = Color.FromRgb(250, 83, 99); // Lighter red
-                    textColor = Colors.White;
-                }
+                button.Background = new SolidColorBrush(Color.FromRgb((byte)(activeColor.R + 40), (byte)(activeColor.G + 40), (byte)(activeColor.B + 40)));
+                button.Foreground = Brushes.White;
             }
             else
             {
-                // Normal unselected state
-                buttonColor = Color.FromRgb(200, 200, 200);
-                textColor = Color.FromRgb(60, 60, 60);
+                button.Background = new SolidColorBrush(Color.FromRgb(200, 200, 200));
+                button.Foreground = new SolidColorBrush(Color.FromRgb(60, 60, 60));
             }
-
-            button.Background = new SolidColorBrush(buttonColor);
-            button.Foreground = new SolidColorBrush(textColor);
         }
 
         private static void SelectTab(int tabIndex, Button selectedButton)
         {
+            _lastSelectedTabIndex = tabIndex;
             _tabControl.SelectedIndex = tabIndex;
-
-            // Update all tab button appearances
             StackPanel tabPanel = (StackPanel)selectedButton.Parent;
             for (int i = 0; i < tabPanel.Children.Count; i++)
             {
                 if (tabPanel.Children[i] is Button btn)
                 {
-                    string buttonText = btn.Content.ToString();
-                    bool isSelected = (i == tabIndex);
-
-                    // Use the centralized color setting method
-                    SetTabButtonColors(btn, buttonText, isSelected);
-                    btn.FontWeight = FontWeights.Bold;
-                    btn.FontSize = 14;
+                    SetTabButtonColors(btn, btn.Content.ToString(), i == tabIndex);
                 }
             }
         }
@@ -360,36 +253,67 @@ namespace Desktop_Fences
         private static void CreateGeneralTab()
         {
             TabItem generalTab = new TabItem();
-            ScrollViewer scrollViewer = new ScrollViewer
-            {
-                VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
-                HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled
-            };
-
+            ScrollViewer scrollViewer = new ScrollViewer { VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
             StackPanel content = new StackPanel();
 
-            // Startup Section - aligned with top
+            // Startup
             CreateSectionHeader(content, "Startup", _userAccentColor);
             CreateCheckBox(content, "Start with Windows", "StartWithWindows", TrayManager.IsStartWithWindows);
 
-            // Selections Section  
+            // Selections
             CreateSectionHeader(content, "Selections", _userAccentColor);
             CreateCheckBox(content, "Single Click to Launch", "SingleClickToLaunch", SettingsManager.SingleClickToLaunch);
             CreateCheckBox(content, "Enable Snap Near Fences", "EnableSnapNearFences", SettingsManager.IsSnapEnabled);
             CreateCheckBox(content, "Enable Dimension Snap", "EnableDimensionSnap", SettingsManager.EnableDimensionSnap);
             CreateCheckBox(content, "Enable Tray Icon", "EnableTrayIcon", SettingsManager.ShowInTray);
-            CreateCheckBox(content, "Enable Portal Fences Watermark", "EnablePortalWatermark", SettingsManager.ShowBackgroundImageOnPortalFences);
             CreateCheckBox(content, "Use Recycle Bin on Portal Fences 'Delete item' command", "UseRecycleBin", SettingsManager.UseRecycleBin);
-            CreateCheckBox(content, "Disable Fence Scrollbars", "DisableFenceScrollbars", SettingsManager.DisableFenceScrollbars);
-            // Style Section
-            CreateSectionHeader(content, "Style", _userAccentColor);
-            CreateTintSlider(content);
-            CreateColorComboBox(content);
-            CreateLaunchEffectComboBox(content);
 
             scrollViewer.Content = content;
             generalTab.Content = scrollViewer;
             _tabControl.Items.Add(generalTab);
+        }
+
+        private static void CreateStyleTab()
+        {
+            TabItem styleTab = new TabItem();
+            ScrollViewer scrollViewer = new ScrollViewer { VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
+            StackPanel content = new StackPanel();
+
+            // Choices
+            CreateSectionHeader(content, "Choices", ColorStyle);
+            CreateCheckBox(content, "Enable Portal Fences Watermark", "EnablePortalWatermark", SettingsManager.ShowBackgroundImageOnPortalFences);
+
+            // Future implementation logic for Note Watermark
+            var noteWatermark = CreateCheckBoxReturn(content, "Enable Note Fences Watermark (Coming Soon)", "EnableNoteWatermark", false);
+            noteWatermark.IsEnabled = false; // Placeholder status
+            noteWatermark.Foreground = Brushes.Gray;
+
+            CreateCheckBox(content, "Disable Fence Scrollbars", "DisableFenceScrollbars", SettingsManager.DisableFenceScrollbars);
+            CreateCheckBox(content, "Enable Sounds", "EnableSounds", SettingsManager.EnableSounds);
+
+            // Appearance
+            CreateSectionHeader(content, "Appearance", ColorStyle);
+            CreateSliderControl(content, "Fence Tint", "TintSlider", SettingsManager.TintValue);
+            CreateSliderControl(content, "Menu Tint", "MenuTintSlider", SettingsManager.MenuTintValue);
+            CreateColorComboBox(content);
+            CreateLaunchEffectComboBox(content);
+
+            // Icons
+            CreateSectionHeader(content, "Icons", ColorStyle);
+
+            // Menu Icon Radio Buttons
+            content.Children.Add(new TextBlock { Text = "Menu Icon", FontWeight = FontWeights.SemiBold, Margin = new Thickness(15, 5, 0, 5) });
+            var menuIcons = new Dictionary<string, int> { { "♥", 0 }, { "☰", 1 }, { "≣", 2 }, { "𓃑", 3 } };
+            CreateIconRadioButtonGroup(content, "MenuIconGroup", menuIcons, SettingsManager.MenuIcon);
+
+            // Lock Icon Radio Buttons
+            content.Children.Add(new TextBlock { Text = "Lock Icon", FontWeight = FontWeights.SemiBold, Margin = new Thickness(15, 10, 0, 5) });
+            var lockIcons = new Dictionary<string, int> { { "🛡️", 0 }, { "🔑", 1 }, { "🔐", 2 }, { "🔒", 3 } };
+            CreateIconRadioButtonGroup(content, "LockIconGroup", lockIcons, SettingsManager.LockIcon);
+
+            scrollViewer.Content = content;
+            styleTab.Content = scrollViewer;
+            _tabControl.Items.Add(styleTab);
         }
 
         private static void CreateToolsTab()
@@ -397,73 +321,27 @@ namespace Desktop_Fences
             TabItem toolsTab = new TabItem();
             StackPanel content = new StackPanel();
 
-            // Tools Section - aligned with top
-            CreateSectionHeader(content, "Tools", Color.FromRgb(34, 139, 34));
+            CreateSectionHeader(content, "Tools", ColorTools);
 
-            // Button panel with proper alignment
-            Grid buttonGrid = new Grid();
+            Grid buttonGrid = new Grid { Margin = new Thickness(0, 10, 0, 0) };
             buttonGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(120) });
-            buttonGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(15) }); // Gap
+            buttonGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(15) });
             buttonGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(120) });
             buttonGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(45) });
-            buttonGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(15) }); // Gap
+            buttonGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(15) });
             buttonGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(45) });
-            buttonGrid.Margin = new Thickness(0, 10, 0, 0);
 
-            // Backup button
-            Button backupButton = new Button
-            {
-                Content = "Backup",
-                FontFamily = new FontFamily("Segoe UI"),
-                FontSize = 13,
-                FontWeight = FontWeights.Bold,
-                Background = new SolidColorBrush(Color.FromRgb(34, 139, 34)),
-                Foreground = Brushes.White,
-                BorderThickness = new Thickness(0),
-                Cursor = Cursors.Hand,
-                HorizontalAlignment = System.Windows.HorizontalAlignment.Stretch,
-                VerticalAlignment = VerticalAlignment.Stretch
-            };
+            Button backupButton = CreateStyledButton("Backup", ColorTools);
             backupButton.Click += (s, e) => BackupManager.BackupData();
-            Grid.SetRow(backupButton, 0);
-            Grid.SetColumn(backupButton, 0);
+            Grid.SetRow(backupButton, 0); Grid.SetColumn(backupButton, 0);
 
-            // Restore button
-            Button restoreButton = new Button
-            {
-                Content = "Restore...",
-                FontFamily = new FontFamily("Segoe UI"),
-                FontSize = 13,
-                FontWeight = FontWeights.Bold,
-                Background = new SolidColorBrush(Color.FromRgb(255, 152, 0)),
-                Foreground = Brushes.White,
-                BorderThickness = new Thickness(0),
-                Cursor = Cursors.Hand,
-                HorizontalAlignment = System.Windows.HorizontalAlignment.Stretch,
-                VerticalAlignment = VerticalAlignment.Stretch
-            };
+            Button restoreButton = CreateStyledButton("Restore...", Color.FromRgb(255, 152, 0));
             restoreButton.Click += (s, e) => RestoreBackup();
-            Grid.SetRow(restoreButton, 0);
-            Grid.SetColumn(restoreButton, 2);
+            Grid.SetRow(restoreButton, 0); Grid.SetColumn(restoreButton, 2);
 
-            // Open Backups Folder button
-            Button openBackupsButton = new Button
-            {
-                Content = "Open Backups Folder",
-                FontFamily = new FontFamily("Segoe UI"),
-                FontSize = 13,
-                FontWeight = FontWeights.Bold,
-                Background = new SolidColorBrush(Color.FromRgb(0, 123, 191)),
-                Foreground = Brushes.White,
-                BorderThickness = new Thickness(0),
-                Cursor = Cursors.Hand,
-                HorizontalAlignment = System.Windows.HorizontalAlignment.Stretch,
-                VerticalAlignment = VerticalAlignment.Stretch
-            };
+            Button openBackupsButton = CreateStyledButton("Open Backups Folder", Color.FromRgb(0, 123, 191));
             openBackupsButton.Click += (s, e) => OpenBackupsFolder();
-            Grid.SetRow(openBackupsButton, 2);
-            Grid.SetColumn(openBackupsButton, 0);
-            Grid.SetColumnSpan(openBackupsButton, 3);
+            Grid.SetRow(openBackupsButton, 2); Grid.SetColumn(openBackupsButton, 0); Grid.SetColumnSpan(openBackupsButton, 3);
 
             buttonGrid.Children.Add(backupButton);
             buttonGrid.Children.Add(restoreButton);
@@ -477,45 +355,22 @@ namespace Desktop_Fences
         private static void CreateLookDeeperTab()
         {
             TabItem lookDeeperTab = new TabItem();
-            ScrollViewer scrollViewer = new ScrollViewer
-            {
-                VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
-                HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled
-            };
-
+            ScrollViewer scrollViewer = new ScrollViewer { VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
             StackPanel content = new StackPanel();
 
-            // Log Section - aligned with top
-            CreateSectionHeader(content, "Log", Color.FromRgb(220, 53, 69));
+            CreateSectionHeader(content, "Log", ColorLookDeeper);
             CreateCheckBox(content, "Enable logging", "EnableLogging", SettingsManager.IsLogEnabled);
 
-            // Open Log button
-            Button openLogButton = new Button
-            {
-                Content = "Open Log",
-                Width = 100,
-                Height = 25,
-                FontFamily = new FontFamily("Segoe UI"),
-                FontSize = 13,
-                FontWeight = FontWeights.Bold,
-                Background = new SolidColorBrush(Color.FromRgb(220, 53, 69)),
-                Foreground = Brushes.White,
-                BorderThickness = new Thickness(0),
-                Margin = new Thickness(0, 10, 0, 20),
-                Cursor = Cursors.Hand,
-                HorizontalAlignment = System.Windows.HorizontalAlignment.Left
-            };
+            Button openLogButton = CreateStyledButton("Open Log", ColorLookDeeper);
+            openLogButton.Width = 100; openLogButton.Height = 25; openLogButton.HorizontalAlignment = HorizontalAlignment.Left;
             openLogButton.Click += (s, e) => OpenLogFile();
             content.Children.Add(openLogButton);
 
-            // Log configuration section
-            CreateSectionHeader(content, "Log configuration", Color.FromRgb(220, 53, 69));
+            CreateSectionHeader(content, "Log configuration", ColorLookDeeper);
             CreateLogLevelComboBox(content);
 
-            // Log Categories section
-            CreateSectionHeader(content, "Log Categories", Color.FromRgb(220, 53, 69));
+            CreateSectionHeader(content, "Log Categories", ColorLookDeeper);
             CreateLogCategoryCheckBoxes(content);
-
             CreateCheckBox(content, "Enable Background Validation Logging", "EnableBackgroundValidation", SettingsManager.EnableBackgroundValidationLogging);
 
             scrollViewer.Content = content;
@@ -523,78 +378,64 @@ namespace Desktop_Fences
             _tabControl.Items.Add(lookDeeperTab);
         }
 
+        // --- Helper Methods ---
+
         private static void CreateSectionHeader(StackPanel parent, string title, Color headerColor)
         {
-            TextBlock header = new TextBlock
+            parent.Children.Add(new TextBlock
             {
                 Text = title,
                 FontFamily = new FontFamily("Segoe UI"),
                 FontSize = 16,
                 FontWeight = FontWeights.Bold,
                 Foreground = new SolidColorBrush(headerColor),
-                Margin = new Thickness(0, 0, 0, 15)
-            };
-            parent.Children.Add(header);
+                Margin = new Thickness(0, 10, 0, 15)
+            });
         }
 
         private static void CreateCheckBox(StackPanel parent, string text, string name, bool isChecked)
         {
-            CheckBox checkBox = new CheckBox
+            parent.Children.Add(new CheckBox
             {
                 Name = name,
                 Content = text,
                 IsChecked = isChecked,
                 FontFamily = new FontFamily("Segoe UI"),
                 FontSize = 13,
-                Margin = new Thickness(15, 8, 0, 8),
-                VerticalAlignment = VerticalAlignment.Center
-            };
-            parent.Children.Add(checkBox);
+                Margin = new Thickness(15, 8, 0, 8)
+            });
         }
 
-        private static void CreateTintSlider(StackPanel parent)
+        private static CheckBox CreateCheckBoxReturn(StackPanel parent, string text, string name, bool isChecked)
+        {
+            var cb = new CheckBox
+            {
+                Name = name,
+                Content = text,
+                IsChecked = isChecked,
+                FontFamily = new FontFamily("Segoe UI"),
+                FontSize = 13,
+                Margin = new Thickness(15, 8, 0, 8)
+            };
+            parent.Children.Add(cb);
+            return cb;
+        }
+
+        private static void CreateSliderControl(StackPanel parent, string labelText, string sliderName, int currentValue)
         {
             Grid sliderGrid = new Grid();
-            sliderGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(80) });
-            sliderGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(120) });
-            sliderGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(50) });
-            sliderGrid.Margin = new Thickness(0, 10, 0, 10);
+            sliderGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(100) }); // Label
+            sliderGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(150) }); // Slider
+            sliderGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(50) });  // Value
+            sliderGrid.Margin = new Thickness(0, 5, 0, 5);
 
-            // Label
-            TextBlock label = new TextBlock
-            {
-                Text = "Tint",
-                FontFamily = new FontFamily("Segoe UI"),
-                FontSize = 13,
-                VerticalAlignment = VerticalAlignment.Center,
-                HorizontalAlignment = HorizontalAlignment.Right,
-                Margin = new Thickness(0, 0, 10, 0)
-            };
+            TextBlock label = new TextBlock { Text = labelText, FontSize = 13, VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 0, 10, 0) };
             Grid.SetColumn(label, 0);
 
-            // Slider
-            Slider slider = new Slider
-            {
-                Name = "TintSlider",
-                Minimum = 1,
-                Maximum = 100,
-                Value = SettingsManager.TintValue,
-                TickFrequency = 1,
-                IsSnapToTickEnabled = true,
-                VerticalAlignment = VerticalAlignment.Center
-            };
+            Slider slider = new Slider { Name = sliderName, Minimum = 1, Maximum = 100, Value = currentValue, TickFrequency = 1, IsSnapToTickEnabled = true, VerticalAlignment = VerticalAlignment.Center };
             Grid.SetColumn(slider, 1);
 
-            // Value display
-            TextBlock valueDisplay = new TextBlock
-            {
-                Name = "TintValue",
-                Text = SettingsManager.TintValue.ToString(),
-                FontFamily = new FontFamily("Segoe UI"),
-                FontSize = 13,
-                VerticalAlignment = VerticalAlignment.Center,
-                Margin = new Thickness(15, 0, 0, 0)
-            };
+            TextBlock valueDisplay = new TextBlock { Text = currentValue.ToString(), FontSize = 13, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(15, 0, 0, 0) };
             Grid.SetColumn(valueDisplay, 2);
 
             slider.ValueChanged += (s, e) => valueDisplay.Text = ((int)e.NewValue).ToString();
@@ -605,38 +446,39 @@ namespace Desktop_Fences
             parent.Children.Add(sliderGrid);
         }
 
+        private static void CreateIconRadioButtonGroup(StackPanel parent, string groupName, Dictionary<string, int> icons, int selectedIndex)
+        {
+            StackPanel panel = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(15, 5, 0, 15), Tag = groupName };
+
+            foreach (var icon in icons)
+            {
+                RadioButton rb = new RadioButton
+                {
+                    Content = icon.Key,
+                    Tag = icon.Value, // Store int value in Tag
+                    GroupName = groupName,
+                    IsChecked = icon.Value == selectedIndex,
+                    Margin = new Thickness(0, 0, 15, 0),
+                    FontSize = 16,
+                    FontFamily = new FontFamily("Segoe UI Symbol") // Ensure symbol support
+                };
+                panel.Children.Add(rb);
+            }
+            parent.Children.Add(panel);
+        }
+
         private static void CreateColorComboBox(StackPanel parent)
         {
-            Grid colorGrid = new Grid();
-            colorGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(80) });
-            colorGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(120) });
-            colorGrid.Margin = new Thickness(0, 10, 0, 10);
+            Grid colorGrid = new Grid { Margin = new Thickness(0, 10, 0, 10) };
+            colorGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(100) });
+            colorGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(150) });
 
-            TextBlock label = new TextBlock
-            {
-                Text = "Color",
-                FontFamily = new FontFamily("Segoe UI"),
-                FontSize = 13,
-                VerticalAlignment = VerticalAlignment.Center,
-                HorizontalAlignment = HorizontalAlignment.Right,
-                Margin = new Thickness(0, 0, 10, 0)
-            };
+            TextBlock label = new TextBlock { Text = "Color", FontSize = 13, VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 0, 10, 0) };
             Grid.SetColumn(label, 0);
 
-            ComboBox comboBox = new ComboBox
-            {
-                Name = "ColorComboBox",
-                Height = 25,
-                FontFamily = new FontFamily("Segoe UI"),
-                FontSize = 13,
-                VerticalAlignment = VerticalAlignment.Center
-            };
-
+            ComboBox comboBox = new ComboBox { Name = "ColorComboBox", Height = 25, FontSize = 13, VerticalAlignment = VerticalAlignment.Center };
             string[] colors = { "Gray", "Black", "White", "Beige", "Green", "Purple", "Fuchsia", "Yellow", "Orange", "Red", "Blue", "Bismark" };
-            foreach (string color in colors)
-            {
-                comboBox.Items.Add(color);
-            }
+            foreach (string color in colors) comboBox.Items.Add(color);
             comboBox.SelectedItem = SettingsManager.SelectedColor;
             Grid.SetColumn(comboBox, 1);
 
@@ -647,36 +489,16 @@ namespace Desktop_Fences
 
         private static void CreateLaunchEffectComboBox(StackPanel parent)
         {
-            Grid effectGrid = new Grid();
-            effectGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(80) });
-            effectGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(120) });
-            effectGrid.Margin = new Thickness(0, 10, 0, 10);
+            Grid effectGrid = new Grid { Margin = new Thickness(0, 10, 0, 10) };
+            effectGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(100) });
+            effectGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(150) });
 
-            TextBlock label = new TextBlock
-            {
-                Text = "Effect",
-                FontFamily = new FontFamily("Segoe UI"),
-                FontSize = 13,
-                VerticalAlignment = VerticalAlignment.Center,
-                HorizontalAlignment = HorizontalAlignment.Right,
-                Margin = new Thickness(0, 0, 10, 0)
-            };
+            TextBlock label = new TextBlock { Text = "Effect", FontSize = 13, VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 0, 10, 0) };
             Grid.SetColumn(label, 0);
 
-            ComboBox comboBox = new ComboBox
-            {
-                Name = "LaunchEffectComboBox",
-                Height = 25,
-                FontFamily = new FontFamily("Segoe UI"),
-                FontSize = 13,
-                VerticalAlignment = VerticalAlignment.Center
-            };
-
+            ComboBox comboBox = new ComboBox { Name = "LaunchEffectComboBox", Height = 25, FontSize = 13, VerticalAlignment = VerticalAlignment.Center };
             string[] effects = { "Zoom", "Bounce", "FadeOut", "SlideUp", "Rotate", "Agitate", "GrowAndFly", "Pulse", "Elastic", "Flip3D", "Spiral", "Shockwave", "Matrix", "Supernova", "Teleport" };
-            foreach (string effect in effects)
-            {
-                comboBox.Items.Add(effect);
-            }
+            foreach (string effect in effects) comboBox.Items.Add(effect);
             comboBox.SelectedIndex = (int)SettingsManager.LaunchEffect;
             Grid.SetColumn(comboBox, 1);
 
@@ -685,47 +507,191 @@ namespace Desktop_Fences
             parent.Children.Add(effectGrid);
         }
 
+        private static Button CreateStyledButton(string text, Color color)
+        {
+            return new Button
+            {
+                Content = text,
+                FontFamily = new FontFamily("Segoe UI"),
+                FontSize = 13,
+                FontWeight = FontWeights.Bold,
+                Background = new SolidColorBrush(color),
+                Foreground = Brushes.White,
+                BorderThickness = new Thickness(0),
+                Cursor = Cursors.Hand,
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                VerticalAlignment = VerticalAlignment.Stretch
+            };
+        }
+
+        private static void SaveOptions()
+        {
+            try
+            {
+                bool tempPortalImageState = SettingsManager.ShowBackgroundImageOnPortalFences;
+                bool newPortalWatermarkState = false;
+                bool newShowInTrayState = false;
+
+                // --- 1. General Tab ---
+                TabItem generalTab = (TabItem)_tabControl.Items[0];
+                StackPanel generalContent = (StackPanel)((ScrollViewer)generalTab.Content).Content;
+
+                foreach (var child in generalContent.Children)
+                {
+                    if (child is CheckBox checkBox)
+                    {
+                        switch (checkBox.Name)
+                        {
+                            case "StartWithWindows":
+                                if (checkBox.IsChecked != TrayManager.IsStartWithWindows)
+                                    TrayManager.Instance?.ToggleStartWithWindows(checkBox.IsChecked == true);
+                                break;
+                            case "SingleClickToLaunch": SettingsManager.SingleClickToLaunch = checkBox.IsChecked == true; break;
+                            case "EnableSnapNearFences": SettingsManager.IsSnapEnabled = checkBox.IsChecked == true; break;
+                            case "EnableDimensionSnap": SettingsManager.EnableDimensionSnap = checkBox.IsChecked == true; break;
+                            case "EnableTrayIcon":
+                                newShowInTrayState = checkBox.IsChecked == true;
+                                SettingsManager.ShowInTray = newShowInTrayState;
+                                if (TrayManager.Instance != null)
+                                    TrayManager.Instance.GetType().GetField("Showintray", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(TrayManager.Instance, newShowInTrayState);
+                                break;
+                            case "UseRecycleBin": SettingsManager.UseRecycleBin = checkBox.IsChecked == true; break;
+                        }
+                    }
+                }
+
+                // --- 2. Style Tab ---
+                TabItem styleTab = (TabItem)_tabControl.Items[1];
+                StackPanel styleContent = (StackPanel)((ScrollViewer)styleTab.Content).Content;
+
+                foreach (var child in styleContent.Children)
+                {
+                    if (child is CheckBox checkBox)
+                    {
+                        switch (checkBox.Name)
+                        {
+                            case "EnablePortalWatermark":
+                                newPortalWatermarkState = checkBox.IsChecked == true;
+                                SettingsManager.ShowBackgroundImageOnPortalFences = newPortalWatermarkState;
+                                break;
+                            case "DisableFenceScrollbars": SettingsManager.DisableFenceScrollbars = checkBox.IsChecked == true; break;
+                            case "EnableSounds": SettingsManager.EnableSounds = checkBox.IsChecked == true; break;
+                                // Case for NoteWatermark reserved for future use
+                        }
+                    }
+                    else if (child is Grid grid)
+                    {
+                        var tintSlider = grid.Children.OfType<Slider>().FirstOrDefault(s => s.Name == "TintSlider");
+                        if (tintSlider != null) SettingsManager.TintValue = (int)tintSlider.Value;
+
+                        var menuTintSlider = grid.Children.OfType<Slider>().FirstOrDefault(s => s.Name == "MenuTintSlider");
+                        if (menuTintSlider != null) SettingsManager.MenuTintValue = (int)menuTintSlider.Value;
+
+                        var colorCombo = grid.Children.OfType<ComboBox>().FirstOrDefault(c => c.Name == "ColorComboBox");
+                        if (colorCombo?.SelectedItem != null) SettingsManager.SelectedColor = colorCombo.SelectedItem.ToString();
+
+                        var effectCombo = grid.Children.OfType<ComboBox>().FirstOrDefault(c => c.Name == "LaunchEffectComboBox");
+                        if (effectCombo != null) SettingsManager.LaunchEffect = (LaunchEffectsManager.LaunchEffect)effectCombo.SelectedIndex;
+                    }
+                    else if (child is StackPanel stackPanel)
+                    {
+                        // Handle Radio Buttons for Icons
+                        if (stackPanel.Tag?.ToString() == "MenuIconGroup")
+                        {
+                            foreach (RadioButton rb in stackPanel.Children.OfType<RadioButton>())
+                                if (rb.IsChecked == true) SettingsManager.MenuIcon = (int)rb.Tag;
+                        }
+                        else if (stackPanel.Tag?.ToString() == "LockIconGroup")
+                        {
+                            foreach (RadioButton rb in stackPanel.Children.OfType<RadioButton>())
+                                if (rb.IsChecked == true) SettingsManager.LockIcon = (int)rb.Tag;
+                        }
+                    }
+                }
+
+                // --- 3. Look Deeper Tab ---
+                TabItem lookDeeperTab = (TabItem)_tabControl.Items[3]; // Index 3 now
+                StackPanel lookDeeperContent = (StackPanel)((ScrollViewer)lookDeeperTab.Content).Content;
+                var newEnabledCategories = new List<LogManager.LogCategory>();
+
+                foreach (var child in lookDeeperContent.Children)
+                {
+                    if (child is CheckBox checkBox)
+                    {
+                        if (checkBox.Name == "EnableLogging") SettingsManager.IsLogEnabled = checkBox.IsChecked == true;
+                        if (checkBox.Name == "EnableBackgroundValidation") SettingsManager.EnableBackgroundValidationLogging = checkBox.IsChecked == true;
+                    }
+                    else if (child is Grid grid)
+                    {
+                        var logLevelCombo = grid.Children.OfType<ComboBox>().FirstOrDefault(c => c.Name == "LogLevelComboBox");
+                        if (logLevelCombo?.SelectedItem != null && Enum.TryParse<LogManager.LogLevel>(logLevelCombo.SelectedItem.ToString(), out var logLevel))
+                            SettingsManager.SetMinLogLevel(logLevel);
+
+                        if (grid.Name == "LogCategoryGrid") ProcessLogCategoryCheckboxes(grid, newEnabledCategories);
+                    }
+                }
+
+                // Save and Apply
+                SettingsManager.SetEnabledLogCategories(newEnabledCategories);
+                LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.Settings, "Options saved successfully");
+
+                if (tempPortalImageState != newPortalWatermarkState)
+                { 
+                TrayManager.reloadAllFences();
+            }
+                TrayManager.Instance?.UpdateTrayIcon();
+
+
+                // --- NEW UPDATE CALL ---
+                Utility.UpdateFenceVisuals();
+                //// Apply runtime changes to existing fences
+                //var fences = System.Windows.Application.Current.Windows.OfType<NonActivatingWindow>().ToList();
+                //foreach (var fence in fences)
+                //{
+                //    dynamic fenceData = FenceManager.GetFenceData().FirstOrDefault(f => f.Title == fence.Title);
+                //    string effectiveColor = (fenceData != null && !string.IsNullOrEmpty(fenceData.CustomColor?.ToString()))
+                //        ? fenceData.CustomColor.ToString() : SettingsManager.SelectedColor;
+
+                //    Utility.ApplyTintAndColorToFence(fence, effectiveColor);
+
+                //    // Refresh scrollbars
+                //    var border = fence.Content as Border;
+                //    var scrollViewer = (border?.Child as DockPanel)?.Children.OfType<ScrollViewer>().FirstOrDefault();
+                //    if (scrollViewer != null)
+                //        scrollViewer.VerticalScrollBarVisibility = SettingsManager.DisableFenceScrollbars ? ScrollBarVisibility.Hidden : ScrollBarVisibility.Auto;
+                //}
+
+                _optionsWindow.Close();
+            }
+            catch (Exception ex)
+            {
+                LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.Settings, $"Error saving options: {ex.Message}");
+                MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Error saving settings: {ex.Message}", "Save Error");
+            }
+        }
+
+        // --- Reused Helpers (Log Checkboxes, etc) ---
         private static void CreateLogLevelComboBox(StackPanel parent)
         {
-            Grid levelGrid = new Grid();
+            Grid levelGrid = new Grid { Margin = new Thickness(0, 10, 0, 10) };
             levelGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(120) });
             levelGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(120) });
-            levelGrid.Margin = new Thickness(0, 10, 0, 10);
 
-            TextBlock label = new TextBlock
-            {
-                Text = "Minimum Log Level",
-                FontFamily = new FontFamily("Segoe UI"),
-                FontSize = 13,
-                VerticalAlignment = VerticalAlignment.Center,
-                Margin = new Thickness(0, 0, 10, 0)
-            };
+            TextBlock label = new TextBlock { Text = "Minimum Log Level", FontSize = 13, VerticalAlignment = VerticalAlignment.Center };
             Grid.SetColumn(label, 0);
 
-            ComboBox comboBox = new ComboBox
-            {
-                Name = "LogLevelComboBox",
-                Height = 25,
-                FontFamily = new FontFamily("Segoe UI"),
-                FontSize = 13,
-                VerticalAlignment = VerticalAlignment.Center
-            };
-
-            comboBox.Items.Add("Debug");
-            comboBox.Items.Add("Info");
-            comboBox.Items.Add("Warn");
-            comboBox.Items.Add("Error");
+            ComboBox comboBox = new ComboBox { Name = "LogLevelComboBox", Height = 25, FontSize = 13, VerticalAlignment = VerticalAlignment.Center };
+            comboBox.Items.Add("Debug"); comboBox.Items.Add("Info"); comboBox.Items.Add("Warn"); comboBox.Items.Add("Error");
             comboBox.SelectedItem = SettingsManager.MinLogLevel.ToString();
             Grid.SetColumn(comboBox, 1);
 
-            levelGrid.Children.Add(label);
-            levelGrid.Children.Add(comboBox);
+            levelGrid.Children.Add(label); levelGrid.Children.Add(comboBox);
             parent.Children.Add(levelGrid);
         }
 
         private static void CreateLogCategoryCheckBoxes(StackPanel parent)
         {
-            Grid categoryGrid = new Grid();
+            Grid categoryGrid = new Grid { Name = "LogCategoryGrid" };
             categoryGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             categoryGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 
@@ -733,123 +699,46 @@ namespace Desktop_Fences
             StackPanel rightColumn = new StackPanel();
 
             var logCategories = new[] {
-                LogManager.LogCategory.General,
-                LogManager.LogCategory.FenceCreation,
-                LogManager.LogCategory.FenceUpdate,
-                LogManager.LogCategory.UI,
-                LogManager.LogCategory.IconHandling,
-                LogManager.LogCategory.Error,
-                LogManager.LogCategory.ImportExport,
-                LogManager.LogCategory.Settings
+                LogManager.LogCategory.General, LogManager.LogCategory.FenceCreation,
+                LogManager.LogCategory.FenceUpdate, LogManager.LogCategory.UI,
+                LogManager.LogCategory.IconHandling, LogManager.LogCategory.Error,
+                LogManager.LogCategory.ImportExport, LogManager.LogCategory.Settings
             };
 
-            for (int i = 0; i < 4; i++)
-            {
-                CreateLogCategoryCheckBox(leftColumn, logCategories[i].ToString(), SettingsManager.EnabledLogCategories.Contains(logCategories[i]));
-            }
+            for (int i = 0; i < 4; i++) CreateLogCategoryCheckBox(leftColumn, logCategories[i].ToString(), SettingsManager.EnabledLogCategories.Contains(logCategories[i]));
+            for (int i = 4; i < 8; i++) CreateLogCategoryCheckBox(rightColumn, logCategories[i].ToString(), SettingsManager.EnabledLogCategories.Contains(logCategories[i]));
 
-            for (int i = 4; i < 8; i++)
-            {
-                CreateLogCategoryCheckBox(rightColumn, logCategories[i].ToString(), SettingsManager.EnabledLogCategories.Contains(logCategories[i]));
-            }
-
-            Grid.SetColumn(leftColumn, 0);
-            Grid.SetColumn(rightColumn, 1);
-            categoryGrid.Children.Add(leftColumn);
-            categoryGrid.Children.Add(rightColumn);
-
+            Grid.SetColumn(leftColumn, 0); Grid.SetColumn(rightColumn, 1);
+            categoryGrid.Children.Add(leftColumn); categoryGrid.Children.Add(rightColumn);
             parent.Children.Add(categoryGrid);
         }
 
         private static void CreateLogCategoryCheckBox(StackPanel parent, string categoryName, bool isEnabled)
         {
-            CheckBox checkBox = new CheckBox
-            {
-                Name = "LogCategory" + categoryName,
-                Content = categoryName,
-                IsChecked = isEnabled,
-                FontFamily = new FontFamily("Segoe UI"),
-                FontSize = 13,
-                Margin = new Thickness(15, 8, 0, 8)
-            };
-            parent.Children.Add(checkBox);
+            parent.Children.Add(new CheckBox { Name = "LogCategory" + categoryName, Content = categoryName, IsChecked = isEnabled, FontSize = 13, Margin = new Thickness(15, 8, 0, 8) });
         }
 
-        private static void RestoreBackup()
+        private static void ProcessLogCategoryCheckboxes(Grid categoryGrid, List<LogManager.LogCategory> enabledCategories)
         {
-            try
+            foreach (var gridChild in categoryGrid.Children)
             {
-                string rootDir = System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
-                string backupsDir = System.IO.Path.Combine(rootDir, "Backups");
-                string initialPath = System.IO.Directory.Exists(backupsDir) ? backupsDir : rootDir;
-
-                using (var dialog = new System.Windows.Forms.FolderBrowserDialog())
+                if (gridChild is StackPanel stackPanel)
                 {
-                    dialog.Description = "Select backup folder to restore from";
-                    dialog.ShowNewFolderButton = false;
-                    dialog.SelectedPath = initialPath;
-
-                    if (dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+                    foreach (var stackChild in stackPanel.Children)
                     {
-                        BackupManager.RestoreFromBackup(dialog.SelectedPath);
-                        _optionsWindow.Close();
-                        TrayManager.reloadAllFences();
+                        if (stackChild is CheckBox checkBox && checkBox.Name.StartsWith("LogCategory") && checkBox.IsChecked == true)
+                        {
+                            string categoryName = checkBox.Name.Substring("LogCategory".Length);
+                            if (Enum.TryParse<LogManager.LogCategory>(categoryName, out var category))
+                                if (!enabledCategories.Contains(category)) enabledCategories.Add(category);
+                        }
                     }
                 }
             }
-            catch (Exception ex)
-            {
-              MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Restore failed: {ex.Message}", "Error");
-            }
         }
 
-        private static void OpenBackupsFolder()
-        {
-            try
-            {
-                string rootDir = System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
-                string backupsDir = System.IO.Path.Combine(rootDir, "Backups");
-                if (!System.IO.Directory.Exists(backupsDir))
-                {
-                    System.IO.Directory.CreateDirectory(backupsDir);
-                }
-                Process.Start(new ProcessStartInfo
-                {
-                    FileName = backupsDir,
-                    UseShellExecute = true
-                });
-            }
-            catch (Exception ex)
-            {
-              MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Error opening backups folder: {ex.Message}", "Error");
-            }
-        }
-
-        private static void OpenLogFile()
-        {
-            try
-            {
-                string exeDir = System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
-                string logPath = System.IO.Path.Combine(exeDir, "Desktop_Fences.log");
-                if (System.IO.File.Exists(logPath))
-                {
-                    Process.Start(new ProcessStartInfo
-                    {
-                        FileName = logPath,
-                        UseShellExecute = true
-                    });
-                }
-                else
-                {
-                  MessageBoxesManager.ShowOKOnlyMessageBoxForm("Log file not found.", "Information");
-                }
-            }
-            catch (Exception ex)
-            {
-              MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Error opening log file: {ex.Message}", "Error");
-            }
-        }
-
+        // Keep existing CreateFooter, CreateDonationSection, RestoreBackup, OpenBackupsFolder, OpenLogFile 
+        // (They are unchanged logic, included here for compilation completeness if copy-pasted)
         private static void CreateFooter(Grid mainGrid)
         {
             Border footerBorder = new Border
@@ -861,307 +750,73 @@ namespace Desktop_Fences
             };
             Grid.SetRow(footerBorder, 2);
 
-            StackPanel buttonPanel = new StackPanel
-            {
-                Orientation = System.Windows.Controls.Orientation.Horizontal,
-                HorizontalAlignment = System.Windows.HorizontalAlignment.Right
-            };
+            StackPanel buttonPanel = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
 
-            System.Windows.Controls.Button cancelButton = new System.Windows.Controls.Button
-            {
-                Content = "Cancel",
-                Width = 100,
-                Height = 34,
-                FontFamily = new FontFamily("Segoe UI"),
-                FontSize = 12,
-                FontWeight = FontWeights.Bold,
-                Background = new SolidColorBrush(Color.FromRgb(248, 249, 250)),
-                Foreground = new SolidColorBrush(Color.FromRgb(32, 33, 36)),
-                BorderBrush = new SolidColorBrush(Color.FromRgb(218, 220, 224)),
-                BorderThickness = new Thickness(1),
-                Margin = new Thickness(0, 0, 10, 0),
-                Cursor = Cursors.Hand
-            };
+            Button cancelButton = new Button { Content = "Cancel", Width = 100, Height = 34, FontWeight = FontWeights.Bold, Background = Brushes.White, BorderBrush = new SolidColorBrush(Color.FromRgb(218, 220, 224)), BorderThickness = new Thickness(1), Margin = new Thickness(0, 0, 10, 0), Cursor = Cursors.Hand };
             cancelButton.Click += (s, e) => _optionsWindow.Close();
 
-            System.Windows.Controls.Button saveButton = new System.Windows.Controls.Button
-            {
-                Content = "Save",
-                Width = 100,
-                Height = 34,
-                FontFamily = new FontFamily("Segoe UI"),
-                FontSize = 12,
-                FontWeight = FontWeights.Bold,
-                Background = new SolidColorBrush(_userAccentColor),
-                Foreground = Brushes.White,
-                BorderThickness = new Thickness(0),
-                Cursor = Cursors.Hand
-            };
+            Button saveButton = new Button { Content = "Save", Width = 100, Height = 34, FontWeight = FontWeights.Bold, Background = new SolidColorBrush(_userAccentColor), Foreground = Brushes.White, BorderThickness = new Thickness(0), Cursor = Cursors.Hand };
             saveButton.Click += (s, e) => SaveOptions();
 
             buttonPanel.Children.Add(cancelButton);
             buttonPanel.Children.Add(saveButton);
             footerBorder.Child = buttonPanel;
-
             mainGrid.Children.Add(footerBorder);
         }
 
         private static void CreateDonationSection(Grid mainGrid)
         {
-            Border donationBorder = new Border
-            {
-                Background = new SolidColorBrush(Color.FromRgb(255, 248, 225)),
-                BorderBrush = new SolidColorBrush(Color.FromRgb(255, 193, 7)),
-                BorderThickness = new Thickness(0, 1, 0, 0),
-                Padding = new Thickness(20)
-            };
+            Border donationBorder = new Border { Background = new SolidColorBrush(Color.FromRgb(255, 248, 225)), BorderBrush = new SolidColorBrush(Color.FromRgb(255, 193, 7)), BorderThickness = new Thickness(0, 1, 0, 0), Padding = new Thickness(20) };
             Grid.SetRow(donationBorder, 3);
-
-            StackPanel donationPanel = new StackPanel
-            {
-                Orientation = System.Windows.Controls.Orientation.Horizontal,
-                HorizontalAlignment = System.Windows.HorizontalAlignment.Center,
-                VerticalAlignment = VerticalAlignment.Center
-            };
-
-            TextBlock donationText = new TextBlock
-            {
-                Text = "Support the Maintenance and Enhancement of This Project by Donating",
-                FontFamily = new FontFamily("Segoe UI"),
-                FontSize = 13,
-                Foreground = new SolidColorBrush(Color.FromRgb(102, 77, 3)),
-                VerticalAlignment = VerticalAlignment.Center,
-                Margin = new Thickness(0, 0, 15, 0)
-            };
-
-            Button paypalButton = new Button
-            {
-                Content = "♥ Donate via PayPal",
-                FontFamily = new FontFamily("Segoe UI"),
-                FontSize = 14,
-                Background = new SolidColorBrush(Color.FromRgb(255, 193, 7)),
-               
-                Foreground = Brushes.White,
-                BorderThickness = new Thickness(0),
-                Padding = new Thickness(15, 6, 15, 6),
-                Cursor = Cursors.Hand
-            };
-            paypalButton.Click += (s, e) =>
-            {
-
-
-
-                        try
-                {
-                    Process.Start(new ProcessStartInfo
-                    {
-                        FileName = "https://www.paypal.com/donate/?hosted_button_id=M8H4M4R763RBE",
-                        UseShellExecute = true
-                    });
-                }
-                catch (Exception ex)
-                {
-                    LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI, $"Error opening PayPal donation link: {ex.Message}");
-                }
-            };
-
-            donationPanel.Children.Add(donationText);
-            donationPanel.Children.Add(paypalButton);
+            StackPanel donationPanel = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
+            TextBlock donationText = new TextBlock { Text = "Support the Maintenance and Enhancement of This Project by Donating", FontSize = 13, Foreground = new SolidColorBrush(Color.FromRgb(102, 77, 3)), VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 15, 0) };
+            Button paypalButton = new Button { Content = "♥ Donate via PayPal", FontSize = 14, Background = new SolidColorBrush(Color.FromRgb(255, 193, 7)), Foreground = Brushes.White, BorderThickness = new Thickness(0), Padding = new Thickness(15, 6, 15, 6), Cursor = Cursors.Hand };
+            paypalButton.Click += (s, e) => { try { Process.Start(new ProcessStartInfo { FileName = "https://www.paypal.com/donate/?hosted_button_id=M8H4M4R763RBE", UseShellExecute = true }); } catch { } };
+            donationPanel.Children.Add(donationText); donationPanel.Children.Add(paypalButton);
             donationBorder.Child = donationPanel;
-
             mainGrid.Children.Add(donationBorder);
         }
 
-        // ADD this helper method to OptionsFormManager class:
-        private static void ProcessLogCategoryCheckboxes(Grid categoryGrid, List<LogManager.LogCategory> enabledCategories)
-        {
-            // The log category checkboxes are in nested StackPanels within the Grid
-            foreach (var gridChild in categoryGrid.Children)
-            {
-                if (gridChild is StackPanel stackPanel)
-                {
-                    foreach (var stackChild in stackPanel.Children)
-                    {
-                        if (stackChild is CheckBox checkBox && checkBox.Name.StartsWith("LogCategory"))
-                        {
-                            if (checkBox.IsChecked == true)
-                            {
-                                string categoryName = checkBox.Name.Substring("LogCategory".Length);
-                                if (Enum.TryParse<LogManager.LogCategory>(categoryName, out var category))
-                                {
-                                    if (!enabledCategories.Contains(category))
-                                    {
-                                        enabledCategories.Add(category);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-
-        private static void SaveOptions()
+        private static void RestoreBackup()
         {
             try
             {
-                bool tempPortalImageState = SettingsManager.ShowBackgroundImageOnPortalFences;
-
-                TabItem generalTab = (TabItem)_tabControl.Items[0];
-                ScrollViewer generalScrollViewer = (ScrollViewer)generalTab.Content;
-                StackPanel generalContent = (StackPanel)generalScrollViewer.Content;
-
-                bool newPortalWatermarkState = false;
-                bool newShowInTrayState = false;
-
-                foreach (var child in generalContent.Children)
+                string rootDir = System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
+                string backupsDir = System.IO.Path.Combine(rootDir, "Backups");
+                using (var dialog = new System.Windows.Forms.FolderBrowserDialog { SelectedPath = System.IO.Directory.Exists(backupsDir) ? backupsDir : rootDir })
                 {
-                    if (child is CheckBox checkBox)
+                    if (dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
                     {
-                        switch (checkBox.Name)
-                        {
-                            case "StartWithWindows":
-                                if (checkBox.IsChecked != TrayManager.IsStartWithWindows)
-                                {
-                                    TrayManager.Instance?.ToggleStartWithWindows(checkBox.IsChecked == true);
-                                }
-                                break;
-                            case "SingleClickToLaunch":
-                                SettingsManager.SingleClickToLaunch = checkBox.IsChecked == true;
-                                break;
-                            case "EnableSnapNearFences":
-                                SettingsManager.IsSnapEnabled = checkBox.IsChecked == true;
-                                break;
-                            case "EnableDimensionSnap":
-                                SettingsManager.EnableDimensionSnap = checkBox.IsChecked == true;
-                                break;
-                            case "EnableTrayIcon":
-                                newShowInTrayState = checkBox.IsChecked == true;
-                                SettingsManager.ShowInTray = newShowInTrayState;
-                                if (TrayManager.Instance != null)
-                                {
-                                    TrayManager.Instance.GetType().GetField("Showintray", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?.SetValue(TrayManager.Instance, newShowInTrayState);
-                                }
-                                break;
-                            case "EnablePortalWatermark":
-                                newPortalWatermarkState = checkBox.IsChecked == true;
-                                SettingsManager.ShowBackgroundImageOnPortalFences = newPortalWatermarkState;
-                                break;
-                            case "UseRecycleBin":
-                                SettingsManager.UseRecycleBin = checkBox.IsChecked == true;
-                                break;
-                            case "DisableFenceScrollbars":
-                                SettingsManager.DisableFenceScrollbars = checkBox.IsChecked == true;
-                                break;
-                        }
-                    }
-                    else if (child is Grid grid)
-                    {
-                        var slider = grid.Children.OfType<Slider>().FirstOrDefault(s => s.Name == "TintSlider");
-                        if (slider != null)
-                        {
-                            SettingsManager.TintValue = (int)slider.Value;
-                        }
-
-                        var colorCombo = grid.Children.OfType<ComboBox>().FirstOrDefault(c => c.Name == "ColorComboBox");
-                        if (colorCombo?.SelectedItem != null)
-                        {
-                            SettingsManager.SelectedColor = colorCombo.SelectedItem.ToString();
-                        }
-
-                        var effectCombo = grid.Children.OfType<ComboBox>().FirstOrDefault(c => c.Name == "LaunchEffectComboBox");
-                        if (effectCombo != null)
-                        {
-                            SettingsManager.LaunchEffect = (LaunchEffectsManager.LaunchEffect)effectCombo.SelectedIndex;
-                        }
+                        BackupManager.RestoreFromBackup(dialog.SelectedPath);
+                        _optionsWindow.Close();
+                        TrayManager.reloadAllFences();
                     }
                 }
-
-                TabItem lookDeeperTab = (TabItem)_tabControl.Items[2];
-                ScrollViewer lookDeeperScrollViewer = (ScrollViewer)lookDeeperTab.Content;
-                StackPanel lookDeeperContent = (StackPanel)lookDeeperScrollViewer.Content;
-
-                var newEnabledCategories = new List<LogManager.LogCategory>();
-
-                foreach (var child in lookDeeperContent.Children)
-                {
-                    if (child is CheckBox checkBox)
-                    {
-                        switch (checkBox.Name)
-                        {
-                            case "EnableLogging":
-                                SettingsManager.IsLogEnabled = checkBox.IsChecked == true;
-                                break;
-                            case "EnableBackgroundValidation":
-                                SettingsManager.EnableBackgroundValidationLogging = checkBox.IsChecked == true;
-                                break;
-                        }
-                    }
-                    else if (child is Grid grid)
-                    {
-                        // Handle log level combo box
-                        var logLevelCombo = grid.Children.OfType<ComboBox>().FirstOrDefault(c => c.Name == "LogLevelComboBox");
-                        if (logLevelCombo?.SelectedItem != null)
-                        {
-                            if (Enum.TryParse<LogManager.LogLevel>(logLevelCombo.SelectedItem.ToString(), out var logLevel))
-                            {
-                                SettingsManager.SetMinLogLevel(logLevel);
-                            }
-                        }
-
-                        // Handle log category checkboxes (they're in nested StackPanels within the Grid)
-                        ProcessLogCategoryCheckboxes(grid, newEnabledCategories);
-                    }
-                }
-
-
-                // Update categories once after collecting all checked ones
-                SettingsManager.EnabledLogCategories = newEnabledCategories;
-
-                if (tempPortalImageState != newPortalWatermarkState)
-                {
-                    TrayManager.reloadAllFences();
-                }
-
-                TrayManager.Instance?.UpdateTrayIcon();
-                var fences = System.Windows.Application.Current.Windows.OfType<NonActivatingWindow>().ToList();
-                foreach (var fence in fences)
-                {
-                    dynamic fenceData = FenceManager.GetFenceData().FirstOrDefault(f => f.Title == fence.Title);
-                    if (fenceData != null)
-                    {
-                        string customColor = fenceData.CustomColor?.ToString();
-                        string appliedColor = string.IsNullOrEmpty(customColor) ? SettingsManager.SelectedColor : customColor;
-                        Utility.ApplyTintAndColorToFence(fence, appliedColor);
-                    }
-                    else
-                    {
-                        Utility.ApplyTintAndColorToFence(fence, SettingsManager.SelectedColor);
-                    }
-
-                    // Apply scrollbar setting to existing fences
-                    var border = fence.Content as Border;
-                    if (border?.Child is DockPanel dockPanel)
-                    {
-                        var scrollViewer = dockPanel.Children.OfType<ScrollViewer>().FirstOrDefault();
-                        if (scrollViewer != null)
-                        {
-                            scrollViewer.VerticalScrollBarVisibility = SettingsManager.DisableFenceScrollbars ? ScrollBarVisibility.Hidden : ScrollBarVisibility.Auto;
-                        }
-                    }
-                }
-
-                LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.Settings, "Options saved successfully");
-                _optionsWindow.Close();
             }
-            catch (Exception ex)
+            catch (Exception ex) { MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Restore failed: {ex.Message}", "Error"); }
+        }
+
+        private static void OpenBackupsFolder()
+        {
+            try
             {
-                LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.Settings, $"Error saving options: {ex.Message}");
-              MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Error saving settings: {ex.Message}", "Save Error");
+                string rootDir = System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
+                string backupsDir = System.IO.Path.Combine(rootDir, "Backups");
+                if (!System.IO.Directory.Exists(backupsDir)) System.IO.Directory.CreateDirectory(backupsDir);
+                Process.Start(new ProcessStartInfo { FileName = backupsDir, UseShellExecute = true });
             }
+            catch (Exception ex) { MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Error: {ex.Message}", "Error"); }
+        }
 
-
+        private static void OpenLogFile()
+        {
+            try
+            {
+                string logPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "Desktop_Fences.log");
+                if (System.IO.File.Exists(logPath)) Process.Start(new ProcessStartInfo { FileName = logPath, UseShellExecute = true });
+                else MessageBoxesManager.ShowOKOnlyMessageBoxForm("Log file not found.", "Information");
+            }
+            catch { }
         }
     }
 }

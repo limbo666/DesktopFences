@@ -251,6 +251,140 @@ namespace Desktop_Fences
             };
         }
 
+
+
+
+
+          public static void UpdateFenceVisuals()
+        {
+            // Ensure we run on the UI thread
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                // 1. Prepare Symbols
+                string[] menuSymbols = { "♥", "☰", "≣", "𓃑" };
+                string[] lockSymbols = { "🛡️", "🔑", "🔐", "🔒" };
+
+                // Safe index retrieval
+                int menuIdx = SettingsManager.MenuIcon;
+                if (menuIdx < 0 || menuIdx >= menuSymbols.Length) menuIdx = 0;
+
+                int lockIdx = SettingsManager.LockIcon;
+                if (lockIdx < 0 || lockIdx >= lockSymbols.Length) lockIdx = 0;
+
+                string menuSymbol = menuSymbols[menuIdx];
+                string lockSymbol = lockSymbols[lockIdx];
+
+                // 2. Determine Opacity
+                double iconOpacity = (double)SettingsManager.MenuTintValue / 100.0;
+
+                // 3. Iterate All Open Fences
+                foreach (var win in Application.Current.Windows.OfType<NonActivatingWindow>())
+                {
+                    // --- FIX START: Determine Effective Color ---
+                    // Instead of blindly applying the Global Color, check if this fence has a Custom Color.
+                    string fenceId = win.Tag?.ToString();
+                    var fenceData = FenceManager.GetFenceData().FirstOrDefault(f => f.Id?.ToString() == fenceId);
+
+                    string colorToApply = SettingsManager.SelectedColor; // Default to Global
+
+                    if (fenceData != null)
+                    {
+                        string customColor = null;
+                        try
+                        {
+                            // Handle both JObject and dynamic object access safely
+                            if (fenceData is Newtonsoft.Json.Linq.JObject jObj)
+                                customColor = jObj["CustomColor"]?.ToString();
+                            else
+                                customColor = fenceData.CustomColor?.ToString();
+                        }
+                        catch { }
+
+                        // If a valid custom color exists, USE IT instead of global
+                        if (!string.IsNullOrEmpty(customColor) && customColor != "Default")
+                        {
+                            colorToApply = customColor;
+                        }
+                    }
+
+                    // Apply the CORRECT color (Custom or Global)
+                    ApplyTintAndColorToFence(win, colorToApply);
+                    // --- FIX END ---
+
+                    // B. Find Visual Elements
+                    var border = win.Content as Border;
+                    var dockPanel = border?.Child as DockPanel;
+                    if (dockPanel == null) continue;
+
+                    // --- Update Menu Icon (Heart) ---
+                    var heartIcon = dockPanel.Children.OfType<TextBlock>().FirstOrDefault();
+                    if (heartIcon != null)
+                    {
+                        heartIcon.Text = menuSymbol;
+                        heartIcon.BeginAnimation(UIElement.OpacityProperty, null); // Break animation hold
+                        heartIcon.Opacity = iconOpacity;
+                    }
+
+                    // --- Update Lock Icon ---
+                    var titleGrid = dockPanel.Children.OfType<Grid>().FirstOrDefault();
+                    if (titleGrid != null)
+                    {
+                        var lockIcon = titleGrid.Children.OfType<TextBlock>()
+                            .FirstOrDefault(tb => Grid.GetColumn(tb) == 2);
+
+                        if (lockIcon != null)
+                        {
+                            lockIcon.Text = lockSymbol;
+                            lockIcon.BeginAnimation(UIElement.OpacityProperty, null); // Break animation hold
+                            lockIcon.Opacity = iconOpacity;
+
+                            // C. Re-apply Lock Color Logic
+                            bool isLocked = false;
+                            if (fenceData != null)
+                            {
+                                try
+                                {
+                                    string lockedStr = null;
+                                    if (fenceData is Newtonsoft.Json.Linq.JObject jObj)
+                                        lockedStr = jObj["IsLocked"]?.ToString();
+                                    else
+                                        lockedStr = fenceData.IsLocked?.ToString();
+
+                                    isLocked = lockedStr?.ToLower() == "true";
+                                }
+                                catch { }
+                            }
+                            lockIcon.Foreground = isLocked ? Brushes.Red : Brushes.White;
+                        }
+                    }
+
+                    // --- NEW: Ensure Note Fences also refresh their text contrast ---
+                    // If the fence color changed (e.g., Global color changed and this fence uses Global),
+                    // we must ensure the Note text remains readable against the new background.
+                    try
+                    {
+                        string type = null;
+                        if (fenceData is Newtonsoft.Json.Linq.JObject jObj) type = jObj["ItemsType"]?.ToString();
+                        else type = fenceData?.ItemsType?.ToString();
+
+                        if (type == "Note")
+                        {
+                            var noteTextBox = dockPanel.Children.OfType<TextBox>().FirstOrDefault();
+                            if (noteTextBox != null && fenceData != null)
+                            {
+                                // Pass the fresh fenceData so it calculates contrast against the correct color
+                                NoteFenceManager.RefreshNoteVisuals(fenceData, noteTextBox);
+                            }
+                        }
+                    }
+                    catch { }
+                }
+            });
+        }
+
+
+
+
         public static bool IsExecutableFile(string filePath)
         {
             string[] executableExtensions = { ".exe", ".bat", ".cmd", ".vbs", ".ps1", ".hta", ".msi" };
@@ -329,9 +463,124 @@ namespace Desktop_Fences
         [DllImport("gdi32.dll")]
         private static extern bool DeleteObject(IntPtr hObject);
 
+        // --- NEW: Native Shell API for robust icon extraction ---
+        // --- UPDATED: Strict Unicode Shell API ---
+    
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+        public struct SHFILEINFO
+        {
+            public IntPtr hIcon;
+            public int iIcon;
+            public uint dwAttributes;
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 260)]
+            public string szDisplayName;
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 80)]
+            public string szTypeName;
+        }
 
+        [DllImport("shell32.dll", CharSet = CharSet.Unicode)]
+        public static extern IntPtr SHGetFileInfo(string pszPath, uint dwFileAttributes, ref SHFILEINFO psfi, uint cbFileInfo, uint uFlags);
+
+        private const uint SHGFI_ICON = 0x100;
+        private const uint SHGFI_LARGEICON = 0x0;    // 32x32
+        private const uint SHGFI_SMALLICON = 0x1;    // 16x16
+        private const uint SHGFI_USEFILEATTRIBUTES = 0x10;
+        private const uint SHGFI_LINKOVERLAY = 0x000008000; // Show shortcut overlay? Optional.
+
+        public static ImageSource GetShellIcon(string path, bool isFolder)
+        {
+            try
+            {
+                // 1. PATH CORRECTION
+                if (!System.IO.Path.IsPathRooted(path))
+                {
+                    string exeDir = AppDomain.CurrentDomain.BaseDirectory;
+                    // If path is relative, assume it's in the Shortcuts folder relative to EXE
+                    string checkPath = System.IO.Path.Combine(exeDir, path);
+                    if (System.IO.File.Exists(checkPath)) path = checkPath;
+                }
+
+                SHFILEINFO shinfo = new SHFILEINFO();
+
+                // 2. FLAG SELECTION
+                // Critical: Do NOT use SHGFI_USEFILEATTRIBUTES for .lnk files. 
+                // We want the Shell to read the file contents (the shortcut target), not just the file extension.
+                uint flags = SHGFI_ICON | SHGFI_LARGEICON;
+
+                // 3. SPECIAL HANDLING FOR UWP SHORTCUTS
+                // If it is a shortcut, we force the shell to resolve it.
+                if (path.EndsWith(".lnk", StringComparison.OrdinalIgnoreCase))
+                {
+                    // Passing 0 as attributes forces shell to access the file
+                    SHGetFileInfo(path, 0, ref shinfo, (uint)Marshal.SizeOf(shinfo), flags);
+                }
+                else if (isFolder)
+                {
+                    // Optimization: For real folders, use attributes to avoid disk spin-up
+                    flags |= SHGFI_USEFILEATTRIBUTES;
+                    SHGetFileInfo(path, 0x00000010, ref shinfo, (uint)Marshal.SizeOf(shinfo), flags);
+                }
+                else
+                {
+                    // Standard files
+                    SHGetFileInfo(path, 0, ref shinfo, (uint)Marshal.SizeOf(shinfo), flags);
+                }
+
+                if (shinfo.hIcon == IntPtr.Zero) return null;
+
+                var img = System.Windows.Interop.Imaging.CreateBitmapSourceFromHIcon(
+                    shinfo.hIcon,
+                    Int32Rect.Empty,
+                    BitmapSizeOptions.FromEmptyOptions());
+
+                DeleteObject(shinfo.hIcon);
+                return img;
+            }
+            catch (Exception ex)
+            {
+                LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.IconHandling, $"GetShellIcon failed for {path}: {ex.Message}");
+                return null;
+            }
+        }
+
+
+        /// <summary>
+        /// Checks if a shortcut points to the virtual "Applications" folder (Store App).
+        /// Uses binary inspection to find the "APPS" signature.
+        /// </summary>
+        public static bool IsStoreAppShortcut(string lnkPath)
+        {
+            try
+            {
+                if (!System.IO.File.Exists(lnkPath)) return false;
+
+                // Read the first 4096 bytes. The "APPS" signature is always in the header.
+                byte[] buffer = new byte[4096];
+                using (var fs = new System.IO.FileStream(lnkPath, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.ReadWrite))
+                {
+                    fs.Read(buffer, 0, buffer.Length);
+                }
+
+                // Convert to ASCII. The "APPS" signature is stored as standard text.
+                string rawData = System.Text.Encoding.ASCII.GetString(buffer);
+
+                // CHECK: "APPS" signature identifies shortcuts to shell:AppsFolder
+                return rawData.Contains("APPS");
+            }
+            catch (Exception ex)
+            {
+                LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.IconHandling, $"Binary check failed for {lnkPath}: {ex.Message}");
+                return false;
+            }
+        }
+
+
+    }
+
+       
     }
 
 
 
-}
+
+

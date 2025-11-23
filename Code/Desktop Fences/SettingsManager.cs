@@ -41,10 +41,37 @@ namespace Desktop_Fences
         /// </summary>
         public static bool ShowInTray { get; set; } = true;
 
+
+        /// <summary>
+        /// Gets or sets whether the sounds will be enabled.
+        /// </summary>
+        public static bool EnableSounds { get; set; } = true;
+
+
         /// <summary>
         /// Gets or sets the tint value (0-100) that controls fence transparency.
         /// </summary>
         public static int TintValue { get; set; } = 60;
+
+
+        /// <summary>
+        /// Gets or sets the tint value (0-100) that controls menu icons transparency.
+        /// </summary>
+        public static int MenuTintValue { get; set; } = 30;
+
+
+        /// <summary>
+        /// Gets or sets the tint value (0-3) that controls the menu icon.
+        /// </summary>
+        public static int MenuIcon { get; set; } = 0;
+
+
+
+        /// <summary>
+        /// Gets or sets the tint value (0-3) that controls the menu icon.
+        /// </summary>
+        public static int LockIcon { get; set; } = 0;
+
 
         /// <summary>
         /// Gets or sets the selected color name for fence backgrounds.
@@ -110,6 +137,12 @@ namespace Desktop_Fences
         /// </summary>
         public static bool DisableFenceScrollbars { get; set; } = false; // Default disabled
 
+
+        /// <summary>
+        /// Gets or sets whether to disable auto-save for note fences, requiring manual save via Done button.
+        /// </summary>
+        public static bool DisableNoteAutoSave { get; set; } = false;
+
         /// <summary>
         /// Gets or sets the icon visibility effect type.
         /// Valid values: None, Glow, Shadow, Outline, AngelGlow, ColoredGlow, StrongShadow
@@ -117,7 +150,15 @@ namespace Desktop_Fences
 
         public static IconVisibilityEffect IconVisibilityEffect { get; set; } = IconVisibilityEffect.None;
 
+        /// <summary>
+        /// Hidden Tweak: Automatically export icons to desktop when deleting a fence.
+        /// </summary>
+        public static bool ExportShortcutsOnFenceDeletion { get; set; } = false;
 
+        /// <summary>
+        /// Hidden Tweak: Delete the original .lnk file from Desktop after dropping it into a fence.
+        /// </summary>
+        public static bool DeleteOriginalShortcutsOnDrop { get; set; } = false;
 
 
 
@@ -182,15 +223,24 @@ namespace Desktop_Fences
                     try { IsSnapEnabled = optionsData.IsSnapEnabled ?? true; } catch { IsSnapEnabled = true; }
                     try { ShowBackgroundImageOnPortalFences = optionsData.ShowBackgroundImageOnPortalFences ?? true; } catch { ShowBackgroundImageOnPortalFences = true; }
                     try { ShowInTray = optionsData.ShowInTray ?? true; } catch { ShowInTray = true; }
+                    try { EnableSounds = optionsData.EnableSounds ?? true; } catch { EnableSounds = true; }
+
                     try { UseRecycleBin = optionsData.UseRecycleBin ?? true; } catch { UseRecycleBin = true; }
                     try { TintValue = optionsData.TintValue ?? 60; } catch { TintValue = 60; }
+                    try { MenuTintValue = optionsData.MenuTintValue ?? 30; } catch { MenuTintValue = 30; }
+                    try { MenuIcon = optionsData.MenuIcon ?? 0; } catch { MenuIcon = 0; }
+                    try { LockIcon = optionsData.LockIcon ?? 0; } catch { LockIcon = 0; }
                     try { SelectedColor = optionsData.SelectedColor ?? "Gray"; } catch { SelectedColor = "Gray"; }
                     try { IsLogEnabled = optionsData.IsLogEnabled ?? false; } catch { IsLogEnabled = false; }
                     try { SingleClickToLaunch = optionsData.SingleClickToLaunch ?? true; } catch { SingleClickToLaunch = true; }
                     try { EnableDimensionSnap = optionsData.EnableDimensionSnap ?? false; } catch { EnableDimensionSnap = false; }
                     try { PortalBackgroundOpacity = optionsData.PortalBackgroundOpacity ?? 20; } catch { PortalBackgroundOpacity = 20; }
                     try { DisableFenceScrollbars = optionsData.DisableFenceScrollbars ?? false; } catch { DisableFenceScrollbars = false; }
-
+                    // Load DisableNoteAutoSave with protection
+                    try { DisableNoteAutoSave = optionsData.DisableNoteAutoSave ?? false; } catch { DisableNoteAutoSave = false; }
+               
+                    try { ExportShortcutsOnFenceDeletion = optionsData.ExportShortcutsOnFenceDeletion ?? false; } catch { ExportShortcutsOnFenceDeletion = false; }
+                    try { DeleteOriginalShortcutsOnDrop = optionsData.DeleteOriginalShortcutsOnDrop ?? false; } catch { DeleteOriginalShortcutsOnDrop = false; }
                     //   try { MaxDisplayNameLength = optionsData.MaxDisplayNameLength ?? 20; } catch { MaxDisplayNameLength = 20; }
                     try
                     {
@@ -321,8 +371,12 @@ namespace Desktop_Fences
                     IsSnapEnabled,
                     ShowBackgroundImageOnPortalFences,
                     ShowInTray,
+                    EnableSounds,
                     UseRecycleBin,
                     TintValue,
+                    MenuTintValue,
+                    MenuIcon,
+                    LockIcon,
                     SelectedColor,
                     IsLogEnabled,
                     SingleClickToLaunch,
@@ -337,7 +391,10 @@ namespace Desktop_Fences
                     SuppressLaunchWarnings,
                     EnableBackgroundValidationLogging, // 
                     DisableSingleInstance, // Multiple instances option  
-                    DisableFenceScrollbars // Scrollbar control option
+                    DisableFenceScrollbars, // Scrollbar control option
+                    DisableNoteAutoSave, // Note auto-save control option
+                    ExportShortcutsOnFenceDeletion,
+                    DeleteOriginalShortcutsOnDrop
                 };
 
                 // Serialize to JSON with indentation for readability

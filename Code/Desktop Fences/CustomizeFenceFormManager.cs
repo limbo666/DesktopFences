@@ -218,6 +218,17 @@ namespace Desktop_Fences
             headerGrid.Children.Add(titleBlock);
             headerGrid.Children.Add(closeButton);
             headerBorder.Child = headerGrid;
+            // Add drag functionality to header area (like EditShortcutWindow and OptionsForm)
+            headerBorder.MouseLeftButtonDown += (sender, e) =>
+            {
+                if (e.ButtonState == MouseButtonState.Pressed)
+                {
+                    this.DragMove();
+                }
+            };
+
+
+
             parent.Children.Add(headerBorder);
         }
 
@@ -682,9 +693,14 @@ namespace Desktop_Fences
                 LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.UI, $"Loading current values for fence '{_fence.Title}'");
 
                 bool isPortalFence = _fence.ItemsType?.ToString() == "Portal";
+                bool isNoteFence = _fence.ItemsType?.ToString() == "Note";
                 if (isPortalFence)
                 {
                     LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI, $"Portal fence detected - disabling icon controls for '{_fence.Title}'");
+                }
+                if (isNoteFence)
+                {
+                    LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI, $"Note fence detected - disabling icon controls for '{_fence.Title}'");
                 }
 
                 // Load Fence Section properties
@@ -699,7 +715,7 @@ namespace Desktop_Fences
                 LoadCheckboxValue(_chkBoldTitleText, _fence.BoldTitleText?.ToString(), "BoldTitleText");
 
                 // Load Icons Section properties
-                if (isPortalFence)
+                if (isPortalFence|| isNoteFence)
                 {
                     DisableIconControls();
                 }
@@ -731,22 +747,31 @@ namespace Desktop_Fences
                 _cmbTextColor.IsEnabled = false;
                 _chkDisableTextShadow.IsEnabled = false;
                 _chkGrayscaleIcons.IsEnabled = false;
+                _cmbCustomLaunchEffect.IsEnabled = false;
 
                 _cmbIconSize.SelectedIndex = 0;
                 _nudIconSpacing.Value = 5;
                 _cmbTextColor.SelectedIndex = 0;
                 _chkDisableTextShadow.IsChecked = false;
                 _chkGrayscaleIcons.IsChecked = false;
+                _cmbCustomLaunchEffect.SelectedIndex = 0;
 
                 _cmbIconSize.Background = SystemColors.ControlBrush;
                 _nudIconSpacing.Background = SystemColors.ControlBrush;
                 _cmbTextColor.Background = SystemColors.ControlBrush;
+                _cmbCustomLaunchEffect.Background = SystemColors.ControlBrush;
 
-                _cmbIconSize.ToolTip = "Icon appearance settings are not available for Portal Fences";
-                _nudIconSpacing.ToolTip = "Icon appearance settings are not available for Portal Fences";
-                _cmbTextColor.ToolTip = "Icon appearance settings are not available for Portal Fences";
-                _chkDisableTextShadow.ToolTip = "Icon appearance settings are not available for Portal Fences";
-                _chkGrayscaleIcons.ToolTip = "Icon appearance settings are not available for Portal Fences";
+                string fenceType = _fence.ItemsType?.ToString();
+                string tooltipMessage = fenceType == "Portal" ? "Icon appearance settings are not available for Portal Fences"
+                                     : fenceType == "Note" ? "Icon appearance settings are not available for Note Fences"
+                                     : "Icon appearance settings are disabled";
+
+                _cmbIconSize.ToolTip = tooltipMessage;
+                _nudIconSpacing.ToolTip = tooltipMessage;
+                _cmbTextColor.ToolTip = tooltipMessage;
+                _chkDisableTextShadow.ToolTip = tooltipMessage;
+                _chkGrayscaleIcons.ToolTip = tooltipMessage;
+                _cmbCustomLaunchEffect.ToolTip = tooltipMessage;
 
                 LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI, "Disabled icon controls for Portal Fence");
             }
@@ -765,16 +790,19 @@ namespace Desktop_Fences
                 _cmbTextColor.IsEnabled = true;
                 _chkDisableTextShadow.IsEnabled = true;
                 _chkGrayscaleIcons.IsEnabled = true;
+                _cmbCustomLaunchEffect.IsEnabled = true;
 
                 _cmbIconSize.Background = SystemColors.WindowBrush;
                 _nudIconSpacing.Background = SystemColors.WindowBrush;
                 _cmbTextColor.Background = SystemColors.WindowBrush;
+                _cmbCustomLaunchEffect.Background = SystemColors.WindowBrush;
 
                 _cmbIconSize.ToolTip = null;
                 _nudIconSpacing.ToolTip = null;
                 _cmbTextColor.ToolTip = null;
                 _chkDisableTextShadow.ToolTip = null;
                 _chkGrayscaleIcons.ToolTip = null;
+                _cmbCustomLaunchEffect.ToolTip = null;
 
                 LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI, "Enabled icon controls for regular fence");
             }
@@ -931,11 +959,7 @@ namespace Desktop_Fences
                 LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI, $"Applying ALL runtime changes for fence '{_fence.Title}'");
 
                 string fenceId = _fence.Id?.ToString();
-                if (string.IsNullOrEmpty(fenceId))
-                {
-                    LogManager.Log(LogManager.LogLevel.Warn, LogManager.LogCategory.UI, $"Fence '{_fence.Title}' has no Id, cannot apply runtime changes");
-                    return;
-                }
+                if (string.IsNullOrEmpty(fenceId)) return;
 
                 var windows = System.Windows.Application.Current.Windows.OfType<NonActivatingWindow>();
                 var win = windows.FirstOrDefault(w => w.Tag?.ToString() == fenceId);
@@ -945,19 +969,103 @@ namespace Desktop_Fences
                     ApplyFenceBorderSettings(win);
                     ApplyTitleSettings(win);
                     ApplyCustomColorSetting(win);
-                    ApplyIconSettings(win);
+
+                    // --- CHANGED LOGIC START ---
+                    string itemsType = _fence.ItemsType?.ToString();
+
+                    if (itemsType == "Note")
+                    {
+                        // Explicitly update Note visuals
+                        ApplyNoteSettings(win);
+                    }
+                    else
+                    {
+                        // Update Icon visuals
+                        ApplyIconSettings(win);
+                    }
+                    // --- CHANGED LOGIC END ---
 
                     LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.UI, $"Applied all runtime changes to fence '{_fence.Title}'");
-                }
-                else
-                {
-                    LogManager.Log(LogManager.LogLevel.Warn, LogManager.LogCategory.UI, $"Could not find window for fence '{_fence.Title}' to apply runtime changes");
                 }
             }
             catch (Exception ex)
             {
                 LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI, $"Error applying runtime changes: {ex.Message}");
-                throw;
+            }
+        }
+
+
+        // In CustomizeFenceFormManager.cs
+
+        private void ApplyNoteSettings(NonActivatingWindow win)
+        {
+            try
+            {
+                LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI, $"Refreshing Note visuals for fence '{_fence.Title}'");
+
+                var border = win.Content as Border;
+                var dockPanel = border?.Child as DockPanel;
+
+                if (dockPanel != null)
+                {
+                    var noteTextBox = dockPanel.Children.OfType<TextBox>().FirstOrDefault();
+
+                    if (noteTextBox != null)
+                    {
+                        // --- ROBUST FIX START ---
+                        // Create a temporary "Effective Fence" object using the CURRENT FORM VALUES.
+                        // This ensures the visual update uses exactly what the user just clicked "Save" on,
+                        // ignoring any stale data in the global list.
+
+                        // 1. Clone properties from the original _fence into a dictionary
+                        var effectiveFence = new Dictionary<string, object>();
+                        try
+                        {
+                            IDictionary<string, object> originalDict = null;
+                            // Handle JObject vs ExpandoObject
+                            if (_fence is Newtonsoft.Json.Linq.JObject jObj)
+                                originalDict = jObj.ToObject<Dictionary<string, object>>();
+                            else if (_fence is IDictionary<string, object> dict)
+                                originalDict = dict;
+
+                            if (originalDict != null)
+                            {
+                                foreach (var kvp in originalDict) effectiveFence[kvp.Key] = kvp.Value;
+                            }
+                        }
+                        catch { }
+
+                        // 2. OVERRIDE with values from the FORM CONTROLS
+                        effectiveFence["CustomColor"] = GetDropdownValue(_cmbCustomColor);
+                        effectiveFence["TextColor"] = GetDropdownValue(_cmbTextColor);
+                        // Map TitleTextSize dropdown to NoteFontSize property
+                        effectiveFence["NoteFontSize"] = GetDropdownValue(_cmbTitleTextSize);
+
+                        // 3. Convert to ExpandoObject for dynamic compatibility
+                        dynamic dynamicFence = new System.Dynamic.ExpandoObject();
+                        var dynamicDict = (IDictionary<string, object>)dynamicFence;
+                        foreach (var kvp in effectiveFence) dynamicDict[kvp.Key] = kvp.Value;
+                        // --- ROBUST FIX END ---
+
+                        // 4. Force NoteFenceManager to repaint using this fresh data
+                        NoteFenceManager.RefreshNoteVisuals(dynamicFence, noteTextBox);
+
+                        // 5. Update font settings directly
+                        try
+                        {
+                            string fontSizeStr = GetDropdownValue(_cmbTitleTextSize);
+                            if (!string.IsNullOrEmpty(fontSizeStr))
+                                noteTextBox.FontSize = NoteFenceManager.GetNoteFontSizeValue(fontSizeStr);
+                        }
+                        catch { }
+
+                        LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.UI, "Successfully refreshed Note TextBox visuals using form values");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI, $"Error applying note settings: {ex.Message}");
             }
         }
 
@@ -1194,6 +1302,14 @@ namespace Desktop_Fences
                                 string filePath = item.Filename?.ToString() ?? "Unknown";
                                 bool isFolder = item.IsFolder?.ToString().ToLower() == "true";
                                 FenceManager.ClickEventAdder(sp, filePath, isFolder);
+
+                                // FIX: Attach the centralized context menu
+                                // We need to find the parent window (NonActivatingWindow) of the WrapPanel
+                                var parentWindow = Window.GetWindow(wrapPanel) as NonActivatingWindow;
+                                if (parentWindow != null)
+                                {
+                                    FenceManager.AttachIconContextMenu(sp, item, regularFence, parentWindow);
+                                }
                             }
                         }
                     }

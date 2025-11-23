@@ -154,6 +154,15 @@ namespace Desktop_Fences
             headerGrid.Children.Add(titlePanel);
             headerGrid.Children.Add(closeButton);
             Grid.SetColumn(closeButton, 1);
+            // Add drag functionality to header area only (like EditShortcutWindow)
+            headerBorder.MouseLeftButtonDown += (sender, e) =>
+            {
+                if (e.ButtonState == MouseButtonState.Pressed)
+                {
+                    moveWindow.DragMove();
+                }
+            };
+
             headerBorder.Child = headerGrid;
             Grid.SetRow(headerBorder, 0);
             rootGrid.Children.Add(headerBorder);
@@ -179,7 +188,9 @@ namespace Desktop_Fences
             {
                 VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
                 HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
-                Margin = new Thickness(20, 0, 20, 0)
+                MaxHeight = 400, // Explicit height limit to ensure scrolling activates
+                Margin = new Thickness(20, 0, 20, 0),
+                    CanContentScroll = true // Improve scrolling performance
             };
 
             StackPanel targetsPanel = new StackPanel();
@@ -228,6 +239,15 @@ namespace Desktop_Fences
             rootGrid.Children.Add(footerBorder);
 
             mainBorder.Child = rootGrid;
+            // Add drag functionality like EditShortcutWindow
+            moveWindow.MouseLeftButtonDown += (sender, e) =>
+            {
+                if (e.ButtonState == MouseButtonState.Pressed)
+                {
+                    moveWindow.DragMove();
+                }
+            };
+
             moveWindow.Content = mainBorder;
             moveWindow.ShowDialog();
         }
@@ -247,7 +267,7 @@ namespace Desktop_Fences
             foreach (var fence in fenceData)
             {
                 // Skip source fence and Portal fences
-                if (fence.Id?.ToString() == sourceFenceId || fence.ItemsType?.ToString() == "Portal")
+                if (fence.Id?.ToString() == sourceFenceId || fence.ItemsType?.ToString() == "Portal" || fence.ItemsType?.ToString() == "Note")
                     continue;
 
                 bool fenceHasTabs = fence.TabsEnabled?.ToString().ToLower() == "true";

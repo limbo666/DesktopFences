@@ -1,4 +1,7 @@
-﻿using System;
+﻿using IWshRuntimeLibrary;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
@@ -17,14 +20,43 @@ using System.Windows.Media.Animation;
 using System.Windows.Media.Effects;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
-using IWshRuntimeLibrary;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace Desktop_Fences
 {
     public static class FenceManager
     {
+
+        // --- WM_GETMINMAXINFO Implementation ---
+        private const int WM_GETMINMAXINFO = 0x0024;
+
+        private const int WM_SYSCOMMAND = 0x0112; // <--- NEW
+        private const int SC_MAXIMIZE = 0xF030;   // <--- NEW
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct POINT
+        {
+            public int x;
+            public int y;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct MINMAXINFO
+        {
+            public POINT ptReserved;
+            public POINT ptMaxSize;
+            public POINT ptMaxPosition;
+            public POINT ptMinTrackSize;
+            public POINT ptMaxTrackSize;
+        }
+
+
+
+
+        // Track icon state to prevent GDI leaks from constant re-extraction
+        // Key: FilePath
+        // Value: (LastWriteTime of the .lnk/file, IsBroken state)
+        private static Dictionary<string, (DateTime LastWrite, bool IsBroken)> _iconStates = new Dictionary<string, (DateTime, bool)>();
 
         private static dynamic _options;
         private static Dictionary<dynamic, PortalFenceManager> _portalFences = new Dictionary<dynamic, PortalFenceManager>();
@@ -50,6 +82,17 @@ namespace Desktop_Fences
         {
             try
             {
+                // FIX 3: Clear Static References to release memory
+                // If we don't clear these, the old Windows and TextBlocks stay in memory forever
+                _heartTextBlocks.Clear();
+
+                // Dispose and clear Portal Fences
+                foreach (var portal in _portalFences.Values)
+                {
+                    try { portal.Dispose(); } catch { }
+                }
+                _portalFences.Clear();
+
                 // Clear existing data
                 FenceDataManager.FenceData?.Clear();
 
@@ -69,7 +112,7 @@ namespace Desktop_Fences
             }
         }
 
-  
+
         /// <summary>
         /// Surgically reloads only specific fences by closing and recreating their windows
         /// Used by: ItemMoveDialog to prevent duplicate windows during move operations
@@ -88,7 +131,7 @@ namespace Desktop_Fences
 
                 // Check if we're about to close all fences (which would terminate the app)
                 bool isSourceTargetSame = sourceFenceId == targetFenceId;
-                int totalFenceCount = Application.Current.Windows.OfType<NonActivatingWindow>().Count();
+                int totalFenceCount = System.Windows.Application.Current.Windows.OfType<NonActivatingWindow>().Count();
                 int fencesToClose = isSourceTargetSame ? 1 : 2;
                 bool needsLifeSupport = (fencesToClose >= totalFenceCount);
 
@@ -105,7 +148,7 @@ namespace Desktop_Fences
                 }
 
                 // Find and close only the specific fence windows
-                var allWindows = Application.Current.Windows.OfType<NonActivatingWindow>().ToList();
+                var allWindows = System.Windows.Application.Current.Windows.OfType<NonActivatingWindow>().ToList();
                 var windowsToClose = new List<NonActivatingWindow>();
 
                 foreach (var window in allWindows)
@@ -156,7 +199,7 @@ namespace Desktop_Fences
                     try
                     {
                         CreateFence(fence, _currentTargetChecker ?? new TargetChecker(1000));
-                        LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI,
+                        LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.FenceUpdate,
                             $"Recreated fence: {fence.Title}");
                     }
                     catch (Exception ex)
@@ -263,6 +306,7 @@ namespace Desktop_Fences
                 LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.ImportExport, $"Adjusted fence '{win.Title}' position to ({newLeft}, {newTop}) to fit within screen bounds.");
             }
             FenceDataManager.SaveFenceData();
+  
         }
 
         private static int _registryMonitorTickCount = 0;
@@ -310,25 +354,45 @@ namespace Desktop_Fences
             };
             menu.Items.Add(newPortalFenceItem);
 
+            // New Note Fence item
+            MenuItem newNoteFenceItem = new MenuItem { Header = "New Note Fence" };
+            newNoteFenceItem.Click += (s, e) =>
+            {
+                var mousePosition = System.Windows.Forms.Cursor.Position;
+                LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.FenceUpdate,
+                    $"Creating new Note fence at mouse position: X={mousePosition.X}, Y={mousePosition.Y}");
+                CreateNewFence("", "Note", mousePosition.X, mousePosition.Y);
+            };
+
+            menu.Items.Add(newNoteFenceItem);
+
             menu.Items.Add(new Separator());
 
 
             // Delete this fence
             var deleteThisFence = new MenuItem { Header = "Delete this Fence" };
 
-
             deleteThisFence.Click += (s, e) =>
             {
-                //bool result = TrayManager.Instance.ShowCustomMessageBoxForm(); // Call the method and store the result  
                 bool result = MessageBoxesManager.ShowCustomMessageBoxForm();
                 if (result == true)
                 {
-                    // NEW: Use BackupManager to handle the deletion backup instead of manual backup code
+                    // HIDDEN TWEAK: Auto-Export to Desktop before deletion
+                    if (SettingsManager.ExportShortcutsOnFenceDeletion && fence.ItemsType?.ToString() == "Data")
+                    {
+                        LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.FenceUpdate,
+                            $"Hidden Tweak Triggered: Auto-exporting icons for '{fence.Title}' before deletion (Silent).");
+
+                        // FIX: Pass false to suppress the success message
+                        ExportAllIconsToDesktop(fence, false);
+                    }
+
+                    // NEW: Use BackupManager to handle the deletion backup
                     BackupManager.BackupDeletedFence(fence);
 
                     // Proceed with deletion - remove from data structures
                     FenceDataManager.FenceData.Remove(fence);
-                    _heartTextBlocks.Remove(fence); // Remove from heart TextBlocks dictionary
+                    _heartTextBlocks.Remove(fence);
 
                     // Clean up portal fence if applicable
                     if (_portalFences.ContainsKey(fence))
@@ -340,7 +404,7 @@ namespace Desktop_Fences
                     // Save updated fence data
                     FenceDataManager.SaveFenceData();
 
-                    // Find and close the window - need to find the window associated with this fence
+                    // Find and close the window
                     var windows = System.Windows.Application.Current.Windows.OfType<NonActivatingWindow>();
                     var win = windows.FirstOrDefault(w => w.Tag?.ToString() == fence.Id?.ToString());
                     if (win != null)
@@ -348,14 +412,12 @@ namespace Desktop_Fences
                         win.Close();
                     }
 
-                    // Update all heart context menus to show restore option is now available
+                    // Update all heart context menus
                     UpdateAllHeartContextMenus();
 
-                    LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.FenceCreation, $"Fence '{fence.Title}' deleted successfully with backup created");
+                    LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.FenceCreation, $"Fence '{fence.Title}' deleted successfully");
                 }
             };
-
-
 
             menu.Items.Add(deleteThisFence);
 
@@ -379,6 +441,14 @@ namespace Desktop_Fences
                     var enableTabsItem = new MenuItem { Header = $"{checkmark}Enable Tabs On This Fence" };
                     enableTabsItem.Click += (s, e) => ToggleFenceTabs(fence);
                     menu.Items.Add(enableTabsItem);
+
+
+                    //// Add Export all icons to desktop option for Data fences
+                    //var exportAllItem = new MenuItem { Header = "Export all icons to desktop" };
+                    //exportAllItem.Click += (s, e) => ExportAllIconsToDesktop(fence);
+                    //menu.Items.Add(exportAllItem);
+
+
 
                     LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.UI,
                         $"Added tabs menu item for Data fence: '{checkmark}Enable Tabs On This Fence'");
@@ -421,17 +491,268 @@ namespace Desktop_Fences
 
             // Exit item
             var exitItem = new MenuItem { Header = "Exit" };
-            exitItem.Click += (s, e) => Application.Current.Shutdown();
+            exitItem.Click += (s, e) => System.Windows.Application.Current.Shutdown();
             menu.Items.Add(exitItem);
 
             return menu;
         }
 
 
+
+
+
+        /// <summary>
+        /// Centralized method to attach the standard Context Menu to an icon.
+        /// Matches the professional layout requested: 
+        /// Edit/Move/Remove -> Copy/Send -> Admin -> Path/Target
+        /// </summary>
+        /// <summary>
+        /// Centralized method to attach the standard Context Menu to an icon.
+        /// Layout: Edit/Move/Remove -> Copy -> Admin -> Path
+        /// </summary>
+        /// <summary>
+        /// Centralized method to attach the standard Context Menu to an icon.
+        /// Layout: Edit/Move/Remove -> Copy -> Admin -> Path
+        /// Includes LIVE data lookup to ensure Checkable items stay synced.
+        /// </summary>
+        public static void AttachIconContextMenu(StackPanel sp, dynamic item, dynamic fence, NonActivatingWindow window)
+        {
+            try
+            {
+                // Initial snapshot for static properties (Path, Folder status)
+                IDictionary<string, object> iconDict = item is IDictionary<string, object> dict ?
+                    dict : ((JObject)item).ToObject<IDictionary<string, object>>();
+
+                string filePath = iconDict.ContainsKey("Filename") ? (string)iconDict["Filename"] : "Unknown";
+                bool isFolder = iconDict.ContainsKey("IsFolder") && (bool)iconDict["IsFolder"];
+
+                // HELPER: Function to find the LIVE item in memory (Handles Tabs vs Main)
+                // We need this because 'item' becomes stale after an update.
+                Func<dynamic> GetLiveItem = () =>
+                {
+                    try
+                    {
+                        string fenceId = fence.Id?.ToString();
+                        var liveFence = FenceDataManager.FenceData.FirstOrDefault(f => f.Id?.ToString() == fenceId);
+                        if (liveFence == null) return null;
+
+                        JArray itemsArray = liveFence.Items as JArray ?? new JArray();
+
+                        // Handle Tabs
+                        bool tabsEnabled = liveFence.TabsEnabled?.ToString().ToLower() == "true";
+                        if (tabsEnabled)
+                        {
+                            var tabs = liveFence.Tabs as JArray ?? new JArray();
+                            int currentTabIndex = Convert.ToInt32(liveFence.CurrentTab?.ToString() ?? "0");
+                            if (currentTabIndex >= 0 && currentTabIndex < tabs.Count)
+                            {
+                                var activeTab = tabs[currentTabIndex] as JObject;
+                                itemsArray = activeTab?["Items"] as JArray ?? itemsArray;
+                            }
+                        }
+
+                        // Find specific item by filename
+                        return itemsArray.FirstOrDefault(i => string.Equals(
+                            System.IO.Path.GetFullPath(i["Filename"]?.ToString() ?? ""),
+                            System.IO.Path.GetFullPath(filePath),
+                            StringComparison.OrdinalIgnoreCase));
+                    }
+                    catch { return null; }
+                };
+
+                ContextMenu iconContextMenu = new ContextMenu();
+
+                // --- GROUP 1: MANIPULATION ---
+                MenuItem miEdit = new MenuItem { Header = "Edit..." };
+                MenuItem miMove = new MenuItem { Header = "Move..." };
+                MenuItem miRemove = new MenuItem { Header = "Remove" };
+
+                iconContextMenu.Items.Add(miEdit);
+                iconContextMenu.Items.Add(miMove);
+                iconContextMenu.Items.Add(miRemove);
+
+                // --- GROUP 2: CLIPBOARD ---
+                iconContextMenu.Items.Add(new Separator());
+
+                MenuItem miCopyItem = new MenuItem { Header = "Copy Item" };
+                iconContextMenu.Items.Add(miCopyItem);
+
+                // --- GROUP 3: EXECUTION (Conditional) ---
+                bool isEligibleForAdmin = !isFolder && !string.IsNullOrEmpty(filePath) &&
+                    (System.IO.Path.GetExtension(filePath).ToLower() == ".lnk" || System.IO.Path.GetExtension(filePath).ToLower() == ".exe");
+
+                MenuItem miAlwaysAdmin = null;
+
+                if (isEligibleForAdmin)
+                {
+                    iconContextMenu.Items.Add(new Separator());
+
+                    MenuItem miRunAsAdmin = new MenuItem { Header = "Run as administrator" };
+                    miAlwaysAdmin = new MenuItem
+                    {
+                        Header = "Always run as administrator",
+                        IsCheckable = true
+                    };
+
+                    iconContextMenu.Items.Add(miRunAsAdmin);
+                    iconContextMenu.Items.Add(miAlwaysAdmin);
+
+                    // Run as Admin Logic
+                    miRunAsAdmin.Click += (s, e) => {
+                        string target = Utility.GetShortcutTarget(filePath);
+                        ProcessStartInfo psi = new ProcessStartInfo { FileName = target, UseShellExecute = true, Verb = "runas" };
+                        if (System.IO.File.Exists(target))
+                        {
+                            string wd = System.IO.Path.GetDirectoryName(target);
+                            if (!string.IsNullOrEmpty(wd)) psi.WorkingDirectory = wd;
+                        }
+                        try { Process.Start(psi); }
+                        catch (Exception ex)
+                        {
+                            MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Error running as admin: {ex.Message}", "Error");
+                        }
+                    };
+
+                    // Toggle Always Admin Logic
+                    miAlwaysAdmin.Click += (sender, e) => {
+                        var liveItem = GetLiveItem();
+                        if (liveItem != null)
+                        {
+                            bool newVal = !Convert.ToBoolean(liveItem["AlwaysRunAsAdmin"] ?? false);
+                            liveItem["AlwaysRunAsAdmin"] = newVal;
+
+                            // Visual feedback immediately
+                            miAlwaysAdmin.IsChecked = newVal;
+
+                            FenceDataManager.SaveFenceData();
+                            LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.UI, $"Toggled AlwaysRunAsAdmin to {newVal} for {filePath}");
+                        }
+                    };
+                }
+
+                // --- GROUP 4: PATH / TARGET ---
+                iconContextMenu.Items.Add(new Separator());
+
+                MenuItem miCopyPathRoot = new MenuItem { Header = "Copy path" };
+                MenuItem miCopyFolder = new MenuItem { Header = "Folder path" };
+                MenuItem miCopyFullPath = new MenuItem { Header = "Full path" };
+
+                miCopyPathRoot.Items.Add(miCopyFolder);
+                miCopyPathRoot.Items.Add(miCopyFullPath);
+
+                MenuItem miFindTarget = new MenuItem { Header = "Open target folder..." };
+
+                iconContextMenu.Items.Add(miCopyPathRoot);
+                iconContextMenu.Items.Add(miFindTarget);
+
+                // --- EVENT HANDLERS ---
+                miEdit.Click += (s, e) => EditItem(item, fence, window);
+                miMove.Click += (s, e) => ItemMoveDialog.ShowMoveDialog(item, fence, window.Dispatcher);
+
+                miRemove.Click += (s, e) =>
+                {
+                    try
+                    {
+                        // Use the LIVE lookup to find the item to remove
+                        var liveItem = GetLiveItem(); // Returns the JObject from the array
+
+                        // We need the Array itself to remove the item
+                        string fenceId = fence.Id?.ToString();
+                        var liveFence = FenceDataManager.FenceData.FirstOrDefault(f => f.Id?.ToString() == fenceId);
+
+                        if (liveFence != null && liveItem != null)
+                        {
+                            // Logic to locate the array containing liveItem
+                            JArray targetArray = liveFence.Items as JArray; // Default to main
+
+                            bool tabsEnabled = liveFence.TabsEnabled?.ToString().ToLower() == "true";
+                            if (tabsEnabled)
+                            {
+                                var tabs = liveFence.Tabs as JArray;
+                                int tabIdx = Convert.ToInt32(liveFence.CurrentTab?.ToString() ?? "0");
+                                if (tabs != null && tabIdx < tabs.Count)
+                                {
+                                    targetArray = tabs[tabIdx]["Items"] as JArray;
+                                }
+                            }
+
+                            if (targetArray != null)
+                            {
+                                targetArray.Remove(liveItem);
+                                FenceDataManager.SaveFenceData();
+                                var wp = VisualTreeHelper.GetParent(sp) as WrapPanel;
+                                if (wp != null) wp.Children.Remove(sp);
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI, $"Error removing: {ex.Message}");
+                    }
+                };
+
+                miCopyItem.Click += (s, e) => CopyPasteManager.CopyItem(item, fence);
+
+                miFindTarget.Click += (s, e) => {
+                    string target = Utility.GetShortcutTarget(filePath);
+                    if (!string.IsNullOrEmpty(target) && (System.IO.File.Exists(target) || System.IO.Directory.Exists(target)))
+                        Process.Start("explorer.exe", $"/select,\"{target}\"");
+                };
+
+                miCopyFolder.Click += (s, e) => {
+                    string target = Utility.GetShortcutTarget(filePath);
+                    if (!string.IsNullOrEmpty(target)) Clipboard.SetText(System.IO.Path.GetDirectoryName(target));
+                };
+                miCopyFullPath.Click += (s, e) => {
+                    string target = Utility.GetShortcutTarget(filePath);
+                    if (!string.IsNullOrEmpty(target)) Clipboard.SetText(target);
+                };
+
+                // --- DYNAMIC UPDATES (On Open) ---
+                MenuItem miSendToDesktop = null;
+
+                iconContextMenu.Opened += (s, e) => {
+                    // 1. Send to Desktop (Ctrl)
+                    bool isCtrl = (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control;
+                    if (miSendToDesktop != null && iconContextMenu.Items.Contains(miSendToDesktop))
+                        iconContextMenu.Items.Remove(miSendToDesktop);
+
+                    if (isCtrl)
+                    {
+                        miSendToDesktop = new MenuItem { Header = "Send to Desktop" };
+                        miSendToDesktop.Click += (sender, args) => CopyPasteManager.SendToDesktop(item);
+                        int idx = iconContextMenu.Items.IndexOf(miCopyItem);
+                        if (idx != -1) iconContextMenu.Items.Insert(idx + 1, miSendToDesktop);
+                    }
+
+                    // 2. REFRESH CHECK STATE from Live Data
+                    if (miAlwaysAdmin != null)
+                    {
+                        var liveItem = GetLiveItem();
+                        if (liveItem != null)
+                        {
+                            bool always = Convert.ToBoolean(liveItem["AlwaysRunAsAdmin"] ?? false);
+                            miAlwaysAdmin.IsChecked = always;
+                        }
+                    }
+                };
+
+                sp.ContextMenu = iconContextMenu;
+            }
+            catch (Exception ex)
+            {
+                LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI, $"Error attaching context menu: {ex.Message}");
+            }
+        }
+
+
+
+
+
         // Updates all heart ContextMenus across all fences using stored TextBlock references
         public static void UpdateAllHeartContextMenus()
         {
-            Application.Current.Dispatcher.Invoke(() =>
+            System.Windows.Application.Current.Dispatcher.Invoke(() =>
             {
                 foreach (var entry in _heartTextBlocks)
                 {
@@ -478,6 +799,113 @@ namespace Desktop_Fences
             }
         }
 
+
+        /// <summary>
+        /// Exports all icons from a Data fence to the desktop
+        /// </summary>
+        /// <param name="fence">The fence to export icons from</param>
+        /// <param name="showConfirmation">If true, shows a message box on completion. False for silent automation.</param>
+        private static void ExportAllIconsToDesktop(dynamic fence, bool showConfirmation = true)
+        {
+            try
+            {
+                // Verify this is a Data fence
+                if (fence.ItemsType?.ToString() != "Data")
+                {
+                    LogManager.Log(LogManager.LogLevel.Warn, LogManager.LogCategory.UI,
+                        $"Export all icons attempted on non-Data fence: {fence.ItemsType}");
+                    return;
+                }
+
+                int exportedCount = 0;
+                int totalCount = 0;
+
+                // Check if fence has tabs
+                bool hasTabsEnabled = fence.TabsEnabled?.ToString().ToLower() == "true";
+
+                if (hasTabsEnabled && fence.Tabs != null)
+                {
+                    // Handle tabbed fence - export from all tabs
+                    var tabs = fence.Tabs as Newtonsoft.Json.Linq.JArray ?? new Newtonsoft.Json.Linq.JArray();
+
+                    foreach (var tab in tabs)
+                    {
+                        var tabObj = tab as Newtonsoft.Json.Linq.JObject;
+                        var tabItems = tabObj?["Items"] as Newtonsoft.Json.Linq.JArray ?? new Newtonsoft.Json.Linq.JArray();
+
+                        foreach (var item in tabItems)
+                        {
+                            totalCount++;
+                            try
+                            {
+                                CopyPasteManager.SendToDesktop(item);
+                                exportedCount++;
+                            }
+                            catch (Exception itemEx)
+                            {
+                                LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI,
+                                    $"Error exporting item to desktop: {itemEx.Message}");
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    // Handle regular fence (no tabs)
+                    var items = fence.Items as Newtonsoft.Json.Linq.JArray ?? new Newtonsoft.Json.Linq.JArray();
+
+                    foreach (var item in items)
+                    {
+                        totalCount++;
+                        try
+                        {
+                            CopyPasteManager.SendToDesktop(item);
+                            exportedCount++;
+                        }
+                        catch (Exception itemEx)
+                        {
+                            LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI,
+                                $"Error exporting item to desktop: {itemEx.Message}");
+                        }
+                    }
+                }
+
+                // Show result message after a brief delay to allow desktop refresh
+                string resultMessage = $"Exported {exportedCount} of {totalCount} icons to desktop.";
+                if (exportedCount != totalCount)
+                {
+                    resultMessage += $" {totalCount - exportedCount} items failed to export.";
+                }
+
+                // Use DispatcherTimer for UI thread delay
+                var delayTimer = new System.Windows.Threading.DispatcherTimer
+                {
+                    Interval = TimeSpan.FromMilliseconds(1700) // 1.7 second delay
+                };
+                delayTimer.Tick += (s, e) =>
+                {
+                    delayTimer.Stop();
+
+                    // FIX: Check flag before showing message
+                    if (showConfirmation)
+                    {
+                        MessageBoxesManager.ShowOKOnlyMessageBoxForm(resultMessage, "Export Complete");
+                    }
+                };
+                delayTimer.Start();
+
+                LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.UI,
+                    $"Export all icons completed for fence '{fence.Title}': {exportedCount}/{totalCount} successful");
+            }
+            catch (Exception ex)
+            {
+                LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI,
+                    $"Error in ExportAllIconsToDesktop: {ex.Message}");
+
+                // Always show errors, even in silent mode, so user knows why it failed
+                MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Error exporting icons: {ex.Message}", "Export Error");
+            }
+        }
 
         /// <summary>
         /// Extracts URL from different browser drop data formats
@@ -564,7 +992,8 @@ namespace Desktop_Fences
             if (string.IsNullOrWhiteSpace(url)) return false;
 
             return Uri.TryCreate(url, UriKind.Absolute, out Uri validUri) &&
-                   (validUri.Scheme == Uri.UriSchemeHttp || validUri.Scheme == Uri.UriSchemeHttps);
+                   (validUri.Scheme == Uri.UriSchemeHttp || validUri.Scheme == Uri.UriSchemeHttps ||
+                    validUri.Scheme.Equals("steam", StringComparison.OrdinalIgnoreCase));
         }
 
         /// <summary>
@@ -603,7 +1032,7 @@ namespace Desktop_Fences
                 newItemDict["IsFolder"] = false;
                 newItemDict["IsLink"] = true;
                 newItemDict["DisplayOrder"] = GetNextDisplayOrder(fence);
-
+                newItemDict["AlwaysRunAsAdmin"] = false;
                 //// Add to fence data
                 //var items = fence.Items as JArray ?? new JArray();
                 //items.Add(JObject.FromObject(newItem));
@@ -720,6 +1149,7 @@ namespace Desktop_Fences
                 ContextMenu iconContextMenu = new ContextMenu();
                 MenuItem miRemove = new MenuItem { Header = "Remove" };
 
+        
                 miRemove.Click += (sender, e) =>
                 {
                     try
@@ -751,7 +1181,118 @@ namespace Desktop_Fences
                     }
                 };
 
+
+
+
                 iconContextMenu.Items.Add(miRemove);
+
+                bool alwaysAdmin = Convert.ToBoolean(item["AlwaysRunAsAdmin"] ?? false);
+                MenuItem miAlwaysAdmin = new MenuItem
+                {
+                    Header = "Always run as administrator",
+                    IsCheckable = true,
+                    IsChecked = alwaysAdmin
+                };
+                miAlwaysAdmin.Click += (sender, e) => {
+                    try
+                    {
+                        NonActivatingWindow parentWindow = FindVisualParent<NonActivatingWindow>(sp);
+                        if (parentWindow != null)
+                        {
+                            string fenceId = parentWindow.Tag?.ToString();
+                            if (!string.IsNullOrEmpty(fenceId))
+                            {
+                                var currentFence = FenceDataManager.FenceData.FirstOrDefault(f => f.Id?.ToString() == fenceId);
+                                if (currentFence != null && currentFence.ItemsType?.ToString() == "Data")
+                                {
+                                    var items = currentFence.Items as JArray ?? new JArray();
+                                    bool tabsEnabled = currentFence.TabsEnabled?.ToString().ToLower() == "true";
+                                    if (tabsEnabled)
+                                    {
+                                        var tabs = currentFence.Tabs as JArray ?? new JArray();
+                                        int currentTabIndex = Convert.ToInt32(currentFence.CurrentTab?.ToString() ?? "0");
+                                        if (currentTabIndex >= 0 && currentTabIndex < tabs.Count)
+                                        {
+                                            var currentTab = tabs[currentTabIndex] as JObject;
+                                            items = currentTab?["Items"] as JArray ?? items;
+                                        }
+                                    }
+                                    var matchingItem = items.FirstOrDefault(i => string.Equals(
+                                        System.IO.Path.GetFullPath(i["Filename"]?.ToString() ?? ""),
+                                        System.IO.Path.GetFullPath(filePath),
+                                        StringComparison.OrdinalIgnoreCase));
+                                    if (matchingItem != null)
+                                    {
+                                        bool currentValue = Convert.ToBoolean(matchingItem["AlwaysRunAsAdmin"] ?? false);
+                                        bool newValue = !currentValue;
+                                        matchingItem["AlwaysRunAsAdmin"] = newValue;
+                                        miAlwaysAdmin.IsChecked = newValue;
+                                        FenceDataManager.SaveFenceData();
+                                        LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.UI, $"Toggled AlwaysRunAsAdmin to {newValue} for item: {filePath}");
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI, $"Error toggling AlwaysRunAsAdmin for {filePath}: {ex.Message}");
+                    }
+                };
+                // Refresh IsChecked on menu open
+                iconContextMenu.Opened += (s, ev) => {
+                    try
+                    {
+                        NonActivatingWindow parentWindow = FindVisualParent<NonActivatingWindow>(sp);
+                        if (parentWindow != null)
+                        {
+                            string fenceId = parentWindow.Tag?.ToString();
+                            if (!string.IsNullOrEmpty(fenceId))
+                            {
+                                var currentFence = FenceDataManager.FenceData.FirstOrDefault(f => f.Id?.ToString() == fenceId);
+                                if (currentFence != null)
+                                {
+                                    var items = currentFence.Items as JArray ?? new JArray();
+                                    bool tabsEnabled = currentFence.TabsEnabled?.ToString().ToLower() == "true";
+                                    if (tabsEnabled)
+                                    {
+                                        var tabs = currentFence.Tabs as JArray ?? new JArray();
+                                        int currentTabIndex = Convert.ToInt32(currentFence.CurrentTab?.ToString() ?? "0");
+                                        if (currentTabIndex >= 0 && currentTabIndex < tabs.Count)
+                                        {
+                                            var currentTab = tabs[currentTabIndex] as JObject;
+                                            items = currentTab?["Items"] as JArray ?? items;
+                                        }
+                                    }
+                                    var matchingItem = items.FirstOrDefault(i => string.Equals(
+                                        System.IO.Path.GetFullPath(i["Filename"]?.ToString() ?? ""),
+                                        System.IO.Path.GetFullPath(filePath),
+                                        StringComparison.OrdinalIgnoreCase));
+                                    if (matchingItem != null)
+                                    {
+                                        miAlwaysAdmin.IsChecked = Convert.ToBoolean(matchingItem["AlwaysRunAsAdmin"] ?? false);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        LogManager.Log(LogManager.LogLevel.Warn, LogManager.LogCategory.UI, $"Error refreshing AlwaysRunAsAdmin IsChecked for {filePath}: {ex.Message}");
+                    }
+                };
+                iconContextMenu.Items.Add(miAlwaysAdmin);
+
+
+
+
+
+
+
+
+
+
+
                 sp.ContextMenu = iconContextMenu;
             }
             catch (Exception ex)
@@ -939,7 +1480,7 @@ namespace Desktop_Fences
                 if (fenceIndex >= 0)
                 {
                     // Find and store the current fence window position/size
-                    var windows = Application.Current.Windows.OfType<NonActivatingWindow>();
+                    var windows = System.Windows.Application.Current.Windows.OfType<NonActivatingWindow>();
                     var currentWindow = windows.FirstOrDefault(w => w.Tag?.ToString() == fenceId);
 
                     double savedLeft = fence.X ?? 100;
@@ -995,7 +1536,7 @@ namespace Desktop_Fences
 
                     // Recreate the fence with the new settings
                     // Use a small delay to ensure the old window is properly closed
-                    Application.Current.Dispatcher.BeginInvoke(new Action(() =>
+                    System.Windows.Application.Current.Dispatcher.BeginInvoke(new Action(() =>
                     {
                         try
                         {
@@ -1841,6 +2382,9 @@ namespace Desktop_Fences
         }
 
         // TABS FEATURE: Simplified content refresh that reuses existing infrastructure
+
+
+
         public static void RefreshFenceContentSimple(NonActivatingWindow fenceWindow, dynamic fence, int tabIndex)
         {
             try
@@ -1899,82 +2443,9 @@ namespace Desktop_Fences
                                 // Add full event handling including context menus
                                 ClickEventAdder(sp, filePath, isFolder);
 
-                                // Add context menu (replicating logic from CreateFence)
-                                // Add context menu (replicating logic from CreateFence)
-                                ContextMenu iconContextMenu = new ContextMenu();
-                                MenuItem miEdit = new MenuItem { Header = "Edit" };
-                                MenuItem miMove = new MenuItem { Header = "Move.." };
-                                MenuItem miRemove = new MenuItem { Header = "Remove" };
-                                MenuItem miFindTarget = new MenuItem { Header = "Find target..." };
-                                MenuItem miCopyPath = new MenuItem { Header = "Copy path" };
-                                MenuItem miRunAsAdmin = new MenuItem { Header = "Run as administrator" };
-                                // Add Copy Item functionality - CopyPasteManager integration
-                                MenuItem miCopyItem = new MenuItem { Header = "Copy Item" };
-
-                                iconContextMenu.Items.Add(miEdit);
-                                iconContextMenu.Items.Add(miMove);
-                                iconContextMenu.Items.Add(miRemove);
-                                iconContextMenu.Items.Add(new Separator());
-                                iconContextMenu.Items.Add(miCopyItem);
-                                iconContextMenu.Items.Add(new Separator());
-                                iconContextMenu.Items.Add(miFindTarget);
-                                iconContextMenu.Items.Add(miCopyPath);
-                                iconContextMenu.Items.Add(miRunAsAdmin);
-
-                                // Capture the fence window from the method parameter
-                                var currentFenceWindow = fenceWindow; // Use the fenceWindow parameter from RefreshFenceContentSimple
-
-                                // Add Copy Item event handler - CopyPasteManager integration
-                                miCopyItem.Click += (s, e) => CopyPasteManager.CopyItem(icon, fence);
-
-                                // Add event handlers with captured window
-                                miEdit.Click += (s, e) => EditItem(icon, sp, currentFenceWindow);
-                                miRemove.Click += (s, e) => RemoveItemFromTab(icon, fence, tabIndex, wrapPanel);
-                                miMove.Click += (s, e) => ItemMoveDialog.ShowMoveDialog(icon, fence, wrapPanel.Dispatcher);
-
-                                sp.ContextMenu = iconContextMenu;
-                                // Add dynamic menu state updates - make Copy Item enabled and handle CTRL+Right Click
-                                MenuItem miSendToDesktop = null; // Declare for conditional addition
-                                iconContextMenu.Opened += (contextSender, contextArgs) =>
-                                {
-                                    // Update Copy Item enabled state dynamically when menu opens
-                                    miCopyItem.IsEnabled = true; // Copy should always be enabled for existing items
-
-                                    // Check if CTRL is pressed for "Send to Desktop" option
-                                    bool isCtrlPressed = (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control;
-
-                                    // Remove existing Send to Desktop if present
-                                    if (miSendToDesktop != null && iconContextMenu.Items.Contains(miSendToDesktop))
-                                    {
-                                        iconContextMenu.Items.Remove(miSendToDesktop);
-                                    }
-
-                                    // Add Send to Desktop if CTRL is pressed
-                                    if (isCtrlPressed)
-                                    {
-                                        miSendToDesktop = new MenuItem { Header = "Send to Desktop" };
-                                        miSendToDesktop.Click += (s, e) => CopyPasteManager.SendToDesktop(icon);
-
-                                        // Find Copy Item position and insert after it
-                                        int copyItemIndex = -1;
-                                        for (int i = 0; i < iconContextMenu.Items.Count; i++)
-                                        {
-                                            if (iconContextMenu.Items[i] is MenuItem mi && mi.Header.ToString() == "Copy Item")
-                                            {
-                                                copyItemIndex = i;
-                                                break;
-                                            }
-                                        }
-
-                                        if (copyItemIndex >= 0)
-                                        {
-                                            iconContextMenu.Items.Insert(copyItemIndex + 1, miSendToDesktop);
-                                        }
-                                    }
-
-                                    LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI,
-                                        $"Updated icon context menu states - Copy available, CTRL pressed: {isCtrlPressed}");
-                                };
+                                // FIX: Use centralized menu builder
+                                // Replaces the large inline ContextMenu block
+                                AttachIconContextMenu(sp, icon, fence, fenceWindow);
                             }
                         }
 
@@ -1989,7 +2460,7 @@ namespace Desktop_Fences
                     $"Error in RefreshFenceContentSimple: {ex.Message}");
             }
         }
-
+     
         // TABS FEATURE: Remove item from current tab
         private static void RemoveItemFromTab(dynamic item, dynamic fence, int tabIndex, WrapPanel wrapPanel)
         {
@@ -2056,155 +2527,7 @@ namespace Desktop_Fences
             }
         }
 
-        ////// TABS FEATURE: Switch to a different tab and refresh content
-        ////public static void SwitchTab(NonActivatingWindow fenceWindow, int newTabIndex)
-        ////{
-        ////    try
-        ////    {
-        ////        // Get fence data by window ID
-        ////        string fenceId = fenceWindow.Tag?.ToString();
-        ////        if (string.IsNullOrEmpty(fenceId))
-        ////        {
-        ////            LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI, "Cannot switch tab: fence ID missing");
-        ////            return;
-        ////        }
-
-        ////        // Find the fence in FenceDataManager.FenceData
-        ////        var currentFence = FenceDataManager.FenceData.FirstOrDefault(f => f.Id?.ToString() == fenceId);
-        ////        if (currentFence == null)
-        ////        {
-        ////            LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI, $"Cannot switch tab: fence with ID '{fenceId}' not found");
-        ////            return;
-        ////        }
-
-        ////        // Validate tab index
-        ////        var tabs = currentFence.Tabs as JArray ?? new JArray();
-        ////        if (newTabIndex < 0 || newTabIndex >= tabs.Count)
-        ////        {
-        ////            LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI,
-        ////                $"Cannot switch tab: index {newTabIndex} out of bounds (0-{tabs.Count - 1}) for fence '{currentFence.Title}'");
-        ////            return;
-        ////        }
-
-        ////        // Check if already on this tab
-        ////        int currentTabIndex = Convert.ToInt32(currentFence.CurrentTab?.ToString() ?? "0");
-        ////        if (currentTabIndex == newTabIndex)
-        ////        {
-        ////            LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI,
-        ////                $"Already on tab {newTabIndex} for fence '{currentFence.Title}'");
-        ////            return;
-        ////        }
-
-        ////        // Update CurrentTab in fence data
-        ////        UpdateFenceProperty(currentFence, "CurrentTab", newTabIndex.ToString(),
-        ////            $"Switched to tab {newTabIndex}");
-
-        ////        // Refresh the fence content to show new tab
-        ////        RefreshFenceContent(fenceWindow, currentFence);
-
-        ////        // Update tab button styling
-        ////        RefreshTabStyling(fenceWindow, newTabIndex);
-
-        ////        string tabName = tabs[newTabIndex]["TabName"]?.ToString() ?? $"Tab {newTabIndex}";
-        ////        LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.UI,
-        ////            $"Successfully switched to tab '{tabName}' (index {newTabIndex}) for fence '{currentFence.Title}'");
-        ////    }
-        ////    catch (Exception ex)
-        ////    {
-        ////        LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI,
-        ////            $"Error switching tab: {ex.Message}");
-        ////    }
-        ////}
-
-        //// TABS FEATURE: Refresh fence content to show items from current tab
-        //private static void RefreshFenceContent(NonActivatingWindow fenceWindow, dynamic fence)
-        //{
-        //    try
-        //    {
-        //        // Find the WrapPanel in the fence window
-        //        var border = fenceWindow.Content as Border;
-        //        if (border == null) return;
-
-        //        var dockPanel = border.Child as DockPanel;
-        //        if (dockPanel == null) return;
-
-        //        var scrollViewer = dockPanel.Children.OfType<ScrollViewer>().FirstOrDefault();
-        //        if (scrollViewer == null) return;
-
-        //        var wrapPanel = scrollViewer.Content as WrapPanel;
-        //        if (wrapPanel == null) return;
-
-        //        // Clear existing content
-        //        wrapPanel.Children.Clear();
-
-        //        // Load items from current tab (using same logic as InitContent)
-        //        bool tabsEnabled = fence.TabsEnabled?.ToString().ToLower() == "true";
-        //        JArray items = null;
-
-        //        if (tabsEnabled)
-        //        {
-        //            var tabs = fence.Tabs as JArray ?? new JArray();
-        //            int currentTab = Convert.ToInt32(fence.CurrentTab?.ToString() ?? "0");
-
-        //            if (currentTab >= 0 && currentTab < tabs.Count)
-        //            {
-        //                var activeTab = tabs[currentTab] as JObject;
-        //                if (activeTab != null)
-        //                {
-        //                    items = activeTab["Items"] as JArray ?? new JArray();
-        //                    string tabName = activeTab["TabName"]?.ToString() ?? $"Tab {currentTab}";
-        //                    LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI,
-        //                        $"Refreshing content for tab '{tabName}' with {items.Count} items");
-        //                }
-        //            }
-        //        }
-        //        else
-        //        {
-        //            items = fence.Items as JArray ?? new JArray();
-        //        }
-
-        //        if (items != null)
-        //        {
-        //            // Sort and add items (same as InitContent logic)
-        //            var sortedItems = items
-        //                .OfType<JObject>()
-        //                .OrderBy(item =>
-        //                {
-        //                    var orderToken = item["DisplayOrder"];
-        //                    return orderToken?.Type == JTokenType.Integer ? orderToken.Value<int>() : 0;
-        //                })
-        //                .ToList();
-
-        //            foreach (dynamic icon in sortedItems)
-        //            {
-        //                IconManager.AddIconWithFenceContext(icon, wrapPanel, fence);
-
-        //                // Add existing event handlers (same as CreateFence logic)
-        //                StackPanel sp = wrapPanel.Children[wrapPanel.Children.Count - 1] as StackPanel;
-        //                if (sp != null)
-        //                {
-        //                    IDictionary<string, object> iconDict = icon is IDictionary<string, object> dict ?
-        //                        dict : ((JObject)icon).ToObject<IDictionary<string, object>>();
-        //                    string filePath = iconDict.ContainsKey("Filename") ? (string)iconDict["Filename"] : "Unknown";
-        //                    bool isFolder = iconDict.ContainsKey("IsFolder") && (bool)iconDict["IsFolder"];
-        //                    // Use the fence's existing click event logic
-        //                    ClickEventAdder(sp, filePath, isFolder);
-
-        //                    // Don't create new TargetChecker - use the existing one from the fence
-        //                    // The original fence creation already has a TargetChecker running
-        //                }
-        //            }
-
-        //            LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.UI,
-        //                $"Refreshed fence content: loaded {sortedItems.Count} items");
-        //        }
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI,
-        //            $"Error refreshing fence content: {ex.Message}");
-        //    }
-        //}
+       
 
         // TABS FEATURE: Update tab button styling to reflect active tab
         private static void RefreshTabStyling(NonActivatingWindow fenceWindow, int activeTabIndex)
@@ -2738,6 +3061,15 @@ namespace Desktop_Fences
                                             tabItemDict["IsNetwork"] = IsNetworkPath(filename);
                                             tabItemsModified = true;
                                         }
+
+                                        // Add AlwaysRunAsAdmin if missing
+                                        if (!tabItemDict.ContainsKey("AlwaysRunAsAdmin"))
+                                        {
+                                            tabItemDict["AlwaysRunAsAdmin"] = false;
+                                            tabItemsModified = true;
+                                        }
+
+
 
                                         // Add DisplayName if missing
                                         if (!tabItemDict.ContainsKey("DisplayName") && tabItemDict.ContainsKey("Filename"))
@@ -3305,7 +3637,7 @@ LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, "Tab0 s
             string currentVersion = Assembly.GetEntryAssembly()?.GetName().Version?.ToString() ?? "0.0.0"; // This is current version for registry tracking
 
 
-            //  string currentVersion = "2.5.2.111"; // This is current version for registry tracking
+           
             RegistryHelper.SetProgramManagementValues(currentVersion);
 
 
@@ -3403,7 +3735,11 @@ LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, "Tab0 s
                 IsSnapEnabled = SettingsManager.IsSnapEnabled,
                 ShowBackgroundImageOnPortalFences = SettingsManager.ShowBackgroundImageOnPortalFences,
                 Showintray = SettingsManager.ShowInTray,
+                EnableSounds = SettingsManager.EnableSounds,
                 TintValue = SettingsManager.TintValue,
+                MenuTintValue = SettingsManager.MenuTintValue,
+                MenuIcon = SettingsManager.MenuIcon,
+                LockIcon = SettingsManager.LockIcon,
                 SelectedColor = SettingsManager.SelectedColor,
                 IsLogEnabled = SettingsManager.IsLogEnabled,
                 singleClickToLaunch = SettingsManager.SingleClickToLaunch,
@@ -3590,11 +3926,10 @@ LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, "Tab0 s
             FenceDataManager.FenceData = JsonConvert.DeserializeObject<List<dynamic>>(defaultJson);
         }
 
+
+
         public static void CreateFence(dynamic fence, TargetChecker targetChecker)
         {
-
-
-
             // Check for valid Portal Fence target folder
             if (fence.ItemsType?.ToString() == "Portal")
             {
@@ -3606,11 +3941,8 @@ LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, "Tab0 s
                     FenceDataManager.SaveFenceData();
                     return;
                 }
-
             }
             DockPanel dp = new DockPanel();
-
-
             // Get fence border color and thickness from fence data
             System.Windows.Media.Brush borderBrush = null;
             double borderThickness = 0;
@@ -3618,7 +3950,6 @@ LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, "Tab0 s
             {
                 string borderColorName = fence.FenceBorderColor?.ToString();
                 int customThickness = Convert.ToInt32(fence.FenceBorderThickness?.ToString() ?? "2");
-
                 if (!string.IsNullOrEmpty(borderColorName))
                 {
                     var borderColor = Utility.GetColorFromName(borderColorName);
@@ -3640,11 +3971,6 @@ LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, "Tab0 s
                 borderBrush = null;
                 borderThickness = 0;
             }
-
-
-
-
-
             Border cborder = new Border
             {
                 Background = new SolidColorBrush(System.Windows.Media.Color.FromArgb(100, 0, 0, 0)),
@@ -3653,75 +3979,186 @@ LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, "Tab0 s
                 BorderThickness = new Thickness(borderThickness), // Apply border thickness
                 Child = dp
             };
+            // Add Double Click Handler
+            cborder.MouseLeftButtonDown += (s, e) =>
+            {
+                if (e.ClickCount == 2)
+                {
+                    SearchFormManager.ToggleSearch();
+                    e.Handled = true;
+                }
+            };
 
 
+            //  Add heart symbol in top-left corner
+            string MenuSymbol = "♥";
 
-            // NEW: Add heart symbol in top-left corner
+            if (SettingsManager.MenuIcon == 0)
+            {
+                MenuSymbol = "♥";
+              
+            }
+            else if (SettingsManager.MenuIcon == 1)
+            {
+                MenuSymbol = "☰";
+            }
+            else if (SettingsManager.MenuIcon == 2)
+            {
+                MenuSymbol = "≣";
+            }
+            else if (SettingsManager.MenuIcon == 3)
+            {
+                MenuSymbol = "𓃑";
+            }
+
             TextBlock heart = new TextBlock
             {
-                Text = "♥",
+                // Text = "♥",
+                
+
+                Text = MenuSymbol,
                 FontSize = 22,
                 Foreground = System.Windows.Media.Brushes.White, // Match title and icon text color
                 Margin = new Thickness(5, -3, 0, 0), // Position top-left, aligned with title
                 HorizontalAlignment = HorizontalAlignment.Left,
                 VerticalAlignment = VerticalAlignment.Top,
-                Cursor = Cursors.Hand
+                Cursor = Cursors.Hand,
+                Opacity = (double)SettingsManager.MenuTintValue / 100 // 0.3 // Lower tint by default
+
             };
-            dp.Children.Add(heart);
-            // Store heart TextBlock reference for this fence
+  
             _heartTextBlocks[fence] = heart;
 
 
-            // Create and assign heart ContextMenu using centralized builder
-            //   heart.ContextMenu = BuildHeartContextMenu(fence);
-            heart.ContextMenu = BuildHeartContextMenu(fence, false); // Normal menu by default
 
-            //// Handle left-click to open heart context menu
-            //heart.MouseLeftButtonDown += (s, e) =>
-            //{
-            //    if (e.ChangedButton == MouseButton.Left && heart.ContextMenu != null)
-            //    {
-            //        heart.ContextMenu.IsOpen = true;
-            //        e.Handled = true;
-            //    }
-            //};
-            // Handle left-click to open heart context menu
+            heart.MouseEnter += (s, e) =>
+            {
+                // Remove previous animation 
+                heart.BeginAnimation(UIElement.OpacityProperty, null);
+
+                heart.Opacity = 1.0;
+            };
+
+            heart.MouseLeave += (s, e) =>
+            {
+                double targetOpacity = (double)SettingsManager.MenuTintValue / 100;
+
+                DoubleAnimation fadeBack = new DoubleAnimation
+                {
+                    From = 1.0,
+                    To = targetOpacity,
+                    Duration = TimeSpan.FromMilliseconds(300),
+                    BeginTime = TimeSpan.FromMilliseconds(800)
+                };
+
+                heart.BeginAnimation(UIElement.OpacityProperty, fadeBack);
+            };
+
+
+            dp.Children.Add(heart);
+            // Store heart TextBlock reference for this fence
+            _heartTextBlocks[fence] = heart;
+            // Create and assign heart ContextMenu using centralized builder
+            // heart.ContextMenu = BuildHeartContextMenu(fence);
+            heart.ContextMenu = BuildHeartContextMenu(fence, false); // Normal menu by default
+                                                                     //// Handle left-click to open heart context menu
+                                                                     //heart.MouseLeftButtonDown += (s, e) =>
+                                                                     //{
+                                                                     // if (e.ChangedButton == MouseButton.Left && heart.ContextMenu != null)
+                                                                     // {
+                                                                     // heart.ContextMenu.IsOpen = true;
+                                                                     // e.Handled = true;
+                                                                     // }
+                                                                     //};
+                                                                     // Handle left-click to open heart context menu
             heart.MouseLeftButtonDown += (s, e) =>
             {
                 if (e.ChangedButton == MouseButton.Left && heart.ContextMenu != null)
                 {
                     // Check if Ctrl is pressed for extended menu
                     bool isCtrlPressed = (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control;
-
                     // DEBUG: Log the Ctrl state
                     LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.UI,
                         $"Heart clicked - Ctrl pressed: {isCtrlPressed}");
-
                     // Rebuild context menu based on Ctrl state
                     heart.ContextMenu = BuildHeartContextMenu(fence, isCtrlPressed);
                     heart.ContextMenu.IsOpen = true;
                     e.Handled = true;
                 }
             };
-
             // Add a protection symbol in top-right corner
-            TextBlock lockIcon = new TextBlock
+
+
+            string LockSymbol = "🛡️";
+
+            if (SettingsManager.LockIcon == 0)
             {
-                Text = "🛡️",
+                LockSymbol = "🛡️";
+            }
+            else if (SettingsManager.LockIcon == 1)
+            {
+                LockSymbol = "🔑";
+            }
+            else if (SettingsManager.LockIcon == 2)
+            {
+                LockSymbol = "🔐";
+            }
+            else if (SettingsManager.LockIcon == 3)
+            {
+                LockSymbol = "🔒";
+            }
+
+            //MessageBox.Show(SettingsManager.LockIcon +" " + LockSymbol.ToString());
+
+
+            TextBlock lockIcon = new TextBlock
+           
+            {
+              
+                //     Text = "🔐",
+                //     Text = "🔑",
+                //     Text = "🔒",
+                //     Text = "🔓",
+                Text = LockSymbol,//"🛡️",
                 FontSize = 14,
                 Foreground = fence.IsLocked?.ToString().ToLower() == "true" ? System.Windows.Media.Brushes.Red : System.Windows.Media.Brushes.White,
                 Margin = new Thickness(0, 3, 2, 0), // Adjusted for top-right positioning
                 HorizontalAlignment = HorizontalAlignment.Right,
                 VerticalAlignment = VerticalAlignment.Top,
                 Cursor = Cursors.Hand,
-                ToolTip = fence.IsLocked?.ToString().ToLower() == "true" ? "Fence is locked (click to unlock)" : "Fence is unlocked (click to lock)"
+                ToolTip = fence.IsLocked?.ToString().ToLower() == "true" ? "Fence is locked (click to unlock)" : "Fence is unlocked (click to lock)",
+                Opacity = (double)SettingsManager.MenuTintValue / 100 // 0.3 // Lower tint by default
             };
+
+  
+            lockIcon.MouseEnter += (s, e) =>
+            {
+                // Remove previous animation
+                lockIcon.BeginAnimation(UIElement.OpacityProperty, null);
+
+                lockIcon.Opacity = 1.0;
+            };
+
+            lockIcon.MouseLeave += (s, e) =>
+            {
+                double targetOpacity = (double)SettingsManager.MenuTintValue / 100;
+
+                DoubleAnimation fadeBack = new DoubleAnimation
+                {
+                    From = 1.0,
+                    To = targetOpacity,
+                    Duration = TimeSpan.FromMilliseconds(300),
+                    BeginTime = TimeSpan.FromMilliseconds(800)
+                };
+
+                lockIcon.BeginAnimation(UIElement.OpacityProperty, fadeBack);
+            };
+
 
 
 
             // Set initial state without saving to JSON
             UpdateLockState(lockIcon, fence, null, saveToJson: false);
-
             // Lock icon click handler
             lockIcon.MouseLeftButtonDown += (s, e) =>
             {
@@ -3734,7 +4171,6 @@ LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, "Tab0 s
                         LogManager.Log(LogManager.LogLevel.Warn, LogManager.LogCategory.Error, $"Could not find NonActivatingWindow for lock icon click in fence '{fence.Title}'");
                         return;
                     }
-
                     // Find the fence in FenceDataManager.FenceData using the window's Tag (Id)
                     string fenceId = win.Tag?.ToString();
                     if (string.IsNullOrEmpty(fenceId))
@@ -3742,28 +4178,22 @@ LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, "Tab0 s
                         LogManager.Log(LogManager.LogLevel.Warn, LogManager.LogCategory.Error, $"Fence Id is missing for window '{win.Title}'");
                         return;
                     }
-
                     dynamic currentFence = FenceDataManager.FenceData.FirstOrDefault(f => f.Id?.ToString() == fenceId);
                     if (currentFence == null)
                     {
                         LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.FenceUpdate, $"Fence with Id '{fenceId}' not found in FenceDataManager.FenceData");
                         return;
                     }
-
                     // Toggle the lock state
                     bool currentState = currentFence.IsLocked?.ToString().ToLower() == "true";
                     bool newState = !currentState;
-
                     // Update UI and JSON on the main thread
-                    Application.Current.Dispatcher.Invoke(() =>
+                    System.Windows.Application.Current.Dispatcher.Invoke(() =>
                     {
                         UpdateLockState(lockIcon, currentFence, newState, saveToJson: true);
                     });
                 }
             };
-
-
-
             // Create a Grid for the titlebar - move here to ensure it is created before mouse handler
             Grid titleGrid = new Grid
             {
@@ -3773,183 +4203,24 @@ LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, "Tab0 s
             titleGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(0, GridUnitType.Pixel) }); // No left spacer
             titleGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) }); // Title takes most space
             titleGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(30, GridUnitType.Pixel) }); // Lock icon fixed width
-
-
-            // Handle Ctrl+Click for roll-up/roll-down
-            titleGrid.MouseLeftButtonDown += (s, e) =>
-            {
-                if (e.ChangedButton == MouseButton.Left && Keyboard.IsKeyDown(Key.LeftCtrl))
-                {
-                    NonActivatingWindow win = FindVisualParent<NonActivatingWindow>(titleGrid);
-                    string fenceId = win?.Tag?.ToString();
-
-                    //  DebugLog("IMMEDIATE", fenceId ?? "UNKNOWN", $"Ctrl+Click FIRST LINE - win.Height:{win?.Height ?? -1:F1}");
-
-                    if (string.IsNullOrEmpty(fenceId) || win == null)
-                    {
-                        //     DebugLog("ERROR", fenceId ?? "UNKNOWN", "Missing window or fenceId in Ctrl+Click");
-                        return;
-                    }
-
-                    // DebugLog("EVENT", fenceId, "Ctrl+Click TRIGGERED");
-                    //  DebugLogFenceState("CTRL_CLICK_START", fenceId, win);
-
-                    dynamic currentFence = FenceDataManager.FenceData.FirstOrDefault(f => f.Id?.ToString() == fenceId);
-                    if (currentFence == null)
-                    {
-                        //     DebugLog("ERROR", fenceId, "Fence not found in FenceDataManager.FenceData for Ctrl+Click");
-                        return;
-                    }
-
-                    bool isRolled = currentFence.IsRolled?.ToString().ToLower() == "true";
-
-                    // Get fence data height (always accurate from SizeChanged handler)
-                    double fenceHeight = Convert.ToDouble(currentFence.Height?.ToString() ?? "130");
-                    double windowHeight = win.Height;
-
-                    //  DebugLog("SYNC_CHECK", fenceId, $"Before sync - FenceHeight:{fenceHeight:F1} | WindowHeight:{windowHeight:F1} | IsRolled:{isRolled}");
-
-                    if (!isRolled)
-                    {
-                        // ROLLUP: Use fence data height (always current)
-                        //   DebugLog("ACTION", fenceId, "Starting ROLLUP");
-
-                        _fencesInTransition.Add(fenceId);
-                        //   DebugLog("TRANSITION", fenceId, "Added to transition state");
-
-                        // FINAL FIX: Use fence data height which is always accurate from SizeChanged handler
-                        double currentHeight = fenceHeight;
-                        //   DebugLog("ROLLUP_HEIGHT_SOURCE", fenceId, $"Using fence.Height:{fenceHeight:F1} (win.Height was stale:{win.Height:F1})");
-
-                        // Save current fence height as UnrolledHeight
-                        IDictionary<string, object> fenceDict = currentFence as IDictionary<string, object> ?? ((JObject)currentFence).ToObject<IDictionary<string, object>>();
-                        fenceDict["UnrolledHeight"] = currentHeight;
-                        fenceDict["IsRolled"] = "true";
-
-                        int fenceIndex = FenceDataManager.FenceData.FindIndex(f => f.Id?.ToString() == fenceId);
-                        if (fenceIndex >= 0)
-                        {
-                            FenceDataManager.FenceData[fenceIndex] = JObject.FromObject(fenceDict);
-                        }
-                        FenceDataManager.SaveFenceData();
-
-                        //   DebugLog("SAVE", fenceId, $"Saved ROLLUP state | UnrolledHeight:{currentHeight:F1} | IsRolled:true");
-
-                        // Roll up animation - starts from current height
-                        double targetHeight = 26;
-                        var heightAnimation = new DoubleAnimation(currentHeight, targetHeight, TimeSpan.FromSeconds(0.3))
-                        {
-                            EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseInOut }
-                        };
-
-                        heightAnimation.Completed += (animSender, animArgs) =>
-                        {
-                            //      DebugLog("ANIMATION", fenceId, "ROLLUP animation completed");
-
-                            // Update WrapPanel visibility
-                            var border = win.Content as Border;
-                            if (border != null)
-                            {
-                                var dockPanel = border.Child as DockPanel;
-                                if (dockPanel != null)
-                                {
-                                    var scrollViewer = dockPanel.Children.OfType<ScrollViewer>().FirstOrDefault();
-                                    if (scrollViewer != null)
-                                    {
-                                        var wpcont = scrollViewer.Content as WrapPanel;
-                                        if (wpcont != null)
-                                        {
-                                            wpcont.Visibility = Visibility.Collapsed;
-                                            //   DebugLog("UI", fenceId, "Set WrapPanel visibility to Collapsed");
-                                        }
-                                    }
-                                }
-                            }
-
-                            _fencesInTransition.Remove(fenceId);
-                            //     DebugLog("TRANSITION", fenceId, "Removed from transition state");
-                            //  DebugLogFenceState("ROLLUP_COMPLETE", fenceId, win);
-                        };
-
-                        win.BeginAnimation(Window.HeightProperty, heightAnimation);
-                        //     DebugLog("ANIMATION", fenceId, $"Started ROLLUP animation from {currentHeight:F1} to height {targetHeight:F1}");
-                    }
-                    else
-                    {
-                        // ROLLDOWN: Roll down to UnrolledHeight
-                        double unrolledHeight = Convert.ToDouble(currentFence.UnrolledHeight?.ToString() ?? "130");
-                        // //   DebugLog("ACTION", fenceId, $"Starting ROLLDOWN to {unrolledHeight:F1}");
-
-                        _fencesInTransition.Add(fenceId);
-                        //   DebugLog("TRANSITION", fenceId, "Added to transition state");
-
-                        IDictionary<string, object> fenceDict = currentFence as IDictionary<string, object> ?? ((JObject)currentFence).ToObject<IDictionary<string, object>>();
-                        fenceDict["IsRolled"] = "false";
-
-                        int fenceIndex = FenceDataManager.FenceData.FindIndex(f => f.Id?.ToString() == fenceId);
-                        if (fenceIndex >= 0)
-                        {
-                            FenceDataManager.FenceData[fenceIndex] = JObject.FromObject(fenceDict);
-                        }
-                        FenceDataManager.SaveFenceData();
-
-                        //   DebugLog("SAVE", fenceId, $"Saved ROLLDOWN state | IsRolled:false | TargetHeight:{unrolledHeight:F1}");
-
-                        var heightAnimation = new DoubleAnimation(win.Height, unrolledHeight, TimeSpan.FromSeconds(0.3))
-                        {
-                            EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseInOut }
-                        };
-
-                        heightAnimation.Completed += (animSender, animArgs) =>
-                        {
-                            //  DebugLog("ANIMATION", fenceId, "ROLLDOWN animation completed");
-
-                            // Update WrapPanel visibility
-                            var border = win.Content as Border;
-                            if (border != null)
-                            {
-                                var dockPanel = border.Child as DockPanel;
-                                if (dockPanel != null)
-                                {
-                                    var scrollViewer = dockPanel.Children.OfType<ScrollViewer>().FirstOrDefault();
-                                    if (scrollViewer != null)
-                                    {
-                                        var wpcont = scrollViewer.Content as WrapPanel;
-                                        if (wpcont != null)
-                                        {
-                                            wpcont.Visibility = Visibility.Visible;
-                                            //   DebugLog("UI", fenceId, "Set WrapPanel visibility to Visible");
-                                        }
-                                    }
-                                }
-                            }
-
-                            _fencesInTransition.Remove(fenceId);
-                            //  DebugLog("TRANSITION", fenceId, "Removed from transition state");
-                            //  DebugLogFenceState("ROLLDOWN_COMPLETE", fenceId, win);
-                        };
-
-                        win.BeginAnimation(Window.HeightProperty, heightAnimation);
-                        //  DebugLog("ANIMATION", fenceId, $"Started ROLLDOWN animation to height {unrolledHeight:F1}");
-                    }
-                    e.Handled = true;
-                }
-            };
-
-
+                                                                                                                      // End of ctrl+click handler
             ContextMenu CnMnFenceManager = new ContextMenu();
-            MenuItem miNewFence = new MenuItem { Header = "New Fence" };
-            MenuItem miNewPortalFence = new MenuItem { Header = "New Portal Fence" };
-            //  MenuItem miRemoveFence = new MenuItem { Header = "Delete Fence" };
+            // MenuItem miNewFence = new MenuItem { Header = "New Fence" };
+            // MenuItem miNewPortalFence = new MenuItem { Header = "New Portal Fence" };
+            MenuItem miNewNoteFence = new MenuItem { Header = "New Note Fence" };
+            // MenuItem miRemoveFence = new MenuItem { Header = "Delete Fence" };
             // MenuItem miXT = new MenuItem { Header = "Exit" };
             MenuItem miHide = new MenuItem { Header = "Hide Fence" }; // New Hide Fence item
-
-
-
-            //   CnMnFenceManager.Items.Add(miRemoveFence);
+                                                                      // CnMnFenceManager.Items.Add(miRemoveFence);
             CnMnFenceManager.Items.Add(miHide); // Add Hide Fence
-
-
+                                                // Add Note fence specific context menu items if this is a Note fence
+            if (fence.ItemsType?.ToString() == "Note")
+            {
+                LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.FenceCreation,
+                    $"Adding Note fence context menu items for '{fence.Title}'");
+                // We'll add the TextBox reference after the window is created
+                // For now, just mark that this will need Note menu items
+            }
             NonActivatingWindow win = new NonActivatingWindow
             {
                 ContextMenu = CnMnFenceManager,
@@ -3968,19 +4239,18 @@ LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, "Tab0 s
                 Left = (double)fence.X,
                 Tag = fence.Id?.ToString() ?? Guid.NewGuid().ToString() // Ensure ID exists
             };
-
-
-
-
+            // Add Note fence specific context menu items after window creation
+            if (fence.ItemsType?.ToString() == "Note")
+            {
+                // The TextBox will be created in InitContent(), so we need to add menu items after that
+                // We'll modify the context menu after InitContent() is called
+            }
             //Peek behind fence
-
             MenuItem miPeekBehind = new MenuItem { Header = "Peek Behind" };
             CnMnFenceManager.Items.Add(miPeekBehind);
-
             miPeekBehind.Click += (s, e) =>
             {
                 LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.UI, $"Initiating Peek Behind for fence '{fence.Title}'");
-
                 // Create a separate transparent window for the countdown
                 var countdownWindow = new Window
                 {
@@ -3992,9 +4262,8 @@ LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, "Tab0 s
                     ShowInTaskbar = false,
                     Topmost = true,
                     Left = win.Left + (win.Width - 60) / 2, // Center horizontally
-                    Top = win.Top + (win.Height - 40) / 2   // Center vertically
+                    Top = win.Top + (win.Height - 40) / 2 // Center vertically
                 };
-
                 // Create countdown label
                 Label countdownLabel = new Label
                 {
@@ -4008,17 +4277,14 @@ LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, "Tab0 s
                     Padding = new Thickness(4)
                 };
                 countdownWindow.Content = countdownLabel;
-
                 // Show the countdown window
                 countdownWindow.Show();
                 LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI, $"Created countdown window for fence '{fence.Title}' at ({countdownWindow.Left}, {countdownWindow.Top})");
-
                 // Fade out animation for the fence
                 var fadeOut = new DoubleAnimation(1, 0, TimeSpan.FromSeconds(0.3))
                 {
                     EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseIn }
                 };
-
                 // Countdown timer
                 int countdownSeconds = 10;
                 var timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
@@ -4040,91 +4306,65 @@ LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, "Tab0 s
                         LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.UI, $"Peek Behind completed for fence '{fence.Title}'");
                     }
                 };
-
                 // Start fade out and timer
                 win.BeginAnimation(UIElement.OpacityProperty, fadeOut);
                 timer.Start();
                 LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI, $"Started Peek Behind fade-out and countdown for fence '{fence.Title}'");
             };
-
-
-
-
-
-
-
             // Clear Dead Shortcuts menu item (only for Data fences)
             if (fence.ItemsType?.ToString() == "Data")
             {
                 CnMnFenceManager.Items.Add(new Separator());
                 MenuItem miClearDeadShortcuts = new MenuItem { Header = "Clear Dead Shortcuts" };
                 CnMnFenceManager.Items.Add(miClearDeadShortcuts);
-
                 miClearDeadShortcuts.Click += (s, e) =>
                 {
                     LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.FenceUpdate,
                         $"Clear Dead Shortcuts clicked for fence '{fence.Title}'");
-
                     try
                     {
                         int removedCount = FilePathUtilities.ClearDeadShortcutsFromFence(fence);
-
                         if (removedCount > 0)
                         {
                             // Save the updated fence data
                             FenceDataManager.SaveFenceData();
-
-                            //                        // Refresh the fence display to show changes
-                            //                        // For tabbed fences, refresh current tab; for regular fences, refresh all
-                            //                        bool tabsEnabled = fence.TabsEnabled?.ToString().ToLower() == "true";
-                            //                        if (tabsEnabled)
-                            //                        {
-                            //                            int currentTab = Convert.ToInt32(fence.CurrentTab?.ToString() ?? "0");
-                            //                            LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.FenceUpdate,
+                            // // Refresh the fence display to show changes
+                            // // For tabbed fences, refresh current tab; for regular fences, refresh all
+                            // bool tabsEnabled = fence.TabsEnabled?.ToString().ToLower() == "true";
+                            // if (tabsEnabled)
+                            // {
+                            // int currentTab = Convert.ToInt32(fence.CurrentTab?.ToString() ?? "0");
+                            // LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.FenceUpdate,
                             //$"About to refresh fence - TabsEnabled: {tabsEnabled}, Method: {(tabsEnabled ? "RefreshFenceContentSimple" : "RefreshFenceContent")}");
-                            //                            RefreshFenceContentSimple(win, fence, currentTab);
-                            //                        }
-                            //                        else
-                            //                        {
-                            //                            LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.FenceUpdate,
+                            // RefreshFenceContentSimple(win, fence, currentTab);
+                            // }
+                            // else
+                            // {
+                            // LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.FenceUpdate,
                             //$"About to refresh fence - TabsEnabled: {tabsEnabled}, Method: {(tabsEnabled ? "RefreshFenceContentSimple" : "RefreshFenceContent")}");
-                            //                            RefreshFenceContent(win, fence);
-                            //                        }
-
-
+                            // RefreshFenceContent(win, fence);
+                            // }
                             // Refresh the fence display to show changes (using same approach as CustomizeFenceForm)
                             RefreshFenceUsingFormApproach(win, fence);
-
                             // Show completion message
                             string message = removedCount == 1 ?
                                 "Removed 1 dead shortcut." :
                                 $"Removed {removedCount} dead shortcuts.";
-                         //   MessageBoxesManager.ShowOKOnlyMessageBoxForm(message, "Clear Dead Shortcuts");
+                            // MessageBoxesManager.ShowOKOnlyMessageBoxForm(message, "Clear Dead Shortcuts");
                         }
                         else
                         {
-                          //  MessageBoxesManager.ShowOKOnlyMessageBoxForm("No dead shortcuts found.", "Clear Dead Shortcuts");
+                            // MessageBoxesManager.ShowOKOnlyMessageBoxForm("No dead shortcuts found.", "Clear Dead Shortcuts");
                         }
                     }
                     catch (Exception ex)
                     {
                         LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.FenceUpdate,
                             $"Error in Clear Dead Shortcuts: {ex.Message}");
-                       // MessageBoxesManager.ShowOKOnlyMessageBoxForm("An error occurred while clearing dead shortcuts.", "Error");
+                        // MessageBoxesManager.ShowOKOnlyMessageBoxForm("An error occurred while clearing dead shortcuts.", "Error");
                     }
                 };
             }
-
-
-
-
-
-
-
-
-
-
-
             // Add "Open Folder in Explorer" only for portal fences
             if (fence.ItemsType?.ToString() == "Portal")
             {
@@ -4154,71 +4394,92 @@ LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, "Tab0 s
                 CnMnFenceManager.Items.Add(miOpenFolder);
             }
 
-            
-
-
             CnMnFenceManager.Items.Add(new Separator());
             //CnMnFenceManager.Items.Add(miCustomize); // Add Customize submenu
-
-
-            // Add Paste Item functionality - CopyPasteManager integration  
+            // Add Paste Item functionality - CopyPasteManager integration
             MenuItem miPasteItem = new MenuItem { Header = "Paste Item" };
             miPasteItem.Click += (s, e) => CopyPasteManager.PasteItem(fence);
             CnMnFenceManager.Items.Add(miPasteItem);
-
+            //// Add dynamic menu state updates - make Paste Item enabled state dynamic
+            //CnMnFenceManager.Opened += (contextSender, contextArgs) =>
+            //{
+            // // Update Paste Item enabled state dynamically when menu opens
+            // bool hasCopiedItem = CopyPasteManager.HasCopiedItem();
+            // miPasteItem.IsEnabled = hasCopiedItem;
+            // LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI,
+            // $"Updated fence context menu - Paste available: {hasCopiedItem}");
+            //};
             // Add dynamic menu state updates - make Paste Item enabled state dynamic
+            MenuItem miExportAllToDesktop = null; // Declare for conditional addition
             CnMnFenceManager.Opened += (contextSender, contextArgs) =>
             {
                 // Update Paste Item enabled state dynamically when menu opens
                 bool hasCopiedItem = CopyPasteManager.HasCopiedItem();
                 miPasteItem.IsEnabled = hasCopiedItem;
+                // Check if CTRL is pressed for "Export all icons to desktop" option (Data fences only)
+                bool isCtrlPressed = (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control;
+                bool isDataFence = fence.ItemsType?.ToString() == "Data";
+                // Remove existing Export All menu item if present
+                if (miExportAllToDesktop != null && CnMnFenceManager.Items.Contains(miExportAllToDesktop))
+                {
+                    CnMnFenceManager.Items.Remove(miExportAllToDesktop);
+                }
+                // Add Export all icons to desktop if CTRL is pressed and this is a Data fence
+                if (isCtrlPressed && isDataFence)
+                {
+                    miExportAllToDesktop = new MenuItem { Header = "Export all icons to desktop" };
+                    miExportAllToDesktop.Click += (s, e) => ExportAllIconsToDesktop(fence);
+                    // Insert after Clear Dead Shortcuts (find its position)
+                    int insertPosition = CnMnFenceManager.Items.Count; // Default to end
+                    for (int i = 0; i < CnMnFenceManager.Items.Count; i++)
+                    {
+                        if (CnMnFenceManager.Items[i] is MenuItem mi && mi.Header.ToString() == "Clear Dead Shortcuts")
+                        {
+                            insertPosition = i + 1;
+                            break;
+                        }
+                    }
+                    CnMnFenceManager.Items.Insert(insertPosition, miExportAllToDesktop);
+                }
                 LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI,
-                    $"Updated fence context menu - Paste available: {hasCopiedItem}");
+                    $"Updated fence context menu - Paste available: {hasCopiedItem}, CTRL pressed: {isCtrlPressed}");
             };
             CnMnFenceManager.Items.Add(new Separator());
-
-            //// New menu item for CustomizeFenceForm 
+            //// New menu item for CustomizeFenceForm
             //MenuItem miNewCustomize = new MenuItem { Header = "Customize..." };
             //miNewCustomize.Click += (s, e) =>
             //{
-            //    try
-            //    {
-            //        LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.UI, $"Opening CustomizeFenceForm for fence '{fence.Title}'");
-            //        using (var customizeForm = new CustomizeFenceForm(fence))
-            //        {
-            //            customizeForm.ShowDialog();
-            //            if (customizeForm.DialogResult)
-            //            {
-            //                LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.UI, $"User saved changes in CustomizeFenceForm for fence '{fence.Title}'");
-            //            }
-            //            else
-            //            {
-            //                LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.UI, $"User cancelled CustomizeFenceForm for fence '{fence.Title}'");
-            //            }
-            //        }
-            //    }
-            //    catch (Exception ex)
-            //    {
-            //        LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI, $"Error opening CustomizeFenceForm: {ex.Message}");
-            //        MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Error opening customize form: {ex.Message}", "Form Error");
-            //    }
+            // try
+            // {
+            // LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.UI, $"Opening CustomizeFenceForm for fence '{fence.Title}'");
+            // using (var customizeForm = new CustomizeFenceForm(fence))
+            // {
+            // customizeForm.ShowDialog();
+            // if (customizeForm.DialogResult)
+            // {
+            // LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.UI, $"User saved changes in CustomizeFenceForm for fence '{fence.Title}'");
+            // }
+            // else
+            // {
+            // LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.UI, $"User cancelled CustomizeFenceForm for fence '{fence.Title}'");
+            // }
+            // }
+            // }
+            // catch (Exception ex)
+            // {
+            // LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI, $"Error opening CustomizeFenceForm: {ex.Message}");
+            // MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Error opening customize form: {ex.Message}", "Form Error");
+            // }
             //};
             //CnMnFenceManager.Items.Add(miNewCustomize);
-
-
-
-
-
             MenuItem miCustomize = new MenuItem { Header = "Customize..." };
             miCustomize.Click += (s, e) =>
             {
                 try
                 {
                     LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.UI, $"Opening CustomizeFenceFormManager for fence '{fence.Title}'");
-
                     var customizeForm = new CustomizeFenceFormManager(fence);
                     customizeForm.ShowDialog();
-
                     if (customizeForm.DialogResult)
                     {
                         LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.UI, $"User saved changes in CustomizeFenceFormManager for fence '{fence.Title}'");
@@ -4231,23 +4492,13 @@ LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, "Tab0 s
                 catch (Exception ex)
                 {
                     LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI, $"Error opening CustomizeFenceFormManager: {ex.Message}");
-                  MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Error opening customize form: {ex.Message}", "Form Error");
+                    MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Error opening customize form: {ex.Message}", "Form Error");
                 }
             };
             CnMnFenceManager.Items.Add(miCustomize);
-
-
-
-
-
-
-
-
-            //  CnMnFenceManager.Items.Add(new Separator());
-
-            //   CnMnFenceManager.Items.Add(new Separator());
-            //   CnMnFenceManager.Items.Add(miXT);
-
+            // CnMnFenceManager.Items.Add(new Separator());
+            // CnMnFenceManager.Items.Add(new Separator());
+            // CnMnFenceManager.Items.Add(miXT);
             // Handle both JObject and ExpandoObject access
             string isHiddenString = "false"; // Default value
             try
@@ -4267,20 +4518,14 @@ LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, "Tab0 s
             {
                 LogManager.Log(LogManager.LogLevel.Warn, LogManager.LogCategory.Error, $"Error reading IsHidden: {ex.Message}");
             }
-
             bool isHidden = isHiddenString == "true";
             LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.Settings, $"Fence '{fence.Title}' IsHidden state: {isHidden}");
-
-
-
             // Adjust the fence position to ensure it fits within screen bounds
             AdjustFencePositionToScreen(win);
-
             win.Loaded += (s, e) =>
             {
                 UpdateLockState(lockIcon, fence, null, saveToJson: false);
                 LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.FenceCreation, $"Applied lock state for fence '{fence.Title}' on load: IsLocked={fence.IsLocked?.ToString().ToLower()}");
-
                 // Apply IsRolled state
                 bool isRolled = fence.IsRolled?.ToString().ToLower() == "true";
                 double targetHeight = 26; // Default for rolled-up state
@@ -4317,7 +4562,6 @@ LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, "Tab0 s
                     LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.FenceCreation, $"Applied rolled-up state for fence '{fence.Title}' on load: Height={targetHeight}");
                 }
                 win.Height = targetHeight;
-
                 // Apply WrapPanel visibility
                 var border = win.Content as Border;
                 if (border != null)
@@ -4337,7 +4581,6 @@ LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, "Tab0 s
                         }
                     }
                 }
-
                 if (isHidden)
                 {
                     win.Visibility = Visibility.Hidden;
@@ -4346,15 +4589,11 @@ LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, "Tab0 s
                 }
             };
             // Step 5
-
-
-
             if (isHidden)
             {
                 TrayManager.AddHiddenFence(win);
                 LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.FenceCreation, $"Added fence '{fence.Title}' to hidden list at startup");
             }
-
             // Hide click
             miHide.Click += (s, e) =>
             {
@@ -4362,8 +4601,6 @@ LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, "Tab0 s
                 TrayManager.AddHiddenFence(win);
                 LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.General, $"Triggered Hide Fence for '{fence.Title}'");
             };
-
-
             // Handle manual resize to update both Height and UnrolledHeight
             win.SizeChanged += (s, e) =>
             {
@@ -4371,76 +4608,64 @@ LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, "Tab0 s
                 string fenceId = win.Tag?.ToString();
                 if (string.IsNullOrEmpty(fenceId))
                 {
-                   
+
                     return;
                 }
 
-              
                 // Skip updates if this fence is currently in a rollup/rolldown transition
                 if (_fencesInTransition.Contains(fenceId))
                 {
-                 
+
                     return;
                 }
-
                 // Find the current fence in FenceDataManager.FenceData using ID
                 var currentFence = FenceDataManager.FenceData.FirstOrDefault(f => f.Id?.ToString() == fenceId);
                 if (currentFence != null)
                 {
-              
+
                     double newHeight = e.NewSize.Height;
                     double newWidth = e.NewSize.Width;
                     double oldHeight = Convert.ToDouble(currentFence.Height?.ToString() ?? "0");
                     double oldUnrolledHeight = Convert.ToDouble(currentFence.UnrolledHeight?.ToString() ?? "0");
-
                     bool isRolled = currentFence.IsRolled?.ToString().ToLower() == "true";
 
-                  
                     // Update Width and Height with the actual new values
                     currentFence.Width = newWidth;
                     currentFence.Height = newHeight;
-                
 
                     // Handle UnrolledHeight update
                     if (!isRolled)
                     {
-                 
+
                         if (Math.Abs(newHeight - 26) > 5) // Only if height is significantly different from rolled-up height
                         {
                             double heightDifference = Math.Abs(newHeight - oldUnrolledHeight);
-                            //       DebugLog("LOGIC", fenceId, $"Height difference from old UnrolledHeight: {heightDifference:F1}");
-
+                            // DebugLog("LOGIC", fenceId, $"Height difference from old UnrolledHeight: {heightDifference:F1}");
                             currentFence.UnrolledHeight = newHeight;
-                            //      DebugLog("UPDATE", fenceId, $"UPDATED UnrolledHeight from {oldUnrolledHeight:F1} to {newHeight:F1}");
+                            // DebugLog("UPDATE", fenceId, $"UPDATED UnrolledHeight from {oldUnrolledHeight:F1} to {newHeight:F1}");
                         }
                         else
                         {
-                          
+
                         }
                     }
                     else
                     {
-                 
-                    }
 
+                    }
                     // Save to JSON
-              
+                 //   MessageBox.Show("Debug: SizeChanged handler called. Saving fence data.");
                     FenceDataManager.SaveFenceData();
                     var verifyFence = FenceDataManager.FenceData.FirstOrDefault(f => f.Id?.ToString() == fenceId);
                     double verifyHeight = Convert.ToDouble(verifyFence.Height?.ToString() ?? "0");
                     double verifyUnrolled = Convert.ToDouble(verifyFence.UnrolledHeight?.ToString() ?? "0");
 
-
-                   
                 }
                 else
                 {
-                    
+
                 }
             };
-
-
-
             win.KeyDown += (sender, e) =>
             {
                 if (IconDragDropManager.IsDragging && e.Key == Key.Escape)
@@ -4449,43 +4674,78 @@ LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, "Tab0 s
                     IconDragDropManager.CancelDrag();
                     e.Handled = true;
                 }
-
-
-                 };
-
-
+            };
             // Make window focusable for key events during drag
             win.Focusable = true;
-
-
             win.Show();
 
 
 
-            miNewFence.Click += (s, e) =>
+
+
+            // --- FIX START ---
+
+            // 1. Install the Message Hook (Enforces the 90% size limit)
+            win.SourceInitialized += (s, e) =>
             {
+                var source = HwndSource.FromHwnd(new WindowInteropHelper(win).Handle);
+                source?.AddHook(WndProc);
+            };
+            // (Safety: if already initialized)
+            if (PresentationSource.FromVisual(win) is HwndSource existingSource)
+            {
+                existingSource.AddHook(WndProc);
+            }
 
+            // 2. Reactive State Fix (The "Trick")
+            // If Snap Assist sets state to Maximized, we immediately force it back to Normal.
+            // This ensures the Resize Grip (bottom-right) remains visible and functional.
+            win.StateChanged += (sender, args) =>
+            {
+                if (win.WindowState == WindowState.Maximized)
+                {
+                    // We use Dispatcher to let the OS finish its "snap" calculation first, 
+                    // then we immediately override the mode back to Normal.
+                    win.Dispatcher.BeginInvoke(new Action(() =>
+                    {
+                        win.WindowState = WindowState.Normal;
 
-                System.Windows.Point mousePosition = win.PointToScreen(new System.Windows.Point(0, 0));
-                mousePosition = Mouse.GetPosition(win);
-                System.Windows.Point absolutePosition = win.PointToScreen(mousePosition);
-                LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.FenceCreation, $"Creating new fence at position: X={absolutePosition.X}, Y={absolutePosition.Y}");
-                CreateNewFence("New Fence", "Data", absolutePosition.X, absolutePosition.Y);
+                        LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI,
+                            "Snap Assist intercepted: Reverted Maximized state to Normal to preserve controls.");
+                    }));
+                }
             };
 
-            miNewPortalFence.Click += (s, e) =>
-            {
 
-
-                System.Windows.Point mousePosition = win.PointToScreen(new System.Windows.Point(0, 0));
-                mousePosition = Mouse.GetPosition(win);
-                System.Windows.Point absolutePosition = win.PointToScreen(mousePosition);
-                LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.FenceCreation, $"Creating new portal fence at position: X={absolutePosition.X}, Y={absolutePosition.Y}");
-                CreateNewFence("New Portal Fence", "Portal", absolutePosition.X, absolutePosition.Y);
-            };
+            // --- FIX END ---
 
 
 
+
+
+
+
+
+
+
+            LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.FenceCreation,
+        $"Fence '{fence.Title}' successfully created and displayed");
+            //miNewFence.Click += (s, e) =>
+            //{
+            // System.Windows.Point mousePosition = win.PointToScreen(new System.Windows.Point(0, 0));
+            // mousePosition = Mouse.GetPosition(win);
+            // System.Windows.Point absolutePosition = win.PointToScreen(mousePosition);
+            // LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.FenceCreation, $"Creating new fence at position: X={absolutePosition.X}, Y={absolutePosition.Y}");
+            // CreateNewFence("New Fence", "Data", absolutePosition.X, absolutePosition.Y);
+            //};
+            //miNewPortalFence.Click += (s, e) =>
+            //{
+            // System.Windows.Point mousePosition = win.PointToScreen(new System.Windows.Point(0, 0));
+            // mousePosition = Mouse.GetPosition(win);
+            // System.Windows.Point absolutePosition = win.PointToScreen(mousePosition);
+            // LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.FenceCreation, $"Creating new portal fence at position: X={absolutePosition.X}, Y={absolutePosition.Y}");
+            // CreateNewFence("New Portal Fence", "Portal", absolutePosition.X, absolutePosition.Y);
+            //};
             // Check if title should be bold
             bool isBoldTitle = false;
             try
@@ -4493,7 +4753,6 @@ LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, "Tab0 s
                 isBoldTitle = fence.BoldTitleText?.ToString().ToLower() == "true";
             }
             catch { /* Safe fallback */ }
-
             // Get title text color or use default white
             System.Windows.Media.Brush titleTextBrush = System.Windows.Media.Brushes.White; // Default
             try
@@ -4509,9 +4768,6 @@ LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, "Tab0 s
             {
                 titleTextBrush = System.Windows.Media.Brushes.White; // Fallback
             }
-
-
-
             // Get title text size from fence data
             double titleFontSize = 12; // Default Medium size
             try
@@ -4534,7 +4790,6 @@ LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, "Tab0 s
             {
                 titleFontSize = 12; // Fallback to Medium
             }
-
             Label titlelabel = new Label
             {
                 Content = fence.Title.ToString(),
@@ -4545,14 +4800,8 @@ LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, "Tab0 s
                 FontWeight = isBoldTitle ? FontWeights.Bold : FontWeights.Normal,
                 FontSize = titleFontSize // Apply custom title text size
             };
-
-
-
-
-
             Grid.SetColumn(titlelabel, 1);
             titleGrid.Children.Add(titlelabel);
-
             TextBox titletb = new TextBox
             {
                 HorizontalContentAlignment = HorizontalAlignment.Center,
@@ -4560,20 +4809,16 @@ LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, "Tab0 s
             };
             Grid.SetColumn(titletb, 1);
             titleGrid.Children.Add(titletb);
-
             // Move lockIcon to the Grid
             Grid.SetColumn(lockIcon, 2);
             Grid.SetRow(lockIcon, 0);
             titleGrid.Children.Add(lockIcon);
-
             // Add the titleGrid to the DockPanel
             DockPanel.SetDock(titleGrid, Dock.Top);
             dp.Children.Add(titleGrid);
-
             // TABS FEATURE: Add TabStrip conditionally for tabbed fences
             StackPanel tabStrip = null;
             bool tabsEnabled = fence.TabsEnabled?.ToString().ToLower() == "true";
-
             if (tabsEnabled)
             {
                 tabStrip = new StackPanel
@@ -4584,31 +4829,25 @@ LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, "Tab0 s
                     Margin = new Thickness(0, 1, 0, 0), // Tighter margins
                     VerticalAlignment = VerticalAlignment.Bottom // Align to bottom for better visual connection
                 };
-
                 DockPanel.SetDock(tabStrip, Dock.Top);
                 dp.Children.Add(tabStrip);
-
                 LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.FenceCreation, $"Added TabStrip for tabbed fence '{fence.Title}'");
                 // TABS FEATURE: Create tab buttons from Tabs array
                 try
                 {
                     var tabs = fence.Tabs as JArray ?? new JArray();
                     int currentTab = Convert.ToInt32(fence.CurrentTab?.ToString() ?? "0");
-
                     // Ensure CurrentTab is within bounds
                     if (currentTab >= tabs.Count)
                     {
                         currentTab = 0;
                     }
-
                     for (int i = 0; i < tabs.Count; i++)
                     {
                         var tab = tabs[i] as JObject;
                         if (tab == null) continue;
-
                         string tabName = tab["TabName"]?.ToString() ?? $"Tab {i + 1}";
                         bool isActiveTab = (i == currentTab);
-
                         Button tabButton = new Button
                         {
                             Content = tabName,
@@ -4625,7 +4864,6 @@ LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, "Tab0 s
                             // Custom template to achieve rounded top corners only
                             Template = CreateTabButtonTemplate()
                         };
-
                         // TABS FEATURE: Get fence color scheme for theming
                         string fenceColorName = fence.CustomColor?.ToString() ?? SettingsManager.SelectedColor;
                         var colorScheme = Utility.GenerateTabColorScheme(fenceColorName);
@@ -4662,7 +4900,6 @@ LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, "Tab0 s
                                 btn.Background = new SolidColorBrush(colorScheme.inactiveTab);
                             };
                         }
-
                         // TABS FEATURE: Add click handler for tab switching with better reliability
                         tabButton.Click += (s, e) =>
                         {
@@ -4670,10 +4907,8 @@ LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, "Tab0 s
                             {
                                 var clickedButton = s as Button;
                                 int newTabIndex = Convert.ToInt32(clickedButton.Tag);
-
                                 LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI,
                                     $"Tab button clicked: index {newTabIndex} for fence '{fence.Title}'");
-
                                 // Use the fence object directly instead of searching by window
                                 SwitchTabByFence(fence, newTabIndex, win);
                             }
@@ -4685,14 +4920,12 @@ LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, "Tab0 s
                         };
                         // TABS FEATURE: Add right-click context menu for tab management
                         ContextMenu tabContextMenu = new ContextMenu();
-
                         MenuItem miAddTab = new MenuItem { Header = "Add New Tab" };
                         MenuItem miRenameTab = new MenuItem { Header = "Rename Tab" };
                         MenuItem miDeleteTab = new MenuItem { Header = "Delete Tab" };
                         Separator miSeparator1 = new Separator();
-                        MenuItem miMoveLeft = new MenuItem { Header = "Move Left", IsEnabled = false }; 
-                        MenuItem miMoveRight = new MenuItem { Header = "Move Right", IsEnabled = false }; 
-
+                        MenuItem miMoveLeft = new MenuItem { Header = "Move Left", IsEnabled = false };
+                        MenuItem miMoveRight = new MenuItem { Header = "Move Right", IsEnabled = false };
                         tabContextMenu.Items.Add(miAddTab);
                         tabContextMenu.Items.Add(miSeparator1);
                         tabContextMenu.Items.Add(miRenameTab);
@@ -4700,19 +4933,15 @@ LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, "Tab0 s
                         tabContextMenu.Items.Add(new Separator());
                         tabContextMenu.Items.Add(miMoveLeft);
                         tabContextMenu.Items.Add(miMoveRight);
-
                         // Capture current context for event handlers
                         int capturedTabIndex = i;
-
                         miAddTab.Click += (s, e) => AddNewTab(fence, win);
                         miRenameTab.Click += (s, e) => RenameTab(fence, capturedTabIndex, win);
                         miDeleteTab.Click += (s, e) => DeleteTab(fence, capturedTabIndex, win);
-
                         tabButton.ContextMenu = tabContextMenu;
                         tabStrip.Children.Add(tabButton);
                         LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.FenceCreation, $"Added tab button '{tabName}' (index {i}, active: {isActiveTab})");
                     }
-
                     LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.FenceCreation, $"Created {tabs.Count} tab buttons for fence '{fence.Title}'");
                     // TABS FEATURE: Add [+] button for adding new tabs
                     Button addTabButton = new Button
@@ -4731,7 +4960,6 @@ LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, "Tab0 s
                         Template = CreateTabButtonTemplate(),
                         ToolTip = "Add new tab"
                     };
-
                     // Style the [+] button with muted colors using existing color scheme
                     string addButtonFenceColor = fence.CustomColor?.ToString() ?? SettingsManager.SelectedColor;
                     var addButtonColorScheme = Utility.GenerateTabColorScheme(addButtonFenceColor);
@@ -4739,7 +4967,6 @@ LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, "Tab0 s
                     addTabButton.Foreground = new SolidColorBrush(addButtonColorScheme.borderColor);
                     addTabButton.BorderBrush = new SolidColorBrush(addButtonColorScheme.borderColor);
                     addTabButton.Opacity = 0.8;
-
                     // Add hover effects
                     addTabButton.MouseEnter += (s, e) =>
                     {
@@ -4764,27 +4991,18 @@ LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, "Tab0 s
                             LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI, $"Error adding new tab: {ex.Message}");
                         }
                     };
-
                     tabStrip.Children.Add(addTabButton);
-                    LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.FenceCreation, $"Added [+] button for fence '{fence.Title}'");
+                    LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.FenceCreation, $"Added [+] button for fence '{fence.Title}'");
                 }
                 catch (Exception ex)
                 {
                     LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.FenceCreation, $"Error creating tab buttons for fence '{fence.Title}': {ex.Message}");
                 }
-
             }
             else
             {
-
-
-
                 LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.FenceCreation, $"Skipped TabStrip for non-tabbed fence '{fence.Title}'");
             }
-
-
-
-
             string fenceId = win.Tag?.ToString();
             if (string.IsNullOrEmpty(fenceId))
             {
@@ -4798,53 +5016,215 @@ LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, "Tab0 s
                 return;
             }
             bool isLocked = currentFence.IsLocked?.ToString().ToLower() == "true";
-
             titlelabel.MouseDown += (sender, e) =>
             {
                 if (e.ClickCount == 2)
                 {
-
-
-                    LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.FenceCreation, $"Entering edit mode for fence: {fence.Title}");
-
-                    titletb.Text = titlelabel.Content.ToString();
-                    titlelabel.Visibility = Visibility.Collapsed;
-                    titletb.Visibility = Visibility.Visible;
-                    win.ShowActivated = true;
-                    win.Activate();
-                    Keyboard.Focus(titletb);
-                    titletb.SelectAll();
-                    LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.FenceCreation, $"Focus set to title textbox for fence: {fence.Title}");
-                }
-                //  else if (e.LeftButton == MouseButtonState.Pressed)
-                else if (e.LeftButton == MouseButtonState.Pressed)
-                {
-                    string fenceId = win.Tag?.ToString();
-                    if (string.IsNullOrEmpty(fenceId))
+                    // Roll-up/roll-down logic (swapped from Ctrl+Click)
+                    NonActivatingWindow win = FindVisualParent<NonActivatingWindow>(titlelabel);
+                    string fenceId = win?.Tag?.ToString();
+                    // DebugLog("IMMEDIATE", fenceId ?? "UNKNOWN", $"Ctrl+Click FIRST LINE - win.Height:{win?.Height ?? -1:F1}");
+                    if (string.IsNullOrEmpty(fenceId) || win == null)
                     {
-                        LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.FenceCreation, $"Fence Id is missing for window '{win.Title}' during MouseDown");
+                        // DebugLog("ERROR", fenceId ?? "UNKNOWN", "Missing window or fenceId in Ctrl+Click");
                         return;
                     }
+                    // DebugLog("EVENT", fenceId, "Ctrl+Click TRIGGERED");
+                    // DebugLogFenceState("CTRL_CLICK_START", fenceId, win);
                     dynamic currentFence = FenceDataManager.FenceData.FirstOrDefault(f => f.Id?.ToString() == fenceId);
                     if (currentFence == null)
                     {
-                        LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.FenceCreation, $"Fence with Id '{fenceId}' not found in FenceDataManager.FenceData during MouseDown");
+                        // DebugLog("ERROR", fenceId, "Fence not found in FenceDataManager.FenceData for Ctrl+Click");
                         return;
                     }
-                    bool isLocked = currentFence.IsLocked?.ToString().ToLower() == "true";
-                    if (!isLocked)
+                    bool isRolled = currentFence.IsRolled?.ToString().ToLower() == "true";
+                    // Get fence data height (always accurate from SizeChanged handler)
+                    double fenceHeight = Convert.ToDouble(currentFence.Height?.ToString() ?? "130");
+                    double windowHeight = win.Height;
+                    // DebugLog("SYNC_CHECK", fenceId, $"Before sync - FenceHeight:{fenceHeight:F1} | WindowHeight:{windowHeight:F1} | IsRolled:{isRolled}");
+                    if (!isRolled)
                     {
-                        win.DragMove();
-                        LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.FenceCreation, $"Dragging fence '{currentFence.Title}'");
+                        // ROLLUP: Use fence data height (always current)
+                        // DebugLog("ACTION", fenceId, "Starting ROLLUP");
+                        _fencesInTransition.Add(fenceId);
+                        // DebugLog("TRANSITION", fenceId, "Added to transition state");
+                        // FINAL FIX: Use fence data height which is always accurate from SizeChanged handler
+                        double currentHeight = fenceHeight;
+                        // DebugLog("ROLLUP_HEIGHT_SOURCE", fenceId, $"Using fence.Height:{fenceHeight:F1} (win.Height was stale:{win.Height:F1})");
+                        // Save current fence height as UnrolledHeight
+                        IDictionary<string, object> fenceDict = currentFence as IDictionary<string, object> ?? ((JObject)currentFence).ToObject<IDictionary<string, object>>();
+                        fenceDict["UnrolledHeight"] = currentHeight;
+                        fenceDict["IsRolled"] = "true";
+                        int fenceIndex = FenceDataManager.FenceData.FindIndex(f => f.Id?.ToString() == fenceId);
+                        if (fenceIndex >= 0)
+                        {
+                            FenceDataManager.FenceData[fenceIndex] = JObject.FromObject(fenceDict);
+                        }
+                        FenceDataManager.SaveFenceData();
+                        // DebugLog("SAVE", fenceId, $"Saved ROLLUP state | UnrolledHeight:{currentHeight:F1} | IsRolled:true");
+                        // Roll up animation - starts from current height
+                        double targetHeight = 26;
+                        var heightAnimation = new DoubleAnimation(currentHeight, targetHeight, TimeSpan.FromSeconds(0.3))
+                        {
+                            EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseInOut }
+                        };
+                        heightAnimation.Completed += (animSender, animArgs) =>
+                        {
+                            // DebugLog("ANIMATION", fenceId, "ROLLUP animation completed");
+                            // Update WrapPanel visibility
+                            var border = win.Content as Border;
+                            if (border != null)
+                            {
+                                var dockPanel = border.Child as DockPanel;
+                                if (dockPanel != null)
+                                {
+                                    var scrollViewer = dockPanel.Children.OfType<ScrollViewer>().FirstOrDefault();
+                                    if (scrollViewer != null)
+                                    {
+                                        var wpcont = scrollViewer.Content as WrapPanel;
+                                        if (wpcont != null)
+                                        {
+                                            wpcont.Visibility = Visibility.Collapsed;
+                                            // DebugLog("UI", fenceId, "Set WrapPanel visibility to Collapsed");
+                                        }
+                                    }
+                                }
+                            }
+                            _fencesInTransition.Remove(fenceId);
+                            // DebugLog("TRANSITION", fenceId, "Removed from transition state");
+                            // DebugLogFenceState("ROLLUP_COMPLETE", fenceId, win);
+                        };
+                        win.BeginAnimation(Window.HeightProperty, heightAnimation);
+                        // DebugLog("ANIMATION", fenceId, $"Started ROLLUP animation from {currentHeight:F1} to height {targetHeight:F1}");
                     }
                     else
                     {
-                        LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.FenceCreation, $"DragMove blocked for locked fence '{currentFence.Title}'");
+                        // ROLLDOWN: Roll down to UnrolledHeight
+                        double unrolledHeight = Convert.ToDouble(currentFence.UnrolledHeight?.ToString() ?? "130");
+                        // // DebugLog("ACTION", fenceId, $"Starting ROLLDOWN to {unrolledHeight:F1}");
+                        _fencesInTransition.Add(fenceId);
+                        // DebugLog("TRANSITION", fenceId, "Added to transition state");
+                        IDictionary<string, object> fenceDict = currentFence as IDictionary<string, object> ?? ((JObject)currentFence).ToObject<IDictionary<string, object>>();
+                        fenceDict["IsRolled"] = "false";
+                        int fenceIndex = FenceDataManager.FenceData.FindIndex(f => f.Id?.ToString() == fenceId);
+                        if (fenceIndex >= 0)
+                        {
+                            FenceDataManager.FenceData[fenceIndex] = JObject.FromObject(fenceDict);
+                        }
+                        FenceDataManager.SaveFenceData();
+                        // DebugLog("SAVE", fenceId, $"Saved ROLLDOWN state | IsRolled:false | TargetHeight:{unrolledHeight:F1}");
+                        var heightAnimation = new DoubleAnimation(win.Height, unrolledHeight, TimeSpan.FromSeconds(0.3))
+                        {
+                            EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseInOut }
+                        };
+                        heightAnimation.Completed += (animSender, animArgs) =>
+                        {
+                            // DebugLog("ANIMATION", fenceId, "ROLLDOWN animation completed");
+                            // Update WrapPanel visibility
+                            var border = win.Content as Border;
+                            if (border != null)
+                            {
+                                var dockPanel = border.Child as DockPanel;
+                                if (dockPanel != null)
+                                {
+                                    var scrollViewer = dockPanel.Children.OfType<ScrollViewer>().FirstOrDefault();
+                                    if (scrollViewer != null)
+                                    {
+                                        var wpcont = scrollViewer.Content as WrapPanel;
+                                        if (wpcont != null)
+                                        {
+                                            wpcont.Visibility = Visibility.Visible;
+                                            // DebugLog("UI", fenceId, "Set WrapPanel visibility to Visible");
+                                        }
+                                    }
+                                }
+                            }
+                            _fencesInTransition.Remove(fenceId);
+                            // DebugLog("TRANSITION", fenceId, "Removed from transition state");
+                            // DebugLogFenceState("ROLLDOWN_COMPLETE", fenceId, win);
+                        };
+                        win.BeginAnimation(Window.HeightProperty, heightAnimation);
+                        // DebugLog("ANIMATION", fenceId, $"Started ROLLDOWN animation to height {unrolledHeight:F1}");
+                    }
+                    e.Handled = true;
+                }
+                else if (e.LeftButton == MouseButtonState.Pressed)
+                {
+                    if ((Keyboard.Modifiers & ModifierKeys.Control) != 0)
+                    {
+                        // Rename fence (swapped from double-click)
+                        LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.FenceCreation, $"Entering edit mode for fence: {fence.Title}");
+                        titletb.Text = titlelabel.Content.ToString();
+                        titlelabel.Visibility = Visibility.Collapsed;
+                        titletb.Visibility = Visibility.Visible;
+                        win.ShowActivated = true;
+                        win.Activate();
+                        Keyboard.Focus(titletb);
+                        titletb.SelectAll();
+                        LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.FenceCreation, $"Focus set to title textbox for fence: {fence.Title}");
+                        e.Handled = true;
+                    }
+                    else
+                    {
+                        string fenceId = win.Tag?.ToString();
+                        if (string.IsNullOrEmpty(fenceId))
+                        {
+                            LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.FenceCreation, $"Fence Id is missing for window '{win.Title}' during MouseDown");
+                            return;
+                        }
+                        dynamic currentFence = FenceDataManager.FenceData.FirstOrDefault(f => f.Id?.ToString() == fenceId);
+                        if (currentFence == null)
+                        {
+                            LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.FenceCreation, $"Fence with Id '{fenceId}' not found in FenceDataManager.FenceData during MouseDown");
+                            return;
+                        }
+                        bool isLocked = currentFence.IsLocked?.ToString().ToLower() == "true";
+                        if (!isLocked)
+                        {
+                            win.DragMove();
+                            LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.FenceCreation, $"Dragging fence '{currentFence.Title}'");
+                        }
+                        else
+                        {
+                            LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.FenceCreation, $"DragMove blocked for locked fence '{currentFence.Title}'");
+                        }
                     }
                 }
             };
-
-
+            //titletb.KeyDown += (sender, e) =>
+            //{
+            //    if (e.Key == Key.Enter)
+            //    {
+            //        string originalTitle = fence.Title.ToString();
+            //        string newTitle = titletb.Text;
+            //        //Process through InterCore for special triggers
+            //        string finalTitle = InterCore.ProcessTitleChange(fence, newTitle, originalTitle);
+            //        fence.Title = finalTitle;
+            //        titlelabel.Content = finalTitle;
+            //        win.Title = finalTitle;
+            //        titletb.Visibility = Visibility.Collapsed;
+            //        titlelabel.Visibility = Visibility.Visible;
+            //        FenceDataManager.SaveFenceData();
+            //        win.ShowActivated = false;
+            //        LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.FenceCreation, $"Exited edit mode via Enter, final title for fence: {fence.Title}");
+            //        win.Focus();
+            //    }
+            //};
+            //titletb.LostFocus += (sender, e) =>
+            //{
+            //    string originalTitle = fence.Title.ToString();
+            //    string newTitle = titletb.Text;
+            //    //Process through InterCore for special triggers
+            //    string finalTitle = InterCore.ProcessTitleChange(fence, newTitle, originalTitle);
+            //    fence.Title = finalTitle;
+            //    titlelabel.Content = finalTitle;
+            //    win.Title = finalTitle;
+            //    titletb.Visibility = Visibility.Collapsed;
+            //    titlelabel.Visibility = Visibility.Visible;
+            //    FenceDataManager.SaveFenceData();
+            //    win.ShowActivated = false;
+            //    LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.FenceCreation, $"Exited edit mode via click, final title for fence: {fence.Title}");
+            //};
 
 
             titletb.KeyDown += (sender, e) =>
@@ -4854,44 +5234,100 @@ LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, "Tab0 s
                     string originalTitle = fence.Title.ToString();
                     string newTitle = titletb.Text;
 
-                    //Process through InterCore for special triggers
+                    // Process through InterCore for special triggers
                     string finalTitle = InterCore.ProcessTitleChange(fence, newTitle, originalTitle);
 
-                    fence.Title = finalTitle;
+                    // --- FIX START: Update LIVE Data ---
+                    // Get the ID to find the fresh object in the global list
+                    string id = fence.Id?.ToString();
+                    var liveFence = GetFenceData().FirstOrDefault(f => f.Id?.ToString() == id);
+
+                    if (liveFence != null)
+                    {
+                        // Update the live object in the list
+                        // Handle both JObject (JSON) and ExpandoObject (New Fence)
+                        if (liveFence is Newtonsoft.Json.Linq.JObject jFence)
+                            jFence["Title"] = finalTitle;
+                        else
+                            liveFence.Title = finalTitle;
+
+                        // Also update the local reference just in case
+                        fence.Title = finalTitle;
+                    }
+                    // --- FIX END ---
+
+                    // Update UI
                     titlelabel.Content = finalTitle;
                     win.Title = finalTitle;
                     titletb.Visibility = Visibility.Collapsed;
                     titlelabel.Visibility = Visibility.Visible;
+
+                    // Save the global list which now contains the updated title
                     FenceDataManager.SaveFenceData();
+
                     win.ShowActivated = false;
-                    LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.FenceCreation, $"Exited edit mode via Enter, final title for fence: {fence.Title}");
+                    LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.FenceCreation, $"Exited edit mode via Enter, final title for fence: {finalTitle}");
                     win.Focus();
                 }
             };
 
+            // 2. Handle Focus Loss (Save)
             titletb.LostFocus += (sender, e) =>
             {
                 string originalTitle = fence.Title.ToString();
                 string newTitle = titletb.Text;
 
-                //Process through InterCore for special triggers
+                // Process through InterCore for special triggers
                 string finalTitle = InterCore.ProcessTitleChange(fence, newTitle, originalTitle);
 
-                fence.Title = finalTitle;
+                // --- FIX START: Update LIVE Data ---
+                string id = fence.Id?.ToString();
+                var liveFence = GetFenceData().FirstOrDefault(f => f.Id?.ToString() == id);
+
+                if (liveFence != null)
+                {
+                    if (liveFence is Newtonsoft.Json.Linq.JObject jFence)
+                        jFence["Title"] = finalTitle;
+                    else
+                        liveFence.Title = finalTitle;
+
+                    fence.Title = finalTitle;
+                }
+                // --- FIX END ---
+
+                // Update UI
                 titlelabel.Content = finalTitle;
                 win.Title = finalTitle;
                 titletb.Visibility = Visibility.Collapsed;
                 titlelabel.Visibility = Visibility.Visible;
+
+                // Save
                 FenceDataManager.SaveFenceData();
+
                 win.ShowActivated = false;
-                LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.FenceCreation, $"Exited edit mode via click, final title for fence: {fence.Title}");
+                LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.FenceCreation, $"Exited edit mode via click, final title for fence: {finalTitle}");
             };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
             WrapPanel wpcont = new WrapPanel();
             ScrollViewer wpcontscr = new ScrollViewer
             {
                 Content = wpcont,
                 VerticalScrollBarVisibility = SettingsManager.DisableFenceScrollbars ? ScrollBarVisibility.Hidden : ScrollBarVisibility.Auto,
-              //  HorizontalScrollBarVisibility = SettingsManager.DisableFenceScrollbars ? ScrollBarVisibility.Hidden : ScrollBarVisibility.Auto
+                // HorizontalScrollBarVisibility = SettingsManager.DisableFenceScrollbars ? ScrollBarVisibility.Hidden : ScrollBarVisibility.Auto
             };
             // Προσθήκη watermark για Portal Fences
             if (fence.ItemsType?.ToString() == "Portal")
@@ -4902,39 +5338,49 @@ LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, "Tab0 s
                     wpcontscr.Background = new ImageBrush
                     {
                         ImageSource = new BitmapImage(new Uri("pack://application:,,,/Resources/portal.png")),
-                        //  Opacity = 0.2,
+                        // Opacity = 0.2,
                         Opacity = opacity,
                         Stretch = Stretch.UniformToFill
                     };
                 }
             }
-
-
             dp.Children.Add(wpcontscr);
+
 
             void InitContent()
             {
-                // Apply initial visibility based on IsRolled
+                // Handle Note fences differently - they don't use WrapPanel
+                if (fence.ItemsType?.ToString() == "Note")
+                {
+                    LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.FenceCreation,
+                        $"Creating Note fence content for '{fence.Title}'");
+                    // Remove the ScrollViewer and WrapPanel, add TextBox directly to DockPanel
+                    dp.Children.Remove(wpcontscr);
+                    // Create note content using NoteFenceManager
+                    TextBox noteTextBox = NoteFenceManager.CreateNoteContent(fence, dp);
+                    // Apply initial visibility based on IsRolled
+                    bool isNoteRolled = fence.IsRolled?.ToString().ToLower() == "true";
+                    noteTextBox.Visibility = isNoteRolled ? Visibility.Collapsed : Visibility.Visible;
+                    LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.FenceCreation,
+                        $"Set initial Note content visibility to {(isNoteRolled ? "Collapsed" : "Visible")} for fence '{fence.Title}'");
+                    return; // Exit early for Note fences
+                }
+                // Apply initial visibility based on IsRolled for Data/Portal fences
                 bool isRolled = fence.IsRolled?.ToString().ToLower() == "true";
                 wpcont.Visibility = isRolled ? Visibility.Collapsed : Visibility.Visible;
                 LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.FenceCreation, $"Set initial WrapPanel visibility to {(isRolled ? "Collapsed" : "Visible")} for fence '{fence.Title}' in InitContent");
-
-  
-
                 wpcont.Children.Clear();
                 if (fence.ItemsType?.ToString() == "Data")
                 {
                     // TABS FEATURE: Determine which items to load based on tabs configuration
                     JArray items = null;
                     bool tabsEnabled = fence.TabsEnabled?.ToString().ToLower() == "true";
-
                     if (tabsEnabled)
                     {
                         try
                         {
                             var tabs = fence.Tabs as JArray ?? new JArray();
                             int currentTab = Convert.ToInt32(fence.CurrentTab?.ToString() ?? "0");
-
                             // Validate CurrentTab is within bounds
                             if (currentTab >= 0 && currentTab < tabs.Count)
                             {
@@ -4973,7 +5419,6 @@ LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, "Tab0 s
                         LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.FenceCreation,
                             $"Tabs disabled, loading main Items for fence '{fence.Title}'");
                     }
-
                     if (items != null)
                     {
                         // Sort items by DisplayOrder before adding to WrapPanel
@@ -4991,13 +5436,10 @@ LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, "Tab0 s
                                 return 0;
                             })
                             .ToList();
-
                         LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.FenceCreation,
                             $"Loading {sortedItems.Count} items in display order for fence '{fence.Title}' {(tabsEnabled ? "(from active tab)" : "(from main Items)")}");
-
                         foreach (dynamic icon in sortedItems)
                         {
-
                             AddIcon(icon, wpcont);
                             StackPanel sp = wpcont.Children[wpcont.Children.Count - 1] as StackPanel;
                             if (sp != null)
@@ -5018,7 +5460,6 @@ LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, "Tab0 s
                                 bool itemIsLink = iconDict.ContainsKey("IsLink") && (bool)iconDict["IsLink"];
                                 bool itemIsNetwork = iconDict.ContainsKey("IsNetwork") && (bool)iconDict["IsNetwork"];
                                 bool allowNetworkChecking = _options.CheckNetworkPaths ?? false;
-
                                 if (!itemIsLink && (!itemIsNetwork || allowNetworkChecking))
                                 {
                                     targetChecker.AddCheckAction(filePath, () => UpdateIcon(sp, filePath, isFolder), isFolder);
@@ -5039,211 +5480,8 @@ LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, "Tab0 s
                                     }
                                 }
 
-                                ContextMenu mn = new ContextMenu();
-                                MenuItem miRunAsAdmin = new MenuItem { Header = "Run as administrator" };
-                                MenuItem miEdit = new MenuItem { Header = "Edit..." };
-                                MenuItem miMove = new MenuItem { Header = "Move..." };
-                                MenuItem miRemove = new MenuItem { Header = "Remove" };
-                                MenuItem miFindTarget = new MenuItem { Header = "Open target folder..." };
-                                MenuItem miCopyPath = new MenuItem { Header = "Copy path" };
-                                MenuItem miCopyFolder = new MenuItem { Header = "Folder path" };
-                                MenuItem miCopyFullPath = new MenuItem { Header = "Full path" };
-                                miCopyPath.Items.Add(miCopyFolder);
-                                miCopyPath.Items.Add(miCopyFullPath);
-
-                                // Add Copy Item functionality - CopyPasteManager integration
-                                MenuItem miCopyItem = new MenuItem { Header = "Copy Item" };
-
-                                mn.Items.Add(miEdit);
-                                mn.Items.Add(miMove);
-                                mn.Items.Add(miRemove);
-                                mn.Items.Add(new Separator());
-                                mn.Items.Add(miCopyItem);
-                                mn.Items.Add(new Separator());
-                                mn.Items.Add(miRunAsAdmin);
-                                mn.Items.Add(new Separator());
-                                mn.Items.Add(miCopyPath);
-                                mn.Items.Add(miFindTarget);
-                                sp.ContextMenu = mn;
-
-                                // Add dynamic menu state updates - make Copy Item enabled and handle CTRL+Right Click
-                                MenuItem miSendToDesktop = null; // Declare for conditional addition
-                                mn.Opened += (contextSender, contextArgs) =>
-                                {
-                                    // Update Copy Item enabled state dynamically when menu opens
-                                    miCopyItem.IsEnabled = true; // Copy should always be enabled for existing items
-
-                                    // Check if CTRL is pressed for "Send to Desktop" option
-                                    bool isCtrlPressed = (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control;
-
-                                    // Remove existing Send to Desktop if present
-                                    if (miSendToDesktop != null && mn.Items.Contains(miSendToDesktop))
-                                    {
-                                        mn.Items.Remove(miSendToDesktop);
-                                    }
-
-                                    // Add Send to Desktop if CTRL is pressed
-                                    if (isCtrlPressed)
-                                    {
-                                        miSendToDesktop = new MenuItem { Header = "Send to Desktop" };
-                                        miSendToDesktop.Click += (s, e) => CopyPasteManager.SendToDesktop(icon);
-
-                                        // Find Copy Item position and insert after it
-                                        int copyItemIndex = -1;
-                                        for (int i = 0; i < mn.Items.Count; i++)
-                                        {
-                                            if (mn.Items[i] is MenuItem mi && mi.Header.ToString() == "Copy Item")
-                                            {
-                                                copyItemIndex = i;
-                                                break;
-                                            }
-                                        }
-
-                                        if (copyItemIndex >= 0)
-                                        {
-                                            mn.Items.Insert(copyItemIndex + 1, miSendToDesktop);
-                                        }
-                                    }
-
-                                    LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI,
-                                        $"Updated context menu states - Copy available, CTRL pressed: {isCtrlPressed}");
-                                };
-
-
-                                miRunAsAdmin.IsEnabled = Utility.IsExecutableFile(filePath);
-
-                                // Add Copy Item event handler - CopyPasteManager integration
-                                miCopyItem.Click += (sender, e) => CopyPasteManager.CopyItem(icon, fence);
-
-                                miMove.Click += (sender, e) => ItemMoveDialog.ShowMoveDialog(icon, fence, win.Dispatcher);
-                                miEdit.Click += (sender, e) => EditItem(icon, fence, win);
-                                miRemove.Click += (sender, e) =>
-                                {
-                                    var items = fence.Items as JArray;
-                                    if (items != null)
-                                    {
-                                        var itemToRemove = items.FirstOrDefault(i => i["Filename"]?.ToString() == filePath);
-                                        if (itemToRemove != null)
-                                        {
-
-                                            LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.FenceCreation, $"Removing icon for {filePath} from fence");
-                                            var fade = new DoubleAnimation(1, 0, TimeSpan.FromSeconds(0.3));
-                                            fade.Completed += (s, a) =>
-                                            {
-                                                items.Remove(itemToRemove);
-                                                wpcont.Children.Remove(sp);
-                                                targetChecker.RemoveCheckAction(filePath);
-                                                FenceDataManager.SaveFenceData();
-
-                                                string shortcutPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "Shortcuts", System.IO.Path.GetFileName(filePath));
-                                                if (System.IO.File.Exists(shortcutPath))
-                                                {
-                                                    try
-                                                    {
-                                                        System.IO.File.Delete(shortcutPath);
-                                                        LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.FenceCreation, $"Deleted shortcut: {shortcutPath}");
-                                                    }
-                                                    catch (Exception ex)
-                                                    {
-                                                        LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.General, $"Failed to delete shortcut {shortcutPath}: {ex.Message}");
-                                                    }
-                                                }
-                                                // Delete backup shortcut if it exists
-                                                string tempShortcutsDir = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "Temp Shortcuts");
-                                                string backupPath = System.IO.Path.Combine(tempShortcutsDir, System.IO.Path.GetFileName(filePath));
-                                                if (System.IO.File.Exists(backupPath))
-                                                {
-                                                    try
-                                                    {
-                                                        System.IO.File.Delete(backupPath);
-                                                        LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.General, $"Deleted backup shortcut: {backupPath}");
-                                                    }
-                                                    catch (Exception ex)
-                                                    {
-                                                        LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.General, $"Failed to delete backup shortcut {backupPath}: {ex.Message}");
-                                                    }
-                                                }
-
-                                            };
-                                            sp.BeginAnimation(UIElement.OpacityProperty, fade);
-                                        }
-                                    }
-                                };
-
-                                miFindTarget.Click += (sender, e) =>
-                                {
-                                    string target = Utility.GetShortcutTarget(filePath);
-                                    if (!string.IsNullOrEmpty(target) && (System.IO.File.Exists(target) || System.IO.Directory.Exists(target)))
-                                    {
-                                        Process.Start("explorer.exe", $"/select,\"{target}\"");
-                                    }
-                                };
-
-                                miCopyFolder.Click += (sender, e) =>
-                                {
-                                    string folderPath = System.IO.Path.GetDirectoryName(Utility.GetShortcutTarget(filePath));
-                                    Clipboard.SetText(folderPath);
-                                    // Use LogManager instead of direct file writing
-                                    LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI,
-                                        $"Copied target folder path to clipboard: {folderPath}");
-                                };
-
-                                miCopyFullPath.Click += (sender, e) =>
-                                {
-                                    string targetPath = Utility.GetShortcutTarget(filePath);
-                                    Clipboard.SetText(targetPath);
-                                    // Use LogManager instead of direct file writing
-                                    LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI,
-                                        $"Copied target full path to clipboard: {targetPath}");
-                                };
-
-                                miRunAsAdmin.Click += (sender, e) =>
-                                {
-                                    string targetPath = Utility.GetShortcutTarget(filePath);
-                                    string runArguments = null;
-                                    if (System.IO.Path.GetExtension(filePath).ToLower() == ".lnk")
-                                    {
-                                        WshShell shell = new WshShell();
-                                        IWshShortcut shortcut = (IWshShortcut)shell.CreateShortcut(filePath);
-                                        runArguments = shortcut.Arguments;
-                                    }
-                                    ProcessStartInfo psi = new ProcessStartInfo
-                                    {
-                                        FileName = targetPath,
-                                        UseShellExecute = true,
-                                        Verb = "runas"
-                                    };
-                                    if (!string.IsNullOrEmpty(runArguments))
-                                    {
-                                        psi.Arguments = runArguments;
-                                        LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.FenceCreation, $"Run as admin with arguments: {runArguments} for {filePath}");
-                                    }
-
-                                    //LAUNCH ADD - CRITICAL FIX: Set working directory for administrator execution
-                                    if (System.IO.File.Exists(targetPath))
-                                    {
-                                        string workingDir = System.IO.Path.GetDirectoryName(targetPath);
-                                        if (!string.IsNullOrEmpty(workingDir) && System.IO.Directory.Exists(workingDir))
-                                        {
-                                            psi.WorkingDirectory = workingDir;
-                                            LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.General,
-                                                $"Set admin working directory: {workingDir}");
-                                        }
-                                    }
-
-
-                                    try
-                                    {
-                                        Process.Start(psi);
-                                        LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.FenceCreation, $"Successfully launched {targetPath} as admin");
-                                    }
-                                    catch (Exception ex)
-                                    {
-                                        LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.General, $"Failed to launch {targetPath} as admin: {ex.Message}");
-                                                   MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Error running as admin: {ex.Message}", "Error");
-
-                                    }
-                                };
+                                // FIX: Attach Centralized Context Menu
+                                AttachIconContextMenu(sp, icon, fence, win);
                             }
                         }
                     }
@@ -5256,7 +5494,6 @@ LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, "Tab0 s
                     }
                     catch (Exception ex)
                     {
-                        // MessageBox.Show($"Failed to initialize Portal Fence: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                         MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Failed to initialize Portal Fence: {ex.Message}", "Error");
                         FenceDataManager.FenceData.Remove(fence);
                         FenceDataManager.SaveFenceData();
@@ -5264,15 +5501,14 @@ LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, "Tab0 s
                     }
                 }
             }
+
+
             win.Drop += (sender, e) =>
             {
                 e.Handled = true;
-
                 if (e.Data.GetDataPresent(DataFormats.FileDrop))
                 {
-                    // string[] droppedFiles = (string[])e.Data.GetData(DataFormats.FileDrop);
                     string[] droppedFiles = null;
-
                     try
                     {
                         droppedFiles = (string[])e.Data.GetData(DataFormats.FileDrop);
@@ -5285,119 +5521,78 @@ LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, "Tab0 s
                             $"Error getting drop data: {dataEx.Message}");
                         return;
                     }
-
                     if (droppedFiles == null) return;
-
-
 
                     foreach (string droppedFile in droppedFiles)
                     {
-                        LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.FenceCreation,
+                        LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.FenceCreation,
                             $"Processing dropped item: '{droppedFile}'");
                         try
                         {
-
-                            // Enhanced Unicode path validation for folders and files
+                            // Path Validation (Existence / Folder Check)
                             bool fileExists = false;
                             bool directoryExists = false;
+                            bool isFolderFlag = false;
 
                             try
                             {
-                                LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.FenceCreation,
-                                    $"Checking existence of: '{droppedFile}'");
-
-                                fileExists = System.IO.File.Exists(droppedFile);
-                                directoryExists = System.IO.Directory.Exists(droppedFile);
-
-                                LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.FenceCreation,
-                                    $"Existence check results - File: {fileExists}, Directory: {directoryExists}");
+                                FileAttributes attrs = System.IO.File.GetAttributes(droppedFile);
+                                isFolderFlag = attrs.HasFlag(FileAttributes.Directory);
+                                directoryExists = isFolderFlag;
+                                fileExists = !isFolderFlag;
                             }
                             catch (Exception pathEx)
                             {
-                                LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.FenceCreation,
-                                    $"Path validation error for Unicode path '{droppedFile}': {pathEx.Message}");
+                                LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.FenceCreation, $"Path validation error: {pathEx.Message}");
                                 continue;
                             }
 
                             if (!fileExists && !directoryExists)
                             {
-                                LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.FenceCreation,
-                                    $"Invalid file or directory: '{droppedFile}'");
                                 MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Invalid file or directory: {droppedFile}", "Error");
                                 continue;
                             }
 
-                            if (directoryExists)
-                            {
-                                LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.FenceCreation,
-                                    $"Successfully validated Unicode folder: '{droppedFile}'");
-                            }
-
+                            // --- DATA FENCE LOGIC ---
                             if (fence.ItemsType?.ToString() == "Data")
                             {
-                                // Logic for Data Fences (shortcuts)
                                 if (!System.IO.Directory.Exists("Shortcuts")) System.IO.Directory.CreateDirectory("Shortcuts");
                                 string baseShortcutName = System.IO.Path.Combine("Shortcuts", System.IO.Path.GetFileName(droppedFile));
                                 string shortcutName = baseShortcutName;
                                 int counter = 1;
-
                                 bool isDroppedShortcut = System.IO.Path.GetExtension(droppedFile).ToLower() == ".lnk";
                                 bool isDroppedUrlFile = System.IO.Path.GetExtension(droppedFile).ToLower() == ".url";
-                                bool isWebLink = CoreUtilities.IsWebLinkShortcut(droppedFile); // Use our new helper method
-
+                                bool isWebLink = CoreUtilities.IsWebLinkShortcut(droppedFile);
                                 string targetPath;
                                 bool isFolder = false;
                                 string webUrl = null;
 
                                 if (isWebLink)
                                 {
-                                    // Handle web link shortcuts
                                     webUrl = CoreUtilities.ExtractWebUrlFromFile(droppedFile);
-                                    targetPath = webUrl; // For web links, target is the URL
-                                    isFolder = false; // Web links are never folders
-                                    LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.FenceCreation, $"Detected web link: {droppedFile} -> {webUrl}");
+                                    targetPath = webUrl;
+                                    isFolder = false;
                                 }
-
-
                                 else
                                 {
-                                    // Handle regular file/folder shortcuts with Unicode support
                                     if (isDroppedShortcut)
                                     {
-                                        // Use enhanced Unicode-safe shortcut target resolution
                                         targetPath = FilePathUtilities.GetShortcutTargetUnicodeSafe(droppedFile);
-
-                                        // Enhanced logging for debugging
-                                        LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.FenceCreation,
-                                            $"Unicode-safe target resolution for dropped shortcut: {droppedFile} -> '{targetPath}'");
-
                                         if (string.IsNullOrEmpty(targetPath))
                                         {
-                                            LogManager.Log(LogManager.LogLevel.Warn, LogManager.LogCategory.FenceCreation,
-                                                $"Failed to resolve target for Unicode shortcut: {droppedFile}");
-                                            // Default to treating as file if we can't resolve
-                                            isFolder = false;
+                                            isFolder = false; // Default if unresolved
                                         }
                                         else
                                         {
-                                            // Determine if target is a folder
                                             isFolder = System.IO.Directory.Exists(targetPath);
-
-                                            // Additional check for folder shortcuts without extensions
                                             if (!isFolder && string.IsNullOrEmpty(System.IO.Path.GetExtension(targetPath)))
                                             {
                                                 isFolder = System.IO.Directory.Exists(targetPath);
-                                                LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.FenceCreation,
-                                                    $"Checked extensionless target for folder: {targetPath} -> isFolder={isFolder}");
                                             }
-
-                                            LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.FenceCreation,
-                                                $"Shortcut classification: {droppedFile} -> target='{targetPath}', isFolder={isFolder}");
                                         }
                                     }
                                     else
                                     {
-                                        // Handle direct files/folders
                                         targetPath = droppedFile;
                                         isFolder = System.IO.Directory.Exists(targetPath);
                                     }
@@ -5414,275 +5609,75 @@ LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, "Tab0 s
 
                                     try
                                     {
-                                        LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.FenceCreation,
-                                            $"Creating shortcut: '{droppedFile}' -> '{shortcutName}'");
-
-                                        // Check if shortcut name or target contains Unicode characters
-                                        bool shortcutHasUnicode = shortcutName.Any(c => c > 127);
-                                        bool targetHasUnicode = droppedFile.Any(c => c > 127);
-
-                                        if (shortcutHasUnicode || targetHasUnicode)
-                                        {
-                                            LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.FenceCreation,
-                                                $"Handling Unicode shortcut - name: {shortcutHasUnicode}, target: {targetHasUnicode}");
-
-                                            // Create shortcut with ASCII-safe temporary name
-                                            string tempShortcutName = System.IO.Path.Combine("Shortcuts", $"temp_{DateTime.Now.Ticks}.lnk");
-
-                                            // For target with Unicode, use a known working folder first
-                                            string tempTarget = targetHasUnicode ? Environment.GetFolderPath(Environment.SpecialFolder.Desktop) : droppedFile;
-
-                                            LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.FenceCreation,
-                                                $"Creating temp shortcut: '{tempTarget}' -> '{tempShortcutName}'");
-
-                                            WshShell shell = new WshShell();
-                                            IWshShortcut shortcut = (IWshShortcut)shell.CreateShortcut(tempShortcutName);
-                                            shortcut.TargetPath = tempTarget;
-                                            shortcut.Save();
-
-
-
-                                            // If target has Unicode, use improved Unicode shortcut creation
-                                            if (targetHasUnicode && System.IO.File.Exists(tempShortcutName))
-                                            {
-                                                LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.FenceCreation,
-                                                    $"Creating Unicode-compatible shortcut from '{tempTarget}' to '{droppedFile}'");
-
-                                                try
-                                                {
-                                                    // Delete the temp shortcut and create a new one with proper Unicode handling
-                                                    System.IO.File.Delete(tempShortcutName);
-
-                                                    // Use .NET's approach for Unicode folders - create shortcut to explorer with folder argument
-                                                    WshShell unicodeShell = new WshShell();
-                                                    IWshShortcut unicodeShortcut = (IWshShortcut)unicodeShell.CreateShortcut(tempShortcutName);
-
-                                                    if (directoryExists)
-                                                    {
-                                                        // For Unicode folders, use explorer.exe with quoted path argument
-                                                        unicodeShortcut.TargetPath = "explorer.exe";
-                                                        unicodeShortcut.Arguments = "\"" + droppedFile + "\"";
-                                                        unicodeShortcut.WorkingDirectory = System.IO.Path.GetDirectoryName(droppedFile);
-
-                                                        // Set icon to folder icon with full path
-                                                        unicodeShortcut.IconLocation = $"{Environment.GetFolderPath(Environment.SpecialFolder.System)}\\shell32.dll,3";
-
-                                                        LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.FenceCreation,
-                                                            $"Created Unicode folder shortcut using explorer.exe method");
-                                                    }
-                                                    else
-                                                    {
-                                                        // For Unicode files, try direct approach first
-                                                        unicodeShortcut.TargetPath = droppedFile;
-                                                        unicodeShortcut.WorkingDirectory = System.IO.Path.GetDirectoryName(droppedFile);
-
-                                                        LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.FenceCreation,
-                                                            $"Created Unicode file shortcut using direct method");
-                                                    }
-
-                                                    unicodeShortcut.Save();
-
-                                                    LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.FenceCreation,
-                                                        $"Successfully created Unicode shortcut with proper target resolution");
-                                                }
-                                                catch (Exception unicodeEx)
-                                                {
-                                                    LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.FenceCreation,
-                                                        $"Unicode shortcut creation failed: {unicodeEx.Message}");
-
-                                                    // Final fallback - recreate shortcut pointing directly to parent folder
-                                                    try
-                                                    {
-                                                        string parentFolder = System.IO.Path.GetDirectoryName(droppedFile);
-                                                        WshShell fallbackShell = new WshShell();
-                                                        IWshShortcut fallbackShortcut = (IWshShortcut)fallbackShell.CreateShortcut(tempShortcutName);
-                                                        fallbackShortcut.TargetPath = "explorer.exe";
-                                                        fallbackShortcut.Arguments = "\"" + parentFolder + "\"";
-                                                        fallbackShortcut.Save();
-
-                                                        LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.FenceCreation,
-                                                            $"Created fallback shortcut to parent folder");
-                                                    }
-                                                    catch (Exception fallbackEx)
-                                                    {
-                                                        LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.FenceCreation,
-                                                            $"Fallback shortcut creation failed: {fallbackEx.Message}");
-                                                    }
-                                                }
-                                            }
-
-                                            // Rename to final Unicode name if needed
-                                            if (shortcutHasUnicode)
-                                            {
-                                                System.IO.File.Move(tempShortcutName, shortcutName);
-                                                LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.FenceCreation,
-                                                    $"Renamed to Unicode filename: {shortcutName}");
-                                            }
-                                            else
-                                            {
-                                                System.IO.File.Move(tempShortcutName, shortcutName);
-                                            }
-
-                                            LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.FenceCreation,
-                                                $"Successfully created Unicode shortcut: {shortcutName}");
-                                        }
-                                        else
-                                        {
-                                            // Regular shortcut creation for non-Unicode paths
-                                            WshShell shell = new WshShell();
-                                            IWshShortcut shortcut = (IWshShortcut)shell.CreateShortcut(shortcutName);
-                                            shortcut.TargetPath = droppedFile;
-
-                                            if (directoryExists)
-                                            {
-                                                shortcut.WorkingDirectory = droppedFile;
-                                            }
-
-                                            shortcut.Save();
-
-                                            LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.FenceCreation,
-                                                $"Successfully created regular shortcut: {shortcutName}");
-                                        }
+                                        WshShell shell = new WshShell();
+                                        IWshShortcut shortcut = (IWshShortcut)shell.CreateShortcut(shortcutName);
+                                        shortcut.TargetPath = droppedFile;
+                                        if (isFolder) shortcut.WorkingDirectory = droppedFile;
+                                        shortcut.Save();
                                     }
-                                    catch (Exception shortcutEx)
-                                    {
-                                        LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.FenceCreation,
-                                            $"Failed to create shortcut for '{droppedFile}': {shortcutEx.Message}");
-                                        continue;
-                                    }
-
-                                    LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.FenceCreation, $"Created unique shortcut: {shortcutName}");
+                                    catch { continue; }
                                 }
                                 else
                                 {
-                                    // Handle dropped shortcut files
                                     while (System.IO.File.Exists(shortcutName))
                                     {
                                         shortcutName = System.IO.Path.Combine("Shortcuts", $"{System.IO.Path.GetFileNameWithoutExtension(droppedFile)} ({counter++}).lnk");
                                     }
-
-                                    if (isWebLink)
-                                    {
-                                        // Create new shortcut targeting the web URL directly
-                                        CreateWebLinkShortcut(webUrl, shortcutName, System.IO.Path.GetFileNameWithoutExtension(droppedFile));
-                                        LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.FenceCreation, $"Created web link shortcut: {shortcutName} -> {webUrl}");
-                                    }
-                                    else
-                                    {
-                                        // Copy regular shortcut
-                                        System.IO.File.Copy(droppedFile, shortcutName, false);
-                                        LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.FenceCreation, $"Copied unique shortcut: {shortcutName}");
-                                    }
+                                    if (isWebLink) CreateWebLinkShortcut(webUrl, shortcutName, System.IO.Path.GetFileNameWithoutExtension(droppedFile));
+                                    else System.IO.File.Copy(droppedFile, shortcutName, false);
                                 }
-
 
                                 dynamic newItem = new System.Dynamic.ExpandoObject();
                                 IDictionary<string, object> newItemDict = newItem;
 
-                                // Enhanced Unicode handling for folder items
-                                if (System.IO.Directory.Exists(droppedFile))
-                                {
-                                    // This is a folder - use Unicode-safe validation
-                                    string validatedPath;
-                                    if (FilePathUtilities.ValidateUnicodeFolderPath(droppedFile, out validatedPath))
-                                    {
-                                        newItemDict["Filename"] = shortcutName;
-                                        newItemDict["IsFolder"] = true;
-                                        LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.FenceCreation,
-                                            $"Unicode folder processed successfully: {droppedFile} -> {shortcutName}");
-                                    }
-                                    else
-                                    {
-                                        LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.FenceCreation,
-                                            $"Failed Unicode folder validation: {droppedFile}");
-                                        continue; // Skip this item
-                                    }
-                                }
-                                else
-                                {
-                                    // Regular file/shortcut handling
-                                    newItemDict["Filename"] = shortcutName;
-                                    newItemDict["IsFolder"] = isFolder;
-                                }
+                                newItemDict["Filename"] = shortcutName;
+                                newItemDict["IsFolder"] = isFolder;
+                                newItemDict["IsLink"] = isWebLink;
+                                newItemDict["IsNetwork"] = IsNetworkPath(shortcutName);
 
+                                string displayFileName = isFolder
+                                    ? System.IO.Path.GetFileName(droppedFile)
+                                    : System.IO.Path.GetFileNameWithoutExtension(droppedFile);
+                                newItemDict["DisplayName"] = displayFileName;
+                                newItemDict["AlwaysRunAsAdmin"] = false;
 
-
-                                newItemDict["IsLink"] = isWebLink; // Set IsLink property
-                                newItemDict["IsNetwork"] = IsNetworkPath(shortcutName); // Set IsNetwork property
-                                newItemDict["DisplayName"] = System.IO.Path.GetFileNameWithoutExtension(droppedFile);
-
-
-                                // TABS FEATURE: Get fresh fence data FIRST to avoid stale CurrentTab
+                                // TABS FEATURE: Get fresh fence data
                                 string fenceId = fence.Id?.ToString();
                                 var freshFence = FenceDataManager.FenceData.FirstOrDefault(f => f.Id?.ToString() == fenceId);
                                 JArray items = null;
                                 bool tabsEnabled = fence.TabsEnabled?.ToString().ToLower() == "true";
-                                bool addedToTab0 = false; // Track if we're adding to Tab0 for sync
+                                bool addedToTab0 = false;
 
                                 if (tabsEnabled && freshFence != null)
                                 {
-                                    // Use FRESH fence data for CurrentTab
                                     int currentTab = Convert.ToInt32(freshFence.CurrentTab?.ToString() ?? "0");
                                     var tabs = freshFence.Tabs as JArray ?? new JArray();
-
-                                    LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.FenceCreation,
-                                        $"Adding dropped item to tab {currentTab} using fresh fence data");
-
                                     if (currentTab >= 0 && currentTab < tabs.Count)
                                     {
                                         var activeTab = tabs[currentTab] as JObject;
                                         if (activeTab != null)
                                         {
                                             items = activeTab["Items"] as JArray ?? new JArray();
-                                            string tabName = activeTab["TabName"]?.ToString() ?? $"Tab {currentTab}";
-                                            LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.FenceCreation,
-                                                $"Using items from tab '{tabName}' with {items.Count} existing items");
-
-                                            // Track if we're adding to Tab0 for synchronization
                                             addedToTab0 = (currentTab == 0);
                                         }
                                     }
-
-                                    // Fallback to main Items if tab structure is invalid
-                                    if (items == null)
-                                    {
-                                        items = freshFence.Items as JArray ?? new JArray();
-                                        LogManager.Log(LogManager.LogLevel.Warn, LogManager.LogCategory.FenceCreation,
-                                            $"Invalid tab structure, using main Items as fallback");
-                                    }
+                                    if (items == null) items = freshFence.Items as JArray ?? new JArray();
                                 }
                                 else
                                 {
-                                    // Tabs disabled - use main Items
                                     items = (freshFence ?? fence).Items as JArray ?? new JArray();
                                 }
 
-
-                                // Add DisplayOrder as the next available order number
                                 int nextDisplayOrder = items.Count;
                                 newItemDict["DisplayOrder"] = nextDisplayOrder;
-                                LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.FenceCreation,
-                                    $"Assigned DisplayOrder={nextDisplayOrder} to new dropped item {shortcutName}");
-
-                                // Add item to the correct array
                                 items.Add(JObject.FromObject(newItem));
 
-                                // ENHANCED: Synchronize Tab0 content after adding item
                                 if (!string.IsNullOrEmpty(fenceId))
                                 {
-                                    if (addedToTab0)
-                                    {
-                                        // Added to Tab0 - sync to main Items
-                                        SynchronizeTab0Content(fenceId, "tab0", "add");
-                                    }
-                                    else if (!tabsEnabled)
-                                    {
-                                        // Added to main Items when tabs disabled - sync to Tab0 if it exists
-                                        SynchronizeTab0Content(fenceId, "main", "add");
-                                    }
+                                    if (addedToTab0) SynchronizeTab0Content(fenceId, "tab0", "add");
+                                    else if (!tabsEnabled) SynchronizeTab0Content(fenceId, "main", "add");
                                 }
 
-                                // Update FenceDataManager.FenceData and save
                                 if (freshFence != null)
                                 {
                                     int fenceIndex = FenceDataManager.FenceData.FindIndex(f => f.Id?.ToString() == fenceId);
@@ -5690,322 +5685,60 @@ LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, "Tab0 s
                                     {
                                         FenceDataManager.FenceData[fenceIndex] = freshFence;
                                         FenceDataManager.SaveFenceData();
-                                        LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.FenceCreation,
-                                            $"Successfully saved dropped item '{shortcutName}' to correct location");
                                     }
                                 }
 
                                 AddIcon(newItem, wpcont);
-
-
-
                                 StackPanel sp = wpcont.Children[wpcont.Children.Count - 1] as StackPanel;
                                 if (sp != null)
                                 {
                                     ClickEventAdder(sp, shortcutName, isFolder);
                                     targetChecker.AddCheckAction(shortcutName, () => UpdateIcon(sp, shortcutName, isFolder), isFolder);
 
-                                    // Προσθήκη Context Menu
-                                    ContextMenu mn = new ContextMenu();
-                                    MenuItem miRunAsAdmin = new MenuItem { Header = "Run as administrator" };
-                                    MenuItem miEdit = new MenuItem { Header = "Edit" };
-                                    MenuItem miMove = new MenuItem { Header = "Move.." };
-                                    MenuItem miRemove = new MenuItem { Header = "Remove" };
-                                    MenuItem miFindTarget = new MenuItem { Header = "Find target..." };
-                                    MenuItem miCopyPath = new MenuItem { Header = "Copy path" };
-                                    MenuItem miCopyFolder = new MenuItem { Header = "Folder" };
-                                    MenuItem miCopyFullPath = new MenuItem { Header = "Full path" };
-                                    miCopyPath.Items.Add(miCopyFolder);
-                                    miCopyPath.Items.Add(miCopyFullPath);
+                                    // Attach Centralized Context Menu
+                                    AttachIconContextMenu(sp, newItem, fence, win);
 
-                                    // Add Copy Item functionality - CopyPasteManager integration
-                                    MenuItem miCopyItem = new MenuItem { Header = "Copy Item" };
-
-                                    mn.Items.Add(miEdit);
-                                    mn.Items.Add(miMove);
-                                    mn.Items.Add(miRemove);
-                                    mn.Items.Add(new Separator());
-                                    mn.Items.Add(miCopyItem);
-                                    mn.Items.Add(new Separator());
-                                    mn.Items.Add(miRunAsAdmin);
-                                    mn.Items.Add(new Separator());
-                                    mn.Items.Add(miCopyPath);
-                                    mn.Items.Add(miFindTarget);
-                                    sp.ContextMenu = mn;
-
-
-
-                                    // Add dynamic menu state updates - make Copy Item enabled and handle CTRL+Right Click
-                                    MenuItem miSendToDesktop = null; // Declare for conditional addition
-                                    mn.Opened += (contextSender, contextArgs) =>
+                                    // --- HIDDEN TWEAK: Delete Original Shortcut On Drop ---
+                                    if (SettingsManager.DeleteOriginalShortcutsOnDrop && isDroppedShortcut && !isFolder && !isWebLink)
                                     {
-                                        // Update Copy Item enabled state dynamically when menu opens
-                                        miCopyItem.IsEnabled = true; // Copy should always be enabled for existing items
-
-                                        // Check if CTRL is pressed for "Send to Desktop" option
-                                        bool isCtrlPressed = (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control;
-
-                                        // Remove existing Send to Desktop if present
-                                        if (miSendToDesktop != null && mn.Items.Contains(miSendToDesktop))
+                                        try
                                         {
-                                            mn.Items.Remove(miSendToDesktop);
-                                        }
+                                            string fileDir = System.IO.Path.GetDirectoryName(droppedFile);
+                                            string userDesktop = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
+                                            string commonDesktop = Environment.GetFolderPath(Environment.SpecialFolder.CommonDesktopDirectory);
 
-                                        // Add Send to Desktop if CTRL is pressed
-                                        if (isCtrlPressed)
-                                        {
-                                            miSendToDesktop = new MenuItem { Header = "Send to Desktop" };
-                                            miSendToDesktop.Click += (s, e) => CopyPasteManager.SendToDesktop(newItem);
+                                            bool isFromDesktop = string.Equals(fileDir, userDesktop, StringComparison.OrdinalIgnoreCase) ||
+                                                                 string.Equals(fileDir, commonDesktop, StringComparison.OrdinalIgnoreCase);
 
-                                            // Find Copy Item position and insert after it
-                                            int copyItemIndex = -1;
-                                            for (int i = 0; i < mn.Items.Count; i++)
+                                            if (isFromDesktop)
                                             {
-                                                if (mn.Items[i] is MenuItem mi && mi.Header.ToString() == "Copy Item")
-                                                {
-                                                    copyItemIndex = i;
-                                                    break;
-                                                }
-                                            }
-
-                                            if (copyItemIndex >= 0)
-                                            {
-                                                mn.Items.Insert(copyItemIndex + 1, miSendToDesktop);
+                                                System.IO.File.Delete(droppedFile);
+                                                LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.FenceCreation,
+                                                    $"Hidden Tweak: Deleted original desktop shortcut '{droppedFile}' after moving to fence.");
                                             }
                                         }
-
-                                        LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI,
-                                            $"Updated drag & drop context menu - Copy available, CTRL pressed: {isCtrlPressed}");
-                                    };
-
-
-
-                                    miRunAsAdmin.IsEnabled = Utility.IsExecutableFile(shortcutName);
-                                    // Add Copy Item event handler - CopyPasteManager integration
-                                    miCopyItem.Click += (sender, e) => CopyPasteManager.CopyItem(newItem, fence);
-
-                                    miMove.Click += (sender, e) => ItemMoveDialog.ShowMoveDialog(newItem, fence, win.Dispatcher);
-                                    miEdit.Click += (sender, e) => EditItem(newItem, fence, win);
-                                                                        miRemove.Click += (sender, e) =>
-                                    {
-                                        var items = fence.Items as JArray;
-                                        if (items != null)
+                                        catch (Exception delEx)
                                         {
-                                            var itemToRemove = items.FirstOrDefault(i => i["Filename"]?.ToString() == shortcutName);
-                                            if (itemToRemove != null)
-                                            {
-                                                LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.FenceCreation, $"Removing icon for {shortcutName} from fence");
-                                                var fade = new DoubleAnimation(1, 0, TimeSpan.FromSeconds(0.3));
-                                                fade.Completed += (s, a) =>
-                                                {
-                                                    items.Remove(itemToRemove);
-                                                    wpcont.Children.Remove(sp);
-                                                    targetChecker.RemoveCheckAction(shortcutName);
-                                                    FenceDataManager.SaveFenceData();
-
-                                                    string shortcutPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "Shortcuts", System.IO.Path.GetFileName(shortcutName));
-                                                    if (System.IO.File.Exists(shortcutPath))
-                                                    {
-                                                        try
-                                                        {
-                                                            System.IO.File.Delete(shortcutPath);
-                                                            LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.FenceCreation, $"Deleted shortcut: {shortcutPath}");
-                                                        }
-                                                        catch (Exception ex)
-                                                        {
-                                                            LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.General, $"Failed to delete shortcut {shortcutPath}: {ex.Message}");
-                                                        }
-                                                    }
-                                                };
-                                                sp.BeginAnimation(UIElement.OpacityProperty, fade);
-                                            }
+                                            LogManager.Log(LogManager.LogLevel.Warn, LogManager.LogCategory.FenceCreation,
+                                                $"Hidden Tweak Failed: Could not delete original shortcut '{droppedFile}': {delEx.Message}");
                                         }
-                                    };
-
-                                    miFindTarget.Click += (sender, e) =>
-                                    {
-                                        string target = Utility.GetShortcutTarget(shortcutName);
-                                        if (!string.IsNullOrEmpty(target) && (System.IO.File.Exists(target) || System.IO.Directory.Exists(target)))
-                                        {
-                                            Process.Start("explorer.exe", $"/select,\"{target}\"");
-                                        }
-                                    };
-
-                                    miCopyFolder.Click += (sender, e) =>
-                                    {
-                                        string folderPath = System.IO.Path.GetDirectoryName(Utility.GetShortcutTarget(shortcutName));
-                                        Clipboard.SetText(folderPath);
-                                        LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.FenceCreation, $"Copied target folder path to clipboard: {folderPath}");
-                                    };
-
-                                    miCopyFullPath.Click += (sender, e) =>
-                                    {
-                                        string targetPath = Utility.GetShortcutTarget(shortcutName);
-                                        Clipboard.SetText(targetPath);
-                                        LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.FenceCreation, $"Copied target full path to clipboard: {targetPath}");
-                                    };
-
-                                    //miRunAsAdmin.Click += (sender, e) =>
-                                    //{
-                                    //    string targetPath = Utility.GetShortcutTarget(shortcutName);
-                                    //    string runArguments = null;
-                                    //    if (System.IO.Path.GetExtension(shortcutName).ToLower() == ".lnk")
-                                    //    {
-                                    //        WshShell shell = new WshShell();
-                                    //        IWshShortcut shortcut = (IWshShortcut)shell.CreateShortcut(shortcutName);
-                                    //        runArguments = shortcut.Arguments;
-                                    //    }
-                                    //    ProcessStartInfo psi = new ProcessStartInfo
-                                    //    {
-                                    //        FileName = targetPath,
-                                    //        UseShellExecute = true,
-                                    //        Verb = "runas"
-                                    //    };
-                                    //    if (!string.IsNullOrEmpty(runArguments))
-                                    //    {
-                                    //        psi.Arguments = runArguments;
-                                    //        LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.FenceCreation, $"Run as admin with arguments: {runArguments} for {shortcutName}");
-                                    //    }
-                                    //    try
-                                    //    {
-                                    //        Process.Start(psi);
-                                    //        LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.FenceCreation, $"Successfully launched {targetPath} as admin");
-                                    //    }
-                                    //    catch (Exception ex)
-                                    //    {
-                                    //        LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.General, $"Failed to launch {targetPath} as admin: {ex.Message}");
-                                    //        MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Error running as admin: {ex.Message}", "Error");
-                                    //    }
-                                    //};
-                                    miRunAsAdmin.Click += (sender, e) =>
-                                    {
-                                        string targetPath = Utility.GetShortcutTarget(shortcutName);
-                                        string runArguments = null;
-                                        if (System.IO.Path.GetExtension(shortcutName).ToLower() == ".lnk")
-                                        {
-                                            WshShell shell = new WshShell();
-                                            IWshShortcut shortcut = (IWshShortcut)shell.CreateShortcut(shortcutName);
-                                            runArguments = shortcut.Arguments;
-                                        }
-
-                                        string fileExtension = System.IO.Path.GetExtension(targetPath).ToLower();
-
-                                        if (fileExtension == ".ps1")
-                                        {
-                                            try
-                                            {
-                                                // Use schtasks to run PowerShell script as admin
-                                                string taskName = $"PSScript_{DateTime.Now:yyyyMMddHHmmss}";
-                                                string psCommand = $"powershell.exe -ExecutionPolicy Bypass -File \\\"{targetPath}\\\"";
-                                                if (!string.IsNullOrEmpty(runArguments))
-                                                {
-                                                    psCommand += $" {runArguments}";
-                                                }
-
-                                                // Create temporary scheduled task
-                                                ProcessStartInfo createTask = new ProcessStartInfo
-                                                {
-                                                    FileName = "schtasks.exe",
-                                                    Arguments = $"/create /tn \"{taskName}\" /tr \"{psCommand}\" /sc once /st 00:00 /rl highest /f",
-                                                    UseShellExecute = true,
-                                                    Verb = "runas",
-                                                    CreateNoWindow = true
-                                                };
-
-                                                Process createProcess = Process.Start(createTask);
-                                                createProcess.WaitForExit();
-
-                                                if (createProcess.ExitCode == 0)
-                                                {
-                                                    // Run the task immediately
-                                                    ProcessStartInfo runTask = new ProcessStartInfo
-                                                    {
-                                                        FileName = "schtasks.exe",
-                                                        Arguments = $"/run /tn \"{taskName}\"",
-                                                        UseShellExecute = false,
-                                                        CreateNoWindow = true
-                                                    };
-                                                    Process.Start(runTask);
-
-                                                    // Delete the task after a delay
-                                                    System.Threading.Tasks.Task.Delay(2000).ContinueWith(t =>
-                                                    {
-                                                        try
-                                                        {
-                                                            ProcessStartInfo deleteTask = new ProcessStartInfo
-                                                            {
-                                                                FileName = "schtasks.exe",
-                                                                Arguments = $"/delete /tn \"{taskName}\" /f",
-                                                                UseShellExecute = false,
-                                                                CreateNoWindow = true
-                                                            };
-                                                            Process.Start(deleteTask);
-                                                        }
-                                                        catch { /* Ignore cleanup errors */ }
-                                                    });
-
-                                                    LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.FenceCreation,
-                                                        $"Successfully launched PS1 via scheduled task as admin: {targetPath}");
-                                                }
-                                                else
-                                                {
-                                                    throw new Exception("Failed to create scheduled task");
-                                                }
-                                            }
-                                            catch (Exception ex)
-                                            {
-                                                LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.General,
-                                                    $"Failed to launch PS1 via scheduled task: {ex.Message}");
-                                                MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Error running PowerShell as admin: {ex.Message}", "Error");
-                                            }
-                                        }
-                                        else
-                                        {
-                                            // Original code for non-PowerShell files
-                                            ProcessStartInfo psi = new ProcessStartInfo
-                                            {
-                                                FileName = targetPath,
-                                                UseShellExecute = true,
-                                                Verb = "runas"
-                                            };
-                                            if (!string.IsNullOrEmpty(runArguments))
-                                            {
-                                                psi.Arguments = runArguments;
-                                                LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.FenceCreation, $"Run as admin with arguments: {runArguments} for {shortcutName}");
-                                            }
-                                            try
-                                            {
-                                                Process.Start(psi);
-                                                LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.FenceCreation, $"Successfully launched {targetPath} as admin");
-                                            }
-                                            catch (Exception ex)
-                                            {
-                                                LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.General, $"Failed to launch {targetPath} as admin: {ex.Message}");
-                                                MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Error running as admin: {ex.Message}", "Error");
-                                            }
-                                        }
-                                    };
-
+                                    }
                                 }
-                                LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.FenceCreation, $"Added shortcut to Data Fence: {shortcutName}");
                             }
+                            // --- PORTAL FENCE LOGIC (RESTORED) ---
                             else if (fence.ItemsType?.ToString() == "Portal")
                             {
-                                // Λογική για Portal Fences (copy) - παραμένει ίδια
                                 IDictionary<string, object> fenceDict = fence is IDictionary<string, object> dict ? dict : ((JObject)fence).ToObject<IDictionary<string, object>>();
                                 string destinationFolder = fenceDict.ContainsKey("Path") ? fenceDict["Path"]?.ToString() : null;
 
                                 if (string.IsNullOrEmpty(destinationFolder))
                                 {
-                                      MessageBoxesManager.ShowOKOnlyMessageBoxForm($"No destination folder defined for this Portal Fence. Please recreate the fence.", "Error");
-                                    LogManager.Log(LogManager.LogLevel.Warn, LogManager.LogCategory.FenceCreation, $"No Path defined for Portal Fence: {fence.Title}");
+                                    MessageBoxesManager.ShowOKOnlyMessageBoxForm($"No destination folder defined for this Portal Fence.", "Error");
                                     continue;
                                 }
-
                                 if (!System.IO.Directory.Exists(destinationFolder))
                                 {
-                                     MessageBoxesManager.ShowOKOnlyMessageBoxForm($"The destination folder '{destinationFolder}' no longer exists. Please update the Portal Fence settings.", "Error");
-                                    LogManager.Log(LogManager.LogLevel.Warn, LogManager.LogCategory.FenceCreation, $"Destination folder missing for Portal Fence: {destinationFolder}");
+                                    MessageBoxesManager.ShowOKOnlyMessageBoxForm($"The destination folder '{destinationFolder}' no longer exists.", "Error");
                                     continue;
                                 }
 
@@ -6016,69 +5749,55 @@ LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, "Tab0 s
 
                                 while (System.IO.File.Exists(destinationPath) || System.IO.Directory.Exists(destinationPath))
                                 {
-                                    destinationPath = System.IO.Path.Combine(destinationFolder, $"{baseName} ({counter}){extension}");
-                                    counter++;
+                                    destinationPath = System.IO.Path.Combine(destinationFolder, $"{baseName} ({counter++}){extension}");
                                 }
 
                                 if (System.IO.File.Exists(droppedFile))
                                 {
                                     System.IO.File.Copy(droppedFile, destinationPath, false);
-                                    LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.FenceCreation, $"Copied file to Portal Fence: {destinationPath}");
                                 }
                                 else if (System.IO.Directory.Exists(droppedFile))
                                 {
                                     BackupManager.CopyDirectory(droppedFile, destinationPath);
-                                     LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.FenceCreation, $"Copied directory to Portal Fence: {destinationPath}");
                                 }
                             }
                         }
                         catch (Exception ex)
                         {
-                               MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Failed to add {droppedFile}: {ex.Message}", "Error");
-                            LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.FenceCreation, $"Failed to add {droppedFile}: {ex.Message}");
+                            MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Failed to add {droppedFile}: {ex.Message}", "Error");
                         }
                     }
-                    FenceDataManager.SaveFenceData(); // Αποθηκεύουμε τις αλλαγές στο JSON
+                    FenceDataManager.SaveFenceData();
                 }
+                // --- URL DROP LOGIC (RESTORED) ---
                 else if (e.Data.GetDataPresent(DataFormats.Text) ||
                          e.Data.GetDataPresent(DataFormats.Html) ||
-                         e.Data.GetDataPresent("UniformResourceLocator") ||
-                         e.Data.GetDataPresent("text/x-moz-url"))
+                         e.Data.GetDataPresent("UniformResourceLocator"))
                 {
                     try
                     {
                         string droppedUrl = ExtractUrlFromDropData(e.Data);
-
                         if (!string.IsNullOrEmpty(droppedUrl) && IsValidWebUrl(droppedUrl))
                         {
-                            LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.FenceCreation,
-                                $"Processing dropped URL: '{droppedUrl}'");
-
-                            // Only process for Data fences
                             if (fence.ItemsType?.ToString() == "Data")
                             {
                                 AddUrlShortcutToFence(droppedUrl, fence, wpcont);
                             }
                             else
                             {
-                                LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.FenceCreation,
-                                    "URL drops not supported for Portal fences");
+                                LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.FenceCreation, "URL drops not supported for Portal fences");
                             }
-                        }
-                        else
-                        {
-                            LogManager.Log(LogManager.LogLevel.Warn, LogManager.LogCategory.FenceCreation,
-                                $"Invalid or empty URL from drop data: '{droppedUrl}'");
                         }
                     }
                     catch (Exception urlEx)
                     {
-                        LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.FenceCreation,
-                            $"Error processing URL drop: {urlEx.Message}");
+                        LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.FenceCreation, $"Error processing URL drop: {urlEx.Message}");
                     }
                 }
             };
 
+
+      
 
 
 
@@ -6087,8 +5806,6 @@ LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, "Tab0 s
             {
                 win.SizeChanged += UpdateSizeFeedback;
             }
-
-
             win.LocationChanged += (s, e) =>
             {
                 // Get current fence reference by ID to avoid stale references
@@ -6098,7 +5815,6 @@ LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, "Tab0 s
                     LogManager.Log(LogManager.LogLevel.Warn, LogManager.LogCategory.FenceUpdate, $"Fence Id missing during position change for window '{win.Title}'");
                     return;
                 }
-
                 // Find the current fence in FenceDataManager.FenceData using ID
                 var currentFence = FenceDataManager.FenceData.FirstOrDefault(f => f.Id?.ToString() == fenceId);
                 if (currentFence != null)
@@ -6114,9 +5830,64 @@ LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, "Tab0 s
                     LogManager.Log(LogManager.LogLevel.Warn, LogManager.LogCategory.FenceUpdate, $"Fence with Id '{fenceId}' not found during position change");
                 }
             };
-
             InitContent();
+            // Add Note fence specific context menu items after content is initialized
+            if (fence.ItemsType?.ToString() == "Note")
+            {
+                // Use a small delay to ensure the TextBox is fully created and added to the visual tree
+                System.Windows.Application.Current.Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    try
+                    {
+                        // Find the TextBox that was created in InitContent()
+                        var border = win.Content as Border;
+                        var dockPanel = border?.Child as DockPanel;
+                        var noteTextBox = dockPanel?.Children.OfType<TextBox>().FirstOrDefault();
+                        if (noteTextBox != null)
+                        {
+                            NoteFenceManager.AddNoteContextMenuItems(CnMnFenceManager, fence, noteTextBox);
+                            LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.FenceCreation,
+                                $"Added Note context menu items for fence '{fence.Title}'");
+                        }
+                        else
+                        {
+                            LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.FenceCreation,
+                                $"CRITICAL: Could not find TextBox for Note fence '{fence.Title}' - checking DockPanel children");
+                            // Debug: Log what children actually exist
+                            if (dockPanel != null)
+                            {
+                                LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.FenceCreation,
+                                    $"DockPanel has {dockPanel.Children.Count} children:");
+                                for (int i = 0; i < dockPanel.Children.Count; i++)
+                                {
+                                    var child = dockPanel.Children[i];
+                                    LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.FenceCreation,
+                                        $" Child {i}: {child.GetType().Name}");
+                                }
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.FenceCreation,
+                            $"Error adding Note context menu: {ex.Message}");
+                    }
+                }), System.Windows.Threading.DispatcherPriority.Loaded);
+            }
             win.Show();
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
             IDictionary<string, object> fenceDict = fence is IDictionary<string, object> dict ? dict : ((JObject)fence).ToObject<IDictionary<string, object>>();
@@ -6126,6 +5897,8 @@ LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, "Tab0 s
             Utility.ApplyTintAndColorToFence(win, string.IsNullOrEmpty(customColor) ? SettingsManager.SelectedColor : customColor);
             targetChecker.Start();
         }
+
+      
 
         public static void AddIcon(dynamic icon, WrapPanel wpcont)
         {
@@ -6320,123 +6093,76 @@ LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, "Tab0 s
                 // Fallback only if no custom icon was successfully extracted
                 if (shortcutIcon == null)
                 {
-                    // Enhanced target path handling for Unicode shortcuts
-                    string effectiveTargetPath = targetPath;
-
-                    // If targetPath is empty, try to resolve it again with Unicode-safe method
-                    if (string.IsNullOrEmpty(targetPath))
+                    // Check for Store App Signature ("APPS")
+                    bool isStoreApp = false;
+                    if (System.IO.Path.GetExtension(filePath).ToLower() == ".lnk")
                     {
-                        effectiveTargetPath = FilePathUtilities.GetShortcutTargetUnicodeSafe(filePath);
-                        LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.IconHandling,
-                            $"Re-resolved target for AddIcon: {filePath} -> {effectiveTargetPath}");
+                        isStoreApp = Utility.IsStoreAppShortcut(filePath);
                     }
 
-                    // Check if target is missing first (before trying to extract icons)
-                    bool targetExists = !string.IsNullOrEmpty(effectiveTargetPath) &&
+                    // If not a Store App, verify target existence
+                    bool targetExists = true;
+                    if (!isStoreApp)
+                    {
+                        string effectiveTargetPath = targetPath;
+                        if (string.IsNullOrEmpty(effectiveTargetPath))
+                        {
+                            effectiveTargetPath = FilePathUtilities.GetShortcutTargetUnicodeSafe(filePath);
+                        }
+                        targetExists = !string.IsNullOrEmpty(effectiveTargetPath) &&
                                        (System.IO.Directory.Exists(effectiveTargetPath) || System.IO.File.Exists(effectiveTargetPath));
-
-                    if (!targetExists)
-                    {
-                        // Target is missing - use appropriate missing icon
-                        shortcutIcon = isFolder
-                            ? new BitmapImage(new Uri("pack://application:,,,/Resources/folder-WhiteX.png"))
-                            : new BitmapImage(new Uri("pack://application:,,,/Resources/file-WhiteX.png"));
-                        LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.IconHandling,
-                            $"Using missing icon for {filePath}: {(isFolder ? "folder-WhiteX.png" : "file-WhiteX.png")} (target: '{effectiveTargetPath}')");
                     }
-                    else if (!string.IsNullOrEmpty(effectiveTargetPath) && System.IO.Directory.Exists(effectiveTargetPath))
+
+                    // Decision Logic
+                    if (isStoreApp)
                     {
-                        shortcutIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/folder-White.png"));
-                        LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.IconHandling,
-                            $"Using folder-White.png for shortcut {filePath} targeting folder {effectiveTargetPath}");
+                        // Valid Store App -> Use Shell Icon
+                        shortcutIcon = Utility.GetShellIcon(filePath, isFolder);
+                        LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.IconHandling,
+                            $"AddIcon: Valid Store App signature found. Using Shell Icon for: {filePath}");
                     }
-                    else if (!string.IsNullOrEmpty(effectiveTargetPath) && System.IO.File.Exists(effectiveTargetPath))
+                    else if (targetExists)
                     {
-                        try
-                        {
-                            shortcutIcon = System.Drawing.Icon.ExtractAssociatedIcon(effectiveTargetPath).ToImageSource();
-                            LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.IconHandling,
-                                $"Successfully extracted icon for Unicode shortcut {filePath}: {effectiveTargetPath}");
-                        }
-                        catch (Exception ex)
-                        {
-                            shortcutIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/file-WhiteX.png"));
-                            LogManager.Log(LogManager.LogLevel.Warn, LogManager.LogCategory.IconHandling,
-                                $"Failed to extract target file icon for {filePath}: {ex.Message}");
-                        }
-                    }
-                }
-
-
-            }
-            else
-            {
-
-
-                // Enhanced Unicode folder icon handling
-                bool folderExists = false;
-                try
-                {
-                    folderExists = System.IO.Directory.Exists(filePath);
-                    if (!folderExists && isFolder)
-                    {
-                        // For items marked as folders, try DirectoryInfo approach
-                        var dirInfo = new System.IO.DirectoryInfo(filePath);
-                        folderExists = dirInfo.Exists;
-                    }
-                }
-                catch (Exception folderEx)
-                {
-                    LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.IconHandling,
-                        $"Folder existence check failed for Unicode path {filePath}: {folderEx.Message}");
-                }
-
-                if (folderExists)
-                {
-                    shortcutIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/folder-White.png"));
-                    LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.IconHandling,
-                        $"Using folder-White.png for Unicode folder {filePath}");
-                }
-                else if (isFolder)
-                {
-                    // Folder marked as folder but doesn't exist - use missing folder icon
-                    shortcutIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/folder-WhiteX.png"));
-                    LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.IconHandling,
-                        $"Using folder-WhiteX.png for missing Unicode folder {filePath}");
-                }
-                else if (System.IO.File.Exists(filePath))
-                {
-                    // Check if this is actually a folder that shows as a file (some Unicode folders)
-                    if (System.IO.Directory.Exists(filePath))
-                    {
-                        shortcutIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/folder-White.png"));
-                        LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.IconHandling,
-                            $"Using folder-White.png for folder detected as file: {filePath}");
+                        // Valid Normal File -> Use Shell Icon
+                        shortcutIcon = Utility.GetShellIcon(filePath, isFolder);
                     }
                     else
                     {
-                        try
-                        {
-                            shortcutIcon = System.Drawing.Icon.ExtractAssociatedIcon(filePath).ToImageSource();
-                            LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.IconHandling, $"Using file icon for {filePath}");
-                        }
-                        catch (Exception ex)
-                        {
-                            shortcutIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/file-WhiteX.png"));
-                            LogManager.Log(LogManager.LogLevel.Warn, LogManager.LogCategory.IconHandling, $"Failed to extract icon for {filePath}: {ex.Message}");
-                        }
+                        // No Store Signature AND Target Missing -> Truly Broken -> White X
+                        shortcutIcon = isFolder
+                            ? new BitmapImage(new Uri("pack://application:,,,/Resources/folder-WhiteX.png"))
+                            : new BitmapImage(new Uri("pack://application:,,,/Resources/file-WhiteX.png"));
+
+                        LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.IconHandling,
+                            $"AddIcon: Broken link detected (No Store Signature, Target Missing): {filePath}");
                     }
                 }
-                else
+            }
+            else
+            {
+                // Non-Shortcuts (Direct files or folders)
+                // Try Shell API first (handles standard icons perfectly)
+                shortcutIcon = Utility.GetShellIcon(filePath, isFolder);
+
+                if (shortcutIcon == null)
                 {
-                    shortcutIcon = isFolder
-                        ? new BitmapImage(new Uri("pack://application:,,,/Resources/folder-WhiteX.png"))
-                        : new BitmapImage(new Uri("pack://application:,,,/Resources/file-WhiteX.png"));
-                    LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.IconHandling, $"Using missing icon for {filePath}: {(isFolder ? "folder-WhiteX.png" : "file-WhiteX.png")}");
+                    // Fallback logic for files/folders that shell couldn't resolve
+                    if (isFolder)
+                        shortcutIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/folder-WhiteX.png"));
+                    else
+                        shortcutIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/file-WhiteX.png"));
                 }
             }
 
+
+        
+
+
+
             ico.Source = shortcutIcon;
+
+
+
 
             // Apply grayscale effect if enabled - AFTER setting the source
             try
@@ -6769,7 +6495,7 @@ LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, "Tab0 s
             }
 
             // Update UI on the main thread
-            Application.Current.Dispatcher.Invoke(() =>
+            System.Windows.Application.Current.Dispatcher.Invoke(() =>
 
 
             {
@@ -6804,7 +6530,7 @@ LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, "Tab0 s
             {
                 //   MessageBox.Show("Edit is only available for shortcuts.", "Info", MessageBoxButton.OK, MessageBoxImage.Information);
 
-                MessageBoxesManager.ShowOKOnlyMessageBoxForm("Edit is only available for shortcuts.", "Info");
+                MessageBoxesManager.ShowOKOnlyMessageBoxForm("Edit is not available for this item type.", "Info");
                 return;
             }
 
@@ -7162,8 +6888,12 @@ LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, "Tab0 s
                                 string filePath = item.Filename?.ToString() ?? "Unknown";
                                 bool isFolder = item.IsFolder?.ToString().ToLower() == "true";
                                 ClickEventAdder(sp, filePath, isFolder);
+
+                                // FIX: Attach the missing Context Menu
+                                AttachIconContextMenu(sp, item, fence, win);
                             }
                         }
+
                     }
 
                     LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.UI,
@@ -7194,26 +6924,63 @@ LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, "Tab0 s
                 return null;
             }
         }
-
         private static void UpdateIcon(StackPanel sp, string filePath, bool isFolder)
         {
+            if (System.Windows.Application.Current == null) return;
 
-
-            if (Application.Current == null)
+            System.Windows.Application.Current.Dispatcher.Invoke(() =>
             {
-                LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.IconHandling, "Application.Current is null, cannot update icon.");
-                return;
-            }
+                // 1. OPTIMIZATION CHECK START
+                // Check if file exists and get timestamp
+                bool fileExists = System.IO.File.Exists(filePath) || System.IO.Directory.Exists(filePath);
+                if (!fileExists) return; // If source file is gone, we can't do anything
 
-            Application.Current.Dispatcher.Invoke(() =>
+                DateTime currentLastWrite;
+                try { currentLastWrite = System.IO.File.GetLastWriteTime(filePath); }
+                catch { return; } // File inaccessible
 
-            {
-                // Early return for web links - they should never have their icons updated by target checking
-                // Find the fence item to check IsLink property
+                // Determine current "Broken" status (Simplified logic for cache check)
+                // We repeat the full check later, this is just a pre-calc for caching
+                bool isShortcut = System.IO.Path.GetExtension(filePath).ToLower() == ".lnk";
+                bool targetValid = true;
+
+                if (isShortcut)
+                {
+                    // Basic validity check
+                    bool isStoreApp = Utility.IsStoreAppShortcut(filePath);
+                    if (!isStoreApp)
+                    {
+                        // Check target only if not store app
+                        string tPath = FilePathUtilities.GetShortcutTargetUnicodeSafe(filePath);
+                        targetValid = !string.IsNullOrEmpty(tPath) &&
+                                     (System.IO.File.Exists(tPath) || System.IO.Directory.Exists(tPath));
+                    }
+                }
+                else
+                {
+                    targetValid = System.IO.File.Exists(filePath) || System.IO.Directory.Exists(filePath);
+                }
+
+                bool isNowBroken = !targetValid;
+
+                // CACHE CHECK: If timestamp hasn't changed AND broken state hasn't changed, DO NOTHING.
+                // This prevents the infinite GDI handle leak.
+                if (_iconStates.TryGetValue(filePath, out var lastState))
+                {
+                    if (lastState.LastWrite == currentLastWrite && lastState.IsBroken == isNowBroken)
+                    {
+                        return; // Skip update - nothing changed
+                    }
+                }
+
+                // Update Cache
+                _iconStates[filePath] = (currentLastWrite, isNowBroken);
+                // 1. OPTIMIZATION CHECK END - Proceed with original logic
+
+                // ... (Existing Web Link Check) ...
                 bool isWebLink = false;
                 try
                 {
-                    // Search through all fences to find this item and check IsLink
                     foreach (var fence in FenceDataManager.FenceData)
                     {
                         if (fence.ItemsType?.ToString() == "Data")
@@ -7235,27 +7002,12 @@ LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, "Tab0 s
                         }
                         if (isWebLink) break;
                     }
+                    if (isWebLink) return;
+                }
+                catch { }
 
-                    if (isWebLink)
-                    {
-                        // do not remove the below commented log line, it may needed for future debugging
-                        //   LogManager.Log(LogManager.LogLevel.Debug,LogManager.LogCategory.IconHandling, $"Skipping icon update for web link: {filePath}");
-                        return;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    LogManager.Log(LogManager.LogLevel.Warn, LogManager.LogCategory.IconHandling, $"Error checking IsLink for {filePath}: {ex.Message}");
-                }
                 System.Windows.Controls.Image ico = sp.Children.OfType<System.Windows.Controls.Image>().FirstOrDefault();
-                if (ico == null)
-                {
-                    LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.IconHandling, $"No Image found in StackPanel for {filePath}");
-                    return;
-                }
-
-                bool isShortcut = System.IO.Path.GetExtension(filePath).ToLower() == ".lnk";
-                //  string targetPath = isShortcut ? Utility.GetShortcutTarget(filePath) : filePath;
+                if (ico == null) return;
 
                 string targetPath = filePath;
                 if (isShortcut)
@@ -7263,258 +7015,104 @@ LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, "Tab0 s
                     targetPath = FilePathUtilities.GetShortcutTargetUnicodeSafe(filePath);
                     if (SettingsManager.EnableBackgroundValidationLogging)
                     {
-                        LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.BackgroundValidation,
-                            $"UpdateIcon Unicode-safe resolution: {filePath} -> {targetPath}");
+                        // LogManager.Log(...) // Reduce spam
                     }
                 }
-
-
 
                 bool targetExists = System.IO.File.Exists(targetPath) || System.IO.Directory.Exists(targetPath);
                 bool isTargetFolder = System.IO.Directory.Exists(targetPath);
 
-                // Correct isFolder for shortcut to folder
-                if (isShortcut && isTargetFolder)
-                {
-                    isFolder = true;
-                    // do not remove the below commented log line, it may needed for future debugging
-                    // LogManager.Log(LogManager.LogLevel.Debug,LogManager.LogCategory.IconHandling, $"Corrected isFolder to true for shortcut {filePath} targeting folder {targetPath}");
-                }
+                if (isShortcut && isTargetFolder) isFolder = true;
 
                 ImageSource newIcon = null;
 
-                // Handle backup/restore for shortcuts
                 if (isShortcut)
                 {
                     BackupOrRestoreShortcut(filePath, targetExists, isFolder);
                 }
 
-                // Use proper folder existence check for folder shortcuts
                 if (isFolder)
                 {
                     bool folderExists = FilePathUtilities.DoesFolderExist(filePath, isFolder);
                     if (folderExists)
-                    {
                         newIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/folder-White.png"));
-                        if (SettingsManager.EnableBackgroundValidationLogging)
-                        {
-                            LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.BackgroundValidation,
-                                $"Using folder-White.png for existing folder {filePath}");
-                        }
-                    }
                     else
-                    {
                         newIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/folder-WhiteX.png"));
-                        LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.IconHandling,
-                            $"Using folder-WhiteX.png for missing folder {filePath}");
-                    }
                 }
                 else if (!targetExists)
                 {
-                    // Use missing icon for non-folder items when target is missing
-                    newIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/file-WhiteX.png"));
-                    LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.IconHandling,
-                        $"Using file-WhiteX.png for missing file {filePath}");
-                }
-                else if (isShortcut)
-                {
-                    WshShell shell = new WshShell();
-
-                    IWshShortcut shortcut = (IWshShortcut)shell.CreateShortcut(filePath);
-
-                    // Check for custom IconLocation
-                    if (!string.IsNullOrEmpty(shortcut.IconLocation))
+                    // FIX: Check Property Engine for Store App ID (AUMID)
+                    if (Utility.IsStoreAppShortcut(filePath))
                     {
-                        string[] iconParts = shortcut.IconLocation.Split(',');
-                        string iconPath = iconParts[0];
-                        int iconIndex = 0;
-                        if (iconParts.Length == 2 && int.TryParse(iconParts[1], out int parsedIndex))
-                        {
-                            iconIndex = parsedIndex;
-                        }
-
-                        if (System.IO.File.Exists(iconPath))
-                        {
-
-                            try
-                            {
-                                // Use IconManager to extract custom icon
-                                newIcon = IconManager.ExtractIconFromFile(iconPath, iconIndex);
-                                if (newIcon != null)
-                                {
-                                    LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.IconHandling, $"Extracted custom icon at index {iconIndex} from {iconPath} for {filePath}");
-                                }
-                                else
-                                {
-                                    LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.IconHandling, $"Failed to extract custom icon at index {iconIndex} from {iconPath} for {filePath}");
-                                }
-                            }
-
-
-                            catch (Exception ex)
-                            {
-                                LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.IconHandling, $"Error extracting custom icon from {iconPath} at index {iconIndex} for {filePath}: {ex.Message}");
-                            }
-                        }
-                        else
-                        {
-                            // do not remove the below commented log line, it may needed for future debugging
-                            // LogManager.Log(LogManager.LogLevel.Debug,LogManager.LogCategory.IconHandling, $"Custom icon file not found: {iconPath} for {filePath}");
-                        }
-
-
-                    }
-
-                    // CHECKPOINT: Step 3 Complete!
-
-                    // Fallback if no custom icon
-                    if (newIcon == null)
-                    {
-                        if (isTargetFolder)
-                        {
-                            newIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/folder-White.png"));
-                            LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.IconHandling,
-                                $"Using folder-White.png for shortcut {filePath} targeting folder {targetPath}");
-                        }
-                        else
-                        {
-                            // Enhanced target resolution for Unicode shortcuts
-                            string iconTargetPath = targetPath;
-
-                            // If targetPath is empty or invalid, use Unicode-safe resolution
-                            if (string.IsNullOrEmpty(targetPath) || !System.IO.File.Exists(targetPath))
-                            {
-                                iconTargetPath = FilePathUtilities.GetShortcutTargetUnicodeSafe(filePath);
-                                LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.IconHandling,
-                                    $"UpdateIcon using Unicode-safe resolution: {filePath} -> {iconTargetPath}");
-                            }
-
-                            if (!string.IsNullOrEmpty(iconTargetPath) && System.IO.File.Exists(iconTargetPath))
-                            {
-                                try
-                                {
-                                    newIcon = System.Drawing.Icon.ExtractAssociatedIcon(iconTargetPath).ToImageSource();
-                                    if (SettingsManager.EnableBackgroundValidationLogging)
-                                    {
-                                        LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.BackgroundValidation,
-                                            $"UpdateIcon extracted target icon for Unicode shortcut {filePath}: {iconTargetPath}");
-                                    }
-                                }
-                                catch (Exception ex)
-                                {
-                                    newIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/file-WhiteX.png"));
-                                    LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.IconHandling,
-                                        $"UpdateIcon failed to extract icon for {filePath}: {ex.Message}");
-                                }
-                            }
-                            else
-                            {
-                                newIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/file-WhiteX.png"));
-                                LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.IconHandling,
-                                    $"UpdateIcon using missing file icon for {filePath} (target: '{iconTargetPath}')");
-                            }
-                        }
-                    }
-                }
-                //else
-                //{
-                //    // Non-shortcut handling
-                //    if (isTargetFolder)
-                //    {
-                //        newIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/folder-White.png"));
-                //        LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.IconHandling, $"Using folder-White.png for {filePath}");
-                //    }
-                //    else
-                //    {
-                //        try
-                //        {
-                //            newIcon = System.Drawing.Icon.ExtractAssociatedIcon(filePath).ToImageSource();
-                //            // do not remove the below commented log line, it may needed for future debugging
-                //            // LogManager.Log(LogManager.LogLevel.Debug,LogManager.LogCategory.IconHandling, $"Using file icon for {filePath}");
-                //        }
-                //        catch (Exception ex)
-                //        {
-                //            newIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/file-WhiteX.png"));
-                //            LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.IconHandling, $"Failed to extract icon for {filePath}: {ex.Message}");
-                //        }
-                //    }
-                //}
-
-                else
-                {
-                    // Non-shortcut handling with Unicode folder support
-
-                    // Enhanced Unicode folder handling in UpdateIcon
-                    bool folderExistsInUpdate = false;
-                    try
-                    {
-                        folderExistsInUpdate = System.IO.Directory.Exists(filePath);
-                        if (!folderExistsInUpdate && isFolder)
-                        {
-                            // Try alternative validation for Unicode folders
-                            var dirInfo = new System.IO.DirectoryInfo(filePath);
-                            folderExistsInUpdate = dirInfo.Exists;
-                            LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.IconHandling,
-                                $"UpdateIcon used DirectoryInfo for Unicode folder: {filePath} -> exists: {folderExistsInUpdate}");
-                        }
-                    }
-                    catch (Exception updateFolderEx)
-                    {
-                        LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.IconHandling,
-                            $"UpdateIcon folder check failed for {filePath}: {updateFolderEx.Message}");
-                    }
-
-                    if (folderExistsInUpdate || (isFolder && folderExistsInUpdate))
-                    {
-                        newIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/folder-White.png"));
-                        LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.IconHandling,
-                            $"UpdateIcon using folder-White.png for existing Unicode folder {filePath}");
-                    }
-                    else if (isFolder)
-                    {
-                        // Missing folder
-                        newIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/folder-WhiteX.png"));
-                        LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.IconHandling,
-                            $"UpdateIcon using folder-WhiteX.png for missing Unicode folder {filePath}");
+                        newIcon = Utility.GetShellIcon(filePath, isFolder);
+                        // Log success
                     }
                     else
                     {
-                        // Regular file handling
-                        try
-                        {
-                            newIcon = System.Drawing.Icon.ExtractAssociatedIcon(filePath).ToImageSource();
-                            LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.IconHandling,
-                                $"UpdateIcon using file icon for {filePath}");
-                        }
-                        catch (Exception ex)
-                        {
-                            newIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/file-WhiteX.png"));
-                            LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.IconHandling,
-                                $"UpdateIcon failed to extract icon for {filePath}: {ex.Message}");
-                        }
+                        newIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/file-WhiteX.png"));
+                        LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.IconHandling,
+                            $"Broken link confirmed: {filePath}");
                     }
                 }
-
-                // Update icon only if different
-                if (ico.Source != newIcon)
+                else if (isShortcut)
                 {
-                    ico.Source = newIcon;
-                    // Update cache if used
-                    if (IconManager.IconCache.ContainsKey(filePath))
+                    // Try Custom Icon First
+                    try
                     {
-                        IconManager.IconCache[filePath] = newIcon;
-                        LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.IconHandling, $"Updated icon cache for {filePath}");
-                    }
+                        WshShell shell = new WshShell();
+                        IWshShortcut shortcut = (IWshShortcut)shell.CreateShortcut(filePath);
+                        if (!string.IsNullOrEmpty(shortcut.IconLocation))
+                        {
+                            string[] iconParts = shortcut.IconLocation.Split(',');
+                            string iconPath = iconParts[0];
+                            int iconIndex = 0;
+                            if (iconParts.Length == 2 && int.TryParse(iconParts[1], out int parsedIndex)) iconIndex = parsedIndex;
 
-                    // do not remove the below commented log line, it may needed for future debugging
-                    // LogManager.Log(LogManager.LogLevel.Debug,LogManager.LogCategory.IconHandling, $"Icon updated for {filePath}");
+                            if (System.IO.File.Exists(iconPath))
+                            {
+                                newIcon = IconManager.ExtractIconFromFile(iconPath, iconIndex);
+                            }
+                        }
+                    }
+                    catch { }
+
+                    // Universal Fallback
+                    if (newIcon == null)
+                    {
+                        newIcon = Utility.GetShellIcon(filePath, isFolder);
+
+                        if (newIcon == null)
+                        {
+                            if (isFolder) newIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/folder-WhiteX.png"));
+                            else newIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/file-WhiteX.png"));
+                        }
+                    }
                 }
                 else
                 {
-                    LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.IconHandling, $"No icon update needed for {filePath}: same icon");
+                    // Standard File
+                    try
+                    {
+                        newIcon = System.Drawing.Icon.ExtractAssociatedIcon(filePath).ToImageSource();
+                    }
+                    catch
+                    {
+                        newIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/file-WhiteX.png"));
+                    }
+                }
+
+                // Apply
+                if (ico.Source != newIcon && newIcon != null)
+                {
+                    ico.Source = newIcon;
+                    if (IconManager.IconCache.ContainsKey(filePath))
+                    {
+                        IconManager.IconCache[filePath] = newIcon;
+                    }
                 }
             });
         }
+       
 
         // Safety method to ensure no fences are stuck in transition state
         public static void ClearAllTransitionStates()
@@ -7538,7 +7136,11 @@ LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, "Tab0 s
                 IsSnapEnabled = SettingsManager.IsSnapEnabled,
                 ShowBackgroundImageOnPortalFences = SettingsManager.ShowBackgroundImageOnPortalFences,
                 Showintray = SettingsManager.ShowInTray,
+                EnableSounds = SettingsManager.EnableSounds,
                 TintValue = SettingsManager.TintValue,
+                MenuTintValue = SettingsManager.MenuTintValue,
+                MenuIcon = SettingsManager.MenuIcon,
+                LockIcon = SettingsManager.LockIcon,
                 SelectedColor = SettingsManager.SelectedColor,
                 IsLogEnabled = SettingsManager.IsLogEnabled,
                 singleClickToLaunch = SettingsManager.SingleClickToLaunch,
@@ -7547,14 +7149,14 @@ LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, "Tab0 s
             };
 
 
-            if (Application.Current != null)
+            if (System.Windows.Application.Current != null)
             {
 
                 // Force UI update on the main thread
-                Application.Current.Dispatcher.Invoke(() =>
+                System.Windows.Application.Current.Dispatcher.Invoke(() =>
             {
                 int updatedItems = 0;
-                foreach (var win in Application.Current.Windows.OfType<NonActivatingWindow>())
+                foreach (var win in System.Windows.Application.Current.Windows.OfType<NonActivatingWindow>())
                 {
                     var wpcont = ((win.Content as Border)?.Child as DockPanel)?.Children
                         .OfType<ScrollViewer>().FirstOrDefault()?.Content as WrapPanel;
@@ -7684,7 +7286,14 @@ LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, "Tab0 s
 
                     LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.General, $"Target check: Path={path}, ResolvedPath={resolvedPath}, IsShortcut={isShortcutLocal}, IsFolder={isFolder}, TargetExists={targetExists}");
 
-                    if (!targetExists)
+                    // FIX: Allow Store Apps to proceed even if target resolution failed
+                    bool isStoreApp = false;
+                    if (!targetExists && isShortcutLocal)
+                    {
+                        isStoreApp = Utility.IsStoreAppShortcut(path);
+                    }
+
+                    if (!targetExists && !isStoreApp)
                     {
                         LogManager.Log(LogManager.LogLevel.Warn, LogManager.LogCategory.General, $"Target not found: {resolvedPath}");
                         return;
@@ -8065,20 +7674,103 @@ LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, "Tab0 s
                 // Check if target exists
                 bool isTargetFolder = System.IO.Directory.Exists(targetPath);
                 bool targetExists = System.IO.File.Exists(targetPath) || isTargetFolder;
+                //bool isUrl = IsWebUrl(targetPath);
+                //bool isSpecialPath = IsSpecialWindowsPath(targetPath);
+
+                //LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.IconHandling, $"Target analysis: path='{targetPath}', exists={targetExists}, isFolder={isTargetFolder}, isUrl={isUrl}, isSpecial={isSpecialPath}");
+
+                //if (!targetExists && !isUrl && !isSpecialPath)
+                //{
+                //    LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.General, $"Target not found: {targetPath}");
+                //    MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Target '{targetPath}' was not found.", "Error");
+                //    return;
+                //}
+
+
                 bool isUrl = IsWebUrl(targetPath);
                 bool isSpecialPath = IsSpecialWindowsPath(targetPath);
 
-                LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.General, $"Target analysis: path='{targetPath}', exists={targetExists}, isFolder={isTargetFolder}, isUrl={isUrl}, isSpecial={isSpecialPath}");
+                // --- FIX: Store App Detection via Binary Inspection ---
+                bool isStoreApp = false;
 
-                if (!targetExists && !isUrl && !isSpecialPath)
+                // Only check if normal validation failed (optimization)
+                if (!targetExists && isShortcut && System.IO.File.Exists(path))
+                {
+                    isStoreApp = Utility.IsStoreAppShortcut(path);
+                    if (isStoreApp)
+                    {
+                        LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General,
+                            $"LaunchItem: Detected Store App signature 'APPS' in: {path}");
+                    }
+                }
+
+                LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.IconHandling, $"Target analysis: path='{targetPath}', exists={targetExists}, isFolder={isTargetFolder}, isUrl={isUrl}, isSpecial={isSpecialPath}, isStoreApp={isStoreApp}");
+
+                if (!targetExists && !isUrl && !isSpecialPath && !isStoreApp)
                 {
                     LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.General, $"Target not found: {targetPath}");
                     MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Target '{targetPath}' was not found.", "Error");
                     return;
                 }
 
+
+                //// Create and configure ProcessStartInfo
+                //ProcessStartInfo psi = new ProcessStartInfo();
+
+
+                // Find the item to check AlwaysRunAsAdmin
+                bool alwaysRunAsAdmin = false;
+                try
+                {
+                    NonActivatingWindow parentWindow = FindVisualParent<NonActivatingWindow>(sp);
+                    if (parentWindow != null)
+                    {
+                        string fenceId = parentWindow.Tag?.ToString();
+                        if (!string.IsNullOrEmpty(fenceId))
+                        {
+                            var currentFence = FenceDataManager.FenceData.FirstOrDefault(f => f.Id?.ToString() == fenceId);
+                            if (currentFence != null && currentFence.ItemsType?.ToString() == "Data")
+                            {
+                                var items = currentFence.Items as JArray ?? new JArray();
+                                // If tabs enabled, search in current tab
+                                bool tabsEnabled = currentFence.TabsEnabled?.ToString().ToLower() == "true";
+                                if (tabsEnabled)
+                                {
+                                    var tabs = currentFence.Tabs as JArray ?? new JArray();
+                                    int currentTabIndex = Convert.ToInt32(currentFence.CurrentTab?.ToString() ?? "0");
+                                    if (currentTabIndex >= 0 && currentTabIndex < tabs.Count)
+                                    {
+                                        var currentTab = tabs[currentTabIndex] as JObject;
+                                        items = currentTab?["Items"] as JArray ?? items;
+                                    }
+                                }
+                                // Find item by Filename (case-insensitive full path match)
+                                var matchingItem = items.FirstOrDefault(i => string.Equals(
+                                    System.IO.Path.GetFullPath(i["Filename"]?.ToString() ?? ""),
+                                    System.IO.Path.GetFullPath(path),
+                                    StringComparison.OrdinalIgnoreCase));
+                                if (matchingItem != null)
+                                {
+                                    alwaysRunAsAdmin = Convert.ToBoolean(matchingItem["AlwaysRunAsAdmin"] ?? false);
+                                    LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.General, $"AlwaysRunAsAdmin flag found: {alwaysRunAsAdmin} for {path}");
+                                }
+                            }
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    LogManager.Log(LogManager.LogLevel.Warn, LogManager.LogCategory.General, $"Error finding item for AlwaysRunAsAdmin in {path}: {ex.Message}");
+                }
+
                 // Create and configure ProcessStartInfo
                 ProcessStartInfo psi = new ProcessStartInfo();
+                if (alwaysRunAsAdmin && !isUrl && !isSpecialPath && !isTargetFolder)
+                {
+                    psi.Verb = "runas";
+                    LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, $"Launching {path} as administrator due to AlwaysRunAsAdmin flag");
+                }
+
 
                 if (isUrl)
                 {
@@ -8098,6 +7790,20 @@ LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, "Tab0 s
                     }
                     LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, $"Launching special path: {targetPath} with args: '{finalArguments}'");
                 }
+                //else if (isTargetFolder)
+                //{
+                //    // Handle folders
+                //    psi.FileName = "explorer.exe";
+                //    psi.Arguments = $"\"{targetPath}\"";
+                //    psi.UseShellExecute = true;
+                //    LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, $"Opening folder: {targetPath}");
+                //}
+                //else
+                //{
+                //    // Handle regular executables
+                //    psi.FileName = targetPath;
+                //    psi.UseShellExecute = true;
+
                 else if (isTargetFolder)
                 {
                     // Handle folders
@@ -8106,6 +7812,18 @@ LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, "Tab0 s
                     psi.UseShellExecute = true;
                     LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, $"Opening folder: {targetPath}");
                 }
+                else if (isStoreApp)
+                {
+                    // FIX: Delegate launch to Explorer.exe
+                    // Direct execution of Store App .lnk files can fail in .NET.
+                    // Passing the shortcut to Explorer forces the Shell to handle the "APPS" routing.
+                    psi.FileName = "explorer.exe";
+                    psi.Arguments = $"\"{path}\""; // Quote the path!
+                    psi.UseShellExecute = true;
+                    psi.WorkingDirectory = "";
+                    LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, $"Launching Store App via Explorer wrapper: {path}");
+                }
+
                 else
                 {
                     // Handle regular executables
@@ -8191,7 +7909,8 @@ LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, "Tab0 s
             return path.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
                    path.StartsWith("https://", StringComparison.OrdinalIgnoreCase) ||
                    path.StartsWith("ftp://", StringComparison.OrdinalIgnoreCase) ||
-                   path.StartsWith("mailto:", StringComparison.OrdinalIgnoreCase);
+                   path.StartsWith("mailto:", StringComparison.OrdinalIgnoreCase) ||
+           path.StartsWith("steam://", StringComparison.OrdinalIgnoreCase);
         }
 
         // Determines if a path is a special Windows path
@@ -8515,7 +8234,7 @@ LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, "Tab0 s
                 fence.Width = snappedWidth;
                 fence.Height = snappedHeight;
 
-                dynamic fenceData = FenceManager.GetFenceData().FirstOrDefault(f => f.Title == fence.Title);
+                dynamic fenceData = GetFenceData().FirstOrDefault(f => f.Title == fence.Title);
                 if (fenceData != null)
                 {
                     fenceData.Width = snappedWidth;
@@ -8536,6 +8255,50 @@ LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, "Tab0 s
                 _hideTimer.Start();
             }
         }
+
+
+
+
+
+
+        // Add this static method inside your FenceManager class
+        private static IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
+        {
+            const int WM_GETMINMAXINFO = 0x0024;
+
+            if (msg == WM_GETMINMAXINFO)
+            {
+                // Get the screen information for the current monitor
+                var screen = System.Windows.Forms.Screen.FromHandle(hwnd);
+                if (screen != null)
+                {
+                    // Define the limit: 90% of the working area
+                    int maxWidth = (int)(screen.WorkingArea.Width * 0.90);
+                    int maxHeight = (int)(screen.WorkingArea.Height * 0.90);
+
+                    // Marshal the structure
+                    MINMAXINFO mmi = (MINMAXINFO)Marshal.PtrToStructure(lParam, typeof(MINMAXINFO));
+
+                    // Force the "Maximized" size to be 90%, not 100%
+                    mmi.ptMaxSize.x = maxWidth;
+                    mmi.ptMaxSize.y = maxHeight;
+
+                    // Force the user-draggable limit to be 90%
+                    mmi.ptMaxTrackSize.x = maxWidth;
+                    mmi.ptMaxTrackSize.y = maxHeight;
+
+                    Marshal.StructureToPtr(mmi, lParam, true);
+                    handled = true;
+                }
+            }
+            return IntPtr.Zero;
+        }
+
+
+
+
+
+
 
         private static void UpdateSizeFeedback(object sender, SizeChangedEventArgs e)
         {

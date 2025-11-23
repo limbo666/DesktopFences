@@ -233,6 +233,7 @@ namespace Desktop_Fences
                     _currentlyPressed.Contains(Key.LeftCtrl) &&
                     _currentlyPressed.Contains(Key.LeftAlt))
                 {
+                
                     ActivateDanceParty();
                 }
 
@@ -399,6 +400,14 @@ namespace Desktop_Fences
 
         private static void PlayHappyTune2()
         {
+            if (SettingsManager.EnableSounds == false)
+            {
+                LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI,
+                    "InterCore: Sound is muted, skipping PlayHappyTune2 sound playback");
+                return;
+            }
+
+
             try
             {
                 var midiOut = new NAudio.Midi.MidiOut(0);
@@ -1179,6 +1188,12 @@ namespace Desktop_Fences
 
         private static void PlaySweepSound()
         {
+            if (SettingsManager.EnableSounds == false)
+            {
+                LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI,
+                    "InterCore: Sound is muted, skipping sweep sound playback");
+                return;
+            }
             try
             {
                 using (Stream soundStream = Assembly.GetExecutingAssembly().GetManifestResourceStream("Desktop_Fences.Resources.sweep-sound-effect-240243.wav"))

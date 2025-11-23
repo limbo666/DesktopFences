@@ -662,49 +662,8 @@ namespace Desktop_Fences
             return path.All(c => c <= 127);
         }
 
-        /// <summary>
-        /// Normalizes path separators and handles Unicode paths
-        /// Used by: Path processing, file operations
-        /// Category: Path Processing
-        /// </summary>
-        public static string NormalizePath(string path)
-        {
-            if (string.IsNullOrEmpty(path))
-                return path;
 
-            try
-            {
-                return Path.GetFullPath(path.Replace('/', '\\'));
-            }
-            catch (Exception ex)
-            {
-                LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.General,
-                    $"Error normalizing path '{path}': {ex.Message}");
-                return path;
-            }
-        }
 
-        /// <summary>
-        /// Safely extracts file name without extension with Unicode support
-        /// Used by: Display name generation, file processing
-        /// Category: Path Processing
-        /// </summary>
-        public static string SafeGetFileNameWithoutExtension(string filePath)
-        {
-            try
-            {
-                if (string.IsNullOrEmpty(filePath))
-                    return "Unknown";
-
-                return Path.GetFileNameWithoutExtension(filePath);
-            }
-            catch (Exception ex)
-            {
-                LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.General,
-                    $"Error extracting filename from '{filePath}': {ex.Message}");
-                return "Unknown";
-            }
-        }
         #endregion
     }
 }

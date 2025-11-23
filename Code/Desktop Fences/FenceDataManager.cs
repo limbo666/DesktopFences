@@ -426,7 +426,7 @@ namespace Desktop_Fences
         /// Category: Fence Defaults
         /// </summary>
         private static void ApplyFenceDefaults(IDictionary<string, object> fenceDict,
-            string customColor, string customLaunchEffect)
+             string customColor, string customLaunchEffect)
         {
             // Basic state defaults
             fenceDict["IsHidden"] = "false";
@@ -437,6 +437,14 @@ namespace Desktop_Fences
             fenceDict["TabsEnabled"] = "false";
             fenceDict["CurrentTab"] = 0;
             fenceDict["Tabs"] = new JArray();
+
+            // Apply fence type specific defaults
+            string itemsType = fenceDict["ItemsType"]?.ToString();
+            if (itemsType == "Note")
+            {
+                NoteFenceManager.ApplyNoteDefaults(fenceDict);
+            }
+
 
             // Custom properties
             if (!string.IsNullOrEmpty(customColor))

@@ -11,7 +11,96 @@ namespace Desktop_Fences
     /// Compatible with existing project structure and follows established patterns
     /// </summary>
     public static class RegistryHelper
+
+
+
+
     {
+
+        #region Messaging State Management (Remote Info System)
+
+        private static readonly string MSG_REGISTRY_KEY_PATH = @"SOFTWARE\Desktop_Fences_Plus\Messaging";
+
+        /// <summary>
+        /// checks if a specific message ID has been permanently dismissed by the user.
+        /// </summary>
+        public static bool IsMessageDismissed(string msgId)
+        {
+            if (string.IsNullOrEmpty(msgId)) return false;
+            try
+            {
+                using (var key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(MSG_REGISTRY_KEY_PATH))
+                {
+                    if (key == null) return false;
+                    var val = key.GetValue($"{msgId}_Dismissed");
+                    return val != null && val.ToString() == "1";
+                }
+            }
+            catch { return false; }
+        }
+
+        /// <summary>
+        /// Gets how many times a specific message has been displayed.
+        /// </summary>
+        public static int GetMessageDisplayCount(string msgId)
+        {
+            if (string.IsNullOrEmpty(msgId)) return 0;
+            try
+            {
+                using (var key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(MSG_REGISTRY_KEY_PATH))
+                {
+                    if (key == null) return 0;
+                    var val = key.GetValue($"{msgId}_Count");
+                    return val != null ? (int)val : 0;
+                }
+            }
+            catch { return 0; }
+        }
+
+        /// <summary>
+        /// Increments the display counter for a message. Call this when showing the window.
+        /// </summary>
+        public static void IncrementMessageCount(string msgId)
+        {
+            if (string.IsNullOrEmpty(msgId)) return;
+            try
+            {
+                using (var key = Microsoft.Win32.Registry.CurrentUser.CreateSubKey(MSG_REGISTRY_KEY_PATH))
+                {
+                    if (key != null)
+                    {
+                        int current = 0;
+                        var val = key.GetValue($"{msgId}_Count");
+                        if (val != null) current = (int)val;
+
+                        key.SetValue($"{msgId}_Count", current + 1, Microsoft.Win32.RegistryValueKind.DWord);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.Settings, $"Failed to increment msg count: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Flags a message as permanently dismissed.
+        /// </summary>
+        public static void SetMessageDismissed(string msgId)
+        {
+            if (string.IsNullOrEmpty(msgId)) return;
+            try
+            {
+                using (var key = Microsoft.Win32.Registry.CurrentUser.CreateSubKey(MSG_REGISTRY_KEY_PATH))
+                {
+                    key?.SetValue($"{msgId}_Dismissed", "1", Microsoft.Win32.RegistryValueKind.String);
+                }
+            }
+            catch { }
+        }
+
+        #endregion
+
         #region Constants
 
         // Registry path for our trigger system
@@ -20,6 +109,61 @@ namespace Desktop_Fences
 
         // Registry path for program management values
         private static readonly string PROGRAM_REGISTRY_KEY_PATH = @"SOFTWARE\Desktop_Fences_Plus\ProgramManagement";
+
+        #endregion
+
+
+        // Inside RegistryHelper.cs
+
+        #region Migration Methods
+
+        // Registry path for internal app settings/flags
+        private static readonly string SETTINGS_REGISTRY_KEY_PATH = @"SOFTWARE\Desktop_Fences_Plus\Settings";
+
+        /// <summary>
+        /// Checks if the startup migration has been performed.
+        /// </summary>
+        public static bool IsStartupMigrated()
+        {
+            try
+            {
+                using (var key = Registry.CurrentUser.OpenSubKey(SETTINGS_REGISTRY_KEY_PATH))
+                {
+                    if (key != null)
+                    {
+                        var val = key.GetValue("StartupMigrated");
+                        return val != null && val.ToString() == "1";
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.General, $"RegistryHelper: Error checking migration flag: {ex.Message}");
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Sets the flag indicating startup migration is complete.
+        /// </summary>
+        public static void SetStartupMigrated()
+        {
+            try
+            {
+                using (var key = Registry.CurrentUser.CreateSubKey(SETTINGS_REGISTRY_KEY_PATH))
+                {
+                    if (key != null)
+                    {
+                        key.SetValue("StartupMigrated", "1", RegistryValueKind.String);
+                        LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, "RegistryHelper: Startup migration flag set.");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.General, $"RegistryHelper: Error setting migration flag: {ex.Message}");
+            }
+        }
 
         #endregion
 
@@ -389,4 +533,7 @@ namespace Desktop_Fences
         #endregion
       
     }
+
+
+
 }

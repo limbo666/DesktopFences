@@ -179,7 +179,39 @@ namespace Desktop_Fences
             IDictionary<string, object> iconDict = icon;
             iconDict["Filename"] = path;
             iconDict["IsFolder"] = Directory.Exists(path);
-            iconDict["DisplayName"] = Path.GetFileNameWithoutExtension(path);
+            // iconDict["DisplayName"] = Path.GetFileNameWithoutExtension(path);
+
+          //  MessageBox.Show( " " + path);
+
+            string displayName;
+
+            try
+            {
+                FileAttributes attributes = System.IO.File.GetAttributes(path);
+                bool isFolder = attributes.HasFlag(FileAttributes.Directory);
+
+                if (isFolder)
+                {
+                    // Folders → keep full name even if they contain dots
+                    displayName = Path.GetFileName(path);
+                }
+                else
+                {
+                    // Files → strip extension
+                    displayName = Path.GetFileNameWithoutExtension(path);
+                }
+            }
+            catch
+            {
+                // Fallback: act like it's a file
+                displayName = Path.GetFileNameWithoutExtension(path);
+            }
+
+            iconDict["DisplayName"] = displayName;
+
+          //  iconDict["DisplayName"] = Path.GetFileName(path);
+
+
 
             FenceManager.AddIcon(icon, _wpcont);
             StackPanel sp = _wpcont.Children[_wpcont.Children.Count - 1] as StackPanel;
@@ -209,7 +241,6 @@ namespace Desktop_Fences
                 sp.ContextMenu = contextMenu;
             }
         }
-
 
 
         private void RenameItem(string currentPath, StackPanel sp)

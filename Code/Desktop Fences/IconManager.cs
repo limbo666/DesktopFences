@@ -160,9 +160,20 @@ namespace Desktop_Fences
                 }
                 else if (Path.GetExtension(filePath).ToLower() == ".url")
                 {
-                    extractedIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/link-White.png"));
-                    LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.IconHandling,
-                        $"Using link-White.png for .url file {filePath}");
+                    // Check if this is a Steam URL for custom icon
+                    string urlContent = CoreUtilities.ExtractUrlFromFile(filePath);
+                    if (!string.IsNullOrEmpty(urlContent) && urlContent.StartsWith("steam://", StringComparison.OrdinalIgnoreCase))
+                    {
+                        extractedIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/steam-White.png"));
+                        LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.IconHandling,
+                            $"Using steam-White.png for Steam URL file {filePath}");
+                    }
+                    else
+                    {
+                        extractedIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/link-White.png"));
+                        LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.IconHandling,
+                            $"Using link-White.png for .url file {filePath}");
+                    }
                 }
                 else if (isFolder)
                 {

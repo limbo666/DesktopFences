@@ -1042,6 +1042,17 @@ namespace Desktop_Fences
         /// </summary>
         private static void PlayDingSound()
         {
+           // System.Windows.MessageBox.Show($"Enable sound is: {SettingsManager.EnableSounds}", "Info", MessageBoxButton.OK);
+            if (SettingsManager.EnableSounds == false)
+
+
+            {
+                LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI,
+                    "MessageBoxes: Sound is muted, skipping ding sound playback");
+                return;
+            }
+
+
             try
             {
                 using (Stream soundStream = Assembly.GetExecutingAssembly().GetManifestResourceStream("Desktop_Fences.Resources.ui-8-warning-sound-effect-336254.wav"))
