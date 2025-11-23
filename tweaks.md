@@ -6,8 +6,8 @@ _IconVisibilityEffect_: `None`,`Glow`, `Shadow`, `Outline`, `StrongShadow`, `Col
 _DeletePreviousLogOnStart_: `true`, `false` <br>
 _SuppressLaunchWarnings_: `true`, `false` <br>
 _DisableSingleInstance_: `true`, `false` <br>
- 
-
+_ExportShortcutsOnFenceDeletion_: `true`, `false` v2.5.3.137 <br>
+_DeleteOriginalShortcutsOnDrop_:`true`, `false`  v2.5.3.137 <br>
 **Notes**: 
  - Changing values manually on json can trigger program instability and crashes.
  - All settings are applied on program start
