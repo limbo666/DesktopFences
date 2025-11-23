@@ -10,7 +10,7 @@
       "Id": "MSG_Temp_01",
       "Type": "Warning",
       "Title": "Did you know?",
-      "Body": "We added a new search feature. Press Ctrl+`.",
+      "Body": "Woo hoo: We added a new search feature. Press Ctrl+`.",
       "Link": "https://github.com/limbo666/DesktopFences/releases",
       "TargetVersionMin": "0.0.0.0",
       "TargetVersionMax": "99.9.9.9",
