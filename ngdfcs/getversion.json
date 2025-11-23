@@ -7,16 +7,16 @@
   },
   "Announcements": [
     {
-      "Id": "MSG_Temp_01",
-      "Type": "Warning",
-      "Title": "Did you know?",
-      "Body": "Woo hoo: We added a new search feature. Press Ctrl+`.",
+      "Id": "MSG_Temp_02",
+      "Type": "Info",
+      "Title": "Hey Did you know?",
+      "Body": "We added a new search feature. Press Ctrl+`.",
       "Link": "https://github.com/limbo666/DesktopFences/releases",
       "TargetVersionMin": "0.0.0.0",
       "TargetVersionMax": "99.9.9.9",
       "MaxDisplayCount": 3,
-      "AutoCloseSeconds": 0,
-      "CanUserDismiss": true
+      "AutoCloseSeconds": 90,
+      "CanUserDismiss": false
     }
   ],
   "RemoteSettings": {
