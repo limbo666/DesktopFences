@@ -1,26 +1,10 @@
 {
-  "Meta": {
-    "LatestVersion": "0.0.0.0",
-    "CriticalUpdate": false,
-    "DownloadUrl": "",
-    "ForceKillSwitch": false
-  },
-  "Announcements": [
-    {
-      "Id": "MSG_Temp_02",
-      "Type": "Info",
-      "Title": "Hey Did you know?",
-      "Body": "We added a new search feature. Press Ctrl+`.",
-      "Link": "https://github.com/limbo666/DesktopFences/releases",
-      "TargetVersionMin": "0.0.0.0",
-      "TargetVersionMax": "99.9.9.9",
-      "MaxDisplayCount": 3,
-      "AutoCloseSeconds": 90,
-      "CanUserDismiss": false
-    }
-  ],
-  "RemoteSettings": {
-    "EnableBackgroundLogging": false,
-    "SearchEngineUrl": ""
-  }
+  "Id": "MSG_WELCOME_137",
+  "Type": "Info",
+  "Title": "Welcome",
+  "Body": "Thank you for downloading Desktop Fences +. Please read the changes on this release",
+  "Link": "https://github.com/limbo666/DesktopFences/blob/main/README.md#252125",
+  "MaxDisplayCount": 2,
+  "AutoCloseSeconds": 0,
+  "CanUserDismiss": true
 }
