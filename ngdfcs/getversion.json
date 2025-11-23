@@ -1,5 +1,23 @@
 {
   "Meta": {
-    "LatestVersion": "2.5.3.136"
+    "LatestVersion": "2.5.3.137",
+    "CriticalUpdate": true,
+    "DownloadUrl": "https://github.com/limbo666/DesktopFences/releases",
+    "ForceKillSwitch": false
+  },
+  "Announcements": [
+    {
+      "Id": "UPDATE_MSG137",
+      "Type": "Info",
+      "Title": "Update Available",
+      "Body": "A new version is available.",
+      "Link": "",
+      "MaxDisplayCount": 3,
+      "AutoCloseSeconds": 20,
+      "CanUserDismiss": false
+    }
+  ],
+  "RemoteSettings": {
+    "EnableBackgroundLogging": false
   }
 }
