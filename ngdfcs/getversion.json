@@ -1,10 +1,17 @@
 {
-  "Id": "MSG_WELCOME_137b",
-  "Type": "Info",
-  "Title": "Welcome",
-  "Body": "Thank you for downloading Desktop Fences +. Please read the changes on this release",
-  "Link": "https://github.com/limbo666/DesktopFences/blob/main/README.md#252125",
-  "MaxDisplayCount": 2,
-  "AutoCloseSeconds": 0,
-  "CanUserDismiss": true
+  "Meta": {
+    "LatestVersion": "2.5.3.137"
+  },
+  "Announcements": [
+    {
+      "Id": "MSG_WELCOME_137b",
+      "Type": "Info",
+      "Title": "Welcome",
+      "Body": "Thank you for downloading Desktop Fences +. Please read the changes on this release",
+      "Link": "https://github.com/limbo666/DesktopFences/blob/main/README.md#252125",
+      "MaxDisplayCount": 2,
+      "AutoCloseSeconds": 0,
+      "CanUserDismiss": true
+    }
+  ]
 }
