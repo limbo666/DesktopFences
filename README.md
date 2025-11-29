@@ -267,7 +267,8 @@ This project is licensed under the [MIT License](License.md).
 ##  Credits
 
 Based on the original **BirdyFences** by HakanKokcu  
-Enhanced and maintained by the Desktop Fences + community.
+Desktop Fences + is Enhanced and maintained by Nikos Georgousis. 
+Hand Water Pump 2025
 
 
 
