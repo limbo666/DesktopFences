@@ -223,7 +223,7 @@ Even small contributions mean a lot. Thank you for keeping this project alive an
 -  **Added**: Basic support for MS store based apps. This is a bare minimum implementation, no shortcut icon customization support. 🐞 Bugs expected to be found on this. https://github.com/limbo666/DesktopFences/issues/34
 -  **Fixed**: 🐛 Bug with program stability. Caused by icon updates and introduced during code migration.
 -  **Fixed**: 🐛 Bug with lost context menu on fence customization and dead shortcut cleanup. https://github.com/limbo666/DesktopFences/issues/27
--  **Added**: ✨🔎📣 Search pane to search and quick launnch shortcuts in all data fences. 🔥📝 Use hotkey ``CTRL+` ``
+-  **Added**: ✨🔎📣 Search pane "SpotSearch" to search and quick launch shortcuts in all data fences. 🔥📝 Use hotkey ``CTRL+` ``
 - **Changed**: 🔩 Some code refactoring.
 
   ## 2.5.3.137 Release 8
