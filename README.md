@@ -229,7 +229,62 @@ Even small contributions mean a lot. Thank you for keeping this project alive an
   ## 2.5.3.137 Release 8
 - **Added**: ☑️ Update checker engine
 - **Fixed**: 🐛 Missing functions from drop icon restored.
-- **Added**: ⚙️ Additional tweaks to automate icon extraction to desktop on fence deletion and icon removal from desktop on drop to fences
+- **Added**: ⚙️ Additional tweaks to automate icon extraction to desktop on fence deletion and icon removal from desktop on drop to fences.
+
+  ## 2.5.3.140
+- **Added**: ☑️ Tweak to select a key combination for SpotSearch (~, title, space, q, F1)
+
+  ## 2.5.3.144
+- **Changed**: Initial startup values and fences. Added a short Note fence on first start for user information.
+- **Fixed**: 🐛 Bug in the fence renaming escape mechanism.
+- **Added**: ☑️ Tweak to show/hide file extensions on Portal Fences.
+- **Added**: ☑️ Filters for Portal Fences.
+
+  ## 2.5.3.145
+- **Changed**: Portal Fence filters. Added predefined filters. Added a (hidden) option to disable wildcards.
+- **Added**: ☑️ Filter history for Portal Fence filters.
+- **Fixed**: 🐛 Bug in tint application.
+
+  ## 2.5.3.155
+- **Changed**: 🎨 Customization window for Portal Fences now allows changes to icon size, icon text, etc., which were previously disabled.
+- **Changed**: Snap logic improved for better Snap Near Fences functionality.
+- **Changed**: 🆒 Right-click menu items on Data Fences are now populated dynamically and displayed only when actions are available.
+- **Added**: ☑️ Ability for Portal Fences to display folders with their original customized icons.
+- **Added**: ☑️ Daily automatic backup functionality.
+- **Added**: ☑️ Cut and Copy options in the right-click menu for Portal Fence items.
+- **Added**: ☑️ Reset and Clear All Data buttons in Options.
+
+  ## 2.5.4.161
+- **Added**: 💥 Tabs❕ 👋 Half of the tabs code was already present, but this release involved a long journey of debugging, stabilizing, and improving functionality to finally bring tabs to life.
+- **Fixed**: 🐛 Minor bugs discovered during tab development. Overall program stability improved.
+- **Changed**: Backup engine updated. The program now backs up and restores options.json (if selected during restore).
+
+  ## 2.5.4.170
+- **Added**: 🎨 Icon customization option for shortcuts targeting folders.
+- **Added**: Support for rearranging icons on tabs using CTRL + Drag.
+
+  ## 2.5.4.172
+- **Fixed**: 💊 Visual glitches in various program functions.
+- **Fixed**: 🐛 Missing context menu for weblinks dropped into fences.
+- **Added**: 🎨 Icon customization option for shortcuts targeting weblinks. (This one was not easy.)
+
+  ## 2.5.4.178
+- **Changed**: Massive tab-related adjustments.
+- **Changed**: Backup and Export/Import engine updated to support tabs.
+- **Fixed**: 🐛 Several minor bugs.
+
+  ## 2.5.4.183
+- **Changed**: Heart Menu rearranged.
+- **Added**: Tab overflow management and navigation mechanism.
+- **Fixed**: 🐛 Bug in settings application from the Options window.
+
+  ## 2.5.4.184
+- **Changed**: Log engine optimized to reduce file system load.
+
+  ## 2.5.4.186
+- **Added**: Basic folder navigation for Portal Fences.
+- **Changed**: Tab naming pattern.
+
 ---
 
 ##  Summary
