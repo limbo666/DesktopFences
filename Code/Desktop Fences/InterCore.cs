@@ -4,11 +4,9 @@ using System.IO;
 using System.Linq;
 using System.Media;
 using System.Reflection;
-using System.Runtime.InteropServices;
 using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Media.Effects;
@@ -17,117 +15,31 @@ using System.Windows.Threading;
 
 namespace Desktop_Fences
 {
-
     // InterCore system for Desktop Fences - handles special interactive features and animations.
-    // Provides enhanced user experience through dynamic visual effects and hidden functionalities.
-
     public static class InterCore
     {
         #region Private Fields
 
-        // Simple key combination tracking
-        private static readonly HashSet<Key> _currentlyPressed = new HashSet<Key>();
-        private static DispatcherTimer _keyReleaseTimer;
         private static bool _isDanceActive = false;
         private static bool _isGravityActive = false;
         private static readonly Dictionary<StackPanel, Point> _originalIconPositions = new Dictionary<StackPanel, Point>();
         private static Window _sparkleOverlay;
 
-        // Global key hook variables
-        private static GlobalKeyboardHook _globalKeyHook;
-
-        #endregion
-
-        #region Global Keyboard Hook
-
-        private class GlobalKeyboardHook
-        {
-            private const int WH_KEYBOARD_LL = 13;
-            private const int HC_ACTION = 0;
-            private const int WM_KEYDOWN = 0x0100;
-            private const int WM_SYSKEYDOWN = 0x0104;
-
-            private delegate IntPtr LowLevelKeyboardProc(int nCode, IntPtr wParam, IntPtr lParam);
-            private LowLevelKeyboardProc _proc = HookCallback;
-            private IntPtr _hookID = IntPtr.Zero;
-
-            public delegate void KeyPressedEventHandler(Key key);
-            public static event KeyPressedEventHandler KeyPressed;
-
-            public GlobalKeyboardHook()
-            {
-                _hookID = SetHook(_proc);
-            }
-
-            public void Dispose()
-            {
-                UnhookWindowsHookEx(_hookID);
-            }
-
-            private IntPtr SetHook(LowLevelKeyboardProc proc)
-            {
-                using (var curProcess = System.Diagnostics.Process.GetCurrentProcess())
-                using (var curModule = curProcess.MainModule)
-                {
-                    return SetWindowsHookEx(WH_KEYBOARD_LL, proc,
-                        GetModuleHandle(curModule.ModuleName), 0);
-                }
-            }
-
-            private static IntPtr HookCallback(int nCode, IntPtr wParam, IntPtr lParam)
-            {
-                if (nCode >= HC_ACTION && (wParam == (IntPtr)WM_KEYDOWN || wParam == (IntPtr)WM_SYSKEYDOWN))
-                {
-                    int vkCode = Marshal.ReadInt32(lParam);
-                    Key key = KeyInterop.KeyFromVirtualKey(vkCode);
-                    KeyPressed?.Invoke(key);
-                }
-                return CallNextHookEx(IntPtr.Zero, nCode, wParam, lParam);
-            }
-
-            [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
-            private static extern IntPtr SetWindowsHookEx(int idHook,
-                LowLevelKeyboardProc lpfn, IntPtr hMod, uint dwThreadId);
-
-            [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
-            [return: MarshalAs(UnmanagedType.Bool)]
-            private static extern bool UnhookWindowsHookEx(IntPtr hhk);
-
-            [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
-            private static extern IntPtr CallNextHookEx(IntPtr hhk, int nCode,
-                IntPtr wParam, IntPtr lParam);
-
-            [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
-            private static extern IntPtr GetModuleHandle(string lpModuleName);
-        }
-
         #endregion
 
         #region Public Methods
 
-
         // Initializes the InterCore system - call this during application startup
-
         public static void Initialize()
         {
             try
             {
-                // Set up key release timer for combination detection
-                _keyReleaseTimer = new DispatcherTimer
-                {
-                    Interval = TimeSpan.FromMilliseconds(500) // Reset after 500ms of no key presses
-                };
-                _keyReleaseTimer.Tick += (s, e) =>
-                {
-                    _currentlyPressed.Clear();
-                    _keyReleaseTimer.Stop();
-                };
+                // REGISTER HOTKEYS from GlobalHotkeyManager
+                // Logic moved to GlobalHotkeyManager for better code management
+                GlobalHotkeyManager.DancePartyTriggered += (s, e) => ActivateDanceParty();
+                GlobalHotkeyManager.GravityDropTriggered += (s, e) => ActivateGravityDrop();
 
-                // Set up global keyboard hook
-                _globalKeyHook = new GlobalKeyboardHook();
-                GlobalKeyboardHook.KeyPressed += OnGlobalKeyPressed;
-
-                LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.UI, "InterCore system initialized with global key hook");
+                LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.UI, "InterCore system initialized and subscribed to global hotkeys");
             }
             catch (Exception ex)
             {
@@ -135,13 +47,27 @@ namespace Desktop_Fences
             }
         }
 
+        // Cleans up any active effects - call this during application shutdown
+        public static void Cleanup()
+        {
+            try
+            {
+                _sparkleOverlay?.Close();
+                _originalIconPositions.Clear();
 
-        // Processes fence title changes for special triggers
+                // Unsubscribe to prevent leaks (though static longevity matches app life)
+                GlobalHotkeyManager.DancePartyTriggered -= (s, e) => ActivateDanceParty();
+                GlobalHotkeyManager.GravityDropTriggered -= (s, e) => ActivateGravityDrop();
 
-        // <param name="fence">The fence object being renamed</param>
-        // <param name="newTitle">The new title</param>
-        // <param name="originalTitle">The original title before change</param>
-        // <returns>The final title to use (may be reverted for special triggers)</returns>
+                LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.UI, "InterCore system cleaned up");
+            }
+            catch (Exception ex)
+            {
+                LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI, $"InterCore: Error during cleanup: {ex.Message}");
+            }
+        }
+
+        // Processes fence title changes for special triggers (e.g. "limbo666")
         public static string ProcessTitleChange(dynamic fence, string newTitle, string originalTitle)
         {
             try
@@ -163,167 +89,9 @@ namespace Desktop_Fences
             }
         }
 
-
-        // Cleans up any active effects - call this during application shutdown
-
-        public static void Cleanup()
-        {
-            try
-            {
-                _keyReleaseTimer?.Stop();
-                _sparkleOverlay?.Close();
-                _originalIconPositions.Clear();
-
-                // Clean up global key hook
-                _globalKeyHook?.Dispose();
-                _globalKeyHook = null;
-
-                LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.UI, "InterCore system cleaned up");
-            }
-            catch (Exception ex)
-            {
-                LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI, $"InterCore: Error during cleanup: {ex.Message}");
-            }
-        }
-
         #endregion
 
-        #region Private Methods - Global Key Handling
-
-
-        // Global key press handler for all keyboard input
-
-        private static void OnGlobalKeyPressed(Key key)
-        {
-            try
-            {
-                // Only process if Desktop Fences is the active application or has fences visible
-                var currentApp = Application.Current;
-                if (currentApp == null) return;
-
-                var fenceWindows = currentApp.Windows.OfType<NonActivatingWindow>().ToList();
-                if (!fenceWindows.Any()) return;
-
-                // Process the key input
-                ProcessKeyInput(key);
-            }
-            catch (Exception ex)
-            {
-                LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI, $"InterCore: Error in global key handler: {ex.Message}");
-            }
-        }
-
-
-        // Processes keyboard input for special sequences and commands
-
-        // <param name="key">The pressed key</param>
-        private static void ProcessKeyInput(Key key)
-        {
-            try
-            {
-                // Add to currently pressed keys
-                _currentlyPressed.Add(key);
-
-                // Reset the timer
-                _keyReleaseTimer.Stop();
-                _keyReleaseTimer.Start();
-
-                // Check for Dance Party trigger (Ctrl+Alt+D)
-                if (key == Key.D &&
-                    _currentlyPressed.Contains(Key.LeftCtrl) &&
-                    _currentlyPressed.Contains(Key.LeftAlt))
-                {
-                
-                    ActivateDanceParty();
-                }
-
-                // Handle Gravity Drop shortcut (Ctrl+Shift+G)
-                if (key == Key.G &&
-                    (_currentlyPressed.Contains(Key.LeftCtrl) || _currentlyPressed.Contains(Key.RightCtrl)) &&
-                    (_currentlyPressed.Contains(Key.LeftShift) || _currentlyPressed.Contains(Key.RightShift)))
-                {
-                    ActivateGravityDrop();
-                }
-            }
-            catch (Exception ex)
-            {
-                LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI, $"InterCore: Error processing key input: {ex.Message}");
-            }
-        }
-
-        #endregion
-
-        //#region Private Methods - Dance Party
-
-        //private static void ActivateDanceParty()
-        //{
-        //    if (_isDanceActive) return;
-
-        //    LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.UI, "InterCore: Dance Party activated!");
-        //    _isDanceActive = true;
-
-        //    try
-        //    {
-        //        // Get all fence icons and make them dance
-        //        var fenceWindows = Application.Current.Windows.OfType<NonActivatingWindow>();
-        //        var allIcons = new List<StackPanel>();
-
-        //        foreach (var window in fenceWindows)
-        //        {
-        //            var wrapPanel = FindWrapPanel(window);
-        //            if (wrapPanel != null)
-        //            {
-        //                allIcons.AddRange(wrapPanel.Children.OfType<StackPanel>());
-        //            }
-        //        }
-
-        //        // Create bounce animation for each icon
-        //        foreach (var icon in allIcons)
-        //        {
-        //            var bounceAnimation = new DoubleAnimationUsingKeyFrames();
-
-        //            // Add keyframes with individual easing
-        //            var easing = new BounceEase { EasingMode = EasingMode.EaseOut };
-        //            bounceAnimation.KeyFrames.Add(new EasingDoubleKeyFrame(0, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(0))));
-        //            bounceAnimation.KeyFrames.Add(new EasingDoubleKeyFrame(-20, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(0.3))) { EasingFunction = easing });
-        //            bounceAnimation.KeyFrames.Add(new EasingDoubleKeyFrame(0, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(0.6))) { EasingFunction = easing });
-        //            bounceAnimation.KeyFrames.Add(new EasingDoubleKeyFrame(-15, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(0.9))) { EasingFunction = easing });
-        //            bounceAnimation.KeyFrames.Add(new EasingDoubleKeyFrame(0, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(1.2))) { EasingFunction = easing });
-
-        //            bounceAnimation.RepeatBehavior = new RepeatBehavior(TimeSpan.FromSeconds(10));
-
-        //            // Create transform if it doesn't exist
-        //            if (icon.RenderTransform == null || icon.RenderTransform == Transform.Identity)
-        //            {
-        //                icon.RenderTransform = new TranslateTransform();
-        //            }
-
-        //            var transform = icon.RenderTransform as TranslateTransform ?? new TranslateTransform();
-        //            icon.RenderTransform = transform;
-
-        //            transform.BeginAnimation(TranslateTransform.YProperty, bounceAnimation);
-        //        }
-
-        //        // Reset flag after animation completes
-        //        var resetTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(10) };
-        //        resetTimer.Tick += (s, e) =>
-        //        {
-        //            _isDanceActive = false;
-        //            resetTimer.Stop();
-        //            LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI, "InterCore: Dance Party effect ended");
-        //        };
-        //        resetTimer.Start();
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI, $"InterCore: Error in Dance Party activation: {ex.Message}");
-        //        _isDanceActive = false;
-        //    }
-        //}
-
-        //#endregion
-
-        #region Private Methods - Dance Party
+        #region Private Methods - Dance Party (Ctrl+Alt+D)
 
         private static void ActivateDanceParty()
         {
@@ -334,16 +102,16 @@ namespace Desktop_Fences
 
             try
             {
-                // Play MIDI music (simple generated tune)
-                // PlayDanceMusic();
+                // Play MIDI music
                 PlayHappyTune2();
 
-                // Get all fence icons and make them dance
+                // Get all fence icons
                 var fenceWindows = Application.Current.Windows.OfType<NonActivatingWindow>();
                 var allIcons = new List<StackPanel>();
 
                 foreach (var window in fenceWindows)
                 {
+                    // Use FenceUtilities to find panels (or local helper if preferred)
                     var wrapPanel = FenceUtilities.FindWrapPanel(window);
                     if (wrapPanel != null)
                     {
@@ -351,26 +119,20 @@ namespace Desktop_Fences
                     }
                 }
 
-                // Create bounce animation for each icon
+                // Create bounce animation
                 foreach (var icon in allIcons)
                 {
                     var bounceAnimation = new DoubleAnimationUsingKeyFrames();
-
-                    // Add keyframes with individual easing
                     var easing = new BounceEase { EasingMode = EasingMode.EaseOut };
+                    
                     bounceAnimation.KeyFrames.Add(new EasingDoubleKeyFrame(0, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(0))));
                     bounceAnimation.KeyFrames.Add(new EasingDoubleKeyFrame(-20, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(0.3))) { EasingFunction = easing });
                     bounceAnimation.KeyFrames.Add(new EasingDoubleKeyFrame(0, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(0.6))) { EasingFunction = easing });
-                    bounceAnimation.KeyFrames.Add(new EasingDoubleKeyFrame(-15, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(0.9))) { EasingFunction = easing });
-                    bounceAnimation.KeyFrames.Add(new EasingDoubleKeyFrame(0, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(1.2))) { EasingFunction = easing });
-
+                    
                     bounceAnimation.RepeatBehavior = new RepeatBehavior(TimeSpan.FromSeconds(10));
 
-                    // Create transform if it doesn't exist
                     if (icon.RenderTransform == null || icon.RenderTransform == Transform.Identity)
-                    {
                         icon.RenderTransform = new TranslateTransform();
-                    }
 
                     var transform = icon.RenderTransform as TranslateTransform ?? new TranslateTransform();
                     icon.RenderTransform = transform;
@@ -378,58 +140,40 @@ namespace Desktop_Fences
                     transform.BeginAnimation(TranslateTransform.YProperty, bounceAnimation);
                 }
 
-                // Reset flag after animation completes
+                // Reset flag
                 var resetTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(10) };
                 resetTimer.Tick += (s, e) =>
                 {
                     _isDanceActive = false;
                     resetTimer.Stop();
-                    LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI, "InterCore: Dance Party effect ended");
                 };
                 resetTimer.Start();
             }
             catch (Exception ex)
             {
-                LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI, $"InterCore: Error in Dance Party activation: {ex.Message}");
+                LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI, $"InterCore: Error in Dance Party: {ex.Message}");
                 _isDanceActive = false;
             }
         }
 
-        #endregion
-
-
         private static void PlayHappyTune2()
         {
-            if (SettingsManager.EnableSounds == false)
-            {
-                LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI,
-                    "InterCore: Sound is muted, skipping PlayHappyTune2 sound playback");
-                return;
-            }
-
+            if (SettingsManager.EnableSounds == false) return;
 
             try
             {
                 var midiOut = new NAudio.Midi.MidiOut(0);
-                midiOut.Send(NAudio.Midi.MidiMessage.ChangePatch(12, 1).RawData); //12 Marimba // 24 Pianio
+                midiOut.Send(NAudio.Midi.MidiMessage.ChangePatch(12, 1).RawData); 
 
                 var thread = new Thread(() =>
                 {
-                    // Chord progression: C - G - Am - F
-                    int[][] chords = {
-                new[] { 60, 64, 67 }, // C
-                new[] { 67, 71, 74 }, // G
-                new[] { 69, 72, 76 }, // Am
-                new[] { 65, 69, 72 }  // F
-            };
+                    int[][] chords = { new[] { 60, 64, 67 }, new[] { 67, 71, 74 }, new[] { 69, 72, 76 }, new[] { 65, 69, 72 } };
 
-                    for (int i = 0; i < 14; i++) // iterations
+                    for (int i = 0; i < 14; i++) 
                     {
-                        // Play chord
                         foreach (var note in chords[i % chords.Length])
-                        {
                             midiOut.Send(NAudio.Midi.MidiMessage.StartNote(note, 90, 1).RawData);
-                        }
+                        
                         Thread.Sleep(300);
 
                         // Staccato rhythm
@@ -440,14 +184,9 @@ namespace Desktop_Fences
                             midiOut.Send(NAudio.Midi.MidiMessage.StartNote(rootNote + (j % 2 == 0 ? 0 : 7), 110, 1).RawData);
                             Thread.Sleep(100);
                         }
-
-                        // Release chord
                         foreach (var note in chords[i % chords.Length])
-                        {
                             midiOut.Send(NAudio.Midi.MidiMessage.StopNote(note, 0, 1).RawData);
-                        }
                     }
-
                     midiOut.Dispose();
                 });
 
@@ -456,13 +195,13 @@ namespace Desktop_Fences
             }
             catch (Exception ex)
             {
-                LogManager.Log(LogManager.LogLevel.Warn, LogManager.LogCategory.UI,
-                    $"InterCore: Couldn't play happy tune 2: {ex.Message}");
+                LogManager.Log(LogManager.LogLevel.Warn, LogManager.LogCategory.UI, $"InterCore: Audio error: {ex.Message}");
             }
         }
 
+        #endregion
 
-        #region Private Methods - Gravity Drop
+        #region Private Methods - Gravity Drop (Ctrl+Shift+G)
 
         private static void ActivateGravityDrop()
         {
@@ -473,7 +212,6 @@ namespace Desktop_Fences
 
             try
             {
-                // Get all fence icons
                 var fenceWindows = Application.Current.Windows.OfType<NonActivatingWindow>();
                 var allIcons = new List<StackPanel>();
                 _originalIconPositions.Clear();
@@ -482,57 +220,36 @@ namespace Desktop_Fences
                 {
                     var wrapPanel = FenceUtilities.FindWrapPanel(window);
                     if (wrapPanel != null)
-                    {
-                        var icons = wrapPanel.Children.OfType<StackPanel>().ToList();
-                        allIcons.AddRange(icons);
-
-                        // Store original positions
-                        foreach (var icon in icons)
-                        {
-                            _originalIconPositions[icon] = new Point(icon.Margin.Left, icon.Margin.Top);
-                        }
-                    }
+                        allIcons.AddRange(wrapPanel.Children.OfType<StackPanel>());
                 }
 
-                // Create gravity effect for each icon
                 foreach (var icon in allIcons)
                 {
                     var random = new Random();
-                    var fallDistance = 500 + random.Next(100); // Random fall distance
-                    var fallDuration = 1.5 + random.NextDouble() * 0.5; // Random fall speed
+                    var fallDistance = 500 + random.Next(100);
+                    var fallDuration = 1.5 + random.NextDouble() * 0.5;
 
-                    // Create fall animation
                     var fallAnimation = new DoubleAnimation
                     {
-                        From = 0,
-                        To = fallDistance,
-                        Duration = TimeSpan.FromSeconds(fallDuration),
+                        From = 0, To = fallDistance, Duration = TimeSpan.FromSeconds(fallDuration),
                         EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseIn }
                     };
 
-                    // Create bounce back animation
                     var bounceAnimation = new DoubleAnimation
                     {
-                        From = fallDistance,
-                        To = 0,
-                        Duration = TimeSpan.FromSeconds(0.8),
+                        From = fallDistance, To = 0, Duration = TimeSpan.FromSeconds(0.8),
                         EasingFunction = new BounceEase { EasingMode = EasingMode.EaseOut, Bounces = 3 },
                         BeginTime = TimeSpan.FromSeconds(fallDuration)
                     };
 
-                    // Create transform if it doesn't exist
                     if (icon.RenderTransform == null || icon.RenderTransform == Transform.Identity)
-                    {
                         icon.RenderTransform = new TranslateTransform();
-                    }
 
                     var transform = icon.RenderTransform as TranslateTransform ?? new TranslateTransform();
                     icon.RenderTransform = transform;
 
-                    // Start fall animation
                     transform.BeginAnimation(TranslateTransform.YProperty, fallAnimation);
 
-                    // Queue bounce animation
                     var bounceTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(fallDuration) };
                     bounceTimer.Tick += (s, e) =>
                     {
@@ -542,27 +259,218 @@ namespace Desktop_Fences
                     bounceTimer.Start();
                 }
 
-                // Reset flag after all animations complete
                 var resetTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(4) };
                 resetTimer.Tick += (s, e) =>
                 {
                     _isGravityActive = false;
                     _originalIconPositions.Clear();
                     resetTimer.Stop();
-                    LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI, "InterCore: Gravity Drop effect ended");
                 };
                 resetTimer.Start();
             }
             catch (Exception ex)
             {
-                LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI, $"InterCore: Error in Gravity Drop activation: {ex.Message}");
+                LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI, $"InterCore: Error in Gravity Drop: {ex.Message}");
                 _isGravityActive = false;
             }
         }
 
         #endregion
 
-        #region Private Methods - Epic Fireworks (limbo666)
+        #region Private Methods - Lighthouse & Sparkle
+
+        // (These methods remain unchanged, they are called by other mechanisms, not hotkeys)
+        #region Private Methods - Lighthouse Sweep (Single Instance Effect)
+
+        private static bool _isLighthouseSweepActive = false;
+
+        /// <summary>
+        /// Activates lighthouse sweep effect across all visible fences
+        /// Called when registry monitor detects another instance attempt
+        /// Creates a wave of golden glow that sweeps across all fences
+        /// </summary>
+        /// 
+
+        public static void ActivateLighthouseSweep()
+        {
+            if (_isLighthouseSweepActive)
+            {
+                LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI,
+                    "InterCore: Lighthouse sweep already active, skipping");
+                return;
+            }
+
+            _isLighthouseSweepActive = true;
+
+            try
+            {
+                LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.UI,
+                    "InterCore: Lighthouse Sweep effect activated - another instance detected!");
+
+                // Get all visible fence windows
+                var allFences = Application.Current.Windows.OfType<NonActivatingWindow>()
+                    .Where(w => w.Visibility == Visibility.Visible)
+                    .OrderBy(w => w.Left) // Order by horizontal position for wave effect
+                    .ToList();
+
+                if (allFences.Count == 0)
+                {
+                    LogManager.Log(LogManager.LogLevel.Warn, LogManager.LogCategory.UI,
+                        "InterCore: No visible fences found for Lighthouse Sweep");
+                    _isLighthouseSweepActive = false;
+                    return;
+                }
+
+                LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.UI,
+                    $"InterCore: Starting Lighthouse Sweep on {allFences.Count} fences");
+
+                // Store original opacities
+                var originalOpacities = new Dictionary<NonActivatingWindow, double>();
+                foreach (var fence in allFences)
+                {
+                    originalOpacities[fence] = fence.Opacity;
+
+                    // If fence has high tint (low opacity), fade it to 0.4
+                    if (fence.Opacity > 0.4)
+                    {
+                        var fadeOut = new DoubleAnimation
+                        {
+                            To = 0.4,
+                            Duration = TimeSpan.FromMilliseconds(400), // smooth transition
+                            FillBehavior = FillBehavior.HoldEnd
+                        };
+                        fence.BeginAnimation(UIElement.OpacityProperty, fadeOut);
+
+                        LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI,
+                            $"InterCore: Fading opacity for fence '{fence.Title}' from {originalOpacities[fence]:F2} to 0.40");
+                    }
+                }
+                PlaySweepSound();
+                // Create wave effect across fences
+                for (int i = 0; i < allFences.Count; i++)
+                {
+                    var fence = allFences[i];
+                    int delay = i * 150; // 150ms delay between each fence for wave effect
+
+                    var delayTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(delay) };
+                    delayTimer.Tick += (s, e) =>
+                    {
+                        ApplyLighthouseGlowToFence(fence);
+                        ((DispatcherTimer)s).Stop();
+                    };
+                    delayTimer.Start();
+                }
+
+                // Restore original opacities with fade-in
+                var restoreTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(3) };
+                restoreTimer.Tick += (s, e) =>
+                {
+                    try
+                    {
+                        foreach (var fence in allFences)
+                        {
+                            if (originalOpacities.ContainsKey(fence))
+                            {
+                                var fadeIn = new DoubleAnimation
+                                {
+                                    To = originalOpacities[fence],
+                                    Duration = TimeSpan.FromMilliseconds(400),
+                                    FillBehavior = FillBehavior.HoldEnd
+                                };
+                                fence.BeginAnimation(UIElement.OpacityProperty, fadeIn);
+
+                                LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI,
+                                    $"InterCore: Restoring opacity for fence '{fence.Title}' to {originalOpacities[fence]:F2}");
+                            }
+                        }
+
+                        _isLighthouseSweepActive = false;
+                        restoreTimer.Stop();
+
+                        LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI,
+                            "InterCore: Lighthouse Sweep effect completed and tint restored");
+                    }
+                    catch (Exception ex)
+                    {
+                        LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI,
+                            $"InterCore: Error restoring opacities: {ex.Message}");
+                        _isLighthouseSweepActive = false;
+                    }
+                };
+                restoreTimer.Start();
+            }
+            catch (Exception ex)
+            {
+                LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI,
+                    $"InterCore: Error in Lighthouse Sweep activation: {ex.Message}");
+                _isLighthouseSweepActive = false;
+            }
+        }
+
+        /// <summary>
+        /// Applies lighthouse glow effect to a single fence window
+        /// Creates bright golden glow that pulses 3 times around the fence border
+        /// </summary>
+        private static void ApplyLighthouseGlowToFence(NonActivatingWindow fence)
+        {
+            try
+            {
+                // Create bright golden glow effect
+                var lighthouseGlow = new DropShadowEffect
+                {
+                    Color = Color.FromRgb(255, 215, 0), // Gold color
+                    BlurRadius = 25,
+                    ShadowDepth = 0,
+                    Opacity = 0
+                };
+
+                // Store original effect to restore later
+                var originalEffect = fence.Effect;
+                fence.Effect = lighthouseGlow;
+
+                // Create pulsing animation - 3 strong pulses
+                var pulseAnimation = new DoubleAnimation
+                {
+                    From = 0,
+                    To = 0.9, // Bright but not overwhelming
+                    Duration = TimeSpan.FromMilliseconds(200),
+                    AutoReverse = true,
+                    RepeatBehavior = new RepeatBehavior(3) // Pulse 3 times
+                };
+
+                // Restore original effect when animation completes
+                pulseAnimation.Completed += (s, e) =>
+                {
+                    try
+                    {
+                        fence.Effect = originalEffect;
+                        LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI,
+                            $"InterCore: Lighthouse glow completed on fence '{fence.Title}'");
+                    }
+                    catch (Exception ex)
+                    {
+                        LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI,
+                            $"InterCore: Error restoring fence effect: {ex.Message}");
+                    }
+                };
+
+                // Start the glow animation
+                lighthouseGlow.BeginAnimation(DropShadowEffect.OpacityProperty, pulseAnimation);
+
+                LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI,
+                    $"InterCore: Applied lighthouse glow to fence '{fence.Title}'");
+            }
+            catch (Exception ex)
+            {
+                LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI,
+                    $"InterCore: Error applying lighthouse glow to fence '{fence?.Title}': {ex.Message}");
+            }
+        }
+
+        #endregion
+
+
+   #region Private Methods - Epic Fireworks (limbo666)
 
         private static void ActivateSparkleEffect()
         {
@@ -961,9 +869,9 @@ namespace Desktop_Fences
         #endregion
 
 
-        #region Private Methods - Lighthouse Sweep (Single Instance Effect)
 
-        private static bool _isLighthouseSweepActive = false;
+
+
 
         /// <summary>
         /// Activates lighthouse sweep effect across all visible fences
@@ -972,183 +880,9 @@ namespace Desktop_Fences
         /// </summary>
         /// 
 
-        public static void ActivateLighthouseSweep()
-        {
-            if (_isLighthouseSweepActive)
-            {
-                LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI,
-                    "InterCore: Lighthouse sweep already active, skipping");
-                return;
-            }
-
-            _isLighthouseSweepActive = true;
-
-            try
-            {
-                LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.UI,
-                    "InterCore: Lighthouse Sweep effect activated - another instance detected!");
-              
-                // Get all visible fence windows
-                var allFences = Application.Current.Windows.OfType<NonActivatingWindow>()
-                    .Where(w => w.Visibility == Visibility.Visible)
-                    .OrderBy(w => w.Left) // Order by horizontal position for wave effect
-                    .ToList();
-
-                if (allFences.Count == 0)
-                {
-                    LogManager.Log(LogManager.LogLevel.Warn, LogManager.LogCategory.UI,
-                        "InterCore: No visible fences found for Lighthouse Sweep");
-                    _isLighthouseSweepActive = false;
-                    return;
-                }
-
-                LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.UI,
-                    $"InterCore: Starting Lighthouse Sweep on {allFences.Count} fences");
-
-                // Store original opacities
-                var originalOpacities = new Dictionary<NonActivatingWindow, double>();
-                foreach (var fence in allFences)
-                {
-                    originalOpacities[fence] = fence.Opacity;
-
-                    // If fence has high tint (low opacity), fade it to 0.4
-                    if (fence.Opacity > 0.4)
-                    {
-                        var fadeOut = new DoubleAnimation
-                        {
-                            To = 0.4,
-                            Duration = TimeSpan.FromMilliseconds(400), // smooth transition
-                            FillBehavior = FillBehavior.HoldEnd
-                        };
-                        fence.BeginAnimation(UIElement.OpacityProperty, fadeOut);
-
-                        LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI,
-                            $"InterCore: Fading opacity for fence '{fence.Title}' from {originalOpacities[fence]:F2} to 0.40");
-                    }
-                }
-                PlaySweepSound();
-                // Create wave effect across fences
-                for (int i = 0; i < allFences.Count; i++)
-                {
-                    var fence = allFences[i];
-                    int delay = i * 150; // 150ms delay between each fence for wave effect
-
-                    var delayTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(delay) };
-                    delayTimer.Tick += (s, e) =>
-                    {
-                        ApplyLighthouseGlowToFence(fence);
-                        ((DispatcherTimer)s).Stop();
-                    };
-                    delayTimer.Start();
-                }
-
-                // Restore original opacities with fade-in
-                var restoreTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(3) };
-                restoreTimer.Tick += (s, e) =>
-                {
-                    try
-                    {
-                        foreach (var fence in allFences)
-                        {
-                            if (originalOpacities.ContainsKey(fence))
-                            {
-                                var fadeIn = new DoubleAnimation
-                                {
-                                    To = originalOpacities[fence],
-                                    Duration = TimeSpan.FromMilliseconds(400),
-                                    FillBehavior = FillBehavior.HoldEnd
-                                };
-                                fence.BeginAnimation(UIElement.OpacityProperty, fadeIn);
-
-                                LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI,
-                                    $"InterCore: Restoring opacity for fence '{fence.Title}' to {originalOpacities[fence]:F2}");
-                            }
-                        }
-
-                        _isLighthouseSweepActive = false;
-                        restoreTimer.Stop();
-
-                        LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI,
-                            "InterCore: Lighthouse Sweep effect completed and tint restored");
-                    }
-                    catch (Exception ex)
-                    {
-                        LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI,
-                            $"InterCore: Error restoring opacities: {ex.Message}");
-                        _isLighthouseSweepActive = false;
-                    }
-                };
-                restoreTimer.Start();
-            }
-            catch (Exception ex)
-            {
-                LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI,
-                    $"InterCore: Error in Lighthouse Sweep activation: {ex.Message}");
-                _isLighthouseSweepActive = false;
-            }
-        }
-
-        /// <summary>
-        /// Applies lighthouse glow effect to a single fence window
-        /// Creates bright golden glow that pulses 3 times around the fence border
-        /// </summary>
-        private static void ApplyLighthouseGlowToFence(NonActivatingWindow fence)
-        {
-            try
-            {
-                // Create bright golden glow effect
-                var lighthouseGlow = new DropShadowEffect
-                {
-                    Color = Color.FromRgb(255, 215, 0), // Gold color
-                    BlurRadius = 25,
-                    ShadowDepth = 0,
-                    Opacity = 0
-                };
-
-                // Store original effect to restore later
-                var originalEffect = fence.Effect;
-                fence.Effect = lighthouseGlow;
-
-                // Create pulsing animation - 3 strong pulses
-                var pulseAnimation = new DoubleAnimation
-                {
-                    From = 0,
-                    To = 0.9, // Bright but not overwhelming
-                    Duration = TimeSpan.FromMilliseconds(200),
-                    AutoReverse = true,
-                    RepeatBehavior = new RepeatBehavior(3) // Pulse 3 times
-                };
-
-                // Restore original effect when animation completes
-                pulseAnimation.Completed += (s, e) =>
-                {
-                    try
-                    {
-                        fence.Effect = originalEffect;
-                        LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI,
-                            $"InterCore: Lighthouse glow completed on fence '{fence.Title}'");
-                    }
-                    catch (Exception ex)
-                    {
-                        LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI,
-                            $"InterCore: Error restoring fence effect: {ex.Message}");
-                    }
-                };
-
-                // Start the glow animation
-                lighthouseGlow.BeginAnimation(DropShadowEffect.OpacityProperty, pulseAnimation);
-
-                LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI,
-                    $"InterCore: Applied lighthouse glow to fence '{fence.Title}'");
-            }
-            catch (Exception ex)
-            {
-                LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI,
-                    $"InterCore: Error applying lighthouse glow to fence '{fence?.Title}': {ex.Message}");
-            }
-        }
 
         #endregion
+        #region Private Methods - Lighthouse Sweep (Single Instance Effect)
 
         #region Helper Methods
 
@@ -1217,6 +951,8 @@ namespace Desktop_Fences
             }
         }
 
+
+        #endregion
 
 
         #endregion

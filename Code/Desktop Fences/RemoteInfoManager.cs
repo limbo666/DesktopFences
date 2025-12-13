@@ -38,7 +38,13 @@ namespace Desktop_Fences
                     client.DefaultRequestHeaders.UserAgent.ParseAdd("DesktopFences/2.5"); // Identify app
                     client.Timeout = TimeSpan.FromSeconds(10);
 
-                    string json = await client.GetStringAsync(MANIFEST_URL);
+                    // FIX: Add Cache Buster to force fresh content from GitHub
+                    // We append a unique timestamp so the CDN/Proxy treats this as a new request.
+                    string urlWithNoCache = $"{MANIFEST_URL}?t={DateTime.Now.Ticks}";
+
+                    LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, $"RemoteInfoManager: Downloading manifest from {urlWithNoCache}");
+
+                    string json = await client.GetStringAsync(urlWithNoCache);
 
                     if (string.IsNullOrWhiteSpace(json)) return;
 

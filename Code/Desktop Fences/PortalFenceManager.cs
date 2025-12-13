@@ -14,6 +14,10 @@ namespace Desktop_Fences
 {
     public class PortalFenceManager
     {
+        // New field for the active filter
+        private string _currentFilter = null;
+
+
         private readonly dynamic _fence;
         private readonly WrapPanel _wpcont;
         private readonly FileSystemWatcher _watcher;
@@ -21,6 +25,130 @@ namespace Desktop_Fences
         private readonly Dispatcher _dispatcher;
         private readonly Dictionary<string, (FileSystemEventArgs Args, string OldPath)> _pendingEvents = new Dictionary<string, (FileSystemEventArgs, string)>();
         private readonly DispatcherTimer _debounceTimer;
+
+
+
+
+
+
+
+
+        // --- FILTERING ENGINE START ---
+
+        /// <summary>
+        /// Updates the current filter and refreshes the visibility of all items.
+        /// Publicly called by FenceManager when the user types in the filter bar.
+        /// </summary>
+        public void ApplyFilter(string filterText)
+        {
+            _currentFilter = filterText;
+            _dispatcher.Invoke(() =>
+            {
+                foreach (StackPanel sp in _wpcont.Children.OfType<StackPanel>())
+                {
+                    if (sp.Tag != null)
+                    {
+                        // Safely retrieve path from anonymous type or object
+                        string path = sp.Tag.GetType().GetProperty("FilePath")?.GetValue(sp.Tag)?.ToString();
+                        if (!string.IsNullOrEmpty(path))
+                        {
+                            sp.Visibility = ShouldShowItem(path) ? Visibility.Visible : Visibility.Collapsed;
+                        }
+                    }
+                }
+            });
+        }
+
+
+
+        /// <summary>
+        /// Determines if a file should be visible based on the current filter.
+        /// Supports "Smart Match" if NoWildcardsOnPortalFilter is enabled.
+        /// </summary>
+        private bool ShouldShowItem(string filePath)
+        {
+            if (string.IsNullOrWhiteSpace(_currentFilter)) return true;
+
+            string fileName = System.IO.Path.GetFileName(filePath);
+            var terms = _currentFilter.Split(new[] { ';', ',' }, StringSplitOptions.RemoveEmptyEntries)
+                                      .Select(t => t.Trim())
+                                      .ToList();
+
+            bool hasIncludeRules = terms.Any(t => !t.StartsWith(">"));
+            bool matchesInclude = !hasIncludeRules;
+            bool matchesExclude = false;
+
+            foreach (var term in terms)
+            {
+                if (string.IsNullOrEmpty(term)) continue;
+
+                string pattern = term;
+                bool isExclude = false;
+
+                // 1. Identify Exclusion
+                if (pattern.StartsWith(">"))
+                {
+                    isExclude = true;
+                    pattern = pattern.Substring(1); // Remove '>' prefix
+                }
+
+                // 2. Apply Smart Wildcards (Hidden Option)
+                // Logic: If user wants "No Wildcards", we treat text as "Contains".
+                // We only auto-wrap if the user hasn't typed wildcards themselves.
+                if (SettingsManager.NoWildcardsOnPortalFilter)
+                {
+                    if (!pattern.Contains("*") && !pattern.Contains("?"))
+                    {
+                        pattern = "*" + pattern + "*";
+                    }
+                }
+
+                // 3. Match
+                if (isExclude)
+                {
+                    if (IsMatch(fileName, pattern))
+                    {
+                        matchesExclude = true;
+                        break; // Hard fail
+                    }
+                }
+                else
+                {
+                    if (IsMatch(fileName, pattern))
+                    {
+                        matchesInclude = true;
+                    }
+                }
+            }
+
+            return !matchesExclude && matchesInclude;
+        }
+
+
+
+
+        /// <summary>
+        /// Simple glob matching (* and ?)
+        /// </summary>
+        private bool IsMatch(string text, string pattern)
+        {
+            // Use VB's Like operator or simple Regex. 
+            // For a dependency-free C# solution, we convert glob to regex.
+            try
+            {
+                string regexPattern = "^" + System.Text.RegularExpressions.Regex.Escape(pattern)
+                                      .Replace(@"\*", ".*")
+                                      .Replace(@"\?", ".") + "$";
+                return System.Text.RegularExpressions.Regex.IsMatch(text, regexPattern, System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+            }
+            catch { return false; }
+        }
+        // --- FILTERING ENGINE END ---
+
+
+
+
+
 
         public PortalFenceManager(dynamic fence, WrapPanel wpcont)
         {
@@ -38,6 +166,12 @@ namespace Desktop_Fences
             // Extract folder path
             IDictionary<string, object> fenceDict = fence is IDictionary<string, object> dict ? dict : ((JObject)fence).ToObject<IDictionary<string, object>>();
             _targetFolderPath = fenceDict.ContainsKey("Path") ? fenceDict["Path"]?.ToString() : null;
+
+            // FIX: Load saved filter immediately on startup
+            if (fenceDict.ContainsKey("FilterString"))
+            {
+                _currentFilter = fenceDict["FilterString"]?.ToString();
+            }
 
             if (string.IsNullOrEmpty(_targetFolderPath))
             {
@@ -59,6 +193,12 @@ namespace Desktop_Fences
             _watcher.Renamed += (s, e) => QueueEvent(e, e.OldFullPath);
 
             InitializeFenceContents();
+
+          //  // --- TEST CODE START ---
+          //  // Hardcode a filter to prove the engine works.
+         //   // This simulates a user typing "*.txt" into the filter bar.
+         //   ApplyFilter("*.txt");
+          //  // --- TEST CODE END ---
         }
 
         private void QueueEvent(FileSystemEventArgs e, string oldPath = null)
@@ -178,45 +318,50 @@ namespace Desktop_Fences
             dynamic icon = new System.Dynamic.ExpandoObject();
             IDictionary<string, object> iconDict = icon;
             iconDict["Filename"] = path;
-            iconDict["IsFolder"] = Directory.Exists(path);
-            // iconDict["DisplayName"] = Path.GetFileNameWithoutExtension(path);
 
-          //  MessageBox.Show( " " + path);
+            bool isFolder = false;
+            try { isFolder = Directory.Exists(path); } catch { }
+            iconDict["IsFolder"] = isFolder;
 
             string displayName;
 
             try
             {
-                FileAttributes attributes = System.IO.File.GetAttributes(path);
-                bool isFolder = attributes.HasFlag(FileAttributes.Directory);
-
-                if (isFolder)
+                // FIX: Handle Extensions based on Global Setting
+                if (SettingsManager.ShowPortalExtensions && !isFolder)
                 {
-                    // Folders → keep full name even if they contain dots
+                    // Force display name WITH extension
                     displayName = Path.GetFileName(path);
                 }
                 else
                 {
-                    // Files → strip extension
-                    displayName = Path.GetFileNameWithoutExtension(path);
+                    if (isFolder)
+                    {
+                        // Folders → keep full name even if they contain dots
+                        displayName = Path.GetFileName(path);
+                    }
+                    else
+                    {
+                        // Files → strip extension (default behavior)
+                        displayName = Path.GetFileNameWithoutExtension(path);
+                    }
                 }
             }
             catch
             {
-                // Fallback: act like it's a file
+                // Fallback: act like it's a file without extension
                 displayName = Path.GetFileNameWithoutExtension(path);
             }
 
             iconDict["DisplayName"] = displayName;
 
-          //  iconDict["DisplayName"] = Path.GetFileName(path);
-
-
-
             FenceManager.AddIcon(icon, _wpcont);
             StackPanel sp = _wpcont.Children[_wpcont.Children.Count - 1] as StackPanel;
             if (sp != null)
             {
+                // FIX: Apply filter immediately upon creation
+                sp.Visibility = ShouldShowItem(path) ? Visibility.Visible : Visibility.Collapsed;
+
                 FenceManager.ClickEventAdder(sp, path, Directory.Exists(path));
 
                 // Create and attach context menu
@@ -231,7 +376,6 @@ namespace Desktop_Fences
                 MenuItem renameItem = new MenuItem { Header = "Rename item" };
                 renameItem.Click += (s, e) => RenameItem(path, sp);
                 contextMenu.Items.Add(renameItem);
-
 
                 // "Delete item" menu item
                 MenuItem deleteItem = new MenuItem { Header = "Delete item" };
@@ -520,6 +664,9 @@ namespace Desktop_Fences
                 LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.General, $"Failed to find StackPanel for {path} in RemoveIcon");
             }
         }
+
+        // TEST: Filter for only text files (REMOVE AFTER TEST)
+        // ApplyFilter("*.txt");
 
         public void Dispose()
         {

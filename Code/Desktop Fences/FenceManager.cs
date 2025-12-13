@@ -21,11 +21,25 @@ using System.Windows.Media.Effects;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using static System.Net.Mime.MediaTypeNames;
+using Color = System.Drawing.Color;
 
 namespace Desktop_Fences
 {
     public static class FenceManager
     {
+
+        // --- NEW: Centralized Presets ---
+        private static readonly Dictionary<string, string> _standardPresets = new Dictionary<string, string>
+        {
+            { "Images", "*.jpg; *.jpeg; *.png; *.gif; *.bmp; *.webp" },
+            { "Documents", "*.doc*; *.pdf; *.txt; *.rtf; *.xls*; *.ppt*" },
+            { "Executables", "*.exe; *.bat; *.msi; *.cmd; *.ps1" },
+            { "Archives", "*.zip; *.rar; *.7z; *.tar; *.gz" },
+            { "Media", "*.mp3; *.wav; *.mp4; *.mkv; *.avi" },
+            { "Hide System", ">*.tmp; >desktop.ini; >~$*" }
+        };
+        // -------------------------------
+
 
         // --- WM_GETMINMAXINFO Implementation ---
         private const int WM_GETMINMAXINFO = 0x0024;
@@ -311,14 +325,57 @@ namespace Desktop_Fences
 
         private static int _registryMonitorTickCount = 0;
 
-        // Builds the heart ContextMenu for a fence with consistent items and dynamic state
+
+
+
+
+
+
+
+
         private static ContextMenu BuildHeartContextMenu(dynamic fence, bool showTabsOption = false)
         {
             // DEBUG: Log menu building
             LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.UI,
-                $"Building heart context menu for fence '{fence.Title}' - showTabsOption: {showTabsOption}");
+                $"Building heart context menu for fence '{fence.Title}'");
 
             var menu = new ContextMenu();
+
+            // --- AUTO-CLOSE TIMER ---
+            // Closes the menu after 4 seconds of inactivity
+            System.Windows.Threading.DispatcherTimer menuTimer = new System.Windows.Threading.DispatcherTimer
+            {
+                Interval = TimeSpan.FromSeconds(4)
+            };
+
+            menuTimer.Tick += (s, e) =>
+            {
+                // Logic: Close only if the mouse is NOT over the menu
+                if (menu.IsOpen && !menu.IsMouseOver)
+                {
+                    menu.IsOpen = false;
+                    LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI, "Heart Menu auto-closed by timer");
+                }
+                menuTimer.Stop();
+            };
+
+            // Timer Logic Hooks
+            menu.Opened += (s, e) => {
+                menuTimer.Start();
+                LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI, "Heart Menu opened - Timer started");
+            };
+
+            menu.Closed += (s, e) => menuTimer.Stop();
+
+            // If mouse enters the menu, STOP the timer (User is thinking)
+            menu.MouseEnter += (s, e) => menuTimer.Stop();
+
+            // If mouse leaves, RESTART the timer (User moved away, start countdown)
+            menu.MouseLeave += (s, e) => {
+                menuTimer.Stop();
+                menuTimer.Start();
+            };
+            // ------------------------
 
             // About item
             var aboutItem = new MenuItem { Header = "About..." };
@@ -338,8 +395,7 @@ namespace Desktop_Fences
             newFenceItem.Click += (s, e) =>
             {
                 var mousePosition = System.Windows.Forms.Cursor.Position;
-                LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.FenceUpdate, $"Creating new fence at mouse position: X={mousePosition.X}, Y={mousePosition.Y}");
-                //CreateNewFence("New Fence", "Data", mousePosition.X, mousePosition.Y);
+                LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.FenceUpdate, $"Creating new fence at: {mousePosition}");
                 CreateNewFence("", "Data", mousePosition.X, mousePosition.Y);
             };
             menu.Items.Add(newFenceItem);
@@ -349,7 +405,7 @@ namespace Desktop_Fences
             newPortalFenceItem.Click += (s, e) =>
             {
                 var mousePosition = System.Windows.Forms.Cursor.Position;
-                LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.FenceUpdate, $"Creating new portal fence at mouse position: X={mousePosition.X}, Y={mousePosition.Y}");
+                LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.FenceUpdate, $"Creating new portal fence at: {mousePosition}");
                 CreateNewFence("New Portal Fence", "Portal", mousePosition.X, mousePosition.Y);
             };
             menu.Items.Add(newPortalFenceItem);
@@ -359,19 +415,15 @@ namespace Desktop_Fences
             newNoteFenceItem.Click += (s, e) =>
             {
                 var mousePosition = System.Windows.Forms.Cursor.Position;
-                LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.FenceUpdate,
-                    $"Creating new Note fence at mouse position: X={mousePosition.X}, Y={mousePosition.Y}");
+                LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.FenceUpdate, $"Creating new Note fence at: {mousePosition}");
                 CreateNewFence("", "Note", mousePosition.X, mousePosition.Y);
             };
-
             menu.Items.Add(newNoteFenceItem);
 
             menu.Items.Add(new Separator());
 
-
             // Delete this fence
             var deleteThisFence = new MenuItem { Header = "Delete this Fence" };
-
             deleteThisFence.Click += (s, e) =>
             {
                 bool result = MessageBoxesManager.ShowCustomMessageBoxForm();
@@ -381,110 +433,69 @@ namespace Desktop_Fences
                     if (SettingsManager.ExportShortcutsOnFenceDeletion && fence.ItemsType?.ToString() == "Data")
                     {
                         LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.FenceUpdate,
-                            $"Hidden Tweak Triggered: Auto-exporting icons for '{fence.Title}' before deletion (Silent).");
+                            $"Hidden Tweak Triggered: Auto-exporting icons for '{fence.Title}'");
 
-                        // FIX: Pass false to suppress the success message
+                        // Pass false to suppress the success message for silent operation
                         ExportAllIconsToDesktop(fence, false);
                     }
 
-                    // NEW: Use BackupManager to handle the deletion backup
                     BackupManager.BackupDeletedFence(fence);
 
-                    // Proceed with deletion - remove from data structures
                     FenceDataManager.FenceData.Remove(fence);
                     _heartTextBlocks.Remove(fence);
 
-                    // Clean up portal fence if applicable
                     if (_portalFences.ContainsKey(fence))
                     {
                         _portalFences[fence].Dispose();
                         _portalFences.Remove(fence);
                     }
 
-                    // Save updated fence data
                     FenceDataManager.SaveFenceData();
 
-                    // Find and close the window
                     var windows = System.Windows.Application.Current.Windows.OfType<NonActivatingWindow>();
                     var win = windows.FirstOrDefault(w => w.Tag?.ToString() == fence.Id?.ToString());
-                    if (win != null)
-                    {
-                        win.Close();
-                    }
+                    if (win != null) win.Close();
 
-                    // Update all heart context menus
                     UpdateAllHeartContextMenus();
-
-                    LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.FenceCreation, $"Fence '{fence.Title}' deleted successfully");
+                    LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.FenceCreation, $"Fence '{fence.Title}' deleted");
                 }
             };
-
             menu.Items.Add(deleteThisFence);
 
-            // TABS FEATURE: Hidden menu item for Ctrl+click (Data fences only)
+            // TABS FEATURE
             if (showTabsOption)
             {
-                LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.UI,
-                    "Checking if tabs menu item should be added");
-
-                // Only show tabs option for Data fences, not Portal fences
                 bool isDataFence = fence.ItemsType?.ToString() == "Data";
-
                 if (isDataFence)
                 {
                     menu.Items.Add(new Separator());
-
-                    // Check current tabs status
                     bool tabsEnabled = fence.TabsEnabled?.ToString().ToLower() == "true";
                     string checkmark = tabsEnabled ? "✓ " : "";
-
                     var enableTabsItem = new MenuItem { Header = $"{checkmark}Enable Tabs On This Fence" };
                     enableTabsItem.Click += (s, e) => ToggleFenceTabs(fence);
                     menu.Items.Add(enableTabsItem);
-
-
-                    //// Add Export all icons to desktop option for Data fences
-                    //var exportAllItem = new MenuItem { Header = "Export all icons to desktop" };
-                    //exportAllItem.Click += (s, e) => ExportAllIconsToDesktop(fence);
-                    //menu.Items.Add(exportAllItem);
-
-
-
-                    LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.UI,
-                        $"Added tabs menu item for Data fence: '{checkmark}Enable Tabs On This Fence'");
-                }
-                else
-                {
-                    LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.UI,
-                        $"Skipping tabs menu item - fence type '{fence.ItemsType}' not supported");
                 }
             }
-
 
             // Restore Fence item
             var restoreItem = new MenuItem
             {
                 Header = "Restore Last Deleted Fence",
-                // Visibility = _isRestoreAvailable ? Visibility.Visible : Visibility.Collapsed
                 Visibility = BackupManager.IsRestoreAvailable ? Visibility.Visible : Visibility.Collapsed
             };
-            //  restoreItem.Click += (s, e) => RestoreLastDeletedFence();
             restoreItem.Click += (s, e) => BackupManager.RestoreLastDeletedFence();
-
             menu.Items.Add(restoreItem);
 
             menu.Items.Add(new Separator());
-            // New Export Fence menu item
+
+            // Export/Import
             var exportItem = new MenuItem { Header = "Export this Fence" };
-            // exportItem.Click += (s, e) => ExportFence(fence);
             exportItem.Click += (s, e) => BackupManager.ExportFence(fence);
             menu.Items.Add(exportItem);
 
             var importItem = new MenuItem { Header = "Import a Fence..." };
-            //importItem.Click += (s, e) => ImportFence();
             importItem.Click += (s, e) => BackupManager.ImportFence();
             menu.Items.Add(importItem);
-
 
             // Separator
             menu.Items.Add(new Separator());
@@ -501,20 +512,6 @@ namespace Desktop_Fences
 
 
 
-        /// <summary>
-        /// Centralized method to attach the standard Context Menu to an icon.
-        /// Matches the professional layout requested: 
-        /// Edit/Move/Remove -> Copy/Send -> Admin -> Path/Target
-        /// </summary>
-        /// <summary>
-        /// Centralized method to attach the standard Context Menu to an icon.
-        /// Layout: Edit/Move/Remove -> Copy -> Admin -> Path
-        /// </summary>
-        /// <summary>
-        /// Centralized method to attach the standard Context Menu to an icon.
-        /// Layout: Edit/Move/Remove -> Copy -> Admin -> Path
-        /// Includes LIVE data lookup to ensure Checkable items stay synced.
-        /// </summary>
         public static void AttachIconContextMenu(StackPanel sp, dynamic item, dynamic fence, NonActivatingWindow window)
         {
             try
@@ -597,10 +594,19 @@ namespace Desktop_Fences
                     iconContextMenu.Items.Add(miRunAsAdmin);
                     iconContextMenu.Items.Add(miAlwaysAdmin);
 
+                 
                     // Run as Admin Logic
                     miRunAsAdmin.Click += (s, e) => {
                         string target = Utility.GetShortcutTarget(filePath);
+                        string args = Utility.GetShortcutArguments(filePath); // Extract arguments
+
                         ProcessStartInfo psi = new ProcessStartInfo { FileName = target, UseShellExecute = true, Verb = "runas" };
+
+                        if (!string.IsNullOrEmpty(args))
+                        {
+                            psi.Arguments = args; // Pass arguments to admin launch
+                        }
+
                         if (System.IO.File.Exists(target))
                         {
                             string wd = System.IO.Path.GetDirectoryName(target);
@@ -1315,8 +1321,70 @@ namespace Desktop_Fences
             return _portalFences;
         }
 
+
+
+
+        /// <summary>
+        /// Updates the filter history for a fence using LRU (Least Recently Used) logic.
+        /// Max 5 items. Duplicates move to top.
+        /// </summary>
+        private static void UpdateFilterHistory(dynamic fence, string newFilter)
+        {
+            if (string.IsNullOrWhiteSpace(newFilter)) return;
+
+            // FIX: Don't save if it matches a Standard Preset value exactly
+            if (_standardPresets.ContainsValue(newFilter)) return;
+
+            try
+            {
+                IDictionary<string, object> fenceDict = fence is IDictionary<string, object> dict
+                    ? dict
+                    : ((JObject)fence).ToObject<IDictionary<string, object>>();
+
+                JArray history = fenceDict.ContainsKey("FilterHistory")
+                    ? (fenceDict["FilterHistory"] as JArray ?? new JArray())
+                    : new JArray();
+
+                // Remove existing to bump to top
+                for (int i = history.Count - 1; i >= 0; i--)
+                {
+                    if (string.Equals(history[i].ToString(), newFilter, StringComparison.OrdinalIgnoreCase))
+                    {
+                        history.RemoveAt(i);
+                    }
+                }
+
+                history.Insert(0, newFilter);
+
+                while (history.Count > 5) history.RemoveAt(history.Count - 1);
+
+                fenceDict["FilterHistory"] = history;
+
+                string fenceId = fence.Id?.ToString();
+                int index = FenceDataManager.FenceData.FindIndex(f => f.Id?.ToString() == fenceId);
+                if (index >= 0)
+                {
+                    FenceDataManager.FenceData[index] = JObject.FromObject(fenceDict);
+                    FenceDataManager.SaveFenceData();
+                }
+            }
+            catch (Exception ex)
+            {
+                LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.Settings, $"History Error: {ex.Message}");
+            }
+        }
+
+
+
+
+
+
+
+
+
+
         // Update fence property, save to JSON, and apply runtime changes
-       public static void UpdateFenceProperty(dynamic fence, string propertyName, string value, string logMessage)
+        public static void UpdateFenceProperty(dynamic fence, string propertyName, string value, string logMessage)
         {
             try
             {
@@ -1391,7 +1459,7 @@ namespace Desktop_Fences
                         else if (propertyName == "IsRolled")
                         {
                             bool isRolled = value?.ToLower() == "true";
-                            double targetHeight = isRolled ? 26 : Convert.ToDouble(actualFence.UnrolledHeight?.ToString() ?? "130");
+                            double targetHeight = isRolled ? 28 : Convert.ToDouble(actualFence.UnrolledHeight?.ToString() ?? "130"); //rolled height
                             var heightAnimation = new DoubleAnimation(win.Height, targetHeight, TimeSpan.FromSeconds(0.3))
                             {
                                 EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseInOut }
@@ -2440,11 +2508,13 @@ namespace Desktop_Fences
                                 string filePath = iconDict.ContainsKey("Filename") ? (string)iconDict["Filename"] : "Unknown";
                                 bool isFolder = iconDict.ContainsKey("IsFolder") && (bool)iconDict["IsFolder"];
 
-                                // Add full event handling including context menus
-                                ClickEventAdder(sp, filePath, isFolder);
+                                // FIX: Extract arguments so ClickEventAdder knows them
+                                string arguments = Utility.GetShortcutArguments(filePath);
 
-                                // FIX: Use centralized menu builder
-                                // Replaces the large inline ContextMenu block
+                                // Add full event handling including context menus
+                                ClickEventAdder(sp, filePath, isFolder, arguments);
+
+                                // FIX: Attach Centralized Context Menu
                                 AttachIconContextMenu(sp, icon, fence, fenceWindow);
                             }
                         }
@@ -3919,17 +3989,131 @@ LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, "Tab0 s
             }
         }
 
+        //private static void InitializeDefaultFence()
+        //{
+        //    string defaultJson = "[{\"Id\":\"" + Guid.NewGuid().ToString() + "\",\"Title\":\"New Fence\",\"X\":20,\"Y\":20,\"Width\":230,\"Height\":130,\"ItemsType\":\"Data\",\"Items\":[],\"IsLocked\":\"false\",\"IsHidden\":\"false\",\"CustomColor\":null,\"CustomLaunchEffect\":null,\"IsRolled\":\"false\",\"UnrolledHeight\":130,\"TabsEnabled\":\"false\",\"CurrentTab\":0,\"Tabs\":[]}]";
+        //    System.IO.File.WriteAllText(FenceDataManager.JsonFilePath, defaultJson);
+        //    FenceDataManager.FenceData = JsonConvert.DeserializeObject<List<dynamic>>(defaultJson);
+        //}
+        //Replacement on v 2.5 .3. 141
+
+
         private static void InitializeDefaultFence()
         {
-            string defaultJson = "[{\"Id\":\"" + Guid.NewGuid().ToString() + "\",\"Title\":\"New Fence\",\"X\":20,\"Y\":20,\"Width\":230,\"Height\":130,\"ItemsType\":\"Data\",\"Items\":[],\"IsLocked\":\"false\",\"IsHidden\":\"false\",\"CustomColor\":null,\"CustomLaunchEffect\":null,\"IsRolled\":\"false\",\"UnrolledHeight\":130,\"TabsEnabled\":\"false\",\"CurrentTab\":0,\"Tabs\":[]}]";
-            System.IO.File.WriteAllText(FenceDataManager.JsonFilePath, defaultJson);
-            FenceDataManager.FenceData = JsonConvert.DeserializeObject<List<dynamic>>(defaultJson);
-        }
+            try
+            {
+                // 1. Create the Standard Data Fence (For user icons)
+                var dataFence = new
+                {
+                    Id = Guid.NewGuid().ToString(),
+                    Title = "New Fence - Drop your shortcuts here",
+                    X = 20.0,
+                    Y = 20.0,
+                    Width = 360.0,
+                    Height = 180.0,
+                    ItemsType = "Data",
+                    Items = new JArray(),
 
+                    // Defaults
+                    IsLocked = "false",
+                    IsHidden = "false",
+                    IsRolled = "false",
+                    UnrolledHeight = 130.0,
+                    TabsEnabled = "false",
+                    CurrentTab = 0,
+                    Tabs = new JArray(),
+
+                    // Visual Defaults
+                    CustomColor = (string)null,
+                    FenceBorderThickness = 2
+                };
+
+                // 2. Create the "Startup Tips" Note Fence
+                var noteFence = new
+                {
+                    Id = Guid.NewGuid().ToString(), // Unique ID
+                    Title = "Desktop Fences+ Startup Tips", // Explicit Name
+                    X = 20.0,   // Positioned below the data fence
+                    Y = 200.0,  // Data fence ends then this fence begins
+                    Width = 555.0,
+                    Height = 318.0,
+                    ItemsType = "Note",
+                    Items = new JArray(),
+
+                    // Visuals from your spec
+                    CustomColor = (string)null, // Default
+                    TextColor = "Teal",         // Teal text
+
+                    // Note Settings
+                    NoteContent = "WELCOME TO DESKTOP FENCES +\r\n" +
+                                  "---------------------------\r\n" +
+                                  "• Roll Up/Down: Double-click the fence title bar.\r\n" +
+                                  "• Rename: Ctrl + Click the title bar (Enter to save).\r\n" +
+                                  "• Search (SpotSearch): Press Ctrl + ` (Tilde) to find any icon instantly.\r\n" +
+                                  "• Options: Click the '♥' menu icon (top-left).\r\n" +
+                                  "• Reorder Icons on a Fence: Ctrl + Drag icon to new position.\r\n" +
+                                  "• Context Menu: Right-click icons or Fences for more options.\r\n" +
+                                  " \r\n" +
+                                  "TIP: Ctrl + Click or Ctrl + Right-click, gives even more options.\r\n\r\n" +
+                                  "Try customizing this fence! Right-click the title bar -> Customize...",
+
+                    NoteFontSize = "Medium",
+                    NoteFontFamily = "Segoe UI",
+                    WordWrap = "true",
+                    SpellCheck = "false",
+
+                    // Standard Properties
+                    IsHidden = "false",
+                    IsLocked = "false",
+                    IsRolled = "false",
+                    UnrolledHeight = 318.0,
+                    BoldTitleText = "false",
+                    DisableTextShadow = "false",
+                    IconSize = "Medium",
+                    IconSpacing = 5,
+                    FenceBorderThickness = 2
+                };
+
+                // 3. Combine and Save
+                var fences = new List<object> { dataFence, noteFence };
+                string defaultJson = JsonConvert.SerializeObject(fences, Formatting.Indented);
+
+                System.IO.File.WriteAllText(FenceDataManager.JsonFilePath, defaultJson);
+
+                // Load into memory
+                FenceDataManager.FenceData = JsonConvert.DeserializeObject<List<dynamic>>(defaultJson);
+
+                LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.FenceCreation,
+                    "Initialized default configuration with Data Fence and Startup Tips");
+            }
+            catch (Exception ex)
+            {
+                LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.FenceCreation,
+                    $"Error initializing default fences: {ex.Message}");
+
+                // Fallback to empty list if something explodes
+                FenceDataManager.FenceData = new List<dynamic>();
+            }
+        }
 
 
         public static void CreateFence(dynamic fence, TargetChecker targetChecker)
         {
+
+            // --- FIX: Declare Title TextBox EARLY ---
+            TextBox titletb = new TextBox
+            {
+                HorizontalContentAlignment = HorizontalAlignment.Center,
+                Visibility = Visibility.Collapsed,
+                Background = System.Windows.Media.Brushes.White,
+                Foreground = System.Windows.Media.Brushes.Black,
+                Padding = new Thickness(2)
+            };
+
+            // --- NEW: Declare Commit Action for robust saving ---
+            Action CommitRename = null;
+            // ---------------------------------------------------
+
             // Check for valid Portal Fence target folder
             if (fence.ItemsType?.ToString() == "Portal")
             {
@@ -4014,8 +4198,8 @@ LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, "Tab0 s
             TextBlock heart = new TextBlock
             {
                 // Text = "♥",
-                
 
+                Name = "FenceMenuIcon", // New! Name
                 Text = MenuSymbol,
                 FontSize = 22,
                 Foreground = System.Windows.Media.Brushes.White, // Match title and icon text color
@@ -4056,6 +4240,8 @@ LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, "Tab0 s
 
 
             dp.Children.Add(heart);
+            Panel.SetZIndex(heart, 100); // Ensure heart is above titleGrid to receive clicks
+
             // Store heart TextBlock reference for this fence
             _heartTextBlocks[fence] = heart;
             // Create and assign heart ContextMenu using centralized builder
@@ -4073,6 +4259,16 @@ LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, "Tab0 s
                                                                      // Handle left-click to open heart context menu
             heart.MouseLeftButtonDown += (s, e) =>
             {
+
+
+                // FIX: Directly call CommitRename logic
+                if (titletb.IsVisible)
+                {
+                    CommitRename?.Invoke();
+                    return;
+                }
+
+
                 if (e.ChangedButton == MouseButton.Left && heart.ContextMenu != null)
                 {
                     // Check if Ctrl is pressed for extended menu
@@ -4114,13 +4310,14 @@ LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, "Tab0 s
             TextBlock lockIcon = new TextBlock
            
             {
-              
+
                 //     Text = "🔐",
                 //     Text = "🔑",
                 //     Text = "🔒",
                 //     Text = "🔓",
+                Name = "FenceLockIcon", // New! Name
                 Text = LockSymbol,//"🛡️",
-                FontSize = 14,
+                                FontSize = 14,
                 Foreground = fence.IsLocked?.ToString().ToLower() == "true" ? System.Windows.Media.Brushes.Red : System.Windows.Media.Brushes.White,
                 Margin = new Thickness(0, 3, 2, 0), // Adjusted for top-right positioning
                 HorizontalAlignment = HorizontalAlignment.Right,
@@ -4164,6 +4361,14 @@ LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, "Tab0 s
             {
                 if (e.ChangedButton == MouseButton.Left)
                 {
+
+                    // FIX: Directly call CommitRename logic
+                    if (titletb.IsVisible)
+                    {
+                        CommitRename?.Invoke();
+                        return;
+                    }
+
                     // Get the NonActivatingWindow to find the fence by Id
                     NonActivatingWindow win = FindVisualParent<NonActivatingWindow>(lockIcon);
                     if (win == null)
@@ -4194,15 +4399,20 @@ LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, "Tab0 s
                     });
                 }
             };
+
+
+
+
+
             // Create a Grid for the titlebar - move here to ensure it is created before mouse handler
             Grid titleGrid = new Grid
             {
                 Background = new SolidColorBrush(System.Windows.Media.Color.FromArgb(20, 0, 0, 0))
             };
-            titleGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-            titleGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(0, GridUnitType.Pixel) }); // No left spacer
-            titleGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) }); // Title takes most space
-            titleGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(30, GridUnitType.Pixel) }); // Lock icon fixed width
+            titleGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(0, GridUnitType.Pixel) }); // Col 0: Spacer
+            titleGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) }); // Col 1: Title
+            titleGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });                      // Col 2: Filter Icon (Auto width)
+            titleGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(30, GridUnitType.Pixel) }); // Col 3: Lock Icon
                                                                                                                       // End of ctrl+click handler
             ContextMenu CnMnFenceManager = new ContextMenu();
             // MenuItem miNewFence = new MenuItem { Header = "New Fence" };
@@ -4528,7 +4738,7 @@ LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, "Tab0 s
                 LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.FenceCreation, $"Applied lock state for fence '{fence.Title}' on load: IsLocked={fence.IsLocked?.ToString().ToLower()}");
                 // Apply IsRolled state
                 bool isRolled = fence.IsRolled?.ToString().ToLower() == "true";
-                double targetHeight = 26; // Default for rolled-up state
+                double targetHeight = 28; // Default for rolled-up state  //rolled height
                 if (!isRolled)
                 {
                     double unrolledHeight = (double)fence.Height; // Default to fence.Height
@@ -4637,7 +4847,7 @@ LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, "Tab0 s
                     if (!isRolled)
                     {
 
-                        if (Math.Abs(newHeight - 26) > 5) // Only if height is significantly different from rolled-up height
+                        if (Math.Abs(newHeight - 28) > 5) // Only if height is significantly different from rolled-up height   //rolled height
                         {
                             double heightDifference = Math.Abs(newHeight - oldUnrolledHeight);
                             // DebugLog("LOGIC", fenceId, $"Height difference from old UnrolledHeight: {heightDifference:F1}");
@@ -4730,23 +4940,9 @@ LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, "Tab0 s
 
             LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.FenceCreation,
         $"Fence '{fence.Title}' successfully created and displayed");
-            //miNewFence.Click += (s, e) =>
-            //{
-            // System.Windows.Point mousePosition = win.PointToScreen(new System.Windows.Point(0, 0));
-            // mousePosition = Mouse.GetPosition(win);
-            // System.Windows.Point absolutePosition = win.PointToScreen(mousePosition);
-            // LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.FenceCreation, $"Creating new fence at position: X={absolutePosition.X}, Y={absolutePosition.Y}");
-            // CreateNewFence("New Fence", "Data", absolutePosition.X, absolutePosition.Y);
-            //};
-            //miNewPortalFence.Click += (s, e) =>
-            //{
-            // System.Windows.Point mousePosition = win.PointToScreen(new System.Windows.Point(0, 0));
-            // mousePosition = Mouse.GetPosition(win);
-            // System.Windows.Point absolutePosition = win.PointToScreen(mousePosition);
-            // LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.FenceCreation, $"Creating new portal fence at position: X={absolutePosition.X}, Y={absolutePosition.Y}");
-            // CreateNewFence("New Portal Fence", "Portal", absolutePosition.X, absolutePosition.Y);
-            //};
-            // Check if title should be bold
+  
+
+
             bool isBoldTitle = false;
             try
             {
@@ -4802,20 +4998,468 @@ LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, "Tab0 s
             };
             Grid.SetColumn(titlelabel, 1);
             titleGrid.Children.Add(titlelabel);
-            TextBox titletb = new TextBox
-            {
-                HorizontalContentAlignment = HorizontalAlignment.Center,
-                Visibility = Visibility.Collapsed
-            };
+
+
+    
+
+
             Grid.SetColumn(titletb, 1);
             titleGrid.Children.Add(titletb);
+
+
+
+
+
+            // --- FILTER UI START ---
+            // Only add Filter UI for Portal Fences
+            Grid filterBar = null;
+            if (fence.ItemsType?.ToString() == "Portal")
+            {
+                // 1. The Filter Icon (Funnel)
+                TextBlock filterIcon = new TextBlock
+                {
+                    //Text = "🌪",
+                    Name = "FenceFilterIcon", // New! Name
+                    Text = "❖",
+                    FontSize = 18,
+                    Foreground = System.Windows.Media.Brushes.White,
+                    VerticalAlignment = VerticalAlignment.Center,
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    Cursor = Cursors.Hand,
+                    Margin = new Thickness(0, 0, 5, 0),
+                    ToolTip = "Filter files (e.g. '*.jpg' or '>*.tmp' to exclude)"
+                };
+
+                Grid.SetColumn(filterIcon, 2);
+                titleGrid.Children.Add(filterIcon);
+
+
+
+
+                // 2. The Filter Bar (Stable Version)
+                filterBar = new Grid
+                {
+                    Height = 26,
+                    Background = new SolidColorBrush(System.Windows.Media.Color.FromArgb(60, 0, 0, 0)),
+                    Visibility = Visibility.Collapsed,
+                    Margin = new Thickness(0, 0, 0, 2)
+                };
+
+                filterBar.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+                filterBar.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+                ComboBox cmbFilter = new ComboBox
+                {
+                    IsEditable = true,
+                    Height = 24,
+                    StaysOpenOnEdit = true,
+                    VerticalContentAlignment = VerticalAlignment.Center,
+                    Padding = new Thickness(5, 0, 5, 0),
+                    Text = GetSafeProperty(fence, "FilterString")
+                };
+
+                // Helper: Only Repopulate when needed (prevents freeze loop)
+                Action repopulateDropdown = () =>
+                {
+                    cmbFilter.Items.Clear();
+
+                    // A. History
+                    try
+                    {
+                        string currentId = fence.Id?.ToString();
+                        var liveFence = GetFenceData().FirstOrDefault(f => f.Id?.ToString() == currentId);
+                        if (liveFence != null)
+                        {
+                            Newtonsoft.Json.Linq.JArray history = null;
+                            if (liveFence is Newtonsoft.Json.Linq.JObject jFence)
+                                history = jFence["FilterHistory"] as Newtonsoft.Json.Linq.JArray;
+                            else
+                                history = liveFence.GetType().GetProperty("FilterHistory")?.GetValue(liveFence) as Newtonsoft.Json.Linq.JArray;
+
+                            if (history != null)
+                            {
+                                foreach (var item in history)
+                                {
+                                    cmbFilter.Items.Add(new ComboBoxItem
+                                    {
+                                        Content = item.ToString(),
+                                        Tag = item.ToString(),
+                                        FontWeight = FontWeights.Bold
+                                    });
+                                }
+                            }
+                        }
+                    }
+                    catch { }
+
+                    // B. Separator (if needed)
+                    if (cmbFilter.Items.Count > 0) cmbFilter.Items.Add(new Separator());
+
+                    // C. Standard Presets (From static dictionary)
+                    foreach (var kvp in _standardPresets)
+                    {
+                        cmbFilter.Items.Add(new ComboBoxItem { Content = kvp.Key, Tag = kvp.Value });
+                    }
+                };
+
+                // FIX 1: Only populate on OPEN, never during selection/typing
+                cmbFilter.DropDownOpened += (s, e) => repopulateDropdown();
+
+                // Clear Button
+                Button btnClearFilter = new Button
+                {
+                    Content = "✕",
+                    Background = System.Windows.Media.Brushes.Transparent,
+                    Foreground = System.Windows.Media.Brushes.Gray,
+                    BorderThickness = new Thickness(0),
+                    Cursor = Cursors.Hand,
+                    Width = 20,
+                    ToolTip = "Clear filter and close"
+                };
+
+                filterBar.Children.Add(cmbFilter);
+                filterBar.Children.Add(btnClearFilter);
+                Grid.SetColumn(btnClearFilter, 1);
+
+                // --- LOGIC SETUP ---
+
+                // Helper to execute/save
+                Action<string> commitFilter = (text) =>
+                {
+                    filterIcon.Foreground = string.IsNullOrWhiteSpace(text)
+                        ? System.Windows.Media.Brushes.White
+                        : System.Windows.Media.Brushes.Orange;
+
+                    if (_portalFences.ContainsKey(fence))
+                        _portalFences[fence].ApplyFilter(text);
+
+                    UpdateFenceProperty(fence, "FilterString", text, "Updated filter");
+
+                    // Update history (logic now handles ignoring presets)
+                    UpdateFilterHistory(fence, text);
+                };
+
+                // Typing Timer
+                System.Windows.Threading.DispatcherTimer debounceTimer = new System.Windows.Threading.DispatcherTimer
+                {
+                    Interval = TimeSpan.FromMilliseconds(500)
+                };
+                debounceTimer.Tick += (s, e) =>
+                {
+                    debounceTimer.Stop();
+                    // Visual update only while typing
+                    if (_portalFences.ContainsKey(fence)) _portalFences[fence].ApplyFilter(cmbFilter.Text);
+
+                    filterIcon.Foreground = string.IsNullOrWhiteSpace(cmbFilter.Text)
+                        ? System.Windows.Media.Brushes.White
+                        : System.Windows.Media.Brushes.Orange;
+                };
+
+                // 1. STYLE FIX (Internal TextBox)
+                cmbFilter.Loaded += (s, e) =>
+                {
+                    var textBox = (TextBox)cmbFilter.Template.FindName("PART_EditableTextBox", cmbFilter);
+                    if (textBox != null)
+                    {
+                        textBox.Background = System.Windows.Media.Brushes.Transparent;
+                        textBox.Foreground = System.Windows.Media.Brushes.White;
+                        textBox.CaretBrush = System.Windows.Media.Brushes.White;
+                        textBox.BorderThickness = new Thickness(0);
+                    }
+                };
+
+                // 2. TYPING LOGIC
+                cmbFilter.KeyUp += (s, e) =>
+                {
+                    if (e.Key == Key.Up || e.Key == Key.Down) return;
+
+                    if (e.Key == Key.Enter)
+                    {
+                        commitFilter(cmbFilter.Text); // Save history on Enter
+                        cmbFilter.IsDropDownOpen = false;
+                        filterBar.Visibility = Visibility.Collapsed;
+                        win.ShowActivated = false;
+                        Keyboard.ClearFocus();
+                        e.Handled = true;
+                        return;
+                    }
+                    else if (e.Key == Key.Escape)
+                    {
+                        filterBar.Visibility = Visibility.Collapsed;
+                        win.ShowActivated = false;
+                        Keyboard.ClearFocus();
+                        e.Handled = true;
+                        return;
+                    }
+
+                    debounceTimer.Stop();
+                    debounceTimer.Start();
+                };
+
+                // 3. SELECTION LOGIC (FIXED)
+                // We do NOT repopulate here. We just apply the value.
+                cmbFilter.SelectionChanged += (s, e) =>
+                {
+                    if (cmbFilter.SelectedItem is ComboBoxItem item && item.Tag != null)
+                    {
+                        string selectedFilter = item.Tag.ToString();
+
+                        // Break the event loop by running this later
+                        System.Windows.Application.Current.Dispatcher.BeginInvoke(new Action(() =>
+                        {
+                            cmbFilter.IsDropDownOpen = false;
+
+                            // Important: Don't set SelectedItem = null here, it causes flickering.
+                            // Just force the text and run logic.
+                            cmbFilter.Text = selectedFilter;
+
+                            debounceTimer.Stop();
+                            commitFilter(selectedFilter);
+                        }));
+                    }
+                };
+
+                // 4. CLEAR LOGIC
+                btnClearFilter.Click += (s, e) =>
+                {
+                    cmbFilter.Text = "";
+                    if (_portalFences.ContainsKey(fence)) _portalFences[fence].ApplyFilter("");
+                    UpdateFenceProperty(fence, "FilterString", "", "Cleared filter");
+                    filterIcon.Foreground = System.Windows.Media.Brushes.White;
+
+                    filterBar.Visibility = Visibility.Collapsed;
+                    win.ShowActivated = false;
+                };
+
+                // 5. TOGGLE BAR
+                filterIcon.MouseLeftButtonDown += (s, e) =>
+                {
+                    if (filterBar.Visibility == Visibility.Visible)
+                    {
+                        if (!string.IsNullOrWhiteSpace(cmbFilter.Text)) commitFilter(cmbFilter.Text); // Save on close
+                        filterBar.Visibility = Visibility.Collapsed;
+                        win.ShowActivated = false;
+                        Keyboard.ClearFocus();
+                    }
+                    else
+                    {
+                        filterBar.Visibility = Visibility.Visible;
+                        win.ShowActivated = true;
+                        win.Activate();
+
+                        var textBox = (TextBox)cmbFilter.Template.FindName("PART_EditableTextBox", cmbFilter);
+                        if (textBox != null) textBox.Focus();
+                        else cmbFilter.Focus();
+                    }
+                    e.Handled = true;
+                };
+
+                // Initial Apply
+                if (!string.IsNullOrEmpty(cmbFilter.Text))
+                {
+                    filterIcon.Foreground = System.Windows.Media.Brushes.Orange;
+                    win.Loaded += (s, e) =>
+                    {
+                        if (_portalFences.ContainsKey(fence))
+                            _portalFences[fence].ApplyFilter(cmbFilter.Text);
+                    };
+                }
+            }
+            // --- FILTER UI END ---
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+            // --- STEP 4 FIX: Centralized Rename Logic ---
+
+            // 1. Define the Logic ONCE
+            CommitRename = () =>
+            {
+                // Only run if actually editing
+                if (titletb.Visibility != Visibility.Visible) return;
+
+                string originalTitle = fence.Title.ToString();
+                string newTitle = titletb.Text;
+                string finalTitle = InterCore.ProcessTitleChange(fence, newTitle, originalTitle);
+
+                // Update Data
+                string id = fence.Id?.ToString();
+                var liveFence = GetFenceData().FirstOrDefault(f => f.Id?.ToString() == id);
+
+                if (liveFence != null)
+                {
+                    if (liveFence is Newtonsoft.Json.Linq.JObject jFence)
+                        jFence["Title"] = finalTitle;
+                    else
+                        liveFence.Title = finalTitle;
+                    fence.Title = finalTitle;
+                }
+
+                // Update UI
+                titlelabel.Content = finalTitle;
+                win.Title = finalTitle;
+                titletb.Visibility = Visibility.Collapsed;
+                titlelabel.Visibility = Visibility.Visible;
+
+                // Save
+                FenceDataManager.SaveFenceData();
+                win.ShowActivated = false;
+
+                // Clear visual focus
+                Keyboard.ClearFocus();
+                LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI, $"Rename committed: {finalTitle}");
+            };
+
+            // 2. Wire up Events to use the central logic
+            titletb.KeyDown += (sender, e) =>
+            {
+                if (e.Key == Key.Enter)
+                {
+                    CommitRename(); // Call shared logic
+                    e.Handled = true;
+                }
+                else if (e.Key == Key.Escape)
+                {
+                    // Cancel Logic
+                    titletb.Text = fence.Title.ToString();
+                    titletb.Visibility = Visibility.Collapsed;
+                    titlelabel.Visibility = Visibility.Visible;
+                    win.ShowActivated = false;
+                    Keyboard.ClearFocus();
+                    e.Handled = true;
+                }
+            };
+
+            titletb.LostFocus += (sender, e) =>
+            {
+                CommitRename(); // Call shared logic
+            };
+
+
+
+            // --- STEP 4 START: Configure and Add Events ---
+            titletb.HorizontalContentAlignment = HorizontalAlignment.Center;
+            titletb.Visibility = Visibility.Collapsed;
+
+            // 1. Handle Keys (Enter = Save, Escape = Cancel)
+            titletb.KeyDown += (sender, e) =>
+            {
+                if (e.Key == Key.Enter)
+                {
+                    string originalTitle = fence.Title.ToString();
+                    string newTitle = titletb.Text;
+                    string finalTitle = InterCore.ProcessTitleChange(fence, newTitle, originalTitle);
+
+                    // Update LIVE Data
+                    string id = fence.Id?.ToString();
+                    var liveFence = GetFenceData().FirstOrDefault(f => f.Id?.ToString() == id);
+
+                    if (liveFence != null)
+                    {
+                        if (liveFence is Newtonsoft.Json.Linq.JObject jFence)
+                            jFence["Title"] = finalTitle;
+                        else
+                            liveFence.Title = finalTitle;
+                        fence.Title = finalTitle;
+                    }
+
+                    titlelabel.Content = finalTitle;
+                    win.Title = finalTitle;
+                    titletb.Visibility = Visibility.Collapsed;
+                    titlelabel.Visibility = Visibility.Visible;
+
+                    FenceDataManager.SaveFenceData();
+
+                    win.ShowActivated = false;
+                    Keyboard.ClearFocus(); // Drop focus
+                    win.Focus();
+                }
+      
+     else if (e.Key == Key.Escape)
+                    {
+                        // ESCAPE: Cancel and Revert
+                        titletb.Text = fence.Title.ToString();
+                        titletb.Visibility = Visibility.Collapsed;
+                        titlelabel.Visibility = Visibility.Visible;
+
+                        win.ShowActivated = false;
+                        win.Focus(); // Drop focus from textbox
+                        e.Handled = true;
+
+                        LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI, "Rename cancelled via Escape");
+                    }
+                }
+                ;
+
+            // 2. Handle Focus Loss (Save when clicking away)
+            titletb.LostFocus += (sender, e) =>
+            {
+                // If invisible, we already handled it (e.g. via Escape)
+                if (titletb.Visibility != Visibility.Visible) return;
+
+                string originalTitle = fence.Title.ToString();
+                string newTitle = titletb.Text;
+                string finalTitle = InterCore.ProcessTitleChange(fence, newTitle, originalTitle);
+
+                string id = fence.Id?.ToString();
+                var liveFence = GetFenceData().FirstOrDefault(f => f.Id?.ToString() == id);
+
+                if (liveFence != null)
+                {
+                    if (liveFence is Newtonsoft.Json.Linq.JObject jFence)
+                        jFence["Title"] = finalTitle;
+                    else
+                        liveFence.Title = finalTitle;
+                    fence.Title = finalTitle;
+                }
+
+                titlelabel.Content = finalTitle;
+                win.Title = finalTitle;
+                titletb.Visibility = Visibility.Collapsed;
+                titlelabel.Visibility = Visibility.Visible;
+
+                FenceDataManager.SaveFenceData();
+
+                win.ShowActivated = false;
+                LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI, $"Rename saved via LostFocus: {finalTitle}");
+            };
+            // --- STEP 4 END ---
+
+
+
+
+
+
+
+
+
+
+
             // Move lockIcon to the Grid
-            Grid.SetColumn(lockIcon, 2);
+            Grid.SetColumn(lockIcon, 3); // Moved to Column 3
             Grid.SetRow(lockIcon, 0);
             titleGrid.Children.Add(lockIcon);
             // Add the titleGrid to the DockPanel
             DockPanel.SetDock(titleGrid, Dock.Top);
             dp.Children.Add(titleGrid);
+            if (filterBar != null)
+            {
+                DockPanel.SetDock(filterBar, Dock.Top);
+                dp.Children.Add(filterBar);
+            }
+
             // TABS FEATURE: Add TabStrip conditionally for tabbed fences
             StackPanel tabStrip = null;
             bool tabsEnabled = fence.TabsEnabled?.ToString().ToLower() == "true";
@@ -5003,6 +5647,24 @@ LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, "Tab0 s
             {
                 LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.FenceCreation, $"Skipped TabStrip for non-tabbed fence '{fence.Title}'");
             }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
             string fenceId = win.Tag?.ToString();
             if (string.IsNullOrEmpty(fenceId))
             {
@@ -5018,6 +5680,13 @@ LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, "Tab0 s
             bool isLocked = currentFence.IsLocked?.ToString().ToLower() == "true";
             titlelabel.MouseDown += (sender, e) =>
             {
+                // FIX: Directly call CommitRename logic
+                if (titletb.IsVisible)
+                {
+                    CommitRename?.Invoke();
+                    return;
+                }
+
                 if (e.ClickCount == 2)
                 {
                     // Roll-up/roll-down logic (swapped from Ctrl+Click)
@@ -5063,7 +5732,7 @@ LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, "Tab0 s
                         FenceDataManager.SaveFenceData();
                         // DebugLog("SAVE", fenceId, $"Saved ROLLUP state | UnrolledHeight:{currentHeight:F1} | IsRolled:true");
                         // Roll up animation - starts from current height
-                        double targetHeight = 26;
+                        double targetHeight = 28;   //rolled height
                         var heightAnimation = new DoubleAnimation(currentHeight, targetHeight, TimeSpan.FromSeconds(0.3))
                         {
                             EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseInOut }
@@ -5191,40 +5860,7 @@ LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, "Tab0 s
                     }
                 }
             };
-            //titletb.KeyDown += (sender, e) =>
-            //{
-            //    if (e.Key == Key.Enter)
-            //    {
-            //        string originalTitle = fence.Title.ToString();
-            //        string newTitle = titletb.Text;
-            //        //Process through InterCore for special triggers
-            //        string finalTitle = InterCore.ProcessTitleChange(fence, newTitle, originalTitle);
-            //        fence.Title = finalTitle;
-            //        titlelabel.Content = finalTitle;
-            //        win.Title = finalTitle;
-            //        titletb.Visibility = Visibility.Collapsed;
-            //        titlelabel.Visibility = Visibility.Visible;
-            //        FenceDataManager.SaveFenceData();
-            //        win.ShowActivated = false;
-            //        LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.FenceCreation, $"Exited edit mode via Enter, final title for fence: {fence.Title}");
-            //        win.Focus();
-            //    }
-            //};
-            //titletb.LostFocus += (sender, e) =>
-            //{
-            //    string originalTitle = fence.Title.ToString();
-            //    string newTitle = titletb.Text;
-            //    //Process through InterCore for special triggers
-            //    string finalTitle = InterCore.ProcessTitleChange(fence, newTitle, originalTitle);
-            //    fence.Title = finalTitle;
-            //    titlelabel.Content = finalTitle;
-            //    win.Title = finalTitle;
-            //    titletb.Visibility = Visibility.Collapsed;
-            //    titlelabel.Visibility = Visibility.Visible;
-            //    FenceDataManager.SaveFenceData();
-            //    win.ShowActivated = false;
-            //    LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.FenceCreation, $"Exited edit mode via click, final title for fence: {fence.Title}");
-            //};
+
 
 
             titletb.KeyDown += (sender, e) =>
@@ -5269,43 +5905,55 @@ LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, "Tab0 s
                     LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.FenceCreation, $"Exited edit mode via Enter, final title for fence: {finalTitle}");
                     win.Focus();
                 }
+                else if (e.Key == Key.Escape)
+                {
+                    // FIX: ESCAPE Logic (Cancel)
+                    titletb.Text = fence.Title.ToString(); // Revert text
+                    titletb.Visibility = Visibility.Collapsed;
+                    titlelabel.Visibility = Visibility.Visible;
+
+                    Keyboard.ClearFocus(); // Drop focus
+                    win.ShowActivated = false;
+                    e.Handled = true;
+
+                    LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI, "Rename cancelled via Escape");
+                }
             };
 
-            // 2. Handle Focus Loss (Save)
+            // 2. Handle Focus Loss (Auto-Save)
             titletb.LostFocus += (sender, e) =>
             {
+                // Don't save if we are cancelling (Escape key handles UI)
+                if (titletb.Visibility != Visibility.Visible) return;
+
                 string originalTitle = fence.Title.ToString();
                 string newTitle = titletb.Text;
-
-                // Process through InterCore for special triggers
                 string finalTitle = InterCore.ProcessTitleChange(fence, newTitle, originalTitle);
 
-                // --- FIX START: Update LIVE Data ---
                 string id = fence.Id?.ToString();
-                var liveFence = GetFenceData().FirstOrDefault(f => f.Id?.ToString() == id);
+                var liveFence = FenceDataManager.FenceData.FirstOrDefault(f => f.Id?.ToString() == id);
 
                 if (liveFence != null)
                 {
-                    if (liveFence is Newtonsoft.Json.Linq.JObject jFence)
-                        jFence["Title"] = finalTitle;
-                    else
-                        liveFence.Title = finalTitle;
+                    IDictionary<string, object> fenceDict = liveFence as IDictionary<string, object> ??
+                        ((JObject)liveFence).ToObject<IDictionary<string, object>>();
+                    fenceDict["Title"] = finalTitle;
+
+                    int index = FenceDataManager.FenceData.IndexOf(liveFence);
+                    if (index >= 0) FenceDataManager.FenceData[index] = JObject.FromObject(fenceDict);
 
                     fence.Title = finalTitle;
                 }
-                // --- FIX END ---
 
-                // Update UI
                 titlelabel.Content = finalTitle;
                 win.Title = finalTitle;
                 titletb.Visibility = Visibility.Collapsed;
                 titlelabel.Visibility = Visibility.Visible;
 
-                // Save
                 FenceDataManager.SaveFenceData();
 
                 win.ShowActivated = false;
-                LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.FenceCreation, $"Exited edit mode via click, final title for fence: {finalTitle}");
+                LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI, $"Rename saved via LostFocus: {finalTitle}");
             };
 
 
@@ -5692,7 +6340,10 @@ LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, "Tab0 s
                                 StackPanel sp = wpcont.Children[wpcont.Children.Count - 1] as StackPanel;
                                 if (sp != null)
                                 {
-                                    ClickEventAdder(sp, shortcutName, isFolder);
+                                    // FIX: Extract arguments for the newly created shortcut
+                                    string args = Utility.GetShortcutArguments(shortcutName);
+
+                                    ClickEventAdder(sp, shortcutName, isFolder, args);
                                     targetChecker.AddCheckAction(shortcutName, () => UpdateIcon(sp, shortcutName, isFolder), isFolder);
 
                                     // Attach Centralized Context Menu
@@ -5878,19 +6529,7 @@ LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, "Tab0 s
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-            IDictionary<string, object> fenceDict = fence is IDictionary<string, object> dict ? dict : ((JObject)fence).ToObject<IDictionary<string, object>>();
+           IDictionary<string, object> fenceDict = fence is IDictionary<string, object> dict ? dict : ((JObject)fence).ToObject<IDictionary<string, object>>();
             SnapManager.AddSnapping(win, fenceDict);
             // Apply custom color if present, otherwise use global
             string customColor = fence.CustomColor?.ToString();
@@ -7592,19 +8231,7 @@ LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, "Tab0 s
                                             $"Fallback: Target does not exist, no working directory set: {targetPath}");
                                     }
 
-                                    //// Fallback for working directory - handle folders properly
-                                    //if (System.IO.Directory.Exists(targetPath))
-                                    //{
-                                    //    workingDirectory = targetPath; // For folders, working directory is the folder itself
-                                    //}
-                                    //else if (System.IO.File.Exists(targetPath))
-                                    //{
-                                    //    workingDirectory = System.IO.Path.GetDirectoryName(targetPath) ?? "";
-                                    //}
-                                    //else
-                                    //{
-                                    //    workingDirectory = "";
-                                    //}
+               
 
                                     finalArguments = arguments ?? "";
                                     LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.General,
@@ -7674,17 +8301,6 @@ LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, "Tab0 s
                 // Check if target exists
                 bool isTargetFolder = System.IO.Directory.Exists(targetPath);
                 bool targetExists = System.IO.File.Exists(targetPath) || isTargetFolder;
-                //bool isUrl = IsWebUrl(targetPath);
-                //bool isSpecialPath = IsSpecialWindowsPath(targetPath);
-
-                //LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.IconHandling, $"Target analysis: path='{targetPath}', exists={targetExists}, isFolder={isTargetFolder}, isUrl={isUrl}, isSpecial={isSpecialPath}");
-
-                //if (!targetExists && !isUrl && !isSpecialPath)
-                //{
-                //    LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.General, $"Target not found: {targetPath}");
-                //    MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Target '{targetPath}' was not found.", "Error");
-                //    return;
-                //}
 
 
                 bool isUrl = IsWebUrl(targetPath);
@@ -7840,12 +8456,6 @@ LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, "Tab0 s
                         LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, $"Launching: '{targetPath}' (no arguments)");
                     }
 
-                    //// Set working directory if available
-                    //if (!string.IsNullOrEmpty(workingDirectory) && System.IO.Directory.Exists(workingDirectory))
-                    //{
-                    //    psi.WorkingDirectory = workingDirectory;
-                    //    LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.General, $"Set working directory: {workingDirectory}");
-                    //}
 
                     // LAUNCH ADD - ENHANCED: Set working directory with comprehensive fallback logic
                     if (!string.IsNullOrEmpty(workingDirectory) && System.IO.Directory.Exists(workingDirectory))
@@ -8296,7 +8906,15 @@ LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, "Tab0 s
 
 
 
-
+        private static string GetSafeProperty(dynamic obj, string propName)
+        {
+            try
+            {
+                if (obj is JObject jObj && jObj[propName] != null) return jObj[propName].ToString();
+                return obj.GetType().GetProperty(propName)?.GetValue(obj, null)?.ToString() ?? "";
+            }
+            catch { return ""; }
+        }
 
 
 

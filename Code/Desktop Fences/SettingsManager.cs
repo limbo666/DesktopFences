@@ -22,6 +22,19 @@ namespace Desktop_Fences
     /// </summary>
     public static class SettingsManager
     {
+
+
+        /// <summary>
+        /// Gets or sets whether extension will be visible on portal fences
+        /// </summary>
+        public static bool ShowPortalExtensions { get; set; } = false;
+
+
+        /// <summary>
+        /// Enables disables wildcards (*) in portal filter strings.
+        /// </summary>
+        public static bool NoWildcardsOnPortalFilter { get; set; } = false;
+
         /// <summary>
         /// Gets or sets whether snapping is enabled for fence alignment.
         /// </summary>
@@ -93,7 +106,7 @@ namespace Desktop_Fences
         /// <summary>
         /// Gets or sets the opacity of the portal fence background image (0-100).
         /// </summary>
-        public static int PortalBackgroundOpacity { get; set; } = 0; // Default to existing opacity
+        public static int PortalBackgroundOpacity { get; set; } = 30; // Default to existing opacity
 
         /// <summary>
         /// Gets or sets whether icon glow effect is enabled for better visibility.
@@ -160,7 +173,36 @@ namespace Desktop_Fences
         /// </summary>
         public static bool DeleteOriginalShortcutsOnDrop { get; set; } = false;
 
+        // --- Hidden Tweaks for SpotSearch ---
+        public static bool EnableSpotSearchHotkey { get; set; } = true;
+        public static int SpotSearchKey { get; set; } = 192; // Default: ~ (Tilde)
+        public static string SpotSearchModifier { get; set; } = "Control"; // Default: Control
 
+
+        /*
+ * SPOTSEARCH HOTKEY CUSTOMIZATION GUIDE
+ * -------------------------------------
+ * Users can manually edit 'options.json' to change the SpotSearch hotkey (Default: Ctrl + ~).
+ *
+ * JSON Parameters:
+ * "EnableSpotSearchHotkey": true/false  -> Master switch to enable/disable the hotkey.
+ * "SpotSearchModifier": "Control"       -> The modifier key. Options: "Control", "Alt", "Shift", "None".
+ * "SpotSearchKey": "~"                  -> The trigger key. Accepts friendly names or integer key codes.
+ *
+ * Supported "SpotSearchKey" Values:
+ * - Friendly Names: "~", "Tilde", "Space", "Q", "F1" (Case insensitive)
+ * - Key Codes: 192 (~), 32 (Space), 81 (Q), 112 (F1), etc. (See Windows Virtual Key Codes)
+ *
+ * EXAMPLES:
+ * 1. Default (Ctrl + ~):
+ * "EnableSpotSearchHotkey": true, "SpotSearchModifier": "Control", "SpotSearchKey": "~"
+ *
+ * 2. Alt + Space (Spotlight Style):
+ * "EnableSpotSearchHotkey": true, "SpotSearchModifier": "Alt", "SpotSearchKey": "Space"
+ *
+ * 3. F1 Only (No Modifier):
+ * "EnableSpotSearchHotkey": true, "SpotSearchModifier": "None", "SpotSearchKey": "F1"
+ */
 
         public static LogManager.LogLevel MinLogLevel { get; set; } = LogManager.LogLevel.Info;
         public static List<LogManager.LogCategory> EnabledLogCategories { get; set; } = new List<LogManager.LogCategory>
@@ -242,6 +284,25 @@ namespace Desktop_Fences
                     try { ExportShortcutsOnFenceDeletion = optionsData.ExportShortcutsOnFenceDeletion ?? false; } catch { ExportShortcutsOnFenceDeletion = false; }
                     try { DeleteOriginalShortcutsOnDrop = optionsData.DeleteOriginalShortcutsOnDrop ?? false; } catch { DeleteOriginalShortcutsOnDrop = false; }
                     //   try { MaxDisplayNameLength = optionsData.MaxDisplayNameLength ?? 20; } catch { MaxDisplayNameLength = 20; }
+
+
+                    // Load SpotSearch Tweaks
+                    try { EnableSpotSearchHotkey = optionsData.EnableSpotSearchHotkey ?? true; } catch { EnableSpotSearchHotkey = true; }
+                    try { SpotSearchModifier = optionsData.SpotSearchModifier?.ToString() ?? "Control"; } catch { SpotSearchModifier = "Control"; }
+                    try { ShowPortalExtensions = optionsData.ShowPortalExtensions ?? false; } catch { ShowPortalExtensions = false; }
+                    try { NoWildcardsOnPortalFilter = optionsData.NoWildcardsOnPortalFilter ?? false; } catch { NoWildcardsOnPortalFilter = false; }
+
+                    // Smart Key Parser
+                    try
+                    {
+                        SpotSearchKey = ParseKey(optionsData.SpotSearchKey);
+                    }
+                    catch
+                    {
+                        SpotSearchKey = 192; // Default ~
+                    }
+
+
                     try
                     {
                         int value = optionsData.MaxDisplayNameLength ?? 20;
@@ -355,7 +416,28 @@ namespace Desktop_Fences
                 SaveSettings(); // Ensure a valid options.json exists
             }
         }
+        /// <summary>
+        /// Converts friendly key names or integers into Virtual Key codes.
+        /// </summary>
+        private static int ParseKey(dynamic value)
+        {
+            if (value == null) return 192; // Default ~
 
+            // If it's already a number, return it
+            if (int.TryParse(value.ToString(), out int code)) return code;
+
+            // Parse friendly strings
+            string keyName = value.ToString().ToLower().Trim();
+            return keyName switch
+            {
+                "~" => 192,
+                "tilde" => 192,
+                "space" => 32,
+                "q" => 81,
+                "f1" => 112,
+                _ => 192 // Fallback to Tilde
+            };
+        }
 
 
         public static void SaveSettings()
@@ -394,7 +476,13 @@ namespace Desktop_Fences
                     DisableFenceScrollbars, // Scrollbar control option
                     DisableNoteAutoSave, // Note auto-save control option
                     ExportShortcutsOnFenceDeletion,
-                    DeleteOriginalShortcutsOnDrop
+                    DeleteOriginalShortcutsOnDrop,
+                    EnableSpotSearchHotkey,
+                    SpotSearchKey,
+                    SpotSearchModifier,
+                    NoWildcardsOnPortalFilter,
+                    ShowPortalExtensions
+
                 };
 
                 // Serialize to JSON with indentation for readability

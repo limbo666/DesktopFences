@@ -371,7 +371,7 @@ namespace Desktop_Fences
             // GitHub Button
             Button githubButton = new Button
             {
-                Content = "⚡ Visit us on GitHub",
+                Content = "⚡ Visit GitHub repository",
                 Height = 36,
                 Padding = new Thickness(16, 0, 16, 0),
                 FontFamily = new FontFamily("Segoe UI"),

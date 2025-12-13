@@ -1301,7 +1301,10 @@ namespace Desktop_Fences
                             {
                                 string filePath = item.Filename?.ToString() ?? "Unknown";
                                 bool isFolder = item.IsFolder?.ToString().ToLower() == "true";
-                                FenceManager.ClickEventAdder(sp, filePath, isFolder);
+                                // FIX: Extract arguments
+                                string arguments = Utility.GetShortcutArguments(filePath);
+
+                                FenceManager.ClickEventAdder(sp, filePath, isFolder, arguments);
 
                                 // FIX: Attach the centralized context menu
                                 // We need to find the parent window (NonActivatingWindow) of the WrapPanel
