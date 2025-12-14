@@ -258,19 +258,37 @@ namespace Desktop_Fences
 
         /// <summary>
         /// Builds the hierarchical list of move targets (fences and tabs)
+        /// Updated to allow moving items between tabs within the SAME fence.
         /// </summary>
         private static void BuildTargetsList(StackPanel targetsPanel, dynamic sourceFence, dynamic item, Window moveWindow)
         {
             string sourceFenceId = sourceFence.Id?.ToString();
+
+            // Determine source state to filter out the "Current" location
+            bool sourceHasTabs = sourceFence.TabsEnabled?.ToString().ToLower() == "true";
+            int sourceActiveTab = -1;
+            if (sourceHasTabs)
+            {
+                sourceActiveTab = Convert.ToInt32(sourceFence.CurrentTab?.ToString() ?? "0");
+            }
+
             var fenceData = FenceManager.GetFenceData();
 
             foreach (var fence in fenceData)
             {
-                // Skip source fence and Portal fences
-                if (fence.Id?.ToString() == sourceFenceId || fence.ItemsType?.ToString() == "Portal" || fence.ItemsType?.ToString() == "Note")
+                // 1. Global Exclusions: Portal and Note Fences cannot receive items via this dialog
+                if (fence.ItemsType?.ToString() == "Portal" || fence.ItemsType?.ToString() == "Note")
                     continue;
 
+                string currentFenceId = fence.Id?.ToString();
+                bool isSourceFence = (currentFenceId == sourceFenceId);
                 bool fenceHasTabs = fence.TabsEnabled?.ToString().ToLower() == "true";
+
+                // 2. Source Fence Logic:
+                // If this is the source fence AND it doesn't have tabs, skip it entirely 
+                if (isSourceFence && !fenceHasTabs)
+                    continue;
+
                 string fenceTitle = fence.Title?.ToString() ?? "Unnamed Fence";
 
                 if (!fenceHasTabs)
@@ -282,7 +300,7 @@ namespace Desktop_Fences
                 {
                     // Tabbed fence - show parent fence + tabs
 
-                    // Parent fence header (non-clickable, just shows fence name)
+                    // Parent fence header (non-clickable info)
                     Border fenceHeaderBorder = new Border
                     {
                         Background = new SolidColorBrush(System.Windows.Media.Color.FromRgb(248, 249, 250)),
@@ -293,10 +311,7 @@ namespace Desktop_Fences
                         Padding = new Thickness(12, 8, 12, 8)
                     };
 
-                    StackPanel fenceHeaderPanel = new StackPanel
-                    {
-                        Orientation = Orientation.Horizontal
-                    };
+                    StackPanel fenceHeaderPanel = new StackPanel { Orientation = Orientation.Horizontal };
 
                     TextBlock fenceIcon = new TextBlock
                     {
@@ -315,9 +330,17 @@ namespace Desktop_Fences
                         VerticalAlignment = VerticalAlignment.Center
                     };
 
+                    // FIX: Smart label indicating omitted tab
+                    int tCount = GetTabCount(fence);
+                    string countLabel = $"({tCount} tabs)";
+                    if (isSourceFence)
+                    {
+                        countLabel += " 1 omitted";
+                    }
+
                     TextBlock tabCountText = new TextBlock
                     {
-                        Text = $"({GetTabCount(fence)} tabs)",
+                        Text = countLabel,
                         FontSize = 11,
                         Foreground = new SolidColorBrush(System.Windows.Media.Color.FromRgb(95, 99, 104)),
                         Margin = new Thickness(8, 0, 0, 0),
@@ -330,13 +353,22 @@ namespace Desktop_Fences
                     fenceHeaderBorder.Child = fenceHeaderPanel;
                     targetsPanel.Children.Add(fenceHeaderBorder);
 
-                    // Option to move to fence main area
-                    CreateMoveTargetButton(targetsPanel, "📋 Main Items", "↳", fence, null, item, sourceFence, moveWindow, true);
+                    // Option to move to fence "Main Items" (Hidden storage)
+                    // We HIDE this if it is the Source Fence, to prevent confusion
+                    if (!isSourceFence)
+                    {
+                        CreateMoveTargetButton(targetsPanel, "📋 Main Items", "↳", fence, null, item, sourceFence, moveWindow, true);
+                    }
 
                     // Individual tabs
                     var tabs = fence.Tabs as JArray ?? new JArray();
                     for (int i = 0; i < tabs.Count; i++)
                     {
+                        // EXCLUSION LOGIC:
+                        // If this is the Source Fence AND this is the Active Tab, skip it.
+                        if (isSourceFence && i == sourceActiveTab)
+                            continue;
+
                         var tab = tabs[i] as JObject;
                         if (tab != null)
                         {

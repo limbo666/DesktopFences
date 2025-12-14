@@ -220,7 +220,7 @@ namespace Desktop_Fences
                 LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.FenceUpdate,
                     $"Starting paste operation to fence: {targetFence.Title}");
 
-                // Read copied item data - BackupManager JSON import pattern
+                // Read copied item data
                 string itemJsonPath = Path.Combine(_copiedItemFolderPath, "CopiedItem.json");
                 if (!File.Exists(itemJsonPath))
                 {
@@ -241,7 +241,7 @@ namespace Desktop_Fences
                 string displayName = pastedItem["DisplayName"]?.ToString() ??
                     Path.GetFileNameWithoutExtension(originalFileName);
 
-                // Generate unique filename for the new shortcut - BackupManager duplicate handling pattern
+                // Generate unique filename for the new shortcut
                 string exeDir = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
                 string shortcutsDir = Path.Combine(exeDir, "Shortcuts");
 
@@ -253,7 +253,7 @@ namespace Desktop_Fences
                 string newFileName = originalFileName;
                 string newFilePath = Path.Combine(shortcutsDir, newFileName);
 
-                // Handle duplicate filenames - BackupManager counter pattern
+                // Handle duplicate filenames
                 int counter = 1;
                 while (File.Exists(newFilePath))
                 {
@@ -263,7 +263,7 @@ namespace Desktop_Fences
                     newFilePath = Path.Combine(shortcutsDir, newFileName);
                 }
 
-                // Copy shortcut from temp folder to Shortcuts folder - BackupManager file copy pattern
+                // Copy shortcut from temp folder to Shortcuts folder
                 string sourceFilePath = Path.Combine(_copiedItemFolderPath, originalFileName);
                 if (File.Exists(sourceFilePath))
                 {
@@ -276,51 +276,76 @@ namespace Desktop_Fences
                     throw new FileNotFoundException($"Source shortcut file not found: {sourceFilePath}");
                 }
 
-                // Update item data for the new location - BackupManager data update pattern
+                // Update item data for the new location
                 pastedItem["Filename"] = Path.Combine("Shortcuts", newFileName);
 
-                // Keep the original display name clean - don't add counter to displayed title
-                // The filename will have (1), (2) etc. for uniqueness, but the displayed name stays clean
                 LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.FenceUpdate,
-                    $"Pasted item - Filename: '{newFileName}', DisplayName: '{displayName}' (kept clean)");
+                    $"Pasted item - Filename: '{newFileName}', DisplayName: '{displayName}'");
 
-                // Note: We intentionally do NOT update DisplayName with counter
-                // This keeps the displayed name clean while the filename ensures uniqueness
+                // --- FIX: TAB AWARENESS LOGIC ---
+                JArray targetItems = null;
+                bool tabsEnabled = targetFence.TabsEnabled?.ToString().ToLower() == "true";
 
-                // Add item to target fence - BackupManager fence data update pattern
-                var targetItems = targetFence.Items as JArray;
-                if (targetItems == null)
+                if (tabsEnabled)
                 {
-                    targetItems = new JArray();
-                    targetFence.Items = targetItems;
+                    // If Tabs are enabled, we must add to the ACTIVE TAB, not the main list
+                    var tabs = targetFence.Tabs as JArray;
+                    int currentTabIdx = Convert.ToInt32(targetFence.CurrentTab?.ToString() ?? "0");
+
+                    if (tabs != null && currentTabIdx >= 0 && currentTabIdx < tabs.Count)
+                    {
+                        var activeTab = tabs[currentTabIdx] as JObject;
+                        if (activeTab != null)
+                        {
+                            targetItems = activeTab["Items"] as JArray;
+                            if (targetItems == null)
+                            {
+                                targetItems = new JArray();
+                                activeTab["Items"] = targetItems;
+                            }
+                            LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.FenceUpdate,
+                                $"Targeting Tab {currentTabIdx} ('{activeTab["TabName"]}') for paste");
+                        }
+                    }
                 }
 
-                targetItems.Add(pastedItem);
-                LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.FenceUpdate,
-                    $"Added item to fence '{targetFence.Title}'");
+                // Fallback: If not tabs, or tab lookup failed, use Main Items
+                if (targetItems == null)
+                {
+                    targetItems = targetFence.Items as JArray;
+                    if (targetItems == null)
+                    {
+                        targetItems = new JArray();
+                        targetFence.Items = targetItems;
+                    }
+                    LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.FenceUpdate,
+                        "Targeting Main Items list for paste");
+                }
+                // --------------------------------
 
-                // Save fence data - BackupManager save pattern
+                // Add item to the identified list
+                targetItems.Add(pastedItem);
+
+                // Save fence data
                 FenceDataManager.SaveFenceData();
 
-                // Refresh fence display - Find the fence window and refresh
+                // Refresh fence display
                 var windows = System.Windows.Application.Current.Windows.OfType<NonActivatingWindow>();
                 var targetWindow = windows.FirstOrDefault(w => w.Tag?.ToString() == targetFence.Id?.ToString());
 
                 if (targetWindow != null)
                 {
-                    // Refresh the fence content to show the new item using the public method
+                    // This method detects tabsEnabled internally and will render the correct list
                     FenceManager.RefreshFenceUsingFormApproach(targetWindow, targetFence);
                     LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.FenceUpdate,
                         "Refreshed fence display after paste");
                 }
 
-                // Clean up copied item - BackupManager cleanup pattern
+                // Clean up copied item
                 CleanCopiedItem();
 
                 LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.FenceUpdate,
                     $"Item pasted successfully to fence '{targetFence.Title}'");
-
-                // No success message for paste - keep it silent for better UX
             }
             catch (Exception ex)
             {
@@ -329,6 +354,10 @@ namespace Desktop_Fences
                 MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Error pasting item: {ex.Message}", "Paste Error");
             }
         }
+
+
+
+
         #endregion
 
         #region Cleanup Operations - Adapted from BackupManager.CleanLastDeletedFolder

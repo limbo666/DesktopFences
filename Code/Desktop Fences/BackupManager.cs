@@ -1,10 +1,16 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Reflection;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+using System.Windows;
+using System.Windows.Media;
+using System.Windows.Media.Animation;
+using System.Windows.Media.Effects;
 
 namespace Desktop_Fences
 {
@@ -15,7 +21,19 @@ namespace Desktop_Fences
 
     public static class BackupManager
     {
+
+
+
+
         #region Private Fields
+        // Track active legendary effects to allow cleanup/reversion
+        private static readonly Dictionary<string, Storyboard> _legendaryEffects = new Dictionary<string, Storyboard>();
+        private static readonly Dictionary<string, Brush> _originalBorders = new Dictionary<string, Brush>();
+        private static readonly Dictionary<string, Thickness> _originalBorderThicknesses = new Dictionary<string, Thickness>();
+        private static readonly Dictionary<string, Effect> _originalEffects = new Dictionary<string, Effect>();
+
+
+
         // Manage last deleted fence restoration
         private static string _lastDeletedFolderPath;
         private static dynamic _lastDeletedFence;
@@ -37,73 +55,84 @@ namespace Desktop_Fences
         #region Existing Backup Method (Enhanced)
 
         // Creates a complete backup of all fences and shortcuts with enhanced logging
+        //public static void BackupData()
+        //{
+        //    try
+        //    {
+        //        LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.ImportExport, "Starting complete data backup");
+
+        //        // Get the directory of the executing assembly
+        //        string exePath = Assembly.GetEntryAssembly().Location;
+        //        string exeDir = Path.GetDirectoryName(exePath);
+
+        //        // Define source paths for fences.json and Shortcuts folder
+        //        string jsonFilePath = Path.Combine(exeDir, "fences.json");
+        //        string shortcutsFolderPath = Path.Combine(exeDir, "Shortcuts");
+
+        //        // Define the destination "Backups" folder
+        //        string backupsFolderPath = Path.Combine(exeDir, "Backups");
+        //        if (!Directory.Exists(backupsFolderPath))
+        //        {
+        //            Directory.CreateDirectory(backupsFolderPath); // Create Backups folder if it doesn't exist
+        //            LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.ImportExport, $"Created Backups directory: {backupsFolderPath}");
+        //        }
+
+        //        // Create a new backup folder with the current date and time (e.g., "2503181234_backup")
+        //        string backupFolderName = DateTime.Now.ToString("yyMMddHHmm") + "_backup";
+        //        string backupFolderPath = Path.Combine(backupsFolderPath, backupFolderName);
+        //        Directory.CreateDirectory(backupFolderPath);
+
+        //        // Copy the fences.json file to the backup folder
+        //        string backupJsonFilePath = Path.Combine(backupFolderPath, "fences.json");
+        //        if (File.Exists(jsonFilePath))
+        //        {
+        //            File.Copy(jsonFilePath, backupJsonFilePath, true); // Overwrite if exists
+        //            LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.ImportExport, $"Backed up fences.json to: {backupJsonFilePath}");
+        //        }
+        //        else
+        //        {
+        //            LogManager.Log(LogManager.LogLevel.Warn, LogManager.LogCategory.ImportExport, "fences.json not found for backup");
+        //        }
+
+        //        // Copy the entire "Shortcuts" folder, if it exists
+        //        string backupShortcutsFolderPath = Path.Combine(backupFolderPath, "Shortcuts");
+        //        if (Directory.Exists(shortcutsFolderPath))
+        //        {
+        //            Directory.CreateDirectory(backupShortcutsFolderPath);
+
+        //            // Use our helper method to copy directory recursively
+        //            CopyDirectory(shortcutsFolderPath, backupShortcutsFolderPath);
+
+        //            var fileCount = Directory.GetFiles(backupShortcutsFolderPath, "*.*", SearchOption.AllDirectories).Length;
+        //            LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.ImportExport, $"Backed up {fileCount} files from Shortcuts folder");
+        //        }
+        //        else
+        //        {
+        //            LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.ImportExport, "Shortcuts folder not found, skipping shortcut backup");
+        //        }
+
+        //        // Notify the user of successful backup
+        //        MessageBoxesManager.ShowOKOnlyMessageBoxForm("Backup completed successfully.", "Backup");
+        //        LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.ImportExport, $"Complete data backup finished successfully: {backupFolderPath}");
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        // Handle any errors during the backup process and inform the user
+        //        LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.ImportExport, $"Backup failed: {ex.Message}\nStack trace: {ex.StackTrace}");
+        //        MessageBoxesManager.ShowOKOnlyMessageBoxForm($"An error occurred during backup: {ex.Message}", "Error");
+        //    }
+        //}
+
+        // Replaces existing BackupData to use the new shared helper
         public static void BackupData()
         {
-            try
-            {
-                LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.ImportExport, "Starting complete data backup");
-
-                // Get the directory of the executing assembly
-                string exePath = Assembly.GetEntryAssembly().Location;
-                string exeDir = Path.GetDirectoryName(exePath);
-
-                // Define source paths for fences.json and Shortcuts folder
-                string jsonFilePath = Path.Combine(exeDir, "fences.json");
-                string shortcutsFolderPath = Path.Combine(exeDir, "Shortcuts");
-
-                // Define the destination "Backups" folder
-                string backupsFolderPath = Path.Combine(exeDir, "Backups");
-                if (!Directory.Exists(backupsFolderPath))
-                {
-                    Directory.CreateDirectory(backupsFolderPath); // Create Backups folder if it doesn't exist
-                    LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.ImportExport, $"Created Backups directory: {backupsFolderPath}");
-                }
-
-                // Create a new backup folder with the current date and time (e.g., "2503181234_backup")
-                string backupFolderName = DateTime.Now.ToString("yyMMddHHmm") + "_backup";
-                string backupFolderPath = Path.Combine(backupsFolderPath, backupFolderName);
-                Directory.CreateDirectory(backupFolderPath);
-
-                // Copy the fences.json file to the backup folder
-                string backupJsonFilePath = Path.Combine(backupFolderPath, "fences.json");
-                if (File.Exists(jsonFilePath))
-                {
-                    File.Copy(jsonFilePath, backupJsonFilePath, true); // Overwrite if exists
-                    LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.ImportExport, $"Backed up fences.json to: {backupJsonFilePath}");
-                }
-                else
-                {
-                    LogManager.Log(LogManager.LogLevel.Warn, LogManager.LogCategory.ImportExport, "fences.json not found for backup");
-                }
-
-                // Copy the entire "Shortcuts" folder, if it exists
-                string backupShortcutsFolderPath = Path.Combine(backupFolderPath, "Shortcuts");
-                if (Directory.Exists(shortcutsFolderPath))
-                {
-                    Directory.CreateDirectory(backupShortcutsFolderPath);
-
-                    // Use our helper method to copy directory recursively
-                    CopyDirectory(shortcutsFolderPath, backupShortcutsFolderPath);
-
-                    var fileCount = Directory.GetFiles(backupShortcutsFolderPath, "*.*", SearchOption.AllDirectories).Length;
-                    LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.ImportExport, $"Backed up {fileCount} files from Shortcuts folder");
-                }
-                else
-                {
-                    LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.ImportExport, "Shortcuts folder not found, skipping shortcut backup");
-                }
-
-                // Notify the user of successful backup
-                MessageBoxesManager.ShowOKOnlyMessageBoxForm("Backup completed successfully.", "Backup");
-                LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.ImportExport, $"Complete data backup finished successfully: {backupFolderPath}");
-            }
-            catch (Exception ex)
-            {
-                // Handle any errors during the backup process and inform the user
-                LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.ImportExport, $"Backup failed: {ex.Message}\nStack trace: {ex.StackTrace}");
-                MessageBoxesManager.ShowOKOnlyMessageBoxForm($"An error occurred during backup: {ex.Message}", "Error");
-            }
+            LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.ImportExport, "Starting manual backup");
+            // Standard format: [datetime]_backup
+            string backupName = DateTime.Now.ToString("yyMMddHHmm") + "_backup";
+            CreateBackup(backupName, silent: false);
         }
+
+
         #endregion
 
         #region Restore Operations
@@ -111,63 +140,7 @@ namespace Desktop_Fences
         // Restores fences and shortcuts from a backup folder with comprehensive validation
 
         // <param name="backupFolder">Path to the backup folder to restore from</param>
-        public static void RestoreFromBackup(string backupFolder)
-        {
-            try
-            {
-                LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.ImportExport, $"Starting restore from backup: {backupFolder}");
-
-                // Validate backup folder structure
-                string backupFencesPath = Path.Combine(backupFolder, "fences.json");
-                string backupShortcutsPath = Path.Combine(backupFolder, "Shortcuts");
-
-                if (!File.Exists(backupFencesPath) || !Directory.Exists(backupShortcutsPath))
-                {
-                    string errorMsg = "Invalid backup folder - missing required files (fences.json or Shortcuts folder)";
-                    LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.ImportExport, errorMsg);
-                    MessageBoxesManager.ShowOKOnlyMessageBoxForm(errorMsg, "Restore Error");
-                    return;
-                }
-
-                // Get current application directory
-                string exeDir = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
-                string currentFencesPath = Path.Combine(exeDir, "fences.json");
-                string currentShortcutsPath = Path.Combine(exeDir, "Shortcuts");
-
-                // Clear existing data structures (important for clean restore)
-                var fenceData = FenceManager.GetFenceData();
-                fenceData?.Clear();
-
-                // Restore fences.json
-                File.Copy(backupFencesPath, currentFencesPath, true);
-                LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.ImportExport, "Restored fences.json");
-
-                // Restore shortcuts folder
-                if (Directory.Exists(currentShortcutsPath))
-                {
-                    Directory.Delete(currentShortcutsPath, true);
-                    LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.ImportExport, "Cleared existing shortcuts");
-                }
-
-                Directory.CreateDirectory(currentShortcutsPath);
-                CopyDirectory(backupShortcutsPath, currentShortcutsPath);
-
-                var restoredFileCount = Directory.GetFiles(currentShortcutsPath, "*.*", SearchOption.AllDirectories).Length;
-                LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.ImportExport, $"Restored {restoredFileCount} shortcut files");
-
-                // Important: Reload fences using FenceManager's method to ensure proper initialization
-                FenceManager.LoadAndCreateFences(new TargetChecker(1000));
-
-                LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.ImportExport, "Restore from backup completed successfully");
-            }
-            catch (Exception ex)
-            {
-                LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.ImportExport, $"Restore failed: {ex.Message}\nStack trace: {ex.StackTrace}");
-                MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Restore failed: {ex.Message}", "Error");
-                throw; // Re-throw to allow calling code to handle
-            }
-        }
-
+    
 
         // Restores the last deleted fence from backup with validation
 
@@ -600,5 +573,224 @@ namespace Desktop_Fences
             }
         }
         #endregion
+
+
+
+        #region Auto-Backup & Core Logic
+
+        private static System.Windows.Threading.DispatcherTimer _autoBackupTimer;
+
+        // Called at startup to schedule the daily auto-backup
+        public static void InitializeAutoBackup()
+        {
+            if (!SettingsManager.EnableAutoBackup) return;
+
+            // Check if already ran today to prevent spamming backups on every restart
+            if (SettingsManager.LastAutoBackupDate.Date == DateTime.Today)
+            {
+                LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.ImportExport, "Auto-backup skipped: Already ran today.");
+                return;
+            }
+
+            // Schedule for 5 minutes later to avoid slowing down startup
+            _autoBackupTimer = new System.Windows.Threading.DispatcherTimer
+            {
+                Interval = TimeSpan.FromMinutes(5)
+            };
+            _autoBackupTimer.Tick += (s, e) =>
+            {
+                _autoBackupTimer.Stop();
+                PerformAutoBackup();
+            };
+            _autoBackupTimer.Start();
+            LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.ImportExport, "Auto-backup scheduled for 5 minutes from now.");
+        }
+
+        private static void PerformAutoBackup()
+        {
+            try
+            {
+                // Double-check setting
+                if (!SettingsManager.EnableAutoBackup) return;
+
+                // Format: [datetime]_backup_auto
+                string timestamp = DateTime.Now.ToString("yyMMddHHmm");
+                string backupFolderName = $"{timestamp}_backup_auto";
+
+                // Run backup silently (no message box)
+                CreateBackup(backupFolderName, silent: true);
+
+                // Update last run date
+                SettingsManager.LastAutoBackupDate = DateTime.Now;
+                SettingsManager.SaveSettings();
+
+                LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.ImportExport, $"Auto-backup completed: {backupFolderName}");
+            }
+            catch (Exception ex)
+            {
+                LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.ImportExport, $"Auto-backup failed: {ex.Message}");
+            }
+        }
+
+        // Refactored Helper: Centralizes the actual backup work
+        // Includes options.json now
+        public static void CreateBackup(string folderName, bool silent = false)
+        {
+            try
+            {
+                string exePath = Assembly.GetEntryAssembly().Location;
+                string exeDir = Path.GetDirectoryName(exePath);
+
+                // Source Paths
+                string jsonFilePath = Path.Combine(exeDir, "fences.json");
+                string optionsFilePath = Path.Combine(exeDir, "options.json"); // NEW
+                string shortcutsFolderPath = Path.Combine(exeDir, "Shortcuts");
+
+                // Dest Paths
+                string backupsFolderPath = Path.Combine(exeDir, "Backups");
+                string backupFolderPath = Path.Combine(backupsFolderPath, folderName);
+
+                if (!Directory.Exists(backupsFolderPath))
+                {
+                    Directory.CreateDirectory(backupsFolderPath);
+                }
+                Directory.CreateDirectory(backupFolderPath);
+
+                // 1. Copy fences.json
+                string backupJsonFilePath = Path.Combine(backupFolderPath, "fences.json");
+                if (File.Exists(jsonFilePath))
+                {
+                    File.Copy(jsonFilePath, backupJsonFilePath, true);
+                }
+
+                // 2. Copy options.json (NEW)
+                string backupOptionsFilePath = Path.Combine(backupFolderPath, "options.json");
+                if (File.Exists(optionsFilePath))
+                {
+                    File.Copy(optionsFilePath, backupOptionsFilePath, true);
+                    LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.ImportExport, "Backed up options.json");
+                }
+
+                // 3. Copy Shortcuts Folder
+                string backupShortcutsFolderPath = Path.Combine(backupFolderPath, "Shortcuts");
+                if (Directory.Exists(shortcutsFolderPath))
+                {
+                    Directory.CreateDirectory(backupShortcutsFolderPath);
+                    CopyDirectory(shortcutsFolderPath, backupShortcutsFolderPath);
+                }
+
+                if (!silent)
+                {
+                    MessageBoxesManager.ShowOKOnlyMessageBoxForm("Backup completed successfully.", "Backup");
+                    LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.ImportExport, $"Manual backup finished: {backupFolderPath}");
+                }
+            }
+            catch (Exception ex)
+            {
+                LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.ImportExport, $"CreateBackup error: {ex.Message}");
+                if (!silent)
+                {
+                    MessageBoxesManager.ShowOKOnlyMessageBoxForm($"An error occurred during backup: {ex.Message}", "Error");
+                }
+            }
+        }
+
+        // Restores fences, shortcuts, AND optionally settings from a backup
+        public static void RestoreFromBackup(string backupFolder)
+        {
+            try
+            {
+                LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.ImportExport, $"Starting restore from backup: {backupFolder}");
+
+                // 1. Validate basic structure
+                string backupFencesPath = Path.Combine(backupFolder, "fences.json");
+                string backupShortcutsPath = Path.Combine(backupFolder, "Shortcuts");
+
+                if (!File.Exists(backupFencesPath) || !Directory.Exists(backupShortcutsPath))
+                {
+                    string errorMsg = "Invalid backup folder - missing required files.";
+                    MessageBoxesManager.ShowOKOnlyMessageBoxForm(errorMsg, "Restore Error");
+                    return;
+                }
+
+                string exeDir = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
+                bool restartRequired = false;
+
+                // 2. Handle options.json
+                string backupOptionsPath = Path.Combine(backupFolder, "options.json");
+                if (File.Exists(backupOptionsPath))
+                {
+                    bool restoreSettings = MessageBoxesManager.ShowCustomYesNoMessageBox(
+                        "This backup contains configuration settings (options.json).\n\n" +
+                        "Do you want to restore your global settings as well?",
+                        "Restore Settings");
+
+                    if (restoreSettings)
+                    {
+                        try
+                        {
+                            string currentOptionsPath = Path.Combine(exeDir, "options.json");
+                            File.Copy(backupOptionsPath, currentOptionsPath, true);
+                            LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.ImportExport, "Restored options.json");
+                            restartRequired = true;
+                        }
+                        catch (Exception ex)
+                        {
+                            LogManager.Log(LogManager.LogLevel.Warn, LogManager.LogCategory.ImportExport, $"Failed to restore options.json: {ex.Message}");
+                        }
+                    }
+                }
+
+                // 3. Clear & Copy Data
+                string currentFencesPath = Path.Combine(exeDir, "fences.json");
+                string currentShortcutsPath = Path.Combine(exeDir, "Shortcuts");
+
+                var fenceData = FenceManager.GetFenceData();
+                fenceData?.Clear();
+
+                File.Copy(backupFencesPath, currentFencesPath, true);
+
+                if (Directory.Exists(currentShortcutsPath))
+                {
+                    Directory.Delete(currentShortcutsPath, true);
+                }
+                Directory.CreateDirectory(currentShortcutsPath);
+                CopyDirectory(backupShortcutsPath, currentShortcutsPath);
+
+                LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.ImportExport, "Files restored successfully.");
+
+                // 4. DECISION TIME
+                if (restartRequired)
+                {
+                    MessageBoxesManager.ShowOKOnlyMessageBoxForm(
+                        "Global settings have been restored.\nThe application will now restart to apply changes.",
+                        "Restart Required");
+
+                    // FIX: Use Environment.Exit(0) to stop execution IMMEDIATELY.
+                    // Application.Current.Shutdown() allows subsequent code (like TrayManager.reloadAllFences)
+                    // to run while the app is dying, causing NullReferenceException.
+                    string appPath = Process.GetCurrentProcess().MainModule.FileName;
+                    Process.Start(appPath);
+                    Environment.Exit(0);
+                }
+                else
+                {
+                    // Optimization: We DO NOT reload fences here anymore.
+                    // The caller (OptionsFormManager) calls TrayManager.reloadAllFences() immediately after we return.
+                    // Removing this prevents Double-Loading.
+                    MessageBoxesManager.ShowOKOnlyMessageBoxForm("Restore completed successfully.", "Restore");
+                }
+            }
+            catch (Exception ex)
+            {
+                LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.ImportExport, $"Restore failed: {ex.Message}");
+                MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Restore failed: {ex.Message}", "Error");
+            }
+        }
+        #endregion
+
+
+
+
     }
 }

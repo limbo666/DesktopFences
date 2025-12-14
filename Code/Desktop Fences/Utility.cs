@@ -252,61 +252,138 @@ namespace Desktop_Fences
         }
 
 
-
-
-
         public static void UpdateFenceVisuals()
         {
             if (System.Windows.Application.Current == null) return;
 
-            foreach (Window window in System.Windows.Application.Current.Windows)
+            System.Windows.Application.Current.Dispatcher.Invoke(() =>
             {
-                if (window.GetType().Name == "NonActivatingWindow") // Check if it's a fence
+                // 1. Prepare Symbols
+                string[] menuSymbols = { "♥", "☰", "≣", "𓃑" };
+                string[] lockSymbols = { "🛡️", "🔑", "🔐", "🔒" };
+
+                int menuIdx = SettingsManager.MenuIcon;
+                if (menuIdx < 0 || menuIdx >= menuSymbols.Length) menuIdx = 0;
+
+                int lockIdx = SettingsManager.LockIcon;
+                if (lockIdx < 0 || lockIdx >= lockSymbols.Length) lockIdx = 0;
+
+                string menuSymbol = menuSymbols[menuIdx];
+                string lockSymbol = lockSymbols[lockIdx];
+                double iconOpacity = (double)SettingsManager.MenuTintValue / 100.0;
+
+                // Get Data List Once
+                var allFences = FenceManager.GetFenceData();
+
+                // 2. Iterate All Open Fences
+                foreach (var win in System.Windows.Application.Current.Windows.OfType<NonActivatingWindow>())
                 {
-                    // 1. Update Menu Icon (Heart)
-                    var menuIcon = FindChild<TextBlock>(window, "FenceMenuIcon");
+                    string fenceId = win.Tag?.ToString();
+                    if (string.IsNullOrEmpty(fenceId)) continue;
+
+                    // --- FIX START: Robust Data Lookup ---
+                    // Explicitly find the fence data without relying on risky dynamic LINQ
+                    dynamic fenceData = null;
+                    foreach (var f in allFences)
+                    {
+                        string id = null;
+                        // Handle JObject (Loaded from JSON)
+                        if (f is Newtonsoft.Json.Linq.JObject j)
+                            id = j["Id"]?.ToString();
+                        // Handle Anonymous/Expando (Newly Created)
+                        else
+                        {
+                            try { id = f.GetType().GetProperty("Id")?.GetValue(f)?.ToString(); } catch { }
+                            if (id == null) try { id = f.Id?.ToString(); } catch { }
+                        }
+
+                        if (string.Equals(id, fenceId, StringComparison.OrdinalIgnoreCase))
+                        {
+                            fenceData = f;
+                            break;
+                        }
+                    }
+
+                    // Determine Color
+                    string colorToApply = SettingsManager.SelectedColor; // Default to Global
+
+                    if (fenceData != null)
+                    {
+                        string customColor = null;
+                        // Robust CustomColor Extraction
+                        if (fenceData is Newtonsoft.Json.Linq.JObject jObj)
+                            customColor = jObj["CustomColor"]?.ToString();
+                        else
+                        {
+                            try { customColor = fenceData.CustomColor?.ToString(); } catch { }
+                            if (customColor == null) try { customColor = fenceData.GetType().GetProperty("CustomColor")?.GetValue(fenceData)?.ToString(); } catch { }
+                        }
+
+                        // If valid custom color, override global
+                        if (!string.IsNullOrEmpty(customColor) && customColor != "Default")
+                        {
+                            colorToApply = customColor;
+                        }
+                    }
+                    // --- FIX END ---
+
+                    // 3. Apply Visuals
+                    ApplyTintAndColorToFence(win, colorToApply);
+
+                    // 4. Update Icons (Using Named FindChild for safety)
+                    var menuIcon = FindChild<TextBlock>(win, "FenceMenuIcon");
                     if (menuIcon != null)
                     {
-                        string menuSymbol = "♥";
-                        if (SettingsManager.MenuIcon == 1) menuSymbol = "☰";
-                        else if (SettingsManager.MenuIcon == 2) menuSymbol = "≣";
-                        else if (SettingsManager.MenuIcon == 3) menuSymbol = "𓃑";
                         menuIcon.Text = menuSymbol;
-
-                        // Update Opacity
-                        menuIcon.Opacity = (double)SettingsManager.MenuTintValue / 100;
+                        menuIcon.BeginAnimation(UIElement.OpacityProperty, null);
+                        menuIcon.Opacity = iconOpacity;
                     }
 
-                    // 2. Update Lock Icon
-                    var lockIcon = FindChild<TextBlock>(window, "FenceLockIcon");
+                    var lockIcon = FindChild<TextBlock>(win, "FenceLockIcon");
                     if (lockIcon != null)
                     {
-                        string lockSymbol = "🛡️";
-                        if (SettingsManager.LockIcon == 1) lockSymbol = "🔑";
-                        else if (SettingsManager.LockIcon == 2) lockSymbol = "🔐";
-                        else if (SettingsManager.LockIcon == 3) lockSymbol = "🔒";
                         lockIcon.Text = lockSymbol;
+                        lockIcon.BeginAnimation(UIElement.OpacityProperty, null);
+                        lockIcon.Opacity = iconOpacity;
 
-                        // Update Opacity
-                        lockIcon.Opacity = (double)SettingsManager.MenuTintValue / 100;
+                        // Re-apply Lock Color (Red/White)
+                        bool isLocked = false;
+                        if (fenceData != null)
+                        {
+                            string lockedStr = null;
+                            if (fenceData is Newtonsoft.Json.Linq.JObject j) lockedStr = j["IsLocked"]?.ToString();
+                            else try { lockedStr = fenceData.IsLocked?.ToString(); } catch { }
+                            isLocked = lockedStr?.ToLower() == "true";
+                        }
+                        lockIcon.Foreground = isLocked ? System.Windows.Media.Brushes.Red : System.Windows.Media.Brushes.White;
                     }
 
-                    // 3. Update Filter Icon (Just opacity, text is static)
-                    var filterIcon = FindChild<TextBlock>(window, "FenceFilterIcon");
-                    if (filterIcon != null)
+                    // 5. Update Note Text Contrast (if applicable)
+                    try
                     {
-                        // Only the opacity needs refreshing from global settings
-                        // The color (Orange/White) is handled by the fence logic itself
-                        // filterIcon.Opacity = (double)SettingsManager.MenuTintValue / 100; 
-                        // Note: Usually filter icon stays fully visible or follows tint? 
-                        // If you want it to fade like others, uncomment line above.
-                    }
+                        string type = null;
+                        if (fenceData is Newtonsoft.Json.Linq.JObject j) type = j["ItemsType"]?.ToString();
+                        else try { type = fenceData.ItemsType?.ToString(); } catch { }
 
-                    // ... (Your existing logic for Color/Tint/Scrollbars) ...
-                    ApplyTintAndColorToFence(window, SettingsManager.SelectedColor);
+                        if (type == "Note" && fenceData != null)
+                        {
+                            var border = win.Content as Border;
+                            var dockPanel = border?.Child as DockPanel;
+                            var noteTextBox = dockPanel?.Children.OfType<TextBox>().FirstOrDefault();
+
+                            if (noteTextBox != null)
+                            {
+                                NoteFenceManager.RefreshNoteVisuals(fenceData, noteTextBox);
+                            }
+                        }
+                    }
+                    catch { }
                 }
-            }
+            });
         }
+
+
+
 
         // Helper to find named elements easily
         private static T FindChild<T>(DependencyObject parent, string childName) where T : DependencyObject
@@ -478,10 +555,16 @@ namespace Desktop_Fences
                 }
                 else if (isFolder)
                 {
-                    // Optimization: For real folders, use attributes to avoid disk spin-up
-                    flags |= SHGFI_USEFILEATTRIBUTES;
-                    SHGetFileInfo(path, 0x00000010, ref shinfo, (uint)Marshal.SizeOf(shinfo), flags);
+                    // FIX: Remove SHGFI_USEFILEATTRIBUTES to force Shell to read desktop.ini for custom icons.
+                    // We pass 0 for attributes so the Shell accesses the disk.
+                    SHGetFileInfo(path, 0, ref shinfo, (uint)Marshal.SizeOf(shinfo), flags);
                 }
+                //else if (isFolder)
+                //{
+                //    // Optimization: For real folders, use attributes to avoid disk spin-up
+                //    flags |= SHGFI_USEFILEATTRIBUTES;
+                //    SHGetFileInfo(path, 0x00000010, ref shinfo, (uint)Marshal.SizeOf(shinfo), flags);
+                //}
                 else
                 {
                     // Standard files

@@ -43,6 +43,228 @@ namespace Desktop_Fences
         }
         #endregion
 
+        #region ShowCustomYesNoMessageBox - Generic Confirmation Dialog
+        /// <summary>
+        /// Shows a modern WPF Yes/No confirmation dialog with custom message and title
+        /// </summary>
+        /// <param name="message">The question to ask the user</param>
+        /// <param name="title">The dialog title</param>
+        /// <returns>True if Yes was clicked, False if No was clicked</returns>
+        public static bool ShowCustomYesNoMessageBox(string message, string title)
+        {
+            try
+            {
+                var messageBox = new CustomYesNoMessageBoxWindow(message, title);
+                messageBox.ShowDialog();
+                return messageBox.DialogResult;
+            }
+            catch (Exception ex)
+            {
+                LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI, $"Error showing Yes/No MessageBox: {ex.Message}");
+                return false;
+            }
+        }
+        #endregion
+
+
+
+        #region CustomYesNoMessageBoxWindow - Internal WPF Window Class
+        /// <summary>
+        /// Internal WPF window for generic Yes/No confirmation dialogs
+        /// </summary>
+        private class CustomYesNoMessageBoxWindow : Window
+        {
+            private bool _result = false;
+            private Color _userAccentColor;
+            private string _message;
+            private string _title;
+
+            public new bool DialogResult => _result;
+
+            public CustomYesNoMessageBoxWindow(string message, string title)
+            {
+                _message = message;
+                _title = title;
+                InitializeComponent();
+                PositionWindowOnMouseScreen(this);
+                PlayDingSound();
+            }
+
+            private void InitializeComponent()
+            {
+                // Get user's accent color
+                string selectedColorName = SettingsManager.SelectedColor;
+                var mediaColor = Utility.GetColorFromName(selectedColorName);
+                _userAccentColor = mediaColor;
+
+                // Modern WPF window setup
+                this.Title = _title;
+                this.Width = 450;
+                this.Height = 220;
+                this.WindowStartupLocation = WindowStartupLocation.Manual;
+                this.WindowStyle = WindowStyle.None;
+                this.AllowsTransparency = true;
+                this.Background = new SolidColorBrush(Color.FromRgb(248, 249, 250));
+                this.ResizeMode = ResizeMode.NoResize;
+                this.Topmost = true;
+
+                // Set icon
+                try
+                {
+                    this.Icon = System.Windows.Interop.Imaging.CreateBitmapSourceFromHIcon(
+                        System.Drawing.Icon.ExtractAssociatedIcon(System.Diagnostics.Process.GetCurrentProcess().MainModule.FileName).Handle,
+                        Int32Rect.Empty,
+                        BitmapSizeOptions.FromEmptyOptions()
+                    );
+                }
+                catch { }
+
+                CreateContent();
+            }
+
+            private void CreateContent()
+            {
+                // Main white card
+                Border mainCard = new Border
+                {
+                    Background = Brushes.White,
+                    Margin = new Thickness(8, 8, 8, 1),
+                    Effect = new DropShadowEffect
+                    {
+                        Color = Colors.Black,
+                        Direction = 270,
+                        ShadowDepth = 2,
+                        BlurRadius = 10,
+                        Opacity = 0.1
+                    }
+                };
+
+                Grid mainGrid = new Grid();
+                mainGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(8) });
+                mainGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+
+                // Accent header
+                Border accentHeader = new Border
+                {
+                    Background = new SolidColorBrush(_userAccentColor),
+                    Height = 8
+                };
+                Grid.SetRow(accentHeader, 0);
+
+                // Content area
+                Grid contentGrid = new Grid { Margin = new Thickness(24) };
+                contentGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(64) });
+                contentGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+                contentGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+                contentGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(50) });
+
+                Grid.SetRow(contentGrid, 1);
+
+                // Warning icon
+                Border iconContainer = new Border
+                {
+                    Width = 48,
+                    Height = 48,
+                    Background = new SolidColorBrush(Color.FromArgb(15, _userAccentColor.R, _userAccentColor.G, _userAccentColor.B)),
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    VerticalAlignment = VerticalAlignment.Top,
+                    Margin = new Thickness(0, 4, 0, 0)
+                };
+                TextBlock warningIcon = new TextBlock
+                {
+                    Text = "⚠",
+                    FontFamily = new FontFamily("Segoe UI"),
+                    FontSize = 32,
+                    FontWeight = FontWeights.Bold,
+                    Foreground = new SolidColorBrush(_userAccentColor),
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    VerticalAlignment = VerticalAlignment.Center
+                };
+                iconContainer.Child = warningIcon;
+                Grid.SetColumn(iconContainer, 0); Grid.SetRow(iconContainer, 0);
+
+                // Message area
+                StackPanel messageArea = new StackPanel { Margin = new Thickness(8, 4, 0, 0) };
+                TextBlock titleLabel = new TextBlock
+                {
+                    Text = _title,
+                    FontFamily = new FontFamily("Segoe UI"),
+                    FontSize = 18,
+                    FontWeight = FontWeights.Bold,
+                    Foreground = new SolidColorBrush(Color.FromRgb(32, 33, 36)),
+                    Margin = new Thickness(0, 0, 0, 4)
+                };
+                TextBlock messageLabel = new TextBlock
+                {
+                    Text = _message,
+                    FontFamily = new FontFamily("Segoe UI"),
+                    FontSize = 14,
+                    Foreground = new SolidColorBrush(Color.FromRgb(95, 99, 104)),
+                    TextWrapping = TextWrapping.Wrap,
+                    MaxWidth = 300
+                };
+                messageArea.Children.Add(titleLabel); messageArea.Children.Add(messageLabel);
+                Grid.SetColumn(messageArea, 1); Grid.SetRow(messageArea, 0);
+
+                // Button area
+                StackPanel buttonArea = new StackPanel
+                {
+                    Orientation = Orientation.Horizontal,
+                    HorizontalAlignment = HorizontalAlignment.Right,
+                    VerticalAlignment = VerticalAlignment.Center,
+                    Margin = new Thickness(8, 8, 0, 0)
+                };
+
+                // No Button
+                Button btnNo = new Button
+                {
+                    Content = "No",
+                    Width = 80,
+                    Height = 32,
+                    FontFamily = new FontFamily("Segoe UI"),
+                    FontSize = 14,
+                    FontWeight = FontWeights.Bold,
+                    Background = new SolidColorBrush(_userAccentColor),
+                    Foreground = Brushes.White,
+                    BorderThickness = new Thickness(0),
+                    Cursor = Cursors.Hand,
+                    Margin = new Thickness(0, 0, 4, 0)
+                };
+                btnNo.MouseEnter += (s, e) => btnNo.Background = new SolidColorBrush(Color.FromRgb((byte)Math.Max(0, _userAccentColor.R - 25), (byte)Math.Max(0, _userAccentColor.G - 25), (byte)Math.Max(0, _userAccentColor.B - 25)));
+                btnNo.MouseLeave += (s, e) => btnNo.Background = new SolidColorBrush(_userAccentColor);
+                btnNo.Click += (s, e) => { _result = false; this.Close(); };
+
+                // Yes Button (Red for Reset/Danger actions)
+                Button btnYes = new Button
+                {
+                    Content = "Yes",
+                    Width = 80,
+                    Height = 32,
+                    FontFamily = new FontFamily("Segoe UI"),
+                    FontSize = 14,
+                    FontWeight = FontWeights.Bold,
+                    Background = new SolidColorBrush(Color.FromRgb(234, 67, 53)),
+                    Foreground = Brushes.White,
+                    BorderThickness = new Thickness(0),
+                    Cursor = Cursors.Hand
+                };
+                btnYes.MouseEnter += (s, e) => btnYes.Background = new SolidColorBrush(Color.FromRgb(219, 50, 36));
+                btnYes.MouseLeave += (s, e) => btnYes.Background = new SolidColorBrush(Color.FromRgb(234, 67, 53));
+                btnYes.Click += (s, e) => { _result = true; this.Close(); };
+
+                buttonArea.Children.Add(btnNo); buttonArea.Children.Add(btnYes);
+                Grid.SetColumn(buttonArea, 1); Grid.SetRow(buttonArea, 1);
+
+                contentGrid.Children.Add(iconContainer); contentGrid.Children.Add(messageArea); contentGrid.Children.Add(buttonArea);
+                mainGrid.Children.Add(accentHeader); mainGrid.Children.Add(contentGrid);
+                mainCard.Child = mainGrid;
+                this.Content = mainCard;
+
+                this.KeyDown += (s, e) => { if (e.Key == Key.Enter) { _result = true; this.Close(); } else if (e.Key == Key.Escape) { _result = false; this.Close(); } };
+                this.Focusable = true; this.Focus();
+            }
+        }
+        #endregion
 
         public static void ShowOKOnlyMessageBoxFormStatic(string msgboxMessage, string msgboxTitle)
         {
@@ -856,7 +1078,7 @@ namespace Desktop_Fences
                 string itemText = _itemCount == 1 ? "item" : "items";
                 TextBlock messageLabel = new TextBlock
                 {
-                    Text = $"Are you sure you want to delete tab '{_tabName}'?\n\nThis tab contains {_itemCount} {itemText} that will be permanently removed.",
+                    Text = $"Are you sure you want to delete tab\n '{_tabName}'?\nThis tab contains {_itemCount} {itemText} that will be permanently removed.",
                     FontFamily = new FontFamily("Segoe UI"),
                     FontSize = 14,
                     Foreground = new SolidColorBrush(Color.FromRgb(95, 99, 104)),

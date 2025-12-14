@@ -622,6 +622,7 @@ public partial class EditShortcutWindow : Window
         }
     }
 
+
     private void Save_Click(object sender, RoutedEventArgs e)
     {
         try
@@ -645,28 +646,21 @@ public partial class EditShortcutWindow : Window
                 return;
             }
 
-
-
-
-
             WshShell shell = new WshShell();
             IWshShortcut shortcut = (IWshShortcut)shell.CreateShortcut(shortcutPath);
 
-            // Only update properties that have valid values
+            // 1. Update Target
             if (!string.IsNullOrEmpty(newTargetPath))
             {
                 shortcut.TargetPath = newTargetPath;
 
-                // Set working directory only if target path is valid
+                // Set working directory logic
                 try
                 {
                     if (System.IO.File.Exists(newTargetPath))
                     {
                         string workingDir = System.IO.Path.GetDirectoryName(newTargetPath);
-                        if (!string.IsNullOrEmpty(workingDir))
-                        {
-                            shortcut.WorkingDirectory = workingDir;
-                        }
+                        if (!string.IsNullOrEmpty(workingDir)) shortcut.WorkingDirectory = workingDir;
                     }
                     else if (System.IO.Directory.Exists(newTargetPath))
                     {
@@ -676,49 +670,42 @@ public partial class EditShortcutWindow : Window
                 catch (Exception dirEx)
                 {
                     LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI, $"Could not set working directory: {dirEx.Message}");
-                    // Don't set working directory if there's an issue
                 }
             }
 
-            // Handle arguments - only set if not null
+            // 2. Update Arguments
             if (newArguments != null)
             {
                 shortcut.Arguments = newArguments;
             }
 
-
-
-            // Handle icon location 
+            // 3. Update Icon Location (The Fix)
             if (!string.IsNullOrEmpty(newIconPath) && newIconPath != "Default")
             {
+                // User selected a specific custom icon
                 shortcut.IconLocation = newIconPath;
                 LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI, $"Set custom icon: {newIconPath}");
             }
-            else if (newIconPath == "Default")
+            else
             {
-                // For default icon, set IconLocation to target executable at index 0
+                // Resetting to Default
                 if (!string.IsNullOrEmpty(newTargetPath) && System.IO.File.Exists(newTargetPath))
                 {
+                    // FILE: Point to the executable itself
                     shortcut.IconLocation = $"{newTargetPath},0";
                     LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI, $"Set default icon to target: {newTargetPath},0");
                 }
                 else
                 {
-                    shortcut.IconLocation = "";
-                    LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI, "Target doesn't exist, clearing icon location");
+                    // FOLDER or MISSING TARGET: 
+                    // FIX: Set to ",0" instead of empty string "" to avoid "Value does not fall within expected range" error.
+                    // This effectively clears the custom icon, causing the main app to fall back to the White Folder theme.
+                    shortcut.IconLocation = ",0";
+                    LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI, "Cleared icon location (reset to ,0)");
                 }
             }
-            else
-            {
-                shortcut.IconLocation = "";
-                LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI, "Cleared icon location");
-            }
 
-
-
-   
-                shortcut.Save();
-        
+            shortcut.Save();
 
             NewDisplayName = newDisplayName;
 
@@ -737,6 +724,122 @@ public partial class EditShortcutWindow : Window
             MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Failed to save shortcut: {ex.Message}", "Save Error");
         }
     }
+
+    //private void Save_Click(object sender, RoutedEventArgs e)
+    //{
+    //    try
+    //    {
+    //        LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.UI, $"Starting save process for shortcut: {shortcutPath}");
+
+    //        string newDisplayName = nameBox?.Text?.Trim() ?? "";
+    //        string newTargetPath = targetPathBox?.Text?.Trim() ?? "";
+    //        string newArguments = argumentsBox?.Text?.Trim() ?? "";
+    //        string newIconPath = iconPathBox?.Text?.Trim() ?? "";
+
+    //        if (string.IsNullOrWhiteSpace(newDisplayName))
+    //        {
+    //            MessageBoxesManager.ShowOKOnlyMessageBoxForm("Display name cannot be empty.", "Validation Error");
+    //            return;
+    //        }
+
+    //        if (string.IsNullOrWhiteSpace(newTargetPath))
+    //        {
+    //            MessageBoxesManager.ShowOKOnlyMessageBoxForm("Target path cannot be empty.", "Validation Error");
+    //            return;
+    //        }
+
+
+
+
+
+    //        WshShell shell = new WshShell();
+    //        IWshShortcut shortcut = (IWshShortcut)shell.CreateShortcut(shortcutPath);
+
+    //        // Only update properties that have valid values
+    //        if (!string.IsNullOrEmpty(newTargetPath))
+    //        {
+    //            shortcut.TargetPath = newTargetPath;
+
+    //            // Set working directory only if target path is valid
+    //            try
+    //            {
+    //                if (System.IO.File.Exists(newTargetPath))
+    //                {
+    //                    string workingDir = System.IO.Path.GetDirectoryName(newTargetPath);
+    //                    if (!string.IsNullOrEmpty(workingDir))
+    //                    {
+    //                        shortcut.WorkingDirectory = workingDir;
+    //                    }
+    //                }
+    //                else if (System.IO.Directory.Exists(newTargetPath))
+    //                {
+    //                    shortcut.WorkingDirectory = newTargetPath;
+    //                }
+    //            }
+    //            catch (Exception dirEx)
+    //            {
+    //                LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI, $"Could not set working directory: {dirEx.Message}");
+    //                // Don't set working directory if there's an issue
+    //            }
+    //        }
+
+    //        // Handle arguments - only set if not null
+    //        if (newArguments != null)
+    //        {
+    //            shortcut.Arguments = newArguments;
+    //        }
+
+
+
+    //        // Handle icon location 
+    //        if (!string.IsNullOrEmpty(newIconPath) && newIconPath != "Default")
+    //        {
+    //            shortcut.IconLocation = newIconPath;
+    //            LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI, $"Set custom icon: {newIconPath}");
+    //        }
+    //        else if (newIconPath == "Default")
+    //        {
+    //            // For default icon, set IconLocation to target executable at index 0
+    //            if (!string.IsNullOrEmpty(newTargetPath) && System.IO.File.Exists(newTargetPath))
+    //            {
+    //                shortcut.IconLocation = $"{newTargetPath},0";
+    //                LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI, $"Set default icon to target: {newTargetPath},0");
+    //            }
+    //            else
+    //            {
+    //                shortcut.IconLocation = "";
+    //                LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI, "Target doesn't exist, clearing icon location");
+    //            }
+    //        }
+    //        else
+    //        {
+    //            shortcut.IconLocation = "";
+    //            LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI, "Cleared icon location");
+    //        }
+
+
+
+
+    //            shortcut.Save();
+
+
+    //        NewDisplayName = newDisplayName;
+
+    //        System.Windows.Application.Current.Dispatcher.Invoke(() =>
+    //        {
+    //            FenceManager.RefreshIconClickHandlers(shortcutPath, newDisplayName);
+    //        });
+
+    //        LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.UI, "Shortcut saved successfully");
+    //        DialogResult = true;
+    //        Close();
+    //    }
+    //    catch (Exception ex)
+    //    {
+    //        LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI, $"Error saving shortcut: {ex.Message}");
+    //        MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Failed to save shortcut: {ex.Message}", "Save Error");
+    //    }
+    //}
 
     /// <summary>
     /// Loads and displays the icon in the preview Image control

@@ -25,6 +25,12 @@ namespace Desktop_Fences
 
 
         /// <summary>
+        /// Values for the automatic backup feature
+        /// </summary>
+        public static bool EnableAutoBackup { get; set; } = true; // Default true
+        public static DateTime LastAutoBackupDate { get; set; } = DateTime.MinValue;
+
+        /// <summary>
         /// Gets or sets whether extension will be visible on portal fences
         /// </summary>
         public static bool ShowPortalExtensions { get; set; } = false;
@@ -64,7 +70,7 @@ namespace Desktop_Fences
         /// <summary>
         /// Gets or sets the tint value (0-100) that controls fence transparency.
         /// </summary>
-        public static int TintValue { get; set; } = 60;
+        public static int TintValue { get; set; } = 85;
 
 
         /// <summary>
@@ -261,6 +267,9 @@ namespace Desktop_Fences
                         return;
                     }
 
+                    try { EnableAutoBackup = optionsData.EnableAutoBackup ?? false; } catch { EnableAutoBackup = false; }
+                    try { LastAutoBackupDate = optionsData.LastAutoBackupDate ?? DateTime.MinValue; } catch { LastAutoBackupDate = DateTime.MinValue; }
+
                     // Load settings with individual property protection
                     try { IsSnapEnabled = optionsData.IsSnapEnabled ?? true; } catch { IsSnapEnabled = true; }
                     try { ShowBackgroundImageOnPortalFences = optionsData.ShowBackgroundImageOnPortalFences ?? true; } catch { ShowBackgroundImageOnPortalFences = true; }
@@ -268,7 +277,7 @@ namespace Desktop_Fences
                     try { EnableSounds = optionsData.EnableSounds ?? true; } catch { EnableSounds = true; }
 
                     try { UseRecycleBin = optionsData.UseRecycleBin ?? true; } catch { UseRecycleBin = true; }
-                    try { TintValue = optionsData.TintValue ?? 60; } catch { TintValue = 60; }
+                    try { TintValue = optionsData.TintValue ?? 85; } catch { TintValue = 85; }
                     try { MenuTintValue = optionsData.MenuTintValue ?? 30; } catch { MenuTintValue = 30; }
                     try { MenuIcon = optionsData.MenuIcon ?? 0; } catch { MenuIcon = 0; }
                     try { LockIcon = optionsData.LockIcon ?? 0; } catch { LockIcon = 0; }
@@ -276,7 +285,7 @@ namespace Desktop_Fences
                     try { IsLogEnabled = optionsData.IsLogEnabled ?? false; } catch { IsLogEnabled = false; }
                     try { SingleClickToLaunch = optionsData.SingleClickToLaunch ?? true; } catch { SingleClickToLaunch = true; }
                     try { EnableDimensionSnap = optionsData.EnableDimensionSnap ?? false; } catch { EnableDimensionSnap = false; }
-                    try { PortalBackgroundOpacity = optionsData.PortalBackgroundOpacity ?? 20; } catch { PortalBackgroundOpacity = 20; }
+                    try { PortalBackgroundOpacity = optionsData.PortalBackgroundOpacity ?? 30; } catch { PortalBackgroundOpacity = 30; }
                     try { DisableFenceScrollbars = optionsData.DisableFenceScrollbars ?? false; } catch { DisableFenceScrollbars = false; }
                     // Load DisableNoteAutoSave with protection
                     try { DisableNoteAutoSave = optionsData.DisableNoteAutoSave ?? false; } catch { DisableNoteAutoSave = false; }
@@ -481,7 +490,9 @@ namespace Desktop_Fences
                     SpotSearchKey,
                     SpotSearchModifier,
                     NoWildcardsOnPortalFilter,
-                    ShowPortalExtensions
+                    ShowPortalExtensions,
+                    EnableAutoBackup,
+                    LastAutoBackupDate
 
                 };
 

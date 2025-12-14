@@ -316,6 +316,8 @@ namespace Desktop_Fences
             _tabControl.Items.Add(styleTab);
         }
 
+
+
         private static void CreateToolsTab()
         {
             TabItem toolsTab = new TabItem();
@@ -323,6 +325,9 @@ namespace Desktop_Fences
 
             CreateSectionHeader(content, "Tools", ColorTools);
 
+            // --- Grid for Standard Tools ---
+            // Width Calculation: 120 + 15 + 120 = 255 Total Width
+            // Row Height: 45
             Grid buttonGrid = new Grid { Margin = new Thickness(0, 10, 0, 0) };
             buttonGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(120) });
             buttonGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(15) });
@@ -348,8 +353,115 @@ namespace Desktop_Fences
             buttonGrid.Children.Add(openBackupsButton);
             content.Children.Add(buttonGrid);
 
+            // --- 1. Automatic Backup Checkbox ---
+            CreateCheckBox(content, "Automatic Backup (Daily)", "EnableAutoBackup", SettingsManager.EnableAutoBackup);
+
+            // --- 2. Reset Section ---
+            CreateSectionHeader(content, "Reset", Colors.Red);
+
+            StackPanel resetStack = new StackPanel
+            {
+                Orientation = Orientation.Vertical,
+                HorizontalAlignment = HorizontalAlignment.Left,
+                Margin = new Thickness(0, 0, 0, 0)
+            };
+
+            // Dimensions to match "Open Backups Folder" exactly
+            double uniformWidth = 255;
+            double uniformHeight = 45;
+
+            // [Reset all Customizations]
+            Button resetCustomButton = CreateStyledButton("Reset Styles", Color.FromRgb(108, 117, 125)); // Gray
+            resetCustomButton.Width = uniformWidth;
+            resetCustomButton.Height = uniformHeight;
+            resetCustomButton.Margin = new Thickness(0, 0, 0, 15); // Gap between buttons
+            resetCustomButton.ToolTip = "Resets colors, fonts, and sizes to default. Content remains safe.";
+            resetCustomButton.Click += (s, e) =>
+            {
+                if (MessageBoxesManager.ShowCustomYesNoMessageBox("Reset all visual customizations to default?\nYour icons and fences will remain.", "Reset Styles"))
+                {
+                    FenceManager.ResetAllCustomizations();
+                    _optionsWindow.Close();
+                }
+            };
+
+            // [Clear all data]
+            Button clearDataButton = CreateStyledButton("Clear All Data", Color.FromRgb(220, 53, 69)); // Red
+            clearDataButton.Width = uniformWidth;
+            clearDataButton.Height = uniformHeight;
+            clearDataButton.ToolTip = "WARNING: Deletes all fences, shortcuts, and settings.";
+            clearDataButton.Click += (s, e) => PerformFullFactoryReset();
+
+            resetStack.Children.Add(resetCustomButton);
+            resetStack.Children.Add(clearDataButton);
+            content.Children.Add(resetStack);
+
             toolsTab.Content = content;
             _tabControl.Items.Add(toolsTab);
+        }
+        private static void PerformFullFactoryReset()
+        {
+            bool confirm = MessageBoxesManager.ShowCustomYesNoMessageBox(
+                "WARNING: This will delete ALL fences, shortcuts, and settings!\n\n" +
+                "Are you sure you want to proceed?",
+                "Factory Reset");
+
+            if (confirm)
+            {
+                try
+                {
+                    // 1. Silent Backup (Unique name, no success popup)
+                    string timestamp = DateTime.Now.ToString("yyMMddHHmm");
+                    string backupName = $"{timestamp}_backup_reset";
+                    BackupManager.CreateBackup(backupName, silent: true);
+
+                    // 2. Clean Folders
+                    string exeDir = System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
+                    string[] foldersToClean = { "Temp Shortcuts", "Shortcuts", "Last Fence Deleted", "CopiedItem" };
+
+                    foreach (string folder in foldersToClean)
+                    {
+                        string path = System.IO.Path.Combine(exeDir, folder);
+                        if (System.IO.Directory.Exists(path))
+                        {
+                            try
+                            {
+                                System.IO.Directory.Delete(path, true); // Recursive delete
+                                System.IO.Directory.CreateDirectory(path); // Recreate empty
+                            }
+                            catch (Exception ex)
+                            {
+                                LogManager.Log(LogManager.LogLevel.Warn, LogManager.LogCategory.Error, $"Failed to clean folder {folder}: {ex.Message}");
+                            }
+                        }
+                    }
+
+                    // 3. Reset JSON Files (Delete them)
+                    string fencesJson = System.IO.Path.Combine(exeDir, "fences.json");
+                    string optionsJson = System.IO.Path.Combine(exeDir, "options.json");
+
+                    if (System.IO.File.Exists(fencesJson)) System.IO.File.Delete(fencesJson);
+                    if (System.IO.File.Exists(optionsJson)) System.IO.File.Delete(optionsJson);
+
+                    // 4. Reload Application State
+                    // A. Reset Settings in memory (loads defaults since file is gone)
+                    SettingsManager.LoadSettings();
+
+                    // B. Reload Fences (destroys old windows, creates defaults)
+                    FenceManager.ReloadFences();
+
+                    // C. Close Options Window (it reflects old state)
+                    _optionsWindow.Close();
+
+                    // Optional: Minimal confirmation
+                    // MessageBoxesManager.ShowOKOnlyMessageBoxForm("Factory reset complete.", "Reset");
+                }
+                catch (Exception ex)
+                {
+                    LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.Error, $"Factory reset failed: {ex.Message}");
+                    MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Reset failed: {ex.Message}", "Error");
+                }
+            }
         }
 
         private static void CreateLookDeeperTab()
@@ -609,7 +721,22 @@ namespace Desktop_Fences
                     }
                 }
 
-                // --- 3. Look Deeper Tab ---
+
+                // --- 3a. Tools Tab ---
+                TabItem toolsTabItem = (TabItem)_tabControl.Items[2];
+                if (toolsTabItem.Content is StackPanel toolsContent)
+                {
+                    foreach (var child in toolsContent.Children)
+                    {
+                        if (child is CheckBox checkBox && checkBox.Name == "EnableAutoBackup")
+                        {
+                            SettingsManager.EnableAutoBackup = checkBox.IsChecked == true;
+                        }
+                    }
+                }
+
+
+                // --- 3b. Look Deeper Tab ---
                 TabItem lookDeeperTab = (TabItem)_tabControl.Items[3]; // Index 3 now
                 StackPanel lookDeeperContent = (StackPanel)((ScrollViewer)lookDeeperTab.Content).Content;
                 var newEnabledCategories = new List<LogManager.LogCategory>();
@@ -644,22 +771,7 @@ namespace Desktop_Fences
 
                 // --- NEW UPDATE CALL ---
                 Utility.UpdateFenceVisuals();
-                //// Apply runtime changes to existing fences
-                //var fences = System.Windows.Application.Current.Windows.OfType<NonActivatingWindow>().ToList();
-                //foreach (var fence in fences)
-                //{
-                //    dynamic fenceData = FenceManager.GetFenceData().FirstOrDefault(f => f.Title == fence.Title);
-                //    string effectiveColor = (fenceData != null && !string.IsNullOrEmpty(fenceData.CustomColor?.ToString()))
-                //        ? fenceData.CustomColor.ToString() : SettingsManager.SelectedColor;
-
-                //    Utility.ApplyTintAndColorToFence(fence, effectiveColor);
-
-                //    // Refresh scrollbars
-                //    var border = fence.Content as Border;
-                //    var scrollViewer = (border?.Child as DockPanel)?.Children.OfType<ScrollViewer>().FirstOrDefault();
-                //    if (scrollViewer != null)
-                //        scrollViewer.VerticalScrollBarVisibility = SettingsManager.DisableFenceScrollbars ? ScrollBarVisibility.Hidden : ScrollBarVisibility.Auto;
-                //}
+    
 
                 _optionsWindow.Close();
             }

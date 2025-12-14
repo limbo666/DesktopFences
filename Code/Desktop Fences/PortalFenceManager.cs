@@ -322,6 +322,9 @@ namespace Desktop_Fences
             bool isFolder = false;
             try { isFolder = Directory.Exists(path); } catch { }
             iconDict["IsFolder"] = isFolder;
+            // --- RESTORED: Network Path Detection ---
+            iconDict["IsNetwork"] = FenceManager.IsNetworkPath(path);
+
 
             string displayName;
 
@@ -355,7 +358,12 @@ namespace Desktop_Fences
 
             iconDict["DisplayName"] = displayName;
 
-            FenceManager.AddIcon(icon, _wpcont);
+            // --- FIX: ONE CALL ONLY ---
+            // We use the new signature that passes '_fence' context.
+            // This applies the custom settings (Size, Color, etc.) immediately.
+            FenceManager.AddIcon(icon, _wpcont, _fence);
+
+            // Now we grab the StackPanel that was just added to attach logic
             StackPanel sp = _wpcont.Children[_wpcont.Children.Count - 1] as StackPanel;
             if (sp != null)
             {
@@ -364,28 +372,103 @@ namespace Desktop_Fences
 
                 FenceManager.ClickEventAdder(sp, path, Directory.Exists(path));
 
+                //// Create and attach context menu
+                //ContextMenu contextMenu = new ContextMenu();
+
+                //// "Copy path (or target)" menu item
+                //MenuItem copyPathItem = new MenuItem { Header = "Copy path" };
+                //copyPathItem.Click += (s, e) => CopyPathOrTarget(path);
+                //contextMenu.Items.Add(copyPathItem);
+
+                //// "Rename item" menu item
+                //MenuItem renameItem = new MenuItem { Header = "Rename item" };
+                //renameItem.Click += (s, e) => RenameItem(path, sp);
+                //contextMenu.Items.Add(renameItem);
+
+                //// "Delete item" menu item
+                //MenuItem deleteItem = new MenuItem { Header = "Delete item" };
+                //deleteItem.Click += (s, e) => DeleteItem(path, sp);
+                //contextMenu.Items.Add(deleteItem);
+
+                //sp.ContextMenu = contextMenu;
+
+
+
                 // Create and attach context menu
                 ContextMenu contextMenu = new ContextMenu();
 
-                // "Copy path (or target)" menu item
-                MenuItem copyPathItem = new MenuItem { Header = "Copy path" };
-                copyPathItem.Click += (s, e) => CopyPathOrTarget(path);
-                contextMenu.Items.Add(copyPathItem);
+                // 1. Copy Item (File Object)
+                MenuItem copyFileItem = new MenuItem { Header = "Copy Item" };
+                copyFileItem.Click += (s, e) =>
+                {
+                    try
+                    {
+                        // Add file to clipboard as a FileDropList (Standard Windows Copy)
+                        var paths = new System.Collections.Specialized.StringCollection();
+                        paths.Add(path);
+                        Clipboard.SetFileDropList(paths);
+                        LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.UI, $"Copied item to clipboard: {path}");
+                    }
+                    catch (Exception ex)
+                    {
+                        LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI, $"Error copying item: {ex.Message}");
+                    }
+                };
+                contextMenu.Items.Add(copyFileItem);
 
-                // "Rename item" menu item
+                // 2. Cut Item (File Object with Move Effect)
+                MenuItem cutFileItem = new MenuItem { Header = "Cut Item" };
+                cutFileItem.Click += (s, e) =>
+                {
+                    try
+                    {
+                        var paths = new System.Collections.Specialized.StringCollection();
+                        paths.Add(path);
+
+                        // Create a DataObject to hold both the file list and the "Move" flag
+                        DataObject data = new DataObject();
+                        data.SetFileDropList(paths);
+
+                        // Set "Preferred DropEffect" to Move (Byte value 2)
+                        // This tells Windows Explorer to perform a MOVe operation on Paste
+                        byte[] moveEffect = new byte[] { 2, 0, 0, 0 };
+                        System.IO.MemoryStream stream = new System.IO.MemoryStream(moveEffect);
+                        data.SetData("Preferred DropEffect", stream);
+
+                        Clipboard.SetDataObject(data, true);
+                        LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.UI, $"Cut item to clipboard: {path}");
+                    }
+                    catch (Exception ex)
+                    {
+                        LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI, $"Error cutting item: {ex.Message}");
+                    }
+                };
+                contextMenu.Items.Add(cutFileItem);
+
+                // 3. Rename item (Existing)
                 MenuItem renameItem = new MenuItem { Header = "Rename item" };
                 renameItem.Click += (s, e) => RenameItem(path, sp);
                 contextMenu.Items.Add(renameItem);
 
-                // "Delete item" menu item
+                // 4. Delete item (Existing)
                 MenuItem deleteItem = new MenuItem { Header = "Delete item" };
                 deleteItem.Click += (s, e) => DeleteItem(path, sp);
                 contextMenu.Items.Add(deleteItem);
 
+                // 5. Separator
+                contextMenu.Items.Add(new Separator());
+
+                // 6. Copy path (Existing - Moved to bottom)
+                MenuItem copyPathItem = new MenuItem { Header = "Copy path" };
+                copyPathItem.Click += (s, e) => CopyPathOrTarget(path);
+                contextMenu.Items.Add(copyPathItem);
+
                 sp.ContextMenu = contextMenu;
+
+
+
             }
         }
-
 
         private void RenameItem(string currentPath, StackPanel sp)
         {

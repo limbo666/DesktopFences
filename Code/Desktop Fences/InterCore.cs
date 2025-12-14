@@ -25,6 +25,13 @@ namespace Desktop_Fences
         private static readonly Dictionary<StackPanel, Point> _originalIconPositions = new Dictionary<StackPanel, Point>();
         private static Window _sparkleOverlay;
 
+        // --- FIX: Add these missing dictionaries for Legendary Mode ---
+        private static readonly Dictionary<string, Storyboard> _legendaryEffects = new Dictionary<string, Storyboard>();
+        private static readonly Dictionary<string, Brush> _originalBorders = new Dictionary<string, Brush>();
+        private static readonly Dictionary<string, Thickness> _originalBorderThicknesses = new Dictionary<string, Thickness>();
+        private static readonly Dictionary<string, Effect> _originalEffects = new Dictionary<string, Effect>();
+        // -------------------------------------------------------------
+
         #endregion
 
         #region Public Methods
@@ -72,15 +79,37 @@ namespace Desktop_Fences
         {
             try
             {
-                // Check for limbo666 trigger
+                // 1. Limbo666 Easter Egg (One-time trigger, Reverts title)
                 if (string.Equals(newTitle, "limbo666", StringComparison.OrdinalIgnoreCase))
                 {
                     LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.UI, "InterCore: limbo666 trigger activated");
                     ActivateSparkleEffect();
-                    return originalTitle; // Revert to original title
+                    return originalTitle; // Revert
                 }
 
-                return newTitle; // No special trigger, use new title
+                // 2. The "Nikos" Legendary Mode (Persistent, Keeps title)
+                bool isLegendary = string.Equals(newTitle, "Nikos", StringComparison.OrdinalIgnoreCase) ||
+                                   string.Equals(newTitle, "Nikos Georgousis", StringComparison.OrdinalIgnoreCase) ||
+                                   (!string.IsNullOrEmpty(newTitle) && newTitle.Contains(">:"));
+
+                // We need the window to apply effects. Find it by ID.
+                string fenceId = fence.Id?.ToString();
+                var win = Application.Current.Windows.OfType<NonActivatingWindow>().FirstOrDefault(w => w.Tag?.ToString() == fenceId);
+
+                if (win != null)
+                {
+                    if (isLegendary)
+                    {
+                        ActivateLegendaryMode(win, fenceId);
+                    }
+                    else
+                    {
+                        // If it WAS legendary but user changed name to "Work", deactivate it
+                        DeactivateLegendaryMode(win, fenceId);
+                    }
+                }
+
+                return newTitle; // Keep the new name (e.g. "Nikos")
             }
             catch (Exception ex)
             {
@@ -88,6 +117,113 @@ namespace Desktop_Fences
                 return newTitle;
             }
         }
+
+        #region Legendary Mode (Nikos)
+
+        private static void ActivateLegendaryMode(Window win, string fenceId)
+        {
+            if (_legendaryEffects.ContainsKey(fenceId)) return; // Already active
+
+            try
+            {
+                var border = win.Content as Border;
+                if (border == null) return;
+
+                LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.UI, $"InterCore: Activating Legendary Mode for {fenceId}");
+
+                // 1. Save Original State
+                _originalBorders[fenceId] = border.BorderBrush;
+                _originalBorderThicknesses[fenceId] = border.BorderThickness;
+                _originalEffects[fenceId] = win.Effect;
+
+                // 2. Create "Mary-Go-Round" Gradient Brush
+                // A vibrant rainbow gradient
+                var rainbowBrush = new LinearGradientBrush
+                {
+                    StartPoint = new Point(0, 0),
+                    EndPoint = new Point(1, 1),
+                    GradientStops = new GradientStopCollection
+                    {
+                        new GradientStop(Colors.Red, 0.0),
+                        new GradientStop(Colors.Gold, 0.2),
+                        new GradientStop(Colors.Lime, 0.4),
+                        new GradientStop(Colors.Cyan, 0.6),
+                        new GradientStop(Colors.Magenta, 0.8),
+                        new GradientStop(Colors.Red, 1.0)
+                    },
+                    RelativeTransform = new RotateTransform(0, 0.5, 0.5) // Rotate around center
+                };
+
+                // 3. Apply New Visuals
+                border.BorderBrush = rainbowBrush;
+                border.BorderThickness = new Thickness(4); // Make it thick enough to see
+
+                // Add a glowing outer effect
+                win.Effect = new DropShadowEffect
+                {
+                    Color = Colors.Cyan,
+                    BlurRadius = 20,
+                    ShadowDepth = 0,
+                    Opacity = 0.8
+                };
+
+                // 4. Create Animation (Infinite Rotation)
+                DoubleAnimation rotateAnim = new DoubleAnimation
+                {
+                    From = 0,
+                    To = 360,
+                    Duration = TimeSpan.FromSeconds(3), // Speed of rotation
+                    RepeatBehavior = RepeatBehavior.Forever
+                };
+
+                // Apply animation to the brush's transform
+                // Note: We must register the name to target it, or apply directly
+                rainbowBrush.RelativeTransform.BeginAnimation(RotateTransform.AngleProperty, rotateAnim);
+
+                // Store a dummy storyboard ref or just track ID to know it's active
+                // Since we applied animation directly to the brush property, we don't strictly need a Storyboard object,
+                // but we put a placeholder here to mark it as "Active" in our dictionary.
+                _legendaryEffects[fenceId] = new Storyboard();
+            }
+            catch (Exception ex)
+            {
+                LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI, $"InterCore: Error activating Legendary Mode: {ex.Message}");
+            }
+        }
+
+        private static void DeactivateLegendaryMode(Window win, string fenceId)
+        {
+            if (!_legendaryEffects.ContainsKey(fenceId)) return; // Not active
+
+            try
+            {
+                LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.UI, $"InterCore: Deactivating Legendary Mode for {fenceId}");
+
+                var border = win.Content as Border;
+                if (border != null)
+                {
+                    // Restore Border
+                    if (_originalBorders.ContainsKey(fenceId)) border.BorderBrush = _originalBorders[fenceId];
+                    if (_originalBorderThicknesses.ContainsKey(fenceId)) border.BorderThickness = _originalBorderThicknesses[fenceId];
+                }
+
+                // Restore Effect
+                if (_originalEffects.ContainsKey(fenceId)) win.Effect = _originalEffects[fenceId];
+                else win.Effect = null;
+
+                // Clean up memory
+                _legendaryEffects.Remove(fenceId);
+                _originalBorders.Remove(fenceId);
+                _originalBorderThicknesses.Remove(fenceId);
+                _originalEffects.Remove(fenceId);
+            }
+            catch (Exception ex)
+            {
+                LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI, $"InterCore: Error deactivating Legendary Mode: {ex.Message}");
+            }
+        }
+
+        #endregion
 
         #endregion
 

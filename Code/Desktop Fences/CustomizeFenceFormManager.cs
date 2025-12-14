@@ -258,6 +258,8 @@ namespace Desktop_Fences
             parent.Children.Add(scrollViewer);
         }
 
+
+
         private void CreateFooter(Grid parent)
         {
             // Footer border
@@ -277,16 +279,16 @@ namespace Desktop_Fences
                 HorizontalAlignment = HorizontalAlignment.Right
             };
 
-            // Default button with green color
+            // 1. Default Button (Moved Left & Restyled to Dark Gray)
             Button defaultButton = new Button
             {
                 Content = "Default",
-                Width = 100,
+                Width = 80, // Slightly smaller to fit 4 buttons
                 Height = 34,
                 FontFamily = new FontFamily("Segoe UI"),
                 FontSize = 12,
                 FontWeight = FontWeights.Normal,
-                Background = new SolidColorBrush(Color.FromRgb(34, 139, 34)),
+                Background = new SolidColorBrush(Color.FromRgb(80, 80, 80)), // Dark Gray
                 Foreground = Brushes.White,
                 BorderThickness = new Thickness(0),
                 Cursor = Cursors.Hand,
@@ -294,7 +296,24 @@ namespace Desktop_Fences
             };
             defaultButton.Click += DefaultButton_Click;
 
-            // Cancel button
+            // 2. Apply Button (New! Green, in old Default location)
+            Button applyButton = new Button
+            {
+                Content = "Apply",
+                Width = 100,
+                Height = 34,
+                FontFamily = new FontFamily("Segoe UI"),
+                FontSize = 12,
+                FontWeight = FontWeights.Normal,
+                Background = new SolidColorBrush(Color.FromRgb(34, 139, 34)), // Green
+                Foreground = Brushes.White,
+                BorderThickness = new Thickness(0),
+                Cursor = Cursors.Hand,
+                Margin = new Thickness(0, 0, 10, 0)
+            };
+            applyButton.Click += ApplyButton_Click;
+
+            // 3. Cancel Button
             Button cancelButton = new Button
             {
                 Content = "Cancel",
@@ -312,7 +331,7 @@ namespace Desktop_Fences
             };
             cancelButton.Click += CancelButton_Click;
 
-            // Save button with accent color
+            // 4. Save Button
             Button saveButton = new Button
             {
                 Content = "Save",
@@ -328,7 +347,9 @@ namespace Desktop_Fences
             };
             saveButton.Click += SaveButton_Click;
 
+            // Add buttons in the new order: Default -> Apply -> Cancel -> Save
             buttonPanel.Children.Add(defaultButton);
+            buttonPanel.Children.Add(applyButton);
             buttonPanel.Children.Add(cancelButton);
             buttonPanel.Children.Add(saveButton);
 
@@ -562,24 +583,31 @@ namespace Desktop_Fences
         {
             try
             {
-                LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.UI, $"Save button clicked for fence '{_fence.Title}' - starting save process");
-
-                SaveAllPropertiesToJson();
-                ApplyRuntimeChanges();
-
-                _result = true;
-                LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.UI, $"Successfully saved all settings for fence '{_fence.Title}'");
-                this.Close();
+                LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.UI, $"Save button clicked for fence '{_fence.Title}'");
+                ApplyChanges(); // Call shared logic
+                this.Close();   // Close the form
             }
             catch (Exception ex)
             {
-                LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI, $"Error saving settings for fence '{_fence.Title}': {ex.Message}");
-              MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Error saving settings: {ex.Message}", "Save Error");
-
+                LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI, $"Error saving settings: {ex.Message}");
+                MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Error saving settings: {ex.Message}", "Save Error");
             }
         }
 
-
+        private void ApplyButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.UI, $"Apply button clicked for fence '{_fence.Title}'");
+                ApplyChanges(); // Call shared logic (Does NOT close the form)
+                LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.UI, "Changes applied successfully without closing form");
+            }
+            catch (Exception ex)
+            {
+                LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI, $"Error applying settings: {ex.Message}");
+                MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Error applying settings: {ex.Message}", "Apply Error");
+            }
+        }
 
 
         /// <summary>
@@ -686,6 +714,18 @@ namespace Desktop_Fences
         #endregion
 
         #region Value Loading and Saving Methods - Helper Methods for Loading Values
+
+        /// <summary>
+        /// Shared logic to commit changes to JSON and update the runtime UI
+        /// </summary>
+        private void ApplyChanges()
+        {
+            SaveAllPropertiesToJson();
+            ApplyRuntimeChanges();
+            _result = true; // Mark as successful so if they close later, it counts as saved
+        }
+
+
         private void LoadCurrentValues()
         {
             try
@@ -715,7 +755,8 @@ namespace Desktop_Fences
                 LoadCheckboxValue(_chkBoldTitleText, _fence.BoldTitleText?.ToString(), "BoldTitleText");
 
                 // Load Icons Section properties
-                if (isPortalFence|| isNoteFence)
+                //  if (isPortalFence|| isNoteFence)
+                if (isNoteFence)
                 {
                     DisableIconControls();
                 }
@@ -1292,7 +1333,8 @@ namespace Desktop_Fences
 
                     foreach (dynamic item in sortedItems)
                     {
-                        FenceManager.AddIcon(item, wrapPanel);
+                        // FIX: Pass 'regularFence' context here too!
+                        FenceManager.AddIcon(item, wrapPanel, regularFence);
 
                         if (wrapPanel.Children.Count > 0)
                         {
