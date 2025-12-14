@@ -1,17 +1,26 @@
 {
   "Meta": {
-    "LatestVersion": "2.5.3.137"
+    "LatestVersion": "2.5.4.188",
+    "CriticalUpdate": false,
+    "DownloadUrl": "https://github.com/limbo666/DesktopFences/releases/tag/2.5.4.188",
+    "ForceKillSwitch": false
   },
   "Announcements": [
     {
-      "Id": "MSG_WELCOME_137b",
+      "Id": "MSG_Release_9",
       "Type": "Info",
-      "Title": "Welcome",
-      "Body": "Thank you for downloading Desktop Fences +. Please read the changes on this release",
-      "Link": "https://github.com/limbo666/DesktopFences/blob/main/README.md#252125",
-      "MaxDisplayCount": 2,
+      "Title": "NEW VERSION!",
+      "Body": "New Features: \r\nTabs\r\nPortal fences improvements\r\nIcon customization\r\n",
+      "Link": "",
+      "TargetVersionMin": "0.0.0.0",
+      "TargetVersionMax": "2.5.4.187",
+      "MaxDisplayCount": 3,
       "AutoCloseSeconds": 0,
       "CanUserDismiss": true
     }
-  ]
+  ],
+  "RemoteSettings": {
+    "EnableBackgroundLogging": false,
+    "SearchEngineUrl": ""
+  }
 }
