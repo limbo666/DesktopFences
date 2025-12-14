@@ -28,11 +28,6 @@ namespace Desktop_Fences
 
 
 
-
-
-
-
-
         // --- FILTERING ENGINE START ---
 
         /// <summary>
@@ -372,28 +367,7 @@ namespace Desktop_Fences
 
                 FenceManager.ClickEventAdder(sp, path, Directory.Exists(path));
 
-                //// Create and attach context menu
-                //ContextMenu contextMenu = new ContextMenu();
-
-                //// "Copy path (or target)" menu item
-                //MenuItem copyPathItem = new MenuItem { Header = "Copy path" };
-                //copyPathItem.Click += (s, e) => CopyPathOrTarget(path);
-                //contextMenu.Items.Add(copyPathItem);
-
-                //// "Rename item" menu item
-                //MenuItem renameItem = new MenuItem { Header = "Rename item" };
-                //renameItem.Click += (s, e) => RenameItem(path, sp);
-                //contextMenu.Items.Add(renameItem);
-
-                //// "Delete item" menu item
-                //MenuItem deleteItem = new MenuItem { Header = "Delete item" };
-                //deleteItem.Click += (s, e) => DeleteItem(path, sp);
-                //contextMenu.Items.Add(deleteItem);
-
-                //sp.ContextMenu = contextMenu;
-
-
-
+          
                 // Create and attach context menu
                 ContextMenu contextMenu = new ContextMenu();
 
@@ -750,6 +724,48 @@ namespace Desktop_Fences
 
         // TEST: Filter for only text files (REMOVE AFTER TEST)
         // ApplyFilter("*.txt");
+
+
+
+        /// <summary>
+        /// Safely switches the monitored folder without destroying the fence window.
+        /// Used for the "Dive In" navigation feature.
+        /// </summary>
+        public void NavigateTo(string newPath)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(newPath) || !Directory.Exists(newPath))
+                {
+                    LogManager.Log(LogManager.LogLevel.Warn, LogManager.LogCategory.General, $"Cannot navigate to invalid path: {newPath}");
+                    return;
+                }
+
+                // 1. Suspend Watcher to prevent event spam during switch
+                bool wasEnable = _watcher.EnableRaisingEvents;
+                _watcher.EnableRaisingEvents = false;
+
+                // 2. Clear UI
+                _dispatcher.Invoke(() => _wpcont.Children.Clear());
+
+                // 3. Switch Target
+                _targetFolderPath = newPath;
+                _watcher.Path = newPath; // FileSystemWatcher supports dynamic path changing
+
+                // 4. Reload Content
+                InitializeFenceContents();
+
+                // 5. Resume Watcher
+                _watcher.EnableRaisingEvents = wasEnable;
+
+                LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, $"Portal Fence navigated to: {newPath}");
+            }
+            catch (Exception ex)
+            {
+                LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.General, $"Navigation failed: {ex.Message}");
+                MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Could not navigate to folder.\n{ex.Message}", "Navigation Error");
+            }
+        }
 
         public void Dispose()
         {

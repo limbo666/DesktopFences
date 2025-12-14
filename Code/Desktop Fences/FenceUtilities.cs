@@ -14,23 +14,32 @@ namespace Desktop_Fences
     /// </summary>
     public static class FenceUtilities
     {
-      
-
         #region Tab Naming - Used by: FenceManager.AddNewTab
-        // Herb names for random tab naming
+
+        // "Herb" names (Secretly Grim Fandango Characters) for random tab naming
         private static readonly string[] herbNames = {
-            "Yarrow", "Mullein", "Plantain", "Mugwort", "Nettle", "Chicory", "Celandine",
-            "Sorrel", "Agrimony", "Betony", "Coltsfoot", "Eyebright", "Meadowsweet",
-            "Wormwood", "Lovage", "Valerian", "Comfrey", "Bistort", "Fleabane", "Tansy",
-            "Feverfew", "Pennyroyal", "Goldenrod", "Boneset", "Selfheal", "Cleavers",
-            "Vervain", "Rue", "Horehound", "Arnica"
+            // Main Cast
+            "Manny", "Meche", "Glottis", "Hector", "Salvador", "Domino", "Eva", 
+            
+            // Year 1 (El Marrow)
+            "Don Copal", "Bruno", "Celso", "Merche", "Brennis", 
+            
+            // Year 2 (Rubacava)
+            "Lupe", "Velasco", "Olivia", "Nick Virago", "Maximino", "Charlie",
+            "Membrillo", "Carla", "Toto", "Naranja", "Bogen", "Raoul", 
+            
+            // Year 3 & 4 (Edge of the World)
+            "Chepito", "Pugsy", "Bowlsley", "Gatekeeper", 
+            
+            // Surnames & Titles
+            "Calavera", "Colomar", "LeMans", "Limones", "Hurley", "Flores", "Martinez"
         };
 
-        // Random instance for herb naming
+        // Random instance for naming
         private static readonly Random herbNameRandom = new Random();
 
         /// <summary>
-        /// Generates random herb names for new tabs
+        /// Generates random names for new tabs
         /// Used by: FenceManager.AddNewTab
         /// Category: Tab Management
         /// </summary>
@@ -69,8 +78,10 @@ namespace Desktop_Fences
             for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
             {
                 var child = VisualTreeHelper.GetChild(parent, i);
-                LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.General,
-                    $"FindWrapPanel: Checking child {i} at depth {depth}, type: {child?.GetType()?.Name ?? "null"}");
+                // Reduced log verbosity to prevent spam during deep searches
+                // LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.General,
+                //    $"FindWrapPanel: Checking child {i} at depth {depth}, type: {child?.GetType()?.Name ?? "null"}");
+
                 var result = FenceUtilities.FindWrapPanel(child, depth + 1, maxDepth);
                 if (result != null)
                 {
@@ -78,15 +89,14 @@ namespace Desktop_Fences
                 }
             }
 
-            LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.General,
-                $"FindWrapPanel: No WrapPanel found under parent {parent?.GetType()?.Name ?? "null"} at depth {depth}");
+            // Only log failure at the top level to avoid recursion spam
+            if (depth == 0)
+            {
+                LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.General,
+                    $"FindWrapPanel: No WrapPanel found under parent {parent?.GetType()?.Name ?? "null"}");
+            }
             return null;
         }
         #endregion
-
-
     }
 }
-
-
-// CHECKPOINT: Step 1 Complete!

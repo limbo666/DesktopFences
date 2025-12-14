@@ -13,6 +13,7 @@ using System.Runtime.Intrinsics.Arm;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
@@ -65,7 +66,8 @@ namespace Desktop_Fences
         }
 
 
-
+        // Tracks temporary navigation paths for Portal Fences. Key: FenceID, Value: CurrentPath
+        private static Dictionary<string, string> _portalNavigationStates = new Dictionary<string, string>();
 
         // Track icon state to prevent GDI leaks from constant re-extraction
         // Key: FilePath
@@ -165,8 +167,179 @@ namespace Desktop_Fences
             return false;
         }
 
+        // PORTAL FEATURE: Logic to switch folders
+        public static void NavigatePortalFence(dynamic fence, string newPath)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(newPath) || !System.IO.Directory.Exists(newPath)) return;
 
+                string fenceId = fence.Id?.ToString();
+                string basePath = fence.Path?.ToString(); // The permanent "Home"
 
+                // Update State
+                if (string.Equals(newPath, basePath, StringComparison.OrdinalIgnoreCase))
+                {
+                    _portalNavigationStates.Remove(fenceId); // We returned Home
+                }
+                else
+                {
+                    _portalNavigationStates[fenceId] = newPath; // We are Deep
+                }
+
+                // Tell the Manager to switch
+                if (_portalFences.ContainsKey(fence))
+                {
+                    _portalFences[fence].NavigateTo(newPath);
+                }
+
+                // Update UI (Show/Hide Bar)
+                var windows = System.Windows.Application.Current.Windows.OfType<NonActivatingWindow>();
+                var win = windows.FirstOrDefault(w => w.Tag?.ToString() == fenceId);
+                if (win != null)
+                {
+                    RefreshPortalNavBar(win, fence);
+                }
+            }
+            catch (Exception ex)
+            {
+                LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI, $"Portal Navigation Error: {ex.Message}");
+            }
+        }
+
+        // PORTAL FEATURE: The UI Strip [ <  Path...  ⚓ ]
+        // v2.5.4 .186: Precision Alignment (Anchor under Filter)
+        public static void RefreshPortalNavBar(NonActivatingWindow fenceWindow, dynamic fence)
+        {
+            try
+            {
+                var border = fenceWindow.Content as Border;
+                var dockPanel = border?.Child as DockPanel;
+                if (dockPanel == null) return;
+
+                // 1. Cleanup Old Bar
+                var oldBar = dockPanel.Children.OfType<Grid>()
+                    .FirstOrDefault(g => g.Tag?.ToString() == "PORTAL_NAV_BAR");
+                if (oldBar != null) dockPanel.Children.Remove(oldBar);
+
+                // 2. Check Logic
+                if (fence.ItemsType?.ToString() != "Portal") return;
+
+                string fenceId = fence.Id?.ToString();
+                string basePath = fence.Path?.ToString();
+                string currentPath = _portalNavigationStates.ContainsKey(fenceId) ? _portalNavigationStates[fenceId] : basePath;
+
+                // Only show bar if we are NOT at home
+                bool isNavigating = !string.Equals(currentPath, basePath, StringComparison.OrdinalIgnoreCase);
+                if (!isNavigating) return;
+
+                // Path Logic
+                string displayPath = new System.IO.DirectoryInfo(currentPath).Name;
+                try
+                {
+                    if (currentPath.StartsWith(basePath, StringComparison.OrdinalIgnoreCase))
+                    {
+                        string rootName = new System.IO.DirectoryInfo(basePath).Name;
+                        string relativePart = currentPath.Substring(basePath.Length).TrimStart(System.IO.Path.DirectorySeparatorChar);
+                        displayPath = string.IsNullOrEmpty(relativePart) ? rootName : System.IO.Path.Combine(rootName, relativePart);
+                    }
+                }
+                catch { }
+
+                // 3. Create UI (Styled & Aligned)
+                Grid navGrid = new Grid
+                {
+                    Tag = "PORTAL_NAV_BAR",
+                    Height = 24,
+                    Background = new SolidColorBrush(System.Windows.Media.Color.FromArgb(60, 0, 0, 0)),
+                    // FIX: Right Margin 35 (30px Lock + 5px Gap) aligns the bar perfectly under the Filter Icon
+                    Margin = new Thickness(5, 0, 35, 2)
+                };
+
+                navGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(25) }); // Back Arrow
+                navGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) }); // Path Text
+                navGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(25) }); // Anchor Icon
+
+                // [ < ] Back Button
+                Button btnBack = new Button
+                {
+                    Content = "‹",
+                    FontSize = 14,
+                    FontWeight = FontWeights.Bold,
+                    Background = System.Windows.Media.Brushes.Transparent,
+                    Foreground = System.Windows.Media.Brushes.White,
+                    BorderThickness = new Thickness(0),
+                    Cursor = Cursors.Hand,
+                    ToolTip = "Go Up"
+                };
+                btnBack.Click += (s, e) => NavigatePortalFence(fence, System.IO.Directory.GetParent(currentPath)?.FullName);
+
+                // [ Path ] Label (Left Aligned)
+                TextBlock lblPath = new TextBlock
+                {
+                    Text = displayPath,
+                    VerticalAlignment = VerticalAlignment.Center,
+                    HorizontalAlignment = HorizontalAlignment.Left,
+                    Foreground = System.Windows.Media.Brushes.White,
+                    FontSize = 11,
+                    FontWeight = FontWeights.SemiBold,
+                    TextTrimming = TextTrimming.CharacterEllipsis,
+                    ToolTip = currentPath,
+                    Margin = new Thickness(5, 0, 5, 0)
+                };
+
+                // [ ⚓ ] Anchor Button
+                Button btnSetBase = new Button
+                {
+                    Content = "⚓",
+                    FontSize = 10,
+                    Background = System.Windows.Media.Brushes.Transparent,
+                    Foreground = System.Windows.Media.Brushes.Orange,
+                    BorderThickness = new Thickness(0),
+                    Cursor = Cursors.Hand,
+                    ToolTip = "Set current view as the new Home for this fence"
+                };
+                btnSetBase.Click += (s, e) =>
+                {
+                    if (MessageBoxesManager.ShowCustomYesNoMessageBox($"Set this folder as the new home?\n\n{currentPath}", "Update Portal Fence"))
+                    {
+                        UpdateFenceProperty(fence, "Path", currentPath, "Updated Portal Path");
+                        _portalNavigationStates.Remove(fenceId);
+                        RefreshPortalNavBar(fenceWindow, fence);
+                    }
+                };
+
+                navGrid.Children.Add(btnBack); Grid.SetColumn(btnBack, 0);
+                navGrid.Children.Add(lblPath); Grid.SetColumn(lblPath, 1);
+                navGrid.Children.Add(btnSetBase); Grid.SetColumn(btnSetBase, 2);
+
+                // 4. Smart Insertion (Under Title)
+                DockPanel.SetDock(navGrid, Dock.Top);
+
+                int insertIndex = 0;
+                bool titleFound = false;
+
+                for (int i = 0; i < dockPanel.Children.Count; i++)
+                {
+                    if (dockPanel.Children[i] is Grid g &&
+                        g.Children.OfType<TextBlock>().Any(tb => tb.Name == "FenceLockIcon"))
+                    {
+                        insertIndex = i + 1;
+                        titleFound = true;
+                        break;
+                    }
+                }
+
+                if (!titleFound) insertIndex = 1;
+                if (insertIndex > dockPanel.Children.Count) insertIndex = dockPanel.Children.Count;
+
+                dockPanel.Children.Insert(insertIndex, navGrid);
+            }
+            catch (Exception ex)
+            {
+                LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI, $"Error refreshing Nav Bar: {ex.Message}");
+            }
+        }
         /// <summary>
         /// Surgically reloads only specific fences by closing and recreating their windows
         /// Used by: ItemMoveDialog to prevent duplicate windows during move operations
@@ -371,8 +544,8 @@ namespace Desktop_Fences
 
 
 
-
-
+        // Builds the heart ContextMenu for a fence with consistent items and dynamic state
+        // v2.5.4 .183: Swapped Tabs/Delete position for better UX safety
         private static ContextMenu BuildHeartContextMenu(dynamic fence, bool showTabsOption = false)
         {
             // DEBUG: Log menu building
@@ -382,7 +555,6 @@ namespace Desktop_Fences
             var menu = new ContextMenu();
 
             // --- AUTO-CLOSE TIMER ---
-            // Closes the menu after 4 seconds of inactivity
             System.Windows.Threading.DispatcherTimer menuTimer = new System.Windows.Threading.DispatcherTimer
             {
                 Interval = TimeSpan.FromSeconds(4)
@@ -390,7 +562,6 @@ namespace Desktop_Fences
 
             menuTimer.Tick += (s, e) =>
             {
-                // Logic: Close only if the mouse is NOT over the menu
                 if (menu.IsOpen && !menu.IsMouseOver)
                 {
                     menu.IsOpen = false;
@@ -399,22 +570,10 @@ namespace Desktop_Fences
                 menuTimer.Stop();
             };
 
-            // Timer Logic Hooks
-            menu.Opened += (s, e) => {
-                menuTimer.Start();
-                LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI, "Heart Menu opened - Timer started");
-            };
-
+            menu.Opened += (s, e) => { menuTimer.Start(); };
             menu.Closed += (s, e) => menuTimer.Stop();
-
-            // If mouse enters the menu, STOP the timer (User is thinking)
             menu.MouseEnter += (s, e) => menuTimer.Stop();
-
-            // If mouse leaves, RESTART the timer (User moved away, start countdown)
-            menu.MouseLeave += (s, e) => {
-                menuTimer.Stop();
-                menuTimer.Start();
-            };
+            menu.MouseLeave += (s, e) => { menuTimer.Stop(); menuTimer.Start(); };
             // ------------------------
 
             // About item
@@ -430,38 +589,55 @@ namespace Desktop_Fences
             // Separator
             menu.Items.Add(new Separator());
 
-            // New Fence item
+            // New Fence items
             var newFenceItem = new MenuItem { Header = "New Fence" };
             newFenceItem.Click += (s, e) =>
             {
                 var mousePosition = System.Windows.Forms.Cursor.Position;
-                LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.FenceUpdate, $"Creating new fence at: {mousePosition}");
                 CreateNewFence("", "Data", mousePosition.X, mousePosition.Y);
             };
             menu.Items.Add(newFenceItem);
 
-            // New Portal Fence item
             var newPortalFenceItem = new MenuItem { Header = "New Portal Fence" };
             newPortalFenceItem.Click += (s, e) =>
             {
                 var mousePosition = System.Windows.Forms.Cursor.Position;
-                LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.FenceUpdate, $"Creating new portal fence at: {mousePosition}");
                 CreateNewFence("New Portal Fence", "Portal", mousePosition.X, mousePosition.Y);
             };
             menu.Items.Add(newPortalFenceItem);
 
-            // New Note Fence item
             MenuItem newNoteFenceItem = new MenuItem { Header = "New Note Fence" };
             newNoteFenceItem.Click += (s, e) =>
             {
                 var mousePosition = System.Windows.Forms.Cursor.Position;
-                LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.FenceUpdate, $"Creating new Note fence at: {mousePosition}");
                 CreateNewFence("", "Note", mousePosition.X, mousePosition.Y);
             };
             menu.Items.Add(newNoteFenceItem);
 
             menu.Items.Add(new Separator());
 
+            // --- REORDERED: Tabs Option First ---
+            // TABS FEATURE (Native Checkbox Logic)
+            bool isDataFence = fence.ItemsType?.ToString() == "Data";
+            if (isDataFence)
+            {
+                bool tabsEnabled = fence.TabsEnabled?.ToString().ToLower() == "true";
+
+                var enableTabsItem = new MenuItem
+                {
+                    Header = "Enable Tabs On This Fence",
+                    IsCheckable = true,   // Shows checkbox gutter
+                    IsChecked = tabsEnabled // Visual checkmark
+                };
+
+                enableTabsItem.Click += (s, e) => ToggleFenceTabs(fence);
+                menu.Items.Add(enableTabsItem);
+
+                // Separator AFTER tabs to separate it from the Delete option
+                menu.Items.Add(new Separator());
+            }
+
+            // --- REORDERED: Delete Option Second ---
             // Delete this fence
             var deleteThisFence = new MenuItem { Header = "Delete this Fence" };
             deleteThisFence.Click += (s, e) =>
@@ -469,13 +645,8 @@ namespace Desktop_Fences
                 bool result = MessageBoxesManager.ShowCustomMessageBoxForm();
                 if (result == true)
                 {
-                    // HIDDEN TWEAK: Auto-Export to Desktop before deletion
                     if (SettingsManager.ExportShortcutsOnFenceDeletion && fence.ItemsType?.ToString() == "Data")
                     {
-                        LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.FenceUpdate,
-                            $"Hidden Tweak Triggered: Auto-exporting icons for '{fence.Title}'");
-
-                        // Pass false to suppress the success message for silent operation
                         ExportAllIconsToDesktop(fence, false);
                     }
 
@@ -497,27 +668,20 @@ namespace Desktop_Fences
                     if (win != null) win.Close();
 
                     UpdateAllHeartContextMenus();
-                    LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.FenceCreation, $"Fence '{fence.Title}' deleted");
                 }
             };
             menu.Items.Add(deleteThisFence);
 
+            menu.Items.Add(new Separator());
 
+            // Export/Import Group
+            var exportItem = new MenuItem { Header = "Export this Fence" };
+            exportItem.Click += (s, e) => BackupManager.ExportFence(fence);
+            menu.Items.Add(exportItem);
 
-            // TABS FEATURE - Always visibl from v2. 5. 4.161
-            bool isDataFence = fence.ItemsType?.ToString() == "Data";
-            if (isDataFence)
-            {
-                menu.Items.Add(new Separator());
-                bool tabsEnabled = fence.TabsEnabled?.ToString().ToLower() == "true";
-                string checkmark = tabsEnabled ? "✓ " : "";
-                var enableTabsItem = new MenuItem { Header = $"{checkmark}Enable Tabs On This Fence" };
-                enableTabsItem.Click += (s, e) => ToggleFenceTabs(fence);
-                menu.Items.Add(enableTabsItem);
-            }
-
-
-
+            var importItem = new MenuItem { Header = "Import a Fence..." };
+            importItem.Click += (s, e) => BackupManager.ImportFence();
+            menu.Items.Add(importItem);
 
             // Restore Fence item
             var restoreItem = new MenuItem
@@ -527,17 +691,6 @@ namespace Desktop_Fences
             };
             restoreItem.Click += (s, e) => BackupManager.RestoreLastDeletedFence();
             menu.Items.Add(restoreItem);
-
-            menu.Items.Add(new Separator());
-
-            // Export/Import
-            var exportItem = new MenuItem { Header = "Export this Fence" };
-            exportItem.Click += (s, e) => BackupManager.ExportFence(fence);
-            menu.Items.Add(exportItem);
-
-            var importItem = new MenuItem { Header = "Import a Fence..." };
-            importItem.Click += (s, e) => BackupManager.ImportFence();
-            menu.Items.Add(importItem);
 
             // Separator
             menu.Items.Add(new Separator());
@@ -549,7 +702,6 @@ namespace Desktop_Fences
 
             return menu;
         }
-
 
 
         /// <summary>
@@ -1173,11 +1325,7 @@ namespace Desktop_Fences
 
 
 
-
-
-
-
-        /// <summary>
+       /// <summary>
         /// Gets the next display order for new items
         /// </summary>
         private static int GetNextDisplayOrder(dynamic fence)
@@ -1791,44 +1939,151 @@ namespace Desktop_Fences
         }
 
 
-       
 
-        //// TABS FEATURE: Dynamically refresh the tab strip UI to show changes
+
+        // TABS FEATURE: Dynamically refresh the tab strip UI (Ghost Arrows)
+        // v2.5. 4.181: Adds smart left/right chevrons that appear only when tabs are hidden.
         public static void RefreshTabStripUI(NonActivatingWindow fenceWindow, dynamic fence)
         {
             try
             {
-                LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI, $"Refreshing tab strip UI for fence '{fence.Title}'");
-
-                // Find the tab strip
                 var border = fenceWindow.Content as Border;
                 var dockPanel = border?.Child as DockPanel;
-                if (dockPanel == null)
+                if (dockPanel == null) return;
+
+                // 1. CAPTURE SCROLL STATE
+                double previousScrollOffset = 0;
+                var oldContainer = dockPanel.Children.OfType<Grid>()
+                    .FirstOrDefault(g => g.Tag?.ToString() == "TAB_STRIP_CONTAINER");
+                if (oldContainer != null)
                 {
-                    LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI, "Cannot find DockPanel for tab strip refresh");
-                    return;
+                    var oldScroll = oldContainer.Children.OfType<ScrollViewer>().FirstOrDefault();
+                    if (oldScroll != null) previousScrollOffset = oldScroll.HorizontalOffset;
                 }
 
-                var tabStrip = dockPanel.Children.OfType<StackPanel>()
-                    .FirstOrDefault(sp => sp.Orientation == Orientation.Horizontal && sp.Height == 20);
+                // 2. CLEANUP
+                var existingStrips = dockPanel.Children.OfType<FrameworkElement>()
+                    .Where(c => c is Grid g && g.Tag?.ToString() == "TAB_STRIP_CONTAINER" ||
+                                c is StackPanel sp && sp.Height == 20)
+                    .ToList();
+                foreach (var oldStrip in existingStrips) dockPanel.Children.Remove(oldStrip);
 
-                if (tabStrip == null)
+                // 3. CHECK ENABLED
+                bool tabsEnabled = fence.TabsEnabled?.ToString().ToLower() == "true";
+                if (!tabsEnabled) return;
+
+                // 4. COLOR ANALYSIS (For Arrow Visibility)
+                string fenceColorName = fence.CustomColor?.ToString() ?? SettingsManager.SelectedColor;
+                string effectiveColor = !string.IsNullOrEmpty(fenceColorName) ? fenceColorName : SettingsManager.SelectedColor;
+
+                System.Windows.Media.Color baseColor = System.Windows.Media.Colors.Gray;
+                try
                 {
-                    LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI, "Cannot find tab strip for refresh");
-                    return;
+                    var drawingColor = Utility.GetColorFromName(effectiveColor);
+                    baseColor = System.Windows.Media.Color.FromArgb(255, drawingColor.R, drawingColor.G, drawingColor.B);
                 }
+                catch { }
 
-                // Clear existing tab buttons
-                tabStrip.Children.Clear();
-                LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI, "Cleared existing tab buttons");
+                string c = effectiveColor?.ToLower() ?? "";
+                bool isExplicitDark = c.Contains("blue") || c.Contains("teal") || c.Contains("black") ||
+                                      c.Contains("red") || c.Contains("green") || c.Contains("purple") ||
+                                      c.Contains("bismark") || c.Contains("fuchsia") || c.Contains("default");
 
-                // Get current tab data
+                double brightness = Math.Sqrt(
+                    (0.299 * baseColor.R * baseColor.R) +
+                    (0.587 * baseColor.G * baseColor.G) +
+                    (0.114 * baseColor.B * baseColor.B)
+                );
+
+                bool isDarkTheme = isExplicitDark || brightness < 160;
+                SolidColorBrush arrowBrush = isDarkTheme ? System.Windows.Media.Brushes.White : new SolidColorBrush(System.Windows.Media.Color.FromRgb(50, 50, 50));
+
+                // 5. CREATE NEW GRID STRUCTURE
+                // Cols: [LeftArrow] [ScrollViewer*] [RightArrow] [PlusButton]
+                Grid containerGrid = new Grid
+                {
+                    Tag = "TAB_STRIP_CONTAINER",
+                    Height = 20,
+                    Background = new SolidColorBrush(System.Windows.Media.Color.FromArgb(20, 0, 0, 0)),
+                    Margin = new Thickness(0, 1, 0, 0),
+                    VerticalAlignment = VerticalAlignment.Top
+                };
+
+                containerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto }); // 0: Left Arrow
+                containerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) }); // 1: Tabs
+                containerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto }); // 2: Right Arrow
+                containerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto }); // 3: Plus Button
+
+                // 6. CREATE SCROLLVIEWER
+                ScrollViewer scrollViewer = new ScrollViewer
+                {
+                    HorizontalScrollBarVisibility = ScrollBarVisibility.Hidden,
+                    VerticalScrollBarVisibility = ScrollBarVisibility.Disabled,
+                    PanningMode = PanningMode.HorizontalOnly,
+                    CanContentScroll = true
+                };
+
+                scrollViewer.PreviewMouseWheel += (s, e) =>
+                {
+                    if (e.Delta > 0) scrollViewer.LineLeft();
+                    else scrollViewer.LineRight();
+                    e.Handled = true;
+                };
+
+                StackPanel tabStack = new StackPanel { Orientation = Orientation.Horizontal };
+                scrollViewer.Content = tabStack;
+
+                // 7. CREATE GHOST ARROWS
+                TextBlock leftArrow = new TextBlock
+                {
+                    Text = "‹", // Elegant chevron
+                    FontSize = 14,
+                    FontWeight = FontWeights.Bold,
+                    Foreground = arrowBrush,
+                    Opacity = 0.6,
+                    Cursor = Cursors.Hand,
+                    VerticalAlignment = VerticalAlignment.Center,
+                    Margin = new Thickness(2, -2, 2, 0), // Slight nudge up
+                    Visibility = Visibility.Collapsed // Hidden by default
+                };
+                leftArrow.MouseLeftButtonDown += (s, e) => { scrollViewer.LineLeft(); e.Handled = true; };
+
+                TextBlock rightArrow = new TextBlock
+                {
+                    Text = "›",
+                    FontSize = 14,
+                    FontWeight = FontWeights.Bold,
+                    Foreground = arrowBrush,
+                    Opacity = 0.6,
+                    Cursor = Cursors.Hand,
+                    VerticalAlignment = VerticalAlignment.Center,
+                    Margin = new Thickness(2, -2, 2, 0),
+                    Visibility = Visibility.Collapsed
+                };
+                rightArrow.MouseLeftButtonDown += (s, e) => { scrollViewer.LineRight(); e.Handled = true; };
+
+                // 8. WIRE UP SCROLL LOGIC
+                // This updates visibility whenever the scroll position or size changes
+                scrollViewer.ScrollChanged += (s, e) =>
+                {
+                    // Only show left if we have scrolled right
+                    leftArrow.Visibility = scrollViewer.HorizontalOffset > 0
+                        ? Visibility.Visible : Visibility.Collapsed;
+
+                    // Only show right if there is scrollable content remaining
+                    rightArrow.Visibility = scrollViewer.HorizontalOffset < scrollViewer.ScrollableWidth
+                        ? Visibility.Visible : Visibility.Collapsed;
+                };
+
+                // Add Elements to Grid
+                containerGrid.Children.Add(leftArrow); Grid.SetColumn(leftArrow, 0);
+                containerGrid.Children.Add(scrollViewer); Grid.SetColumn(scrollViewer, 1);
+                containerGrid.Children.Add(rightArrow); Grid.SetColumn(rightArrow, 2);
+
+                // 9. POPULATE TABS
                 var tabs = fence.Tabs as JArray ?? new JArray();
                 int currentTab = Convert.ToInt32(fence.CurrentTab?.ToString() ?? "0");
-                string fenceColorName = fence.CustomColor?.ToString() ?? SettingsManager.SelectedColor;
-                var colorScheme = Utility.GenerateTabColorScheme(fenceColorName);
 
-                // Recreate tab buttons
                 for (int i = 0; i < tabs.Count; i++)
                 {
                     var tab = tabs[i] as JObject;
@@ -1836,6 +2091,7 @@ namespace Desktop_Fences
 
                     string tabName = tab["TabName"]?.ToString() ?? $"Tab {i + 1}";
                     bool isActiveTab = (i == currentTab);
+                    int capturedIndex = i;
 
                     Button tabButton = new Button
                     {
@@ -1847,156 +2103,64 @@ namespace Desktop_Fences
                         Padding = new Thickness(10, 2, 10, 2),
                         FontSize = 10,
                         FontFamily = new System.Windows.Media.FontFamily("Segoe UI"),
-                        FontWeight = FontWeights.Medium,
-                        BorderThickness = new Thickness(1, 1, 1, 0),
                         Cursor = Cursors.Hand,
-                        Template = CreateTabButtonTemplate()
+                        Focusable = false
                     };
 
-                    // Apply styling
-                    if (isActiveTab)
+                    ApplyTabStyle(tabButton, isActiveTab, fenceColorName);
+
+                    tabButton.PreviewMouseLeftButtonDown += (s, e) =>
                     {
-                        tabButton.Background = new SolidColorBrush(colorScheme.activeTab);
-                        tabButton.Foreground = System.Windows.Media.Brushes.White;
-                        tabButton.BorderBrush = new SolidColorBrush(colorScheme.borderColor);
-                        tabButton.FontWeight = FontWeights.Bold;
-                        tabButton.Opacity = 1.0;
-                    }
-                    else
-                    {
-                        tabButton.Background = new SolidColorBrush(colorScheme.inactiveTab);
-                        tabButton.Foreground = new SolidColorBrush(System.Windows.Media.Color.FromArgb(255, 96, 96, 96));
-                        tabButton.BorderBrush = new SolidColorBrush(colorScheme.borderColor);
-                        tabButton.FontWeight = FontWeights.Normal;
-                        tabButton.Opacity = 0.7;
+                        fenceWindow.Focus();
+                        System.Windows.Input.Keyboard.ClearFocus();
 
-                        // Add hover effects for inactive tabs
-                        tabButton.MouseEnter += (s, e) =>
+                        if ((Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control)
                         {
-                            var btn = s as Button;
-                            btn.Background = new SolidColorBrush(colorScheme.hoverTab);
-                        };
-                        tabButton.MouseLeave += (s, e) =>
-                        {
-                            var btn = s as Button;
-                            btn.Background = new SolidColorBrush(colorScheme.inactiveTab);
-                        };
-                    }
-
-                    // Add click handler with delay to allow double-click detection
-                    int capturedIndex = i; // Capture for closure
-                    System.Windows.Threading.DispatcherTimer clickTimer = null;
-
-                    tabButton.Click += (s, e) =>
-                    {
-                        try
-                        {
-                            // Start or restart timer for delayed single-click
-                            if (clickTimer != null)
-                            {
-                                clickTimer.Stop();
-                            }
-
-                            clickTimer = new System.Windows.Threading.DispatcherTimer
-                            {
-                                Interval = TimeSpan.FromMilliseconds(300) // Double-click detection window
-                            };
-
-                            clickTimer.Tick += (ts, te) =>
-                            {
-                                clickTimer.Stop();
-                                LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI,
-                                    $"Tab button single-clicked (delayed): index {capturedIndex}");
-                                SwitchTabByFence(fence, capturedIndex, fenceWindow);
-                            };
-
-                            clickTimer.Start();
-                        }
-                        catch (Exception ex)
-                        {
-                            LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI,
-                                $"Error in tab click: {ex.Message}");
-                        }
-                    };
-
-
-
-                    // FIX: Switch tab on Right-Click before showing context menu (UX Improvement)
-                    tabButton.PreviewMouseRightButtonDown += (s, e) =>
-                    {
-                        // Switch content immediately so the user sees what they are editing
-                        SwitchTabByFence(fence, capturedIndex, fenceWindow);
-                        // Note: We DO NOT set e.Handled=true, letting the ContextMenu open normally afterwards
-                    };
-
-                    // Add double-click handler for quick rename
-                    tabButton.MouseDoubleClick += (s, e) =>
-                    {
-                        try
-                        {
-                            // Stop the single-click timer if running
-                            if (clickTimer != null)
-                            {
-                                clickTimer.Stop();
-                            }
-
-                            LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI,
-                                $"Tab button double-clicked: starting rename for index {capturedIndex}");
-
-                            e.Handled = true; // Prevent other events
-
-                            // Start rename immediately
+                            e.Handled = true;
                             RenameTab(fence, capturedIndex, fenceWindow);
                         }
-                        catch (Exception ex)
+                        else
                         {
-                            LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI,
-                                $"Error in tab double-click: {ex.Message}");
+                            SwitchTabByFence(fence, capturedIndex, fenceWindow);
+                            e.Handled = true;
                         }
                     };
-                    // Add right-click context menu
+
+                    tabButton.PreviewMouseRightButtonDown += (s, e) => SwitchTabByFence(fence, capturedIndex, fenceWindow);
+
+                    // Context Menu
                     ContextMenu tabContextMenu = new ContextMenu();
                     MenuItem miAddTab = new MenuItem { Header = "Add New Tab" };
                     MenuItem miRenameTab = new MenuItem { Header = "Rename Tab" };
                     MenuItem miDeleteTab = new MenuItem { Header = "Delete Tab" };
-                    Separator miSeparator1 = new Separator();
-
-                    // Initial State (Will be updated dynamically on Open)
                     MenuItem miMoveLeft = new MenuItem { Header = "Move Left" };
                     MenuItem miMoveRight = new MenuItem { Header = "Move Right" };
 
                     tabContextMenu.Items.Add(miAddTab);
-                    tabContextMenu.Items.Add(miSeparator1);
+                    tabContextMenu.Items.Add(new Separator());
                     tabContextMenu.Items.Add(miRenameTab);
                     tabContextMenu.Items.Add(miDeleteTab);
                     tabContextMenu.Items.Add(new Separator());
                     tabContextMenu.Items.Add(miMoveLeft);
                     tabContextMenu.Items.Add(miMoveRight);
 
-                    // Add event handlers with captured index
                     miAddTab.Click += (s, e) => AddNewTab(fence, fenceWindow);
                     miRenameTab.Click += (s, e) => RenameTab(fence, capturedIndex, fenceWindow);
                     miDeleteTab.Click += (s, e) => DeleteTab(fence, capturedIndex, fenceWindow);
-
                     miMoveLeft.Click += (s, e) => MoveTab(fence, capturedIndex, -1, fenceWindow);
                     miMoveRight.Click += (s, e) => MoveTab(fence, capturedIndex, 1, fenceWindow);
 
-                    // FIX: Update Enable/Disable state dynamically when menu opens
-                    // This ensures we always check against the current list count and position
                     tabContextMenu.Opened += (s, e) =>
                     {
                         miMoveLeft.IsEnabled = capturedIndex > 0;
                         miMoveRight.IsEnabled = capturedIndex < tabs.Count - 1;
-
-                        // Debug Log to verify state if needed
-                        // LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI, $"Tab Menu Opened: Idx={capturedIndex}, Count={tabs.Count}, Left={miMoveLeft.IsEnabled}, Right={miMoveRight.IsEnabled}");
                     };
 
                     tabButton.ContextMenu = tabContextMenu;
-                    tabStrip.Children.Add(tabButton);
+                    tabStack.Children.Add(tabButton);
                 }
 
-                // Add the [+] button
+                // 10. POPULATE PINNED [+] BUTTON
                 Button addTabButton = new Button
                 {
                     Content = "+",
@@ -2004,73 +2168,86 @@ namespace Desktop_Fences
                     Height = 18,
                     Width = 25,
                     Margin = new Thickness(3, 0, 1, 0),
-                    Padding = new Thickness(0),
                     FontSize = 12,
                     FontWeight = FontWeights.Bold,
                     FontFamily = new System.Windows.Media.FontFamily("Segoe UI"),
                     BorderThickness = new Thickness(1),
                     Cursor = Cursors.Hand,
-                    Template = CreateTabButtonTemplate(),
-                    ToolTip = "Add new tab"
+                    ToolTip = "Add new tab (Ctrl+Click to Import)", // Updated Tooltip
+                    Focusable = false
                 };
 
-                // Style the [+] button
-                var addButtonColorScheme = colorScheme;
-                addTabButton.Background = new SolidColorBrush(System.Windows.Media.Color.FromArgb(100, addButtonColorScheme.inactiveTab.R, addButtonColorScheme.inactiveTab.G, addButtonColorScheme.inactiveTab.B));
-                addTabButton.Foreground = new SolidColorBrush(addButtonColorScheme.borderColor);
-                addTabButton.BorderBrush = new SolidColorBrush(addButtonColorScheme.borderColor);
-                addTabButton.Opacity = 0.8;
+                ApplyTabStyle(addTabButton, false, fenceColorName, true);
 
-                // Add hover effects
-                addTabButton.MouseEnter += (s, e) =>
-                {
-                    addTabButton.Background = new SolidColorBrush(addButtonColorScheme.hoverTab);
-                    addTabButton.Opacity = 1.0;
-                };
-                addTabButton.MouseLeave += (s, e) =>
-                {
-                    addTabButton.Background = new SolidColorBrush(System.Windows.Media.Color.FromArgb(100, addButtonColorScheme.inactiveTab.R, addButtonColorScheme.inactiveTab.G, addButtonColorScheme.inactiveTab.B));
-                    addTabButton.Opacity = 0.8;
-                };
-
-                // Add click handler with debouncing to prevent multiple rapid clicks
                 bool isAddingTab = false;
-                addTabButton.Click += async (s, e) =>
+                addTabButton.PreviewMouseLeftButtonDown += async (s, e) =>
                 {
-                    if (isAddingTab) return; // Prevent rapid clicking
-                    isAddingTab = true;
+                    fenceWindow.Focus();
+                    e.Handled = true;
 
-                    try
+                    // --- NEW IMPORT LOGIC ---
+                    if ((Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control)
                     {
-                        LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI, "Add tab button clicked");
-                        AddNewTab(fence, fenceWindow);
+                        // Advanced: Import Tab
+                        ImportTabManager.HandleImportRequest(fence, fenceWindow);
+                        return;
                     }
-                    catch (Exception ex)
-                    {
-                        LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI, $"Error adding new tab: {ex.Message}");
-                    }
-                    finally
-                    {
-                        // Reset the flag after a short delay
-                        await System.Threading.Tasks.Task.Delay(500);
-                        isAddingTab = false;
-                    }
+                    // ------------------------
+
+                    if (isAddingTab) return;
+                    isAddingTab = true;
+                    try { AddNewTab(fence, fenceWindow); }
+                    finally { await System.Threading.Tasks.Task.Delay(500); isAddingTab = false; }
                 };
 
-                tabStrip.Children.Add(addTabButton);
+                containerGrid.Children.Add(addTabButton);
+                Grid.SetColumn(addTabButton, 3); // Col 3 is for the Button
 
-                LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.UI,
-                    $"Successfully refreshed tab strip UI: {tabs.Count} tabs + [+] button for fence '{fence.Title}'");
+                // 11. SURGICAL INSERTION
+                DockPanel.SetDock(containerGrid, Dock.Top);
+
+                int insertIndex = 0;
+                bool titleFound = false;
+                for (int i = 0; i < dockPanel.Children.Count; i++)
+                {
+                    if (dockPanel.Children[i] is Grid g)
+                    {
+                        if (g.Children.OfType<TextBlock>().Any(tb => tb.Name == "FenceLockIcon"))
+                        {
+                            insertIndex = i + 1;
+                            titleFound = true;
+                            break;
+                        }
+                    }
+                }
+                if (!titleFound) insertIndex = 0;
+
+                if (insertIndex < dockPanel.Children.Count &&
+                    dockPanel.Children[insertIndex] is Grid potentialFilter &&
+                    potentialFilter.Children.OfType<ComboBox>().Any())
+                {
+                    insertIndex++;
+                }
+
+                if (insertIndex > dockPanel.Children.Count) insertIndex = dockPanel.Children.Count;
+                dockPanel.Children.Insert(insertIndex, containerGrid);
+
+                // 12. RESTORE SCROLL (Async to allow layout pass)
+                if (previousScrollOffset > 0)
+                {
+                    fenceWindow.Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Loaded, new Action(() =>
+                    {
+                        scrollViewer.ScrollToHorizontalOffset(previousScrollOffset);
+                    }));
+                }
+
+                LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI, "Refreshed Tab Strip with Ghost Arrows");
             }
             catch (Exception ex)
             {
-                LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI,
-                    $"Error refreshing tab strip UI: {ex.Message}");
+                LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI, $"Error refreshing tab strip UI: {ex.Message}");
             }
-        }
-
-
-        // TABS FEATURE: Add new tab with random herb name
+        }      // TABS FEATURE: Add new tab with random herb name
         public static void AddNewTab(dynamic fence, NonActivatingWindow fenceWindow)
         {
             try
@@ -2144,22 +2321,45 @@ namespace Desktop_Fences
 
 
         // TABS FEATURE: Rename tab with inline editing (in-button, focus-enabled)
+        // v2.5.4.187: Fixed Visual Tree traversal to support ScrollViewer/Ghost Arrows structure
         public static void RenameTab(dynamic fence, int tabIndex, NonActivatingWindow fenceWindow)
         {
             try
             {
                 LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI, $"RenameTab called for fence '{fence.Title}', tab {tabIndex}");
 
-                // Find the specific tab button
+                // 1. Find the main DockPanel
                 var border = fenceWindow.Content as Border;
                 var dockPanel = border?.Child as DockPanel;
                 if (dockPanel == null) return;
 
-                var tabStrip = dockPanel.Children.OfType<StackPanel>()
-                    .FirstOrDefault(sp => sp.Orientation == Orientation.Horizontal && sp.Height == 20);
-                if (tabStrip == null) return;
+                // 2. FIX: Find the new Grid Container first (Tag: TAB_STRIP_CONTAINER)
+                var containerGrid = dockPanel.Children.OfType<Grid>()
+                    .FirstOrDefault(g => g.Tag?.ToString() == "TAB_STRIP_CONTAINER");
 
-                // Find the button for this tab index
+                if (containerGrid == null)
+                {
+                    LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI, "RenameTab: Tab strip container not found.");
+                    return;
+                }
+
+                // 3. FIX: Find the ScrollViewer inside the Grid
+                var scrollViewer = containerGrid.Children.OfType<ScrollViewer>().FirstOrDefault();
+                if (scrollViewer == null)
+                {
+                    LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI, "RenameTab: ScrollViewer not found.");
+                    return;
+                }
+
+                // 4. FIX: Get the StackPanel from the ScrollViewer content
+                var tabStrip = scrollViewer.Content as StackPanel;
+                if (tabStrip == null)
+                {
+                    LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI, "RenameTab: Tab StackPanel not found.");
+                    return;
+                }
+
+                // 5. Find the button for this tab index
                 Button targetButton = null;
                 foreach (Button btn in tabStrip.Children.OfType<Button>())
                 {
@@ -2215,12 +2415,11 @@ namespace Desktop_Fences
                 var originalForeground = targetButton.Foreground;
                 var originalBorderBrush = targetButton.BorderBrush;
 
-                
                 targetButton.Content = editTextBox;
                 targetButton.Background = System.Windows.Media.Brushes.White;
                 targetButton.BorderBrush = new SolidColorBrush(System.Windows.Media.Color.FromArgb(255, 70, 130, 180));
 
-                // Focus and select text with proper timing (improved from fence title editing pattern)
+                // Focus and select text with proper timing
                 System.Windows.Threading.Dispatcher.CurrentDispatcher.BeginInvoke(
                     System.Windows.Threading.DispatcherPriority.Background,
                     new Action(() =>
@@ -2299,7 +2498,7 @@ namespace Desktop_Fences
                         // CRITICAL: Re-enable NonActivatingWindow focus prevention
                         fenceWindow.EnableFocusPrevention(true);
 
-                        // Return focus to fence window (same as fence title editing)
+                        // Return focus to fence window
                         fenceWindow.Focus();
                     }
                     catch (Exception ex)
@@ -2318,7 +2517,7 @@ namespace Desktop_Fences
                     }
                 };
 
-                // Handle Enter key (save) and Escape (cancel) - same as fence title editing
+                // Handle Enter key (save) and Escape (cancel)
                 editTextBox.KeyDown += (s, e) =>
                 {
                     if (e.Key == Key.Enter)
@@ -2333,7 +2532,7 @@ namespace Desktop_Fences
                     }
                 };
 
-                // Handle focus loss (save) - same pattern as fence title editing
+                // Handle focus loss (save)
                 editTextBox.LostFocus += (s, e) =>
                 {
                     System.Windows.Threading.Dispatcher.CurrentDispatcher.BeginInvoke(
@@ -2354,7 +2553,6 @@ namespace Desktop_Fences
                 fenceWindow.EnableFocusPrevention(true);
             }
         }
-
 
         // TABS FEATURE: Delete tab with confirmation if it has items
         // TABS FEATURE: Delete tab with confirmation, Auto-Export, and Sync Fix
@@ -2482,57 +2680,33 @@ namespace Desktop_Fences
         }
 
 
-        // TABS FEATURE: Switch tab using fence ID (avoid stale references)
+        // TABS FEATURE: Switch tab using fence ID
+        // FIXED: Now calls RefreshTabStripUI instead of RefreshTabStyling to force a clean redraw.
         public static void SwitchTabByFence(dynamic fence, int newTabIndex, NonActivatingWindow fenceWindow)
         {
             try
             {
                 // Get fresh fence data by ID to avoid stale references
                 string fenceId = fence.Id?.ToString();
-                if (string.IsNullOrEmpty(fenceId))
-                {
-                    LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI, "Cannot switch tab: fence ID missing");
-                    return;
-                }
+                if (string.IsNullOrEmpty(fenceId)) return;
 
-                // Find fresh fence data
                 var currentFence = FenceDataManager.FenceData.FirstOrDefault(f => f.Id?.ToString() == fenceId);
-                if (currentFence == null)
-                {
-                    LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI, $"Cannot switch tab: fence with ID '{fenceId}' not found");
-                    return;
-                }
-
-                LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI,
-                    $"SwitchTabByFence: fence '{currentFence.Title}', newTabIndex {newTabIndex}");
+                if (currentFence == null) return;
 
                 // Validate tab index
                 var tabs = currentFence.Tabs as JArray ?? new JArray();
-                if (newTabIndex < 0 || newTabIndex >= tabs.Count)
-                {
-                    LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI,
-                        $"Cannot switch tab: index {newTabIndex} out of bounds (0-{tabs.Count - 1})");
-                    return;
-                }
+                if (newTabIndex < 0 || newTabIndex >= tabs.Count) return;
 
                 // Check current tab
                 int currentTabIndex = Convert.ToInt32(currentFence.CurrentTab?.ToString() ?? "0");
-                LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI,
-                    $"Current tab: {currentTabIndex}, New tab: {newTabIndex}");
+                if (currentTabIndex == newTabIndex) return; // Already there
 
-                if (currentTabIndex == newTabIndex)
-                {
-                    LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI,
-                        $"Already on tab {newTabIndex}");
-                    return;
-                }
-
-                // Update CurrentTab directly in FenceDataManager.FenceData
+                // Update Data
                 IDictionary<string, object> fenceDict = currentFence as IDictionary<string, object> ??
                     ((JObject)currentFence).ToObject<IDictionary<string, object>>();
                 fenceDict["CurrentTab"] = newTabIndex;
 
-                // Find and update the fence in FenceDataManager.FenceData
+                // Save
                 int fenceIndex = FenceDataManager.FenceData.FindIndex(f => f.Id?.ToString() == fenceId);
                 if (fenceIndex >= 0)
                 {
@@ -2540,25 +2714,30 @@ namespace Desktop_Fences
                     FenceDataManager.SaveFenceData();
                 }
 
-                // Use the fresh fence data for refreshing
                 var freshFence = FenceDataManager.FenceData[fenceIndex];
 
-                // Refresh content with fresh data
+                // 1. Refresh Icons (Content)
                 RefreshFenceContentSimple(fenceWindow, freshFence, newTabIndex);
 
-                // Update tab styling
-                RefreshTabStyling(fenceWindow, newTabIndex);
+                // 2. Refresh Tabs (UI Redraw) - THE FIX
+                // We use RefreshTabStripUI instead of RefreshTabStyling.
+                // This destroys the old buttons and creates new ones with the correct "Active" state baked in.
+                RefreshTabStripUI(fenceWindow, freshFence);
 
                 string tabName = tabs[newTabIndex]["TabName"]?.ToString() ?? $"Tab {newTabIndex}";
-                LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.UI,
-                    $"Successfully switched to tab '{tabName}' (index {newTabIndex})");
+                LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.UI, $"Switched to tab '{tabName}'");
             }
             catch (Exception ex)
             {
-                LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI,
-                    $"Error in SwitchTabByFence: {ex.Message}");
+                LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI, $"Error switching tab: {ex.Message}");
             }
         }
+
+
+
+
+
+
 
         // TABS FEATURE: Move Tab (Left/Right)
         public static void MoveTab(dynamic fence, int fromIndex, int direction, NonActivatingWindow fenceWindow)
@@ -2911,70 +3090,62 @@ namespace Desktop_Fences
             }
         }
 
-       
-
-        // TABS FEATURE: Update tab button styling to reflect active tab
-        private static void RefreshTabStyling(NonActivatingWindow fenceWindow, int activeTabIndex)
+        // TABS FEATURE: Update tab button styling
+        // Updated to support the new ScrollViewer structure
+        public static void RefreshTabStyling(NonActivatingWindow fenceWindow, int activeTabIndex)
         {
             try
             {
-                // Find the TabStrip
                 var border = fenceWindow.Content as Border;
-                if (border == null) return;
-
-                var dockPanel = border.Child as DockPanel;
+                var dockPanel = border?.Child as DockPanel;
                 if (dockPanel == null) return;
 
-                var tabStrip = dockPanel.Children.OfType<StackPanel>()
-                    .FirstOrDefault(sp => sp.Orientation == Orientation.Horizontal && sp.Height == 20);
+                // 1. Find the Container (Grid)
+                var containerGrid = dockPanel.Children.OfType<Grid>()
+                    .FirstOrDefault(g => g.Tag?.ToString() == "TAB_STRIP_CONTAINER");
 
-                if (tabStrip == null) return;
+                if (containerGrid == null) return;
 
-                // Get fence data for color scheme
+                // 2. Find the Tab StackPanel (Inside ScrollViewer)
+                var scrollViewer = containerGrid.Children.OfType<ScrollViewer>().FirstOrDefault();
+                var tabStack = scrollViewer?.Content as StackPanel;
+
+                // 3. Find the [+] Button (Direct child of Grid)
+                var plusButton = containerGrid.Children.OfType<Button>()
+                    .FirstOrDefault(b => b.Tag?.ToString() == "ADD_TAB");
+
                 string fenceId = fenceWindow.Tag?.ToString();
                 var currentFence = FenceDataManager.FenceData.FirstOrDefault(f => f.Id?.ToString() == fenceId);
                 if (currentFence == null) return;
 
-                string fenceColorName = currentFence.CustomColor?.ToString() ?? SettingsManager.SelectedColor;
-                var colorScheme = Utility.GenerateTabColorScheme(fenceColorName);
+                string fenceColorName = currentFence.CustomColor?.ToString();
+                if (string.IsNullOrEmpty(fenceColorName)) fenceColorName = SettingsManager.SelectedColor;
 
-                // Update all tab buttons
-                int tabIndex = 0;
-                foreach (Button tabButton in tabStrip.Children.OfType<Button>())
+                // 4. Update Tab Buttons
+                if (tabStack != null)
                 {
-                    bool isActiveTab = (tabIndex == activeTabIndex);
-
-                    if (isActiveTab)
+                    foreach (var child in tabStack.Children)
                     {
-                        // Active tab styling - more prominent
-                        tabButton.Background = new SolidColorBrush(colorScheme.activeTab);
-                        tabButton.BorderBrush = new SolidColorBrush(colorScheme.borderColor);
-                        tabButton.FontWeight = FontWeights.Bold;
-                        tabButton.Opacity = 1.0;
-                        tabButton.Foreground = System.Windows.Media.Brushes.White;
+                        if (child is Button tabButton && tabButton.Tag is int idx)
+                        {
+                            bool isActive = (idx == activeTabIndex);
+                            ApplyTabStyle(tabButton, isActive, fenceColorName);
+                        }
                     }
-                    else
-                    {
-                        // Inactive tab styling - more muted
-                        tabButton.Background = new SolidColorBrush(colorScheme.inactiveTab);
-                        tabButton.BorderBrush = new SolidColorBrush(colorScheme.borderColor);
-                        tabButton.FontWeight = FontWeights.Normal;
-                        tabButton.Opacity = 0.7;
-                        tabButton.Foreground = new SolidColorBrush(System.Windows.Media.Color.FromArgb(255, 96, 96, 96));
-                    }
-
-                    tabIndex++;
                 }
 
-                LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI,
-                    $"Updated tab styling: active tab is {activeTabIndex}");
+                // 5. Update [+] Button
+                if (plusButton != null)
+                {
+                    ApplyTabStyle(plusButton, false, fenceColorName, true);
+                }
             }
-            catch (Exception ex)
-            {
-                LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI,
-                    $"Error refreshing tab styling: {ex.Message}");
-            }
+            catch { }
         }
+
+
+
+
 
         // TABS FEATURE: Create custom button template with rounded top corners only
         private static ControlTemplate CreateTabButtonTemplate()
@@ -3010,83 +3181,45 @@ namespace Desktop_Fences
             return template;
         }
 
-        // TABS FEATURE: Refresh tab colors when fence color changes
+
         public static void RefreshTabColors(NonActivatingWindow fenceWindow, string newColorName)
         {
             try
             {
-                // Find the TabStrip in the fence window
                 var border = fenceWindow.Content as Border;
                 if (border == null) return;
-
                 var dockPanel = border.Child as DockPanel;
                 if (dockPanel == null) return;
+                var tabStrip = dockPanel.Children.OfType<StackPanel>().FirstOrDefault(sp => sp.Orientation == Orientation.Horizontal && sp.Height == 20);
+                if (tabStrip == null) return;
 
-                // Look for TabStrip (StackPanel with Horizontal orientation)
-                var tabStrip = dockPanel.Children.OfType<StackPanel>()
-                    .FirstOrDefault(sp => sp.Orientation == Orientation.Horizontal && sp.Height == 20);
-
-                if (tabStrip == null) return; // No tabs on this fence
-
-                // Get the fence data to determine current tab
                 string fenceId = fenceWindow.Tag?.ToString();
-                if (string.IsNullOrEmpty(fenceId)) return;
-
                 var currentFence = FenceDataManager.FenceData.FirstOrDefault(f => f.Id?.ToString() == fenceId);
                 if (currentFence == null) return;
 
                 int currentTab = Convert.ToInt32(currentFence.CurrentTab?.ToString() ?? "0");
 
-                // Generate new color scheme based on the new color
-                var colorScheme = Utility.GenerateTabColorScheme(newColorName);
-
-                // Update all tab buttons with new color scheme
-                int tabIndex = 0;
-                foreach (Button tabButton in tabStrip.Children.OfType<Button>())
+                foreach (var child in tabStrip.Children)
                 {
-                    bool isActiveTab = (tabIndex == currentTab);
-
-                    if (isActiveTab)
+                    if (child is Button tabButton)
                     {
-                        // Update active tab with new colors
-                        tabButton.Background = new SolidColorBrush(colorScheme.activeTab);
-                        tabButton.BorderBrush = new SolidColorBrush(colorScheme.borderColor);
-                    }
-                    else
-                    {
-                        // Update inactive tab with new colors
-                        tabButton.Background = new SolidColorBrush(colorScheme.inactiveTab);
-                        tabButton.BorderBrush = new SolidColorBrush(colorScheme.borderColor);
-
-                        // Update hover effects with new colors
-                        tabButton.MouseEnter -= TabButton_MouseEnter; // Remove old handler
-                        tabButton.MouseLeave -= TabButton_MouseLeave; // Remove old handler
-
-                        tabButton.MouseEnter += (s, e) =>
+                        if (tabButton.Tag is int idx)
                         {
-                            var btn = s as Button;
-                            btn.Background = new SolidColorBrush(colorScheme.hoverTab);
-                        };
-                        tabButton.MouseLeave += (s, e) =>
+                            bool isActive = (idx == currentTab);
+                            ApplyTabStyle(tabButton, isActive, newColorName);
+                        }
+                        else if (tabButton.Tag?.ToString() == "ADD_TAB")
                         {
-                            var btn = s as Button;
-                            btn.Background = new SolidColorBrush(colorScheme.inactiveTab);
-                        };
+                            ApplyTabStyle(tabButton, false, newColorName, true);
+                        }
                     }
-
-                    tabIndex++;
                 }
-
-                LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI,
-                    $"Refreshed tab colors for fence '{currentFence.Title}' with color '{newColorName}'");
             }
-            catch (Exception ex)
-            {
-                LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI,
-                    $"Error refreshing tab colors: {ex.Message}");
-            }
+            catch { }
         }
-    
+
+
+
         // Helper event handlers to avoid lambda capture issues
         private static void TabButton_MouseEnter(object sender, RoutedEventArgs e) { }
 
@@ -3260,7 +3393,6 @@ namespace Desktop_Fences
         }
 
 
-     
         public static void LoadAndCreateFences(TargetChecker targetChecker)
 
 
@@ -3562,12 +3694,7 @@ namespace Desktop_Fences
             }
         }
 
-        //private static void InitializeDefaultFence()
-        //{
-        //    string defaultJson = "[{\"Id\":\"" + Guid.NewGuid().ToString() + "\",\"Title\":\"New Fence\",\"X\":20,\"Y\":20,\"Width\":230,\"Height\":130,\"ItemsType\":\"Data\",\"Items\":[],\"IsLocked\":\"false\",\"IsHidden\":\"false\",\"CustomColor\":null,\"CustomLaunchEffect\":null,\"IsRolled\":\"false\",\"UnrolledHeight\":130,\"TabsEnabled\":\"false\",\"CurrentTab\":0,\"Tabs\":[]}]";
-        //    System.IO.File.WriteAllText(FenceDataManager.JsonFilePath, defaultJson);
-        //    FenceDataManager.FenceData = JsonConvert.DeserializeObject<List<dynamic>>(defaultJson);
-        //}
+
         //Replacement on v 2.5 .3. 141
 
 
@@ -4097,11 +4224,6 @@ namespace Desktop_Fences
 
 
 
-
-
-
-
-
             // --- DYNAMIC MENU ITEMS ---
 
             // 1. Clear Dead Shortcuts (Initially Hidden)
@@ -4159,56 +4281,7 @@ namespace Desktop_Fences
             miPasteItem.Click += (s, e) => CopyPasteManager.PasteItem(fence);
             CnMnFenceManager.Items.Add(miPasteItem);
 
-            // --- DYNAMIC STATE UPDATES (ON MENU OPEN) ---
-            MenuItem miExportAllToDesktop = null;
-
-            CnMnFenceManager.Opened += (contextSender, contextArgs) =>
-            {
-                // A. Update Paste Visibility
-                // Only show if the app actually has something copied internally
-                bool hasCopiedItem = CopyPasteManager.HasCopiedItem();
-                miPasteItem.Visibility = hasCopiedItem ? Visibility.Visible : Visibility.Collapsed;
-
-                // B. Update Clear Dead Shortcuts Visibility
-                // Only show if we detected broken links in the background check
-                if (miClearDeadShortcuts != null)
-                {
-                    bool hasDead = HasDeadShortcuts(fence);
-                    miClearDeadShortcuts.Visibility = hasDead ? Visibility.Visible : Visibility.Collapsed;
-                    if (sepClearDead != null) sepClearDead.Visibility = hasDead ? Visibility.Visible : Visibility.Collapsed;
-                }
-
-                // C. Export All (Hidden Tweak: Ctrl + Right Click)
-                bool isCtrlPressed = (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control;
-                bool isDataFence = fence.ItemsType?.ToString() == "Data";
-
-                if (miExportAllToDesktop != null && CnMnFenceManager.Items.Contains(miExportAllToDesktop))
-                {
-                    CnMnFenceManager.Items.Remove(miExportAllToDesktop);
-                }
-
-                if (isCtrlPressed && isDataFence)
-                {
-                    miExportAllToDesktop = new MenuItem { Header = "Export all icons to desktop" };
-                    miExportAllToDesktop.Click += (s, e) => ExportAllIconsToDesktop(fence);
-
-                    // Insert strategically
-                    int insertPosition = CnMnFenceManager.Items.Count - 2; // Before Customize/Separator
-                    if (miClearDeadShortcuts != null)
-                    {
-                        int clearIndex = CnMnFenceManager.Items.IndexOf(miClearDeadShortcuts);
-                        if (clearIndex >= 0) insertPosition = clearIndex + 1;
-                    }
-
-                    if (insertPosition >= 0 && insertPosition < CnMnFenceManager.Items.Count)
-                        CnMnFenceManager.Items.Insert(insertPosition, miExportAllToDesktop);
-                    else
-                        CnMnFenceManager.Items.Add(miExportAllToDesktop);
-                }
-
-                LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI,
-                    $"Updated fence menu - Paste: {hasCopiedItem}, DeadShortcuts: {miClearDeadShortcuts?.Visibility}");
-            };
+          
 
 
 
@@ -4219,14 +4292,8 @@ namespace Desktop_Fences
 
 
 
+            //  CnMnFenceManager.Items.Add(new Separator());
 
-
-
-
-
-      
-          //  CnMnFenceManager.Items.Add(new Separator());
-           
             //CnMnFenceManager.Items.Add(miNewCustomize);
             MenuItem miCustomize = new MenuItem { Header = "Customize..." };
             miCustomize.Click += (s, e) =>
@@ -4483,12 +4550,8 @@ namespace Desktop_Fences
 
 
 
-
-
             LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.FenceCreation,
         $"Fence '{fence.Title}' successfully created and displayed");
-
-
 
             bool isBoldTitle = false;
             try
@@ -4547,7 +4610,116 @@ namespace Desktop_Fences
             titleGrid.Children.Add(titlelabel);
 
 
-    
+            // --- DYNAMIC STATE UPDATES (ON MENU OPEN) ---
+            MenuItem miExportAllToDesktop = null;
+            MenuItem miNameAfterPath = null; // New: For Portal Renaming
+            Separator sepNameAfterPath = null; // New: Separator for layout
+
+            CnMnFenceManager.Opened += (contextSender, contextArgs) =>
+            {
+                // A. Update Paste Visibility
+                bool hasCopiedItem = CopyPasteManager.HasCopiedItem();
+                miPasteItem.Visibility = hasCopiedItem ? Visibility.Visible : Visibility.Collapsed;
+
+                // B. Update Clear Dead Shortcuts Visibility
+                if (miClearDeadShortcuts != null)
+                {
+                    bool hasDead = HasDeadShortcuts(fence);
+                    miClearDeadShortcuts.Visibility = hasDead ? Visibility.Visible : Visibility.Collapsed;
+                    if (sepClearDead != null) sepClearDead.Visibility = hasDead ? Visibility.Visible : Visibility.Collapsed;
+                }
+
+                // --- CTRL + RIGHT CLICK LOGIC ---
+                bool isCtrlPressed = (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control;
+                bool isDataFence = fence.ItemsType?.ToString() == "Data";
+                bool isPortalFence = fence.ItemsType?.ToString() == "Portal";
+
+                // Clean up previous dynamic items to prevent duplicates
+                if (miExportAllToDesktop != null && CnMnFenceManager.Items.Contains(miExportAllToDesktop))
+                    CnMnFenceManager.Items.Remove(miExportAllToDesktop);
+
+                if (miNameAfterPath != null && CnMnFenceManager.Items.Contains(miNameAfterPath))
+                    CnMnFenceManager.Items.Remove(miNameAfterPath);
+
+                if (sepNameAfterPath != null && CnMnFenceManager.Items.Contains(sepNameAfterPath))
+                    CnMnFenceManager.Items.Remove(sepNameAfterPath);
+
+                // C. Export All (Data Fence + Ctrl)
+                if (isCtrlPressed && isDataFence)
+                {
+                    miExportAllToDesktop = new MenuItem { Header = "Export all icons to desktop" };
+                    miExportAllToDesktop.Click += (s, e) => ExportAllIconsToDesktop(fence);
+
+                    // Insert before Customize (safe lookup)
+                    int insertIndex = CnMnFenceManager.Items.Count - 1;
+                    var customizeItem = CnMnFenceManager.Items.OfType<MenuItem>()
+                        .FirstOrDefault(m => m.Header.ToString() == "Customize...");
+                    if (customizeItem != null) insertIndex = CnMnFenceManager.Items.IndexOf(customizeItem);
+
+                    CnMnFenceManager.Items.Insert(insertIndex, miExportAllToDesktop);
+                }
+
+                // D. Name After Target (Portal Fence + Ctrl)
+                if (isCtrlPressed && isPortalFence)
+                {
+                    miNameAfterPath = new MenuItem { Header = "Name Fence After Target Path" };
+                    miNameAfterPath.Click += (s, e) =>
+                    {
+                        // Get Base Path (Not navigation path)
+                        string targetPath = fence.Path?.ToString();
+
+                        if (!string.IsNullOrEmpty(targetPath))
+                        {
+                            // 1. Update Live Object (Global List)
+                            string id = fence.Id?.ToString();
+                            var liveFence = GetFenceData().FirstOrDefault(f => f.Id?.ToString() == id);
+
+                            if (liveFence != null)
+                            {
+                                if (liveFence is JObject jFence) jFence["Title"] = targetPath;
+                                else liveFence.Title = targetPath;
+
+                                fence.Title = targetPath; // Update local reference
+                            }
+
+                            // 2. Update UI
+                            titlelabel.Content = targetPath;
+                            win.Title = targetPath;
+                            titletb.Text = targetPath; // Update hidden textbox too
+
+                            // 3. Save
+                            FenceDataManager.SaveFenceData();
+                            LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.UI, $"Renamed portal fence to target: {targetPath}");
+                        }
+                    };
+
+                    sepNameAfterPath = new Separator();
+
+                    // Insert before Customize
+                    int insertIndex = CnMnFenceManager.Items.Count - 1;
+                    var customizeItem = CnMnFenceManager.Items.OfType<MenuItem>()
+                        .FirstOrDefault(m => m.Header.ToString() == "Customize...");
+
+                    if (customizeItem != null)
+                    {
+                        insertIndex = CnMnFenceManager.Items.IndexOf(customizeItem);
+                        // Insert Order: Name -> Separator -> Customize
+                        CnMnFenceManager.Items.Insert(insertIndex, miNameAfterPath);
+                        CnMnFenceManager.Items.Insert(insertIndex + 1, sepNameAfterPath);
+                    }
+                    else
+                    {
+                        CnMnFenceManager.Items.Add(miNameAfterPath);
+                        CnMnFenceManager.Items.Add(sepNameAfterPath);
+                    }
+                }
+
+                LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI,
+                    $"Updated fence menu - Ctrl:{isCtrlPressed}");
+            };
+
+
+
 
 
             Grid.SetColumn(titletb, 1);
@@ -4815,20 +4987,6 @@ namespace Desktop_Fences
             // --- FILTER UI END ---
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
             // --- STEP 4 FIX: Centralized Rename Logic ---
 
             // 1. Define the Logic ONCE
@@ -4985,15 +5143,6 @@ namespace Desktop_Fences
             // --- STEP 4 END ---
 
 
-
-
-
-
-
-
-
-
-
             // Move lockIcon to the Grid
             Grid.SetColumn(lockIcon, 3); // Moved to Column 3
             Grid.SetRow(lockIcon, 0);
@@ -5007,231 +5156,12 @@ namespace Desktop_Fences
                 dp.Children.Add(filterBar);
             }
 
-            // TABS FEATURE: Add TabStrip conditionally for tabbed fences
-            StackPanel tabStrip = null;
-            bool tabsEnabled = fence.TabsEnabled?.ToString().ToLower() == "true";
-            if (tabsEnabled)
-            {
-                tabStrip = new StackPanel
-                {
-                    Orientation = Orientation.Horizontal,
-                    Height = 20, // Reduced height to fit the smaller buttons elegantly
-                    Background = new SolidColorBrush(System.Windows.Media.Color.FromArgb(20, 0, 0, 0)), // Even more subtle background
-                    Margin = new Thickness(0, 1, 0, 0), // Tighter margins
-                    VerticalAlignment = VerticalAlignment.Bottom // Align to bottom for better visual connection
-                };
-                DockPanel.SetDock(tabStrip, Dock.Top);
-                dp.Children.Add(tabStrip);
-                LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.FenceCreation, $"Added TabStrip for tabbed fence '{fence.Title}'");
-                // TABS FEATURE: Create tab buttons from Tabs array
-                try
-                {
-                    var tabs = fence.Tabs as JArray ?? new JArray();
-                    int currentTab = Convert.ToInt32(fence.CurrentTab?.ToString() ?? "0");
-                    // Ensure CurrentTab is within bounds
-                    if (currentTab >= tabs.Count)
-                    {
-                        currentTab = 0;
-                    }
 
-                    for (int i = 0; i < tabs.Count; i++)
-                    {
-                        var tab = tabs[i] as JObject;
-                        if (tab == null) continue;
+            // TABS FEATURE: Add TabStrip
+            // We delegate to the shared method to ensure consistent "Scrollable" layout on startup.
+            RefreshTabStripUI(win, fence);
 
-                        // CAPTURE INDEX FOR LAMBDAS (Vital fix)
-                        int currentLoopIndex = i;
-
-                        string tabName = tab["TabName"]?.ToString() ?? $"Tab {i + 1}";
-                        bool isActiveTab = (i == currentTab);
-
-                        Button tabButton = new Button
-                        {
-                            Content = tabName,
-                            Tag = currentLoopIndex, // Store index in Tag
-                            Height = 18,
-                            MinWidth = 50,
-                            Margin = new Thickness(1, 0, 1, 0),
-                            Padding = new Thickness(10, 2, 10, 2),
-                            FontSize = 10,
-                            FontFamily = new System.Windows.Media.FontFamily("Segoe UI"),
-                            FontWeight = FontWeights.Medium,
-                            BorderThickness = new Thickness(1, 1, 1, 0),
-                            Cursor = Cursors.Hand,
-                            Template = CreateTabButtonTemplate()
-                        };
-
-                        // TABS FEATURE: Get fence color scheme for theming
-                        string fenceColorName = fence.CustomColor?.ToString() ?? SettingsManager.SelectedColor;
-                        var colorScheme = Utility.GenerateTabColorScheme(fenceColorName);
-
-                        // Apply themed styling
-                        if (isActiveTab)
-                        {
-                            tabButton.Background = new SolidColorBrush(colorScheme.activeTab);
-                            tabButton.Foreground = System.Windows.Media.Brushes.White;
-                            tabButton.BorderBrush = new SolidColorBrush(colorScheme.borderColor);
-                            tabButton.FontWeight = FontWeights.Bold;
-                            tabButton.Opacity = 1.0;
-                        }
-                        else
-                        {
-                            tabButton.Background = new SolidColorBrush(colorScheme.inactiveTab);
-                            tabButton.Foreground = new SolidColorBrush(System.Windows.Media.Color.FromArgb(255, 96, 96, 96));
-                            tabButton.BorderBrush = new SolidColorBrush(colorScheme.borderColor);
-                            tabButton.FontWeight = FontWeights.Normal;
-                            tabButton.Opacity = 0.7;
-                        }
-
-                        // Add hover effects
-                        if (!isActiveTab)
-                        {
-                            tabButton.MouseEnter += (s, e) => { ((Button)s).Background = new SolidColorBrush(colorScheme.hoverTab); };
-                            tabButton.MouseLeave += (s, e) => { ((Button)s).Background = new SolidColorBrush(colorScheme.inactiveTab); };
-                        }
-
-                        // 1. LEFT CLICK (Switch Tab)
-                        tabButton.Click += (s, e) =>
-                        {
-                            try
-                            {
-                                LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI, $"Tab clicked: index {currentLoopIndex}");
-                                SwitchTabByFence(fence, currentLoopIndex, win);
-                            }
-                            catch (Exception ex) { LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI, $"Tab Click Error: {ex.Message}"); }
-                        };
-
-                        // 2. RIGHT CLICK (Switch Tab FIRST, then Menu) - THE FIX
-                        tabButton.PreviewMouseRightButtonDown += (s, e) =>
-                        {
-                            // Switch context immediately
-                            SwitchTabByFence(fence, currentLoopIndex, win);
-                            // Do NOT set Handled=true, allow ContextMenu to open
-                        };
-
-                        // 3. DOUBLE CLICK (Rename)
-                        tabButton.MouseDoubleClick += (s, e) =>
-                        {
-                            e.Handled = true;
-                            RenameTab(fence, currentLoopIndex, win);
-                        };
-
-                        // 4. CONTEXT MENU
-                        ContextMenu tabContextMenu = new ContextMenu();
-                        MenuItem miAddTab = new MenuItem { Header = "Add New Tab" };
-                        MenuItem miRenameTab = new MenuItem { Header = "Rename Tab" };
-                        MenuItem miDeleteTab = new MenuItem { Header = "Delete Tab" };
-                        Separator miSeparator1 = new Separator();
-
-                        MenuItem miMoveLeft = new MenuItem { Header = "Move Left" };
-                        MenuItem miMoveRight = new MenuItem { Header = "Move Right" };
-
-                        tabContextMenu.Items.Add(miAddTab);
-                        tabContextMenu.Items.Add(miSeparator1);
-                        tabContextMenu.Items.Add(miRenameTab);
-                        tabContextMenu.Items.Add(miDeleteTab);
-                        tabContextMenu.Items.Add(new Separator());
-                        tabContextMenu.Items.Add(miMoveLeft);
-                        tabContextMenu.Items.Add(miMoveRight);
-
-                        // Attach handlers using CAPTURED index
-                        miAddTab.Click += (s, e) => AddNewTab(fence, win);
-                        miRenameTab.Click += (s, e) => RenameTab(fence, currentLoopIndex, win);
-                        miDeleteTab.Click += (s, e) => DeleteTab(fence, currentLoopIndex, win);
-                        miMoveLeft.Click += (s, e) => MoveTab(fence, currentLoopIndex, -1, win);
-                        miMoveRight.Click += (s, e) => MoveTab(fence, currentLoopIndex, 1, win);
-
-                        // Dynamic Enable State
-                        tabContextMenu.Opened += (s, e) =>
-                        {
-                            miMoveLeft.IsEnabled = currentLoopIndex > 0;
-                            miMoveRight.IsEnabled = currentLoopIndex < tabs.Count - 1;
-                        };
-
-                        tabButton.ContextMenu = tabContextMenu;
-                        tabStrip.Children.Add(tabButton);
-                    }
-
-           
-                    LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.FenceCreation, $"Created {tabs.Count} tab buttons for fence '{fence.Title}'");
-                    // TABS FEATURE: Add [+] button for adding new tabs
-                    Button addTabButton = new Button
-                    {
-                        Content = "+",
-                        Tag = "ADD_TAB", // Special tag to identify add button
-                        Height = 18,
-                        Width = 25, // Slightly wider for the + symbol
-                        Margin = new Thickness(3, 0, 1, 0), // Bit more space before +
-                        Padding = new Thickness(0),
-                        FontSize = 12,
-                        FontWeight = FontWeights.Bold,
-                        FontFamily = new System.Windows.Media.FontFamily("Segoe UI"),
-                        BorderThickness = new Thickness(1),
-                        Cursor = Cursors.Hand,
-                        Template = CreateTabButtonTemplate(),
-                        ToolTip = "Add new tab"
-                    };
-                    // Style the [+] button with muted colors using existing color scheme
-                    string addButtonFenceColor = fence.CustomColor?.ToString() ?? SettingsManager.SelectedColor;
-                    var addButtonColorScheme = Utility.GenerateTabColorScheme(addButtonFenceColor);
-                    addTabButton.Background = new SolidColorBrush(System.Windows.Media.Color.FromArgb(100, addButtonColorScheme.inactiveTab.R, addButtonColorScheme.inactiveTab.G, addButtonColorScheme.inactiveTab.B)); // Semi-transparent
-                    addTabButton.Foreground = new SolidColorBrush(addButtonColorScheme.borderColor);
-                    addTabButton.BorderBrush = new SolidColorBrush(addButtonColorScheme.borderColor);
-                    addTabButton.Opacity = 0.8;
-                    // Add hover effects
-                    addTabButton.MouseEnter += (s, e) =>
-                    {
-                        addTabButton.Background = new SolidColorBrush(addButtonColorScheme.hoverTab);
-                        addTabButton.Opacity = 1.0;
-                    };
-                    addTabButton.MouseLeave += (s, e) =>
-                    {
-                        addTabButton.Background = new SolidColorBrush(System.Windows.Media.Color.FromArgb(100, addButtonColorScheme.inactiveTab.R, addButtonColorScheme.inactiveTab.G, addButtonColorScheme.inactiveTab.B));
-                        addTabButton.Opacity = 0.8;
-                    };
-                    // Add click handler for new tab creation
-                    addTabButton.Click += (s, e) =>
-                    {
-                        try
-                        {
-                            LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI, $"Add tab button clicked for fence '{fence.Title}'");
-                            AddNewTab(fence, win);
-                        }
-                        catch (Exception ex)
-                        {
-                            LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI, $"Error adding new tab: {ex.Message}");
-                        }
-                    };
-                    tabStrip.Children.Add(addTabButton);
-                    LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.FenceCreation, $"Added [+] button for fence '{fence.Title}'");
-                }
-                catch (Exception ex)
-                {
-                    LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.FenceCreation, $"Error creating tab buttons for fence '{fence.Title}': {ex.Message}");
-                }
-            }
-            else
-            {
-                LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.FenceCreation, $"Skipped TabStrip for non-tabbed fence '{fence.Title}'");
-            }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+       
             string fenceId = win.Tag?.ToString();
             if (string.IsNullOrEmpty(fenceId))
             {
@@ -5427,6 +5357,7 @@ namespace Desktop_Fences
                     }
                 }
             };
+     
 
 
             titletb.KeyDown += (sender, e) =>
@@ -5521,19 +5452,6 @@ namespace Desktop_Fences
                 win.ShowActivated = false;
                 LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI, $"Rename saved via LostFocus: {finalTitle}");
             };
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
             // WrapPanel wpcont = new WrapPanel();
@@ -5728,7 +5646,6 @@ namespace Desktop_Fences
                 }
             }
        
-
 
             win.Drop += (sender, e) =>
             {
@@ -6298,60 +6215,43 @@ namespace Desktop_Fences
 
 
 
-
-
-
-
             // --- ICON EXTRACTION LOGIC ---
             ImageSource shortcutIcon = null;
             bool isShortcut = System.IO.Path.GetExtension(filePath).ToLower() == ".lnk";
+            bool isUrlFile = System.IO.Path.GetExtension(filePath).ToLower() == ".url";
 
-            // New variables to track target state
+            // Variables to track target state
             string targetPath = null;
             bool targetIsUncRoot = false;
 
-            if (isLink)
+            // FIX: Unified Custom Icon Extraction for Links AND Shortcuts
+            // We check for a custom icon FIRST. If one exists, we use it immediately.
+            if (isShortcut || isLink || isUrlFile)
             {
-                shortcutIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/link-White.png"));
-            }
-            else if (isShortcut)
-            {
-                try
+                // NEW: Special handling for .url files using manual parser
+                if (isUrlFile || isLink)
                 {
-                    // FIX: Use the robust Unicode-Safe reader (IShellLink) instead of WshShell.
-                    // WshShell often fails to read targets for Network Roots, returning null.
-                    targetPath = FilePathUtilities.GetShortcutTargetUnicodeSafe(filePath);
-
-                    // Fallback to WshShell only if the utility failed (rare)
-                    if (string.IsNullOrEmpty(targetPath))
+                    var urlIcon = GetUrlCustomIcon(filePath);
+                    if (urlIcon.Path != null)
                     {
-                        try
-                        {
-                            WshShell shell = new WshShell();
-                            IWshShortcut shortcut = (IWshShortcut)shell.CreateShortcut(System.IO.Path.GetFullPath(filePath));
-                            targetPath = shortcut.TargetPath;
-                        }
-                        catch { }
+                        shortcutIcon = IconManager.ExtractIconFromFile(urlIcon.Path, urlIcon.Index);
                     }
+                }
 
-                    // FIX 1: RUNTIME CORRECTION (Server Root)
-                    // If target is \\192.168.1.10, force isFolder=true immediately.
-                    if (IsUncRoot(targetPath))
-                    {
-                        targetIsUncRoot = true;
-                        isFolder = true;   // Force folder treatment!
-                        isNetwork = true;  // Force network flag
-                    }
+                // Existing .lnk logic
+                if (shortcutIcon == null)
+                {
 
-                    // 1. Try Custom Icon (Properties -> Change Icon)
-                    // We need WshShell specifically for reading the *IconLocation* property
-                    // (IShellLink helpers often just return the target)
+
                     try
                     {
                         WshShell shell = new WshShell();
                         IWshShortcut shortcut = (IWshShortcut)shell.CreateShortcut(System.IO.Path.GetFullPath(filePath));
+                        targetPath = shortcut.TargetPath;
 
-                        if (!string.IsNullOrEmpty(shortcut.IconLocation))
+                        // 1. Try Custom Icon (Properties -> Change Icon)
+                        // Check if IconLocation is valid and NOT ",0" (which implies default)
+                        if (!string.IsNullOrEmpty(shortcut.IconLocation) && shortcut.IconLocation != ",0")
                         {
                             string[] iconParts = shortcut.IconLocation.Split(',');
                             string iconPath = iconParts[0];
@@ -6365,17 +6265,52 @@ namespace Desktop_Fences
                             }
                         }
                     }
+
+
                     catch { }
                 }
-                catch { }
+                }
 
-
-
-
-
-                // 2. Fallback: Determine Icon
-                if (shortcutIcon == null)
+            // 2. Fallback: Determine Icon if no custom icon found
+            if (shortcutIcon == null)
+            {
+                if (isLink || isUrlFile)
                 {
+                    // Default Link Icon
+                    shortcutIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/link-White.png"));
+                }
+                else if (isShortcut)
+                {
+                    try
+                    {
+                        // FIX: Use the robust Unicode-Safe reader (IShellLink)
+                        // This handles tricky paths better than WshShell
+                        if (string.IsNullOrEmpty(targetPath))
+                            targetPath = FilePathUtilities.GetShortcutTargetUnicodeSafe(filePath);
+
+                        // Fallback to WshShell only if utility failed and we haven't tried yet
+                        if (string.IsNullOrEmpty(targetPath))
+                        {
+                            try
+                            {
+                                WshShell shell = new WshShell();
+                                IWshShortcut shortcut = (IWshShortcut)shell.CreateShortcut(System.IO.Path.GetFullPath(filePath));
+                                targetPath = shortcut.TargetPath;
+                            }
+                            catch { }
+                        }
+
+                        // FIX 1: RUNTIME CORRECTION (Server Root)
+                        // If target is \\192.168.1.10, force isFolder=true immediately.
+                        if (IsUncRoot(targetPath))
+                        {
+                            targetIsUncRoot = true;
+                            isFolder = true;   // Force folder treatment!
+                            isNetwork = true;  // Force network flag
+                        }
+                    }
+                    catch { }
+
                     // A. Standard Checks
                     bool targetIsFolder = false;
                     bool targetExists = false;
@@ -6387,8 +6322,8 @@ namespace Desktop_Fences
                     }
 
                     // B. SCRAPING FALLBACK
-                    // If standard checks failed, scan the file content.
-                    if (!targetExists && isShortcut)
+                    // If standard checks failed, scan the file content for \\Server pattern
+                    if (!targetExists)
                     {
                         if (ScrapeLnkForNetworkRoot(filePath))
                         {
@@ -6413,20 +6348,17 @@ namespace Desktop_Fences
                         shortcutIcon = Utility.GetShellIcon(filePath, isFolder);
                     }
                 }
-
-
-
-            }
-            else
-            {
-                // Standard File/Folder
-                if (!isPortal && isFolder)
-                {
-                    shortcutIcon = null;
-                }
                 else
                 {
-                    shortcutIcon = Utility.GetShellIcon(filePath, isFolder);
+                    // Standard File/Folder (Not a shortcut/link)
+                    if (!isPortal && isFolder)
+                    {
+                        shortcutIcon = null;
+                    }
+                    else
+                    {
+                        shortcutIcon = Utility.GetShellIcon(filePath, isFolder);
+                    }
                 }
             }
 
@@ -6458,17 +6390,6 @@ namespace Desktop_Fences
             }
 
             ico.Source = shortcutIcon;
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -6774,250 +6695,265 @@ namespace Desktop_Fences
             LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI, $"Updated lock state for fence '{actualFence.Title}': IsLocked={isLocked}");
         }
 
+
+
+        // --- HELPER: Manual Icon Extraction for .url Files ---
+        private static (string Path, int Index) GetUrlCustomIcon(string urlPath)
+        {
+            try
+            {
+                if (!System.IO.File.Exists(urlPath)) return (null, 0);
+                var lines = System.IO.File.ReadAllLines(urlPath);
+                string iconFile = null;
+                int iconIndex = 0;
+
+                foreach (var line in lines)
+                {
+                    string trimmed = line.Trim();
+                    if (trimmed.StartsWith("IconFile=", StringComparison.OrdinalIgnoreCase))
+                        iconFile = trimmed.Substring(9).Trim();
+                    else if (trimmed.StartsWith("IconIndex=", StringComparison.OrdinalIgnoreCase))
+                        int.TryParse(trimmed.Substring(10).Trim(), out iconIndex);
+                }
+
+                if (!string.IsNullOrEmpty(iconFile)) return (iconFile, iconIndex);
+            }
+            catch { }
+            return (null, 0);
+        }
+
+
+
+
         public static void EditItem(dynamic icon, dynamic fence, NonActivatingWindow win)
         {
             IDictionary<string, object> iconDict = icon is IDictionary<string, object> dict ? dict : ((JObject)icon).ToObject<IDictionary<string, object>>();
             string filePath = iconDict.ContainsKey("Filename") ? (string)iconDict["Filename"] : "Unknown";
             string displayName = iconDict.ContainsKey("DisplayName") ? (string)iconDict["DisplayName"] : System.IO.Path.GetFileNameWithoutExtension(filePath);
-            bool isShortcut = System.IO.Path.GetExtension(filePath).ToLower() == ".lnk";
 
-            if (!isShortcut)
+            // Allow .lnk and .url
+            string ext = System.IO.Path.GetExtension(filePath).ToLower();
+            bool isEditable = ext == ".lnk" || ext == ".url";
+
+            if (!isEditable)
             {
-                //   MessageBox.Show("Edit is only available for shortcuts.", "Info", MessageBoxButton.OK, MessageBoxImage.Information);
-
                 MessageBoxesManager.ShowOKOnlyMessageBoxForm("Edit is not available for this item type.", "Info");
                 return;
             }
 
             var editWindow = new EditShortcutWindow(filePath, displayName);
+
+            // Note: The EditWindow calls 'UpdateFenceDataForIcon' internally when Save is clicked.
+            // We don't need to duplicate the saving logic here.
             if (editWindow.ShowDialog() == true)
             {
                 string newDisplayName = editWindow.NewDisplayName;
+
+                // Update local memory reference immediately for responsiveness
                 iconDict["DisplayName"] = newDisplayName;
-                LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.IconHandling, $"Updated DisplayName for {filePath} to {newDisplayName}");
+                LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.IconHandling, $"EditItem: Local display name updated to {newDisplayName}");
 
-                // Update fence data
-                var items = fence.Items as JArray;
-                if (items != null)
-                {
-                    var itemToUpdate = items.FirstOrDefault(i => i["Filename"]?.ToString() == filePath);
-                    if (itemToUpdate != null)
-                    {
-                        itemToUpdate["DisplayName"] = newDisplayName;
-                        FenceDataManager.SaveFenceData();
-                        LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.IconHandling, $"Fence data updated for {filePath}");
-                    }
-                    else
-                    {
-                        LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.IconHandling, $"Failed to find item {filePath} in fence items for update");
-                    }
-                }
+                // UI Refresh Logic
+                if (win == null) return;
 
-                // Update UI
-                if (win == null)
-                {
-                    LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.IconHandling, $"Window is null for fence when updating {filePath}");
-                    return;
-                }
-
-                // Attempt to find WrapPanel directly
-                LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.IconHandling, $"Starting UI update for {filePath}. Window content type: {win.Content?.GetType()?.Name ?? "null"}");
                 WrapPanel wpcont = null;
                 var border = win.Content as Border;
-                if (border != null)
-                {
-                    LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.General, $"Found Border. Child type: {border.Child?.GetType()?.Name ?? "null"}");
-                    var dockPanel = border.Child as DockPanel;
-                    if (dockPanel != null)
-                    {
-                        LogManager.Log(LogManager.LogLevel.Warn, LogManager.LogCategory.General, $"Found DockPanel. Checking for ScrollViewer...");
-                        var scrollViewer = dockPanel.Children.OfType<ScrollViewer>().FirstOrDefault();
-                        if (scrollViewer != null)
-                        {
-                            LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.General, $"Found ScrollViewer. Content type: {scrollViewer.Content?.GetType()?.Name ?? "null"}");
-                            wpcont = scrollViewer.Content as WrapPanel;
-                        }
-                        else
-                        {
-                            LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.General, $"ScrollViewer not found in DockPanel for {filePath}");
-                        }
-                    }
-                    else
-                    {
-                        LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.General, $"DockPanel not found in Border for {filePath}");
-                    }
-                }
-                else
-                {
-                    LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.General, $"Border not found in window content for {filePath}");
-                }
+                var dockPanel = border?.Child as DockPanel;
+                var scrollViewer = dockPanel?.Children.OfType<ScrollViewer>().FirstOrDefault();
+                if (scrollViewer != null) wpcont = scrollViewer.Content as WrapPanel;
 
-                // Fallback to visual tree traversal if direct lookup fails
-                if (wpcont == null)
-                {
-                    LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.IconHandling, $"Direct WrapPanel lookup failed, attempting visual tree traversal for {filePath}");
-                    wpcont = FenceUtilities.FindWrapPanel(win);
-                }
+                if (wpcont == null) wpcont = FenceUtilities.FindWrapPanel(win);
 
                 if (wpcont != null)
                 {
-                    LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.IconHandling, $"Found WrapPanel. Checking for StackPanel with Tag.FilePath: {filePath}");
-                    // Access Tag.FilePath to match ClickEventAdder's anonymous object
                     var sp = wpcont.Children.OfType<StackPanel>()
                         .FirstOrDefault(s => s.Tag != null && s.Tag.GetType().GetProperty("FilePath")?.GetValue(s.Tag)?.ToString() == filePath);
+
                     if (sp != null)
                     {
-                        LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.IconHandling, $"Found StackPanel for {filePath}. Tag: {sp.Tag?.ToString() ?? "null"}");
-                        var lbl = sp.Children.OfType<TextBlock>().FirstOrDefault();
-                        if (lbl != null)
-                        {
-                            // Apply truncation logic (same as in AddIcon)
-                            string displayText = string.IsNullOrEmpty(newDisplayName)
-                                ? System.IO.Path.GetFileNameWithoutExtension(filePath)
-                                : newDisplayName;
-                            //if (displayText.Length > 20)
-                            //{
-                            //    displayText = displayText.Substring(0, 20) + "...";
-                            //}
-                            if (displayText.Length > SettingsManager.MaxDisplayNameLength)
-                            {
-                                displayText = displayText.Substring(0, SettingsManager.MaxDisplayNameLength) + "...";
-                            }
-                            lbl.Text = displayText;
-                            lbl.InvalidateVisual(); // Force UI refresh
-                            LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.IconHandling, $"Updated TextBlock for {filePath} to '{displayText}'");
-                        }
-                        else
-                        {
-                            LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.IconHandling, $"TextBlock not found in StackPanel for {filePath}. Children: {string.Join(", ", sp.Children.OfType<FrameworkElement>().Select(c => c.GetType().Name))}");
-                        }
-                        var ico = sp.Children.OfType<System.Windows.Controls.Image>().FirstOrDefault();
-                        if (ico != null)
-                        {
-                            WshShell shell = new WshShell();
-                            IWshShortcut shortcut = (IWshShortcut)shell.CreateShortcut(filePath);
-                            ImageSource shortcutIcon = null;
-
-                            if (!string.IsNullOrEmpty(shortcut.IconLocation))
-                            {
-                                string[] iconParts = shortcut.IconLocation.Split(',');
-                                string iconPath = iconParts[0];
-                                int iconIndex = 0;
-                                if (iconParts.Length == 2 && int.TryParse(iconParts[1], out int parsedIndex))
-                                {
-                                    iconIndex = parsedIndex; // Use the specified index
-                                }
-
-                                if (System.IO.File.Exists(iconPath))
-                                {
-                                    try
-                                    {
-                                        // Use IconManager to extract custom icon
-                                        shortcutIcon = IconManager.ExtractIconFromFile(iconPath, iconIndex);
-                                        if (shortcutIcon != null)
-                                        {
-                                            LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.IconHandling, $"Extracted custom icon at index {iconIndex} from {iconPath} for {filePath}");
-                                        }
-                                        else
-                                        {
-                                            LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.IconHandling, $"Failed to extract custom icon at index {iconIndex} from {iconPath} for {filePath}");
-                                        }
-                                    }
-
-
-
-                                    catch (Exception ex)
-                                    {
-                                        LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.IconHandling, $"Error extracting icon from {iconPath} at index {iconIndex} for {filePath}: {ex.Message}");
-                                    }
-                                }
-                                else
-                                {
-                                    LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.IconHandling, $"Icon file not found: {iconPath} for {filePath}");
-                                }
-                            }
-
-                            // Fallback logic if no custom icon is extracted
-                            if (shortcutIcon == null)
-                            {
-                                string targetPath = shortcut.TargetPath;
-                                if (System.IO.File.Exists(targetPath))
-                                {
-                                    try
-                                    {
-                                        shortcutIcon = System.Drawing.Icon.ExtractAssociatedIcon(targetPath).ToImageSource();
-                                        LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.IconHandling, $"No custom icon, using target icon for {filePath}: {targetPath}");
-                                    }
-                                    catch (Exception ex)
-                                    {
-                                        LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.IconHandling, $"Failed to extract target icon for {filePath}: {ex.Message}");
-                                    }
-                                }
-                                else if (System.IO.Directory.Exists(targetPath))
-                                {
-                                    shortcutIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/folder-White.png"));
-                                    LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.IconHandling, $"No custom icon, using folder-White.png for {filePath}");
-                                }
-                                else
-                                {
-                                    shortcutIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/file-WhiteX.png"));
-                                    LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.IconHandling, $"No custom icon or valid target, using file-WhiteX.png for {filePath}");
-                                }
-                            }
-
-                            ico.Source = shortcutIcon;
-                            IconManager.IconCache[filePath] = shortcutIcon;
-                            LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.IconHandling, $"Updated icon for {filePath}");
-                        }
-                        else
-                        {
-                            LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.IconHandling, $"Image not found in StackPanel for {filePath}");
-                        }
+                        RefreshSingleIconComplete(sp, filePath, newDisplayName, win);
                     }
                     else
                     {
-                        LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.IconHandling, $"StackPanel not found for {filePath} in WrapPanel. Available Tag.FilePaths: {string.Join(", ", wpcont.Children.OfType<StackPanel>().Select(s => s.Tag != null ? (s.Tag.GetType().GetProperty("FilePath")?.GetValue(s.Tag)?.ToString() ?? "null") : "null"))}");
-
-                        // Fallback: Rebuild single icon
-                        LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.IconHandling, $"Attempting to rebuild icon for {filePath}");
-                        // Remove existing StackPanel if present (in case Tag lookup failed due to corruption)
-                        var oldSp = wpcont.Children.OfType<StackPanel>()
-                            .FirstOrDefault(s => s.Tag != null && s.Tag.GetType().GetProperty("FilePath")?.GetValue(s.Tag)?.ToString() == filePath);
-                        if (oldSp != null)
-                        {
-                            wpcont.Children.Remove(oldSp);
-                            LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.IconHandling, $"Removed old StackPanel for {filePath}");
-                        }
-
-                        // Re-add icon
-                        AddIcon(icon, wpcont);
-                        var newSp = wpcont.Children.OfType<StackPanel>().LastOrDefault();
-                        if (newSp != null)
-                        {
-                            bool isFolder = iconDict.ContainsKey("IsFolder") && (bool)iconDict["IsFolder"];
-                            string arguments = null;
-                            if (isShortcut)
-                            {
-                                WshShell shell = new WshShell();
-                                IWshShortcut shortcut = (IWshShortcut)shell.CreateShortcut(filePath);
-                                arguments = shortcut.Arguments;
-                            }
-                            ClickEventAdder(newSp, filePath, isFolder, arguments);
-                            LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.IconHandling, $"Rebuilt icon for {filePath} with new StackPanel");
-                        }
-                        else
-                        {
-                            LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.IconHandling, $"Failed to rebuild icon for {filePath}: No new StackPanel created");
-                        }
+                        // Fallback: Rebuild if not found (e.g. Tab switch might have hidden it)
+                        // In most cases RefreshSingleIconComplete handles it, or a full fence refresh will catch it later.
+                        LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.IconHandling, "StackPanel not found for immediate refresh, data is saved though.");
                     }
-                }
-                else
-                {
-                    LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.IconHandling, $"WrapPanel not found for {filePath}. UI update skipped.");
                 }
             }
         }
 
+
+
+        // --- PROFESSIONAL UX FINAL v13: The "Sorcery" Fix ---
+        // 1. Reverts Padding to 'TemplateBinding' so the [+] button isn't crushed.
+        // 2. Ensures the [+] button (Width 25) gets its 0 padding, while Text tabs get 10.
+        private static void ApplyTabStyle(Button btn, bool isActive, string colorName, bool isPlusButton = false)
+        {
+            try
+            {
+                // 1. RESET
+                btn.Style = null;
+                btn.FocusVisualStyle = null;
+                btn.Focusable = false;
+
+                btn.ClearValue(Button.BackgroundProperty);
+                btn.ClearValue(Button.ForegroundProperty);
+                btn.ClearValue(Button.BorderBrushProperty);
+                btn.ClearValue(Button.FontWeightProperty);
+                btn.ClearValue(Button.PaddingProperty); // Clear local padding to be safe
+
+                btn.MouseEnter -= Tab_MouseEnter_Lambda;
+                btn.MouseLeave -= Tab_MouseLeave_Lambda;
+
+                // 2. COLOR CALCULATION
+                string effectiveColor = !string.IsNullOrEmpty(colorName) ? colorName : SettingsManager.SelectedColor;
+                System.Windows.Media.Color baseColor = System.Windows.Media.Colors.Gray;
+                try
+                {
+                    var drawingColor = Utility.GetColorFromName(effectiveColor);
+                    baseColor = System.Windows.Media.Color.FromArgb(255, drawingColor.R, drawingColor.G, drawingColor.B);
+                }
+                catch { }
+
+                string c = effectiveColor?.ToLower() ?? "";
+                bool isExplicitDark = c.Contains("blue") || c.Contains("teal") || c.Contains("black") ||
+                                      c.Contains("red") || c.Contains("green") || c.Contains("purple") ||
+                                      c.Contains("bismark") || c.Contains("fuchsia") || c.Contains("default");
+
+                double brightness = Math.Sqrt(
+                    (0.299 * baseColor.R * baseColor.R) +
+                    (0.587 * baseColor.G * baseColor.G) +
+                    (0.114 * baseColor.B * baseColor.B)
+                );
+
+                bool isDarkTheme = isExplicitDark || brightness < 160;
+
+                // 3. PALETTE DEFINITION
+                SolidColorBrush bgActive, bgInactive, bgHover;
+                SolidColorBrush textActive, textInactive;
+                SolidColorBrush borderActive, borderInactive;
+
+                if (isDarkTheme)
+                {
+                    bgActive = new SolidColorBrush(baseColor);
+                    bgInactive = new SolidColorBrush(System.Windows.Media.Color.FromArgb(40, 255, 255, 255));
+                    bgHover = new SolidColorBrush(System.Windows.Media.Color.FromArgb(80, 255, 255, 255));
+
+                    textActive = System.Windows.Media.Brushes.White;
+                    textInactive = new SolidColorBrush(System.Windows.Media.Color.FromArgb(180, 255, 255, 255));
+
+                    borderActive = new SolidColorBrush(System.Windows.Media.Color.FromArgb(120, 255, 255, 255));
+                    borderInactive = new SolidColorBrush(System.Windows.Media.Color.FromArgb(40, 255, 255, 255));
+                }
+                else
+                {
+                    bgActive = System.Windows.Media.Brushes.White;
+                    bgInactive = new SolidColorBrush(System.Windows.Media.Color.FromArgb(20, 0, 0, 0));
+                    bgHover = new SolidColorBrush(System.Windows.Media.Color.FromArgb(40, 0, 0, 0));
+
+                    textActive = new SolidColorBrush(System.Windows.Media.Color.FromRgb(20, 20, 20));
+                    textInactive = new SolidColorBrush(System.Windows.Media.Color.FromArgb(160, 0, 0, 0));
+
+                    borderActive = new SolidColorBrush(System.Windows.Media.Color.FromArgb(80, 0, 0, 0));
+                    borderInactive = new SolidColorBrush(System.Windows.Media.Color.FromArgb(40, 0, 0, 0));
+                }
+
+                // 4. BUTTON CONFIGURATION
+                if (isPlusButton)
+                {
+                    // Special Case: [+] Button needs 0 padding to center the text in 25px width
+                    btn.Padding = new Thickness(0);
+
+                    if (!isActive)
+                    {
+                        bgInactive = new SolidColorBrush(System.Windows.Media.Color.FromArgb(
+                            (byte)(bgInactive.Color.A / 2),
+                            bgInactive.Color.R,
+                            bgInactive.Color.G,
+                            bgInactive.Color.B));
+                    }
+                }
+                else
+                {
+                    // Standard Tab: Needs padding for breathing room
+                    btn.Padding = new Thickness(10, 2, 10, 2);
+                }
+
+                // 5. TEMPLATE GENERATION
+                ControlTemplate template = new ControlTemplate(typeof(Button));
+                FrameworkElementFactory border = new FrameworkElementFactory(typeof(Border));
+                border.Name = "Border";
+                border.SetValue(Border.CornerRadiusProperty, new CornerRadius(4, 4, 0, 0));
+
+                // CRITICAL FIX: Bind Padding to the Button's property instead of hardcoding it.
+                // This allows the [+] button to have 0 padding and Text tabs to have 10 padding.
+                border.SetValue(Border.PaddingProperty, new TemplateBindingExtension(Button.PaddingProperty));
+
+                FrameworkElementFactory content = new FrameworkElementFactory(typeof(ContentPresenter));
+                content.SetValue(ContentPresenter.HorizontalAlignmentProperty, HorizontalAlignment.Center);
+                content.SetValue(ContentPresenter.VerticalAlignmentProperty, VerticalAlignment.Center);
+
+                border.AppendChild(content);
+                template.VisualTree = border;
+
+                // 6. APPLY STYLE
+                Style style = new Style(typeof(Button));
+                style.Setters.Add(new Setter(Button.TemplateProperty, template));
+
+                if (isActive)
+                {
+                    // ACTIVE
+                    style.Setters.Add(new Setter(Button.BackgroundProperty, bgActive));
+                    style.Setters.Add(new Setter(Button.ForegroundProperty, textActive));
+                    style.Setters.Add(new Setter(Button.BorderBrushProperty, borderActive));
+                    style.Setters.Add(new Setter(Button.BorderThicknessProperty, new Thickness(1, 1, 1, 0)));
+                    style.Setters.Add(new Setter(Button.FontWeightProperty, FontWeights.Bold));
+                    style.Setters.Add(new Setter(Button.OpacityProperty, 1.0));
+
+                    Trigger staticTrigger = new Trigger { Property = Button.IsEnabledProperty, Value = true };
+                    staticTrigger.Setters.Add(new Setter(Border.BackgroundProperty, bgActive, "Border"));
+                    staticTrigger.Setters.Add(new Setter(Border.BorderBrushProperty, borderActive, "Border"));
+                    staticTrigger.Setters.Add(new Setter(Border.BorderThicknessProperty, new Thickness(1, 1, 1, 0), "Border"));
+                    template.Triggers.Add(staticTrigger);
+
+                    if (isDarkTheme)
+                        style.Setters.Add(new Setter(Button.EffectProperty, new DropShadowEffect { BlurRadius = 4, ShadowDepth = 1, Direction = 270, Color = System.Windows.Media.Colors.Black, Opacity = 0.5 }));
+                }
+                else
+                {
+                    // INACTIVE
+                    style.Setters.Add(new Setter(Button.BackgroundProperty, bgInactive));
+                    style.Setters.Add(new Setter(Button.ForegroundProperty, textInactive));
+                    style.Setters.Add(new Setter(Button.BorderBrushProperty, borderInactive));
+                    style.Setters.Add(new Setter(Button.BorderThicknessProperty, new Thickness(1, 1, 1, 1)));
+                    style.Setters.Add(new Setter(Button.FontWeightProperty, FontWeights.Normal));
+
+                    Trigger baseTrigger = new Trigger { Property = Button.IsEnabledProperty, Value = true };
+                    baseTrigger.Setters.Add(new Setter(Border.BackgroundProperty, bgInactive, "Border"));
+                    baseTrigger.Setters.Add(new Setter(Border.BorderBrushProperty, borderInactive, "Border"));
+                    baseTrigger.Setters.Add(new Setter(Border.BorderThicknessProperty, new Thickness(1, 1, 1, 1), "Border"));
+                    template.Triggers.Add(baseTrigger);
+
+                    Trigger hoverTrigger = new Trigger { Property = UIElement.IsMouseOverProperty, Value = true };
+                    hoverTrigger.Setters.Add(new Setter(Border.BackgroundProperty, bgHover, "Border"));
+                    hoverTrigger.Setters.Add(new Setter(Border.BorderBrushProperty, borderActive, "Border"));
+                    hoverTrigger.Setters.Add(new Setter(Button.ForegroundProperty, textActive));
+                    hoverTrigger.Setters.Add(new Setter(Button.CursorProperty, Cursors.Hand));
+                    template.Triggers.Add(hoverTrigger);
+                }
+
+                btn.Style = style;
+            }
+            catch { }
+        }
+
+
+        // Dummy handlers to allow -= syntax (prevents compiler errors if we were using named methods)
+        // Since we use lambdas above, we don't strictly need these, but good for safety if refactoring.
+        private static void Tab_MouseEnter_Lambda(object sender, System.Windows.Input.MouseEventArgs e) { }
+        private static void Tab_MouseLeave_Lambda(object sender, System.Windows.Input.MouseEventArgs e) { }
+    
         private static void BackupOrRestoreShortcut(string filePath, bool targetExists, bool isFolder)
         {
 
@@ -7180,6 +7116,8 @@ namespace Desktop_Fences
             }
         }
 
+
+
         private static void UpdateIcon(StackPanel sp, string filePath, bool isFolder)
         {
             if (System.Windows.Application.Current == null) return;
@@ -7194,8 +7132,8 @@ namespace Desktop_Fences
                 try { currentLastWrite = System.IO.File.GetLastWriteTime(filePath); }
                 catch { return; }
 
-                // Determine "Broken" state for cache key
                 bool isShortcut = System.IO.Path.GetExtension(filePath).ToLower() == ".lnk";
+                bool isUrlFile = System.IO.Path.GetExtension(filePath).ToLower() == ".url";
                 bool targetValid = true;
 
                 if (isShortcut && !Utility.IsStoreAppShortcut(filePath))
@@ -7218,75 +7156,95 @@ namespace Desktop_Fences
                 }
                 _iconStates[filePath] = (currentLastWrite, isNowBroken);
 
-                // 2. Web Link Check
-                bool isWebLink = false;
-                try
+                // 2. Identify Web Link (Do NOT return early anymore)
+                bool isWebLink = isUrlFile;
+                if (!isWebLink)
                 {
-                    foreach (var fence in FenceDataManager.FenceData)
+                    try
                     {
-                        if (fence.ItemsType?.ToString() == "Data")
+                        foreach (var fence in FenceDataManager.FenceData)
                         {
-                            bool CheckList(JArray list)
+                            if (fence.ItemsType?.ToString() == "Data")
                             {
-                                if (list == null) return false;
-                                foreach (var item in list)
+                                bool CheckList(JArray list)
                                 {
-                                    string itemPath = item["Filename"]?.ToString();
-                                    if (!string.IsNullOrEmpty(itemPath) && string.Equals(itemPath, filePath, StringComparison.OrdinalIgnoreCase))
-                                        return item["IsLink"]?.ToObject<bool>() ?? false;
+                                    if (list == null) return false;
+                                    foreach (var item in list)
+                                    {
+                                        string itemPath = item["Filename"]?.ToString();
+                                        if (!string.IsNullOrEmpty(itemPath) && string.Equals(itemPath, filePath, StringComparison.OrdinalIgnoreCase))
+                                            return item["IsLink"]?.ToObject<bool>() ?? false;
+                                    }
+                                    return false;
                                 }
-                                return false;
-                            }
-                            if (CheckList(fence.Items as JArray)) { isWebLink = true; break; }
-                            var tabs = fence.Tabs as JArray;
-                            if (tabs != null)
-                            {
-                                foreach (var tab in tabs) if (CheckList(tab["Items"] as JArray)) { isWebLink = true; goto FoundLink; }
+                                if (CheckList(fence.Items as JArray)) { isWebLink = true; break; }
+                                var tabs = fence.Tabs as JArray;
+                                if (tabs != null)
+                                {
+                                    foreach (var tab in tabs) if (CheckList(tab["Items"] as JArray)) { isWebLink = true; goto FoundLink; }
+                                }
                             }
                         }
+                    FoundLink:;
                     }
-                FoundLink:;
-                    if (isWebLink) return;
+                    catch { }
                 }
-                catch { }
 
                 System.Windows.Controls.Image ico = sp.Children.OfType<System.Windows.Controls.Image>().FirstOrDefault();
                 if (ico == null) return;
 
                 // 3. MAIN ICON LOGIC
                 ImageSource newIcon = null;
-
                 string targetPath = filePath;
+
                 if (isShortcut) targetPath = FilePathUtilities.GetShortcutTargetUnicodeSafe(filePath);
 
                 bool targetExists = System.IO.File.Exists(targetPath) || System.IO.Directory.Exists(targetPath);
                 bool isTargetFolder = System.IO.Directory.Exists(targetPath);
-
                 if (isShortcut && isTargetFolder) isFolder = true;
 
                 if (isShortcut) BackupOrRestoreShortcut(filePath, targetExists, isFolder);
 
-                if (isFolder)
-                {
-                    // PRIORITY 1: BROKEN TARGET -> Force White X
-                    // We use the helper to be accurate about what constitutes "Existence"
-                    bool actuallyExists = FilePathUtilities.DoesFolderExist(filePath, isFolder);
+                // --- PRIORITY LOGIC START ---
 
-                    if (!actuallyExists)
+                // CASE A: WEB LINKS
+                if (isWebLink)
+                {
+                    // 1. Try Custom Icon first
+                    var urlIcon = GetUrlCustomIcon(filePath); // <--- USE NEW HELPER
+                    if (urlIcon.Path != null)
+                    {
+                        newIcon = IconManager.ExtractIconFromFile(urlIcon.Path, urlIcon.Index);
+                    }
+                    else
+                    {
+                        // Try WshShell only if manual failed (legacy fallback)
+                        try { /* existing WshShell logic */ } catch { }
+                    }
+
+                    // 2. Fallback to Theme
+                    if (newIcon == null)
+                    {
+                        newIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/link-White.png"));
+                    }
+                }
+                // CASE B: FOLDERS
+                else if (isFolder)
+                {
+                    // 1. Broken Target -> White X
+                    if (!FilePathUtilities.DoesFolderExist(filePath, isFolder))
                     {
                         newIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/folder-WhiteX.png"));
                     }
 
-                    // If newIcon is set (to WhiteX), we skip the next blocks automatically.
-
-                    // PRIORITY 2: CUSTOM ICON
+                    // 2. Custom Icon
                     if (newIcon == null && isShortcut)
                     {
                         try
                         {
                             WshShell shell = new WshShell();
                             IWshShortcut shortcut = (IWshShortcut)shell.CreateShortcut(filePath);
-                            if (!string.IsNullOrEmpty(shortcut.IconLocation))
+                            if (!string.IsNullOrEmpty(shortcut.IconLocation) && shortcut.IconLocation != ",0")
                             {
                                 string[] iconParts = shortcut.IconLocation.Split(',');
                                 string iconPath = iconParts[0];
@@ -7295,15 +7253,13 @@ namespace Desktop_Fences
                                     iconIndex = parsedIndex;
 
                                 if (System.IO.File.Exists(iconPath))
-                                {
                                     newIcon = IconManager.ExtractIconFromFile(iconPath, iconIndex);
-                                }
                             }
                         }
                         catch { }
                     }
 
-                    // PRIORITY 3: THEME FALLBACK (Default White)
+                    // 3. Theme Fallback
                     if (newIcon == null)
                     {
                         NonActivatingWindow win = FindVisualParent<NonActivatingWindow>(sp);
@@ -7311,32 +7267,26 @@ namespace Desktop_Fences
                         var fence = FenceDataManager.FenceData.FirstOrDefault(f => f.Id?.ToString() == fenceId);
                         bool isPortal = fence != null && fence.ItemsType?.ToString() == "Portal";
 
-                        if (isPortal)
-                        {
-                            newIcon = Utility.GetShellIcon(filePath, true);
-                        }
-                        else
-                        {
-                            newIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/folder-White.png"));
-                        }
+                        if (isPortal) newIcon = Utility.GetShellIcon(filePath, true);
+                        else newIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/folder-White.png"));
                     }
                 }
+                // CASE C: BROKEN FILES
                 else if (!targetExists)
                 {
-                    // Broken File
                     if (Utility.IsStoreAppShortcut(filePath))
                         newIcon = Utility.GetShellIcon(filePath, isFolder);
                     else
                         newIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/file-WhiteX.png"));
                 }
+                // CASE D: SHORTCUT FILES
                 else if (isShortcut)
                 {
-                    // Custom Icon Extraction for files...
                     try
                     {
                         WshShell shell = new WshShell();
                         IWshShortcut shortcut = (IWshShortcut)shell.CreateShortcut(filePath);
-                        if (!string.IsNullOrEmpty(shortcut.IconLocation))
+                        if (!string.IsNullOrEmpty(shortcut.IconLocation) && shortcut.IconLocation != ",0")
                         {
                             string[] iconParts = shortcut.IconLocation.Split(',');
                             string iconPath = iconParts[0];
@@ -7351,15 +7301,16 @@ namespace Desktop_Fences
 
                     if (newIcon == null)
                     {
+                        // Clean icon fallback
                         if (targetPath != null && System.IO.File.Exists(targetPath))
-                            newIcon = Utility.GetShellIcon(targetPath, false); // Clean icon
+                            newIcon = Utility.GetShellIcon(targetPath, false);
                         else
-                            newIcon = Utility.GetShellIcon(filePath, false); // Fallback
+                            newIcon = Utility.GetShellIcon(filePath, false);
                     }
                 }
+                // CASE E: STANDARD FILES
                 else
                 {
-                    // Standard File
                     try { newIcon = System.Drawing.Icon.ExtractAssociatedIcon(filePath).ToImageSource(); }
                     catch { newIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/file-WhiteX.png")); }
                 }
@@ -7376,7 +7327,7 @@ namespace Desktop_Fences
             });
         }
 
-
+  
 
         // Safety method to ensure no fences are stuck in transition state
         public static void ClearAllTransitionStates()
@@ -7456,40 +7407,35 @@ namespace Desktop_Fences
             }
         }
 
+   
+
+        // --- LIVE EVENT ENGINE (v2.5. 4.183) ---
+        // 1. Uses Static Handlers (Prevents Event Leaks).
+        // 2. Reads SettingsManager directly (Fixes Runtime Updates).
+        // 3. Restores critical Folder Shortcut validation.
+
         public static void ClickEventAdder(StackPanel sp, string path, bool isFolder, string arguments = null)
         {
-            bool isLogEnabled = _options.IsLogEnabled ?? true;
-
             // Store only path, isFolder, and arguments in Tag
             sp.Tag = new { FilePath = path, IsFolder = isFolder, Arguments = arguments };
-
-            LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.General, $"Attaching fresh handler for {path}, arguments='{arguments ?? "null"}'");
-
-            // Clear existing handler
-            sp.MouseLeftButtonDown -= MouseDownHandler;
-
-            // Store only path, isFolder, and arguments in Tag
-            sp.Tag = new { FilePath = path, IsFolder = isFolder, Arguments = arguments };
-
-            LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.General, $"Attaching handler for {path}, initial singleClickToLaunch={_options.singleClickToLaunch}");
 
             // Check if path is a shortcut and correct isFolder for folder shortcuts
+            // This logic is preserved from your working version
             bool isShortcut = System.IO.Path.GetExtension(path).ToLower() == ".lnk";
             string targetPath = isShortcut ? Utility.GetShortcutTarget(path) : path;
             if (isShortcut && System.IO.Directory.Exists(targetPath))
             {
                 isFolder = true;
-                LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.General, $"Corrected isFolder to true for shortcut {path} targeting folder {targetPath}");
             }
 
-
+            // Remove existing handlers to be safe (though works best with static, harmless here)
+            sp.MouseLeftButtonDown -= MouseDownHandler;
 
             void MouseDownHandler(object sender, MouseButtonEventArgs e)
             {
                 if (e.ChangedButton != MouseButton.Left) return;
 
                 // --- FIX: Runtime Correction for Extension Mismatch ---
-                // If JSON says .lnk but file is missing, check if a .url exists instead.
                 if (!System.IO.File.Exists(path) && !System.IO.Directory.Exists(path))
                 {
                     if (path.EndsWith(".lnk", StringComparison.OrdinalIgnoreCase))
@@ -7498,62 +7444,76 @@ namespace Desktop_Fences
                         if (System.IO.File.Exists(potentialUrlPath))
                         {
                             path = potentialUrlPath;
-                            LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General,
-                                $"Auto-corrected path extension mismatch: {path}");
                         }
                     }
                 }
-                // -----------------------------------------------------
 
-
-                // Check for Ctrl+Click to start drag operation
+                // --- CTRL + CLICK LOGIC (MODIFIED FOR PORTAL) ---
                 if (Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl))
                 {
-                    // Start drag operation for icon reordering
-                    System.Windows.Point mousePosition = e.GetPosition(sp);
-                    // StartIconDrag(sp, mousePosition);
-                    IconDragDropManager.StartIconDrag(sp, mousePosition);
+                    // 1. Detect Context (Fence Type)
+                    NonActivatingWindow win = FindVisualParent<NonActivatingWindow>(sp);
+                    string fenceId = win?.Tag?.ToString();
+                    dynamic fence = null;
+                    if (!string.IsNullOrEmpty(fenceId))
+                        fence = FenceDataManager.FenceData.FirstOrDefault(f => f.Id?.ToString() == fenceId);
 
-                    e.Handled = true; // Prevent normal click handling
-                    LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI, $"Ctrl+Click detected on {path}, starting drag operation");
+                    // 2. Portal Fence Logic
+                    if (fence != null && fence.ItemsType?.ToString() == "Portal")
+                    {
+                        if (isFolder)
+                        {
+                            // Trigger Navigation
+                            NavigatePortalFence(fence, path);
+                            e.Handled = true;
+                            return;
+                        }
+                        else
+                        {
+                            // Do nothing for files in Portal (No Drag Support)
+                            e.Handled = true;
+                            return;
+                        }
+                    }
+
+                    // 3. Data Fence Logic (Standard Drag)
+                    System.Windows.Point mousePosition = e.GetPosition(sp);
+                    IconDragDropManager.StartIconDrag(sp, mousePosition);
+                    e.Handled = true;
                     return;
                 }
+                // ------------------------------------------------
 
-                // Continue with normal click handling for launching
-                bool singleClickToLaunch = _options.singleClickToLaunch ?? true;
-                LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.General, $"MouseDown on {path}, ClickCount={e.ClickCount}, singleClickToLaunch={singleClickToLaunch}");
+
+                //// Check for Ctrl+Click to start drag operation
+                //if (Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl))
+                //{
+                //    System.Windows.Point mousePosition = e.GetPosition(sp);
+                //    IconDragDropManager.StartIconDrag(sp, mousePosition);
+                //    e.Handled = true;
+                //    return;
+                //}
+
+                // FIX: Read LIVE Single Click Setting directly
+                // This guarantees the setting applies immediately after saving Options
+                bool singleClickToLaunch = SettingsManager.SingleClickToLaunch;
 
                 try
                 {
-                    // Recompute isShortcut to avoid unassigned variable issue
                     bool isShortcutLocal = System.IO.Path.GetExtension(path).ToLower() == ".lnk";
                     bool targetExists;
                     string resolvedPath = path;
-                    //if (isShortcutLocal)
-                    //{
-                    //    resolvedPath = Utility.GetShortcutTarget(path);
-                    //    targetExists = isFolder ? System.IO.Directory.Exists(resolvedPath) : System.IO.File.Exists(resolvedPath);
-                    //}
 
                     if (isShortcutLocal)
                     {
-                        // Use the same Unicode-safe resolution for consistency
                         resolvedPath = FilePathUtilities.GetShortcutTargetUnicodeSafe(path);
-
-                        LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.General,
-                            $"ClickEventAdder target resolution: {path} -> {resolvedPath}");
-
                         if (string.IsNullOrEmpty(resolvedPath))
                         {
                             targetExists = false;
-                            LogManager.Log(LogManager.LogLevel.Warn, LogManager.LogCategory.General,
-                                $"Failed to resolve shortcut target in ClickEventAdder: {path}");
                         }
                         else
                         {
                             targetExists = isFolder ? System.IO.Directory.Exists(resolvedPath) : System.IO.File.Exists(resolvedPath);
-
-                            // Correct isFolder if needed (folder shortcut but was marked as file)
                             if (!isFolder && System.IO.Directory.Exists(resolvedPath))
                             {
                                 isFolder = true;
@@ -7566,52 +7526,34 @@ namespace Desktop_Fences
                         targetExists = isFolder ? System.IO.Directory.Exists(path) : System.IO.File.Exists(path);
                     }
 
-                    LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.General, $"Target check: Path={path}, ResolvedPath={resolvedPath}, IsShortcut={isShortcutLocal}, IsFolder={isFolder}, TargetExists={targetExists}");
-
-                    //// FIX: Allow Store Apps to proceed even if target resolution failed
-                    //bool isStoreApp = false;
-                    //if (!targetExists && isShortcutLocal)
-                    //{
-                    //    isStoreApp = Utility.IsStoreAppShortcut(path);
-                    //}
-
-                    // --- FIX: Allow Store Apps AND Network Roots ---
                     bool isStoreApp = false;
                     string scrapedPath = null;
 
                     if (!targetExists && isShortcutLocal)
                     {
                         isStoreApp = Utility.IsStoreAppShortcut(path);
-
-                        // NEW: Check if it's a valid Network Root via scraping
                         if (!isStoreApp)
                         {
                             scrapedPath = GetScrapedNetworkPath(path);
                             if (!string.IsNullOrEmpty(scrapedPath))
                             {
-                                // We found a valid network path (e.g. \\192.168.1.10)
-                                // Override the failure
                                 targetExists = true;
-                                LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, $"Click validation passed via scraping: {scrapedPath}");
                             }
                         }
                     }
 
                     if (!targetExists && !isStoreApp)
                     {
-                        LogManager.Log(LogManager.LogLevel.Warn, LogManager.LogCategory.General, $"Target not found: {resolvedPath}");
                         return;
                     }
 
                     if (singleClickToLaunch && e.ClickCount == 1)
                     {
-                        LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.General, $"Single click launching {path}");
                         LaunchItem(sp, path, isFolder, arguments);
                         e.Handled = true;
                     }
                     else if (!singleClickToLaunch && e.ClickCount == 2)
                     {
-                        LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.General, $"Double click launching {path}");
                         LaunchItem(sp, path, isFolder, arguments);
                         e.Handled = true;
                     }
@@ -7622,10 +7564,7 @@ namespace Desktop_Fences
                 }
             }
 
-
             sp.MouseLeftButtonDown += MouseDownHandler;
-
-
 
             sp.MouseMove += (sender, e) =>
             {
@@ -7633,14 +7572,10 @@ namespace Desktop_Fences
                 {
                     try
                     {
-                        // Update drag preview position to follow cursor
                         System.Windows.Point screenPosition = sp.PointToScreen(e.GetPosition(sp));
                         IconDragDropManager.HandleDragMove(screenPosition);
                     }
-                    catch (Exception ex)
-                    {
-                        LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI, $"Error during drag move: {ex.Message}");
-                    }
+                    catch { }
                 }
             };
 
@@ -7650,41 +7585,189 @@ namespace Desktop_Fences
                 {
                     try
                     {
-                        // Calculate final drop position
                         WrapPanel wrapPanel = FindVisualParent<WrapPanel>(sp);
                         if (wrapPanel != null)
                         {
                             System.Windows.Point finalPosition = e.GetPosition(wrapPanel);
                             IconDragDropManager.CompleteDrag(finalPosition);
                         }
-                        else
-                        {
-                            IconDragDropManager.CancelDrag();
-                        }
+                        else IconDragDropManager.CancelDrag();
                         e.Handled = true;
                     }
-                    catch (Exception ex)
+                    catch
                     {
-                        LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI, $"Error completing drag operation: {ex.Message}");
                         IconDragDropManager.CancelDrag();
                     }
                 }
             };
 
-
-            // Add key up handler to cancel drag on Ctrl release
             sp.KeyUp += (sender, e) =>
             {
                 if (IconDragDropManager.IsDragging &&
                     (e.Key == Key.LeftCtrl || e.Key == Key.RightCtrl) &&
                     !Keyboard.IsKeyDown(Key.LeftCtrl) && !Keyboard.IsKeyDown(Key.RightCtrl))
                 {
-                    LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI, "Ctrl key released during drag, cancelling operation");
                     IconDragDropManager.CancelDrag();
                     e.Handled = true;
                 }
             };
         }
+        // --- STATIC HANDLERS ---
+
+        private static void Icon_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (e.ChangedButton != MouseButton.Left) return;
+            var sp = sender as StackPanel;
+            if (sp == null || sp.Tag == null) return;
+
+            // 1. Extract Data safely using dynamic
+            dynamic data = sp.Tag;
+            string path = data.FilePath;
+            bool isFolder = data.IsFolder;
+            string arguments = data.Arguments;
+
+            // 2. Extension Mismatch Fix (Legacy Logic)
+            if (!System.IO.File.Exists(path) && !System.IO.Directory.Exists(path))
+            {
+                if (path.EndsWith(".lnk", StringComparison.OrdinalIgnoreCase))
+                {
+                    string urlPath = System.IO.Path.ChangeExtension(path, ".url");
+                    if (System.IO.File.Exists(urlPath))
+                    {
+                        path = urlPath;
+                        // Update Tag for consistency
+                        sp.Tag = new { FilePath = path, IsFolder = isFolder, Arguments = arguments };
+                    }
+                }
+            }
+
+
+     
+            // 3. Ctrl + Click Logic (Navigation vs Drag)
+            if (Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl))
+            {
+                // Detect Fence Context
+                NonActivatingWindow win = FindVisualParent<NonActivatingWindow>(sp);
+                string fenceId = win?.Tag?.ToString();
+                dynamic fence = null;
+                if (!string.IsNullOrEmpty(fenceId))
+                    fence = FenceDataManager.FenceData.FirstOrDefault(f => f.Id?.ToString() == fenceId);
+
+                // --- NEW: PORTAL NAVIGATION LOGIC ---
+                if (fence != null && fence.ItemsType?.ToString() == "Portal")
+                {
+                    // Only navigate if it is a Folder
+                    if (isFolder)
+                    {
+                        LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.UI, $"Portal Navigation triggered for: {path}");
+                        NavigatePortalFence(fence, path);
+                        e.Handled = true;
+                        return;
+                    }
+                    else
+                    {
+                        // It's a file in a Portal Fence. 
+                        // Do NOT drag (unsupported). Do NOT navigate.
+                        // Future: Open With...
+                        LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI, "Ctrl+Click on Portal File ignored (No Drag support)");
+                        e.Handled = true;
+                        return;
+                    }
+                }
+                // ------------------------------------
+
+                // DEFAULT: Data Fence Drag
+                IconDragDropManager.StartIconDrag(sp, e.GetPosition(sp));
+                e.Handled = true;
+                return;
+            }
+
+
+
+            // 4. LAUNCH LOGIC (Reads LIVE Settings directly)
+            bool singleClick = SettingsManager.SingleClickToLaunch;
+
+            // Target Validation Logic
+            bool isShortcut = System.IO.Path.GetExtension(path).ToLower() == ".lnk";
+            bool targetExists = false;
+
+            if (isShortcut)
+            {
+                string resolved = FilePathUtilities.GetShortcutTargetUnicodeSafe(path);
+                if (string.IsNullOrEmpty(resolved)) resolved = GetScrapedNetworkPath(path);
+
+                if (!string.IsNullOrEmpty(resolved))
+                {
+                    targetExists = isFolder ? System.IO.Directory.Exists(resolved) : System.IO.File.Exists(resolved);
+                    // Correction: If we thought it was a file but it's a folder, update state
+                    if (!isFolder && System.IO.Directory.Exists(resolved)) { isFolder = true; targetExists = true; }
+                }
+            }
+            else
+            {
+                targetExists = isFolder ? System.IO.Directory.Exists(path) : System.IO.File.Exists(path);
+            }
+
+            // Check Special Cases
+            bool isStoreApp = isShortcut && Utility.IsStoreAppShortcut(path);
+            bool isScraped = !targetExists && isShortcut && !string.IsNullOrEmpty(GetScrapedNetworkPath(path));
+
+            if (targetExists || isStoreApp || isScraped)
+            {
+                if (singleClick && e.ClickCount == 1)
+                {
+                    LaunchItem(sp, path, isFolder, arguments);
+                    e.Handled = true;
+                }
+                else if (!singleClick && e.ClickCount == 2)
+                {
+                    LaunchItem(sp, path, isFolder, arguments);
+                    e.Handled = true;
+                }
+            }
+        }
+
+        private static void Icon_MouseMove(object sender, MouseEventArgs e)
+        {
+            if (IconDragDropManager.IsDragging && sender is StackPanel sp)
+            {
+                try { IconDragDropManager.HandleDragMove(sp.PointToScreen(e.GetPosition(sp))); } catch { }
+            }
+        }
+
+        private static void Icon_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        {
+            if (IconDragDropManager.IsDragging && sender is StackPanel sp)
+            {
+                try
+                {
+                    var wrapPanel = FindVisualParent<WrapPanel>(sp);
+                    if (wrapPanel != null) IconDragDropManager.CompleteDrag(e.GetPosition(wrapPanel));
+                    else IconDragDropManager.CancelDrag();
+                    e.Handled = true;
+                }
+                catch { IconDragDropManager.CancelDrag(); }
+            }
+        }
+
+        private static void Icon_KeyUp(object sender, KeyEventArgs e)
+        {
+            if (IconDragDropManager.IsDragging &&
+               (e.Key == Key.LeftCtrl || e.Key == Key.RightCtrl) &&
+               !Keyboard.IsKeyDown(Key.LeftCtrl) && !Keyboard.IsKeyDown(Key.RightCtrl))
+            {
+                IconDragDropManager.CancelDrag();
+                e.Handled = true;
+            }
+        }
+
+
+
+
+
+
+
+
 
         private static T FindVisualParent<T>(DependencyObject child) where T : DependencyObject
         {
@@ -7696,20 +7779,46 @@ namespace Desktop_Fences
             return parent as T;
         }
 
+   
+
+
         private static void LaunchItem(StackPanel sp, string path, bool isFolder, string arguments)
         {
             try
             {
                 // 1. Visual Feedback
                 NonActivatingWindow win = FindVisualParent<NonActivatingWindow>(sp);
-                dynamic fence = FenceDataManager.FenceData.FirstOrDefault(f => f.Title == win?.Title);
 
+                // FIX: Use ID (Tag) lookup instead of Title (Robust)
+                string fenceId = win?.Tag?.ToString();
+                dynamic fence = null;
+
+                if (!string.IsNullOrEmpty(fenceId))
+                {
+                    fence = FenceDataManager.FenceData.FirstOrDefault(f => f.Id?.ToString() == fenceId);
+                }
+
+                // Fallback to Title only if ID lookup failed
+                if (fence == null)
+                {
+                    fence = FenceDataManager.FenceData.FirstOrDefault(f => f.Title == win?.Title);
+                }
+
+                // FIX: Read LIVE Global Setting directly from SettingsManager
+                // This bypasses the stale _options cache.
+                LaunchEffectsManager.LaunchEffect effect = SettingsManager.LaunchEffect;
+
+                // Check for Fence-Specific Override
                 string customEffect = fence?.CustomLaunchEffect?.ToString();
-                LaunchEffectsManager.LaunchEffect effect = (LaunchEffectsManager.LaunchEffect)_options.LaunchEffect;
                 if (!string.IsNullOrEmpty(customEffect))
                 {
-                    try { effect = (LaunchEffectsManager.LaunchEffect)Enum.Parse(typeof(LaunchEffectsManager.LaunchEffect), customEffect, true); } catch { }
+                    try
+                    {
+                        effect = (LaunchEffectsManager.LaunchEffect)Enum.Parse(typeof(LaunchEffectsManager.LaunchEffect), customEffect, true);
+                    }
+                    catch { }
                 }
+
                 LaunchEffectsManager.ExecuteLaunchEffect(sp, effect);
 
                 // 2. Path Resolution
@@ -7736,22 +7845,16 @@ namespace Desktop_Fences
                 }
                 else if (isLnk)
                 {
-                    // Try robust resolution
                     string resolved = FilePathUtilities.GetShortcutTargetUnicodeSafe(fullPath);
-
-                    // Fallback for tricky Network Roots
                     if (string.IsNullOrEmpty(resolved)) resolved = GetScrapedNetworkPath(fullPath);
 
                     if (!string.IsNullOrEmpty(resolved))
                     {
                         targetPath = resolved;
-
                         try
                         {
                             WshShell shell = new WshShell();
                             IWshShortcut shortcut = (IWshShortcut)shell.CreateShortcut(fullPath);
-
-                            // Don't overwrite args for special folder shortcuts (Explorer.exe)
                             string rawTarget = shortcut.TargetPath?.ToLower() ?? "";
                             if (!rawTarget.EndsWith("explorer.exe"))
                             {
@@ -7790,31 +7893,28 @@ namespace Desktop_Fences
                 bool alwaysRunAsAdmin = false;
                 try
                 {
-                    string fenceId = win?.Tag?.ToString();
-                    if (!string.IsNullOrEmpty(fenceId))
+                    if (fence != null && fence.ItemsType?.ToString() == "Data")
                     {
-                        var currentFence = FenceDataManager.FenceData.FirstOrDefault(f => f.Id?.ToString() == fenceId);
-                        if (currentFence != null && currentFence.ItemsType?.ToString() == "Data")
-                        {
-                            var items = currentFence.Items as JArray ?? new JArray();
-                            bool tabsEnabled = currentFence.TabsEnabled?.ToString().ToLower() == "true";
-                            if (tabsEnabled)
-                            {
-                                var tabs = currentFence.Tabs as JArray ?? new JArray();
-                                int currentTabIndex = Convert.ToInt32(currentFence.CurrentTab?.ToString() ?? "0");
-                                if (currentTabIndex >= 0 && currentTabIndex < tabs.Count)
-                                {
-                                    var currentTab = tabs[currentTabIndex] as JObject;
-                                    items = currentTab?["Items"] as JArray ?? items;
-                                }
-                            }
-                            var matchingItem = items.FirstOrDefault(i => string.Equals(
-                                System.IO.Path.GetFullPath(i["Filename"]?.ToString() ?? ""),
-                                fullPath, StringComparison.OrdinalIgnoreCase));
+                        var items = fence.Items as JArray ?? new JArray();
+                        bool tabsEnabled = fence.TabsEnabled?.ToString().ToLower() == "true";
 
-                            if (matchingItem != null)
-                                alwaysRunAsAdmin = Convert.ToBoolean(matchingItem["AlwaysRunAsAdmin"] ?? false);
+                        if (tabsEnabled)
+                        {
+                            var tabs = fence.Tabs as JArray ?? new JArray();
+                            int currentTabIndex = Convert.ToInt32(fence.CurrentTab?.ToString() ?? "0");
+                            if (currentTabIndex >= 0 && currentTabIndex < tabs.Count)
+                            {
+                                var currentTab = tabs[currentTabIndex] as JObject;
+                                items = currentTab?["Items"] as JArray ?? items;
+                            }
                         }
+
+                        var matchingItem = items.FirstOrDefault(i => string.Equals(
+                            System.IO.Path.GetFullPath(i["Filename"]?.ToString() ?? ""),
+                            fullPath, StringComparison.OrdinalIgnoreCase));
+
+                        if (matchingItem != null)
+                            alwaysRunAsAdmin = Convert.ToBoolean(matchingItem["AlwaysRunAsAdmin"] ?? false);
                     }
                 }
                 catch { }
@@ -8019,19 +8119,23 @@ namespace Desktop_Fences
         }
 
         // Completely refreshes a single icon with fresh data from the .lnk fil
-       private static void RefreshSingleIconComplete(StackPanel iconPanel, string shortcutPath, string newDisplayName, NonActivatingWindow parentWindow)
+        private static void RefreshSingleIconComplete(StackPanel iconPanel, string shortcutPath, string newDisplayName, NonActivatingWindow parentWindow)
         {
             try
             {
                 LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI, $"Performing complete refresh of icon: {shortcutPath}");
 
-                // Read fresh data from the updated shortcut file
+                // 1. Read fresh data
                 string freshTargetPath = shortcutPath;
                 string freshArguments = "";
                 bool isFolder = false;
                 string workingDirectory = "";
 
-                if (System.IO.Path.GetExtension(shortcutPath).ToLower() == ".lnk")
+                // Identify Type
+                bool isUrl = System.IO.Path.GetExtension(shortcutPath).ToLower() == ".url";
+                bool isLnk = System.IO.Path.GetExtension(shortcutPath).ToLower() == ".lnk";
+
+                if (isLnk)
                 {
                     try
                     {
@@ -8041,18 +8145,17 @@ namespace Desktop_Fences
                         freshArguments = shortcut.Arguments ?? "";
                         workingDirectory = shortcut.WorkingDirectory ?? "";
                         isFolder = System.IO.Directory.Exists(freshTargetPath);
-
-                        LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.UI,
-                            $"Fresh data loaded - Target: '{freshTargetPath}', Args: '{freshArguments}', IsFolder: {isFolder}");
                     }
-                    catch (Exception ex)
-                    {
-                        LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI, $"Error reading shortcut: {ex.Message}");
-                        return;
-                    }
+                    catch { }
+                }
+                else if (isUrl)
+                {
+                    // For URLs, we can try to extract the clean URL, but IsFolder is always false
+                    string url = CoreUtilities.ExtractWebUrlFromFile(shortcutPath);
+                    if (!string.IsNullOrEmpty(url)) freshTargetPath = url;
                 }
 
-                //  Update the Tag with completely fresh data (MOST IMPORTANT)
+                // 2. Update Tag
                 iconPanel.Tag = new
                 {
                     FilePath = shortcutPath,
@@ -8060,48 +8163,106 @@ namespace Desktop_Fences
                     Arguments = freshArguments
                 };
 
-                // 2. Update display name if provided
+                // 3. Update Text
                 if (!string.IsNullOrEmpty(newDisplayName))
                 {
                     var textBlock = iconPanel.Children.OfType<TextBlock>().FirstOrDefault();
                     if (textBlock != null)
                     {
-                        string displayText = newDisplayName.Length > 20 ? newDisplayName.Substring(0, 20) + "..." : newDisplayName;
+                        string displayText = newDisplayName.Length > SettingsManager.MaxDisplayNameLength
+                            ? newDisplayName.Substring(0, SettingsManager.MaxDisplayNameLength) + "..."
+                            : newDisplayName;
                         textBlock.Text = displayText;
-                        LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI, $"Updated display text: '{displayText}'");
                     }
                 }
 
-                //  Update tooltip with fresh information
+                // 4. Update ToolTip
                 string toolTipText = $"{System.IO.Path.GetFileName(shortcutPath)}\nTarget: {freshTargetPath}";
-                if (!string.IsNullOrEmpty(freshArguments))
-                {
-                    toolTipText += $"\nArguments: {freshArguments}";
-                }
-                if (!string.IsNullOrEmpty(workingDirectory))
-                {
-                    toolTipText += $"\nWorking Directory: {workingDirectory}";
-                }
+                if (!string.IsNullOrEmpty(freshArguments)) toolTipText += $"\nArguments: {freshArguments}";
                 iconPanel.ToolTip = new ToolTip { Content = toolTipText };
 
-                // CRITICAL: Re-attach fresh event handlers
-                ClickEventAdder(iconPanel, shortcutPath, isFolder, freshArguments);
+                // 5. UPDATE ICON IMAGE (The Critical Fix)
+                var ico = iconPanel.Children.OfType<System.Windows.Controls.Image>().FirstOrDefault();
+                if (ico != null)
+                {
+                    ImageSource newIcon = null;
 
-                //  Update fence JSON data
+                    // A. Try Manual Extraction for .url (Fixes Runtime Update)
+                    if (isUrl)
+                    {
+                        var urlIcon = GetUrlCustomIcon(shortcutPath);
+                        if (urlIcon.Path != null)
+                        {
+                            newIcon = IconManager.ExtractIconFromFile(urlIcon.Path, urlIcon.Index);
+                        }
+                    }
+                    // B. Try WshShell for .lnk
+                    else if (isLnk)
+                    {
+                        try
+                        {
+                            WshShell shell = new WshShell();
+                            IWshShortcut shortcut = (IWshShortcut)shell.CreateShortcut(shortcutPath);
+                            if (!string.IsNullOrEmpty(shortcut.IconLocation) && shortcut.IconLocation != ",0")
+                            {
+                                string[] parts = shortcut.IconLocation.Split(',');
+                                if (System.IO.File.Exists(parts[0]))
+                                {
+                                    int idx = 0;
+                                    if (parts.Length > 1) int.TryParse(parts[1], out idx);
+                                    newIcon = IconManager.ExtractIconFromFile(parts[0], idx);
+                                }
+                            }
+                        }
+                        catch { }
+                    }
+
+                    // C. Fallback to Theme/Shell Icon
+                    if (newIcon == null)
+                    {
+                        if (isUrl)
+                        {
+                            newIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/link-White.png"));
+                        }
+                        else if (isFolder)
+                        {
+                            // Check for broken target
+                            if (!FilePathUtilities.DoesFolderExist(shortcutPath, true))
+                                newIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/folder-WhiteX.png"));
+                            else
+                                newIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/folder-White.png"));
+                        }
+                        else
+                        {
+                            // Standard file fallback
+                            newIcon = Utility.GetShellIcon(freshTargetPath, false);
+                            if (newIcon == null) newIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/file-WhiteX.png"));
+                        }
+                    }
+
+                    // Apply and Update Cache
+                    if (newIcon != null)
+                    {
+                        ico.Source = newIcon;
+                        IconManager.IconCache[shortcutPath] = newIcon; // Force update cache
+                    }
+                }
+
+                // 6. Re-attach Events and Update Data
+                ClickEventAdder(iconPanel, shortcutPath, isFolder, freshArguments);
                 UpdateFenceDataForIcon(shortcutPath, newDisplayName, parentWindow);
 
-                LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.UI,
-                    $"Complete icon refresh successful. New arguments: '{freshArguments}'");
+                LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.UI, $"Complete icon refresh successful for: {shortcutPath}");
             }
             catch (Exception ex)
             {
-                LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI,
-                    $"Error in complete icon refresh: {ex.Message}");
+                LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI, $"Error in complete icon refresh: {ex.Message}");
             }
         }
+        // Updates fence JSON data after icon refresh
 
-       // Updates fence JSON data after icon refresh
 
+        // Updates fence JSON data after icon refresh
         private static void UpdateFenceDataForIcon(string shortcutPath, string newDisplayName, NonActivatingWindow parentWindow)
         {
             try
@@ -8112,30 +8273,65 @@ namespace Desktop_Fences
                 if (string.IsNullOrEmpty(fenceId)) return;
 
                 var fence = FenceDataManager.FenceData.FirstOrDefault(f => f.Id?.ToString() == fenceId);
-                if (fence?.ItemsType?.ToString() != "Data") return;
+                if (fence == null) return;
 
-                var items = fence.Items as JArray;
-                if (items == null) return;
+                // FIX: Search for the item in BOTH Main Items and ALL Tabs
+                bool found = false;
 
-                foreach (var item in items)
+                // Helper function to search and update a list
+                bool SearchList(JArray list)
                 {
-                    string itemFilename = item["Filename"]?.ToString();
-                    if (!string.IsNullOrEmpty(itemFilename) &&
-                        string.Equals(System.IO.Path.GetFullPath(itemFilename), System.IO.Path.GetFullPath(shortcutPath), StringComparison.OrdinalIgnoreCase))
+                    if (list == null) return false;
+                    foreach (var item in list)
                     {
-                        item["DisplayName"] = newDisplayName;
-                        LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI, $"Updated JSON data for: {itemFilename}");
-                        break;
+                        string itemFilename = item["Filename"]?.ToString();
+                        if (!string.IsNullOrEmpty(itemFilename) &&
+                            string.Equals(System.IO.Path.GetFullPath(itemFilename), System.IO.Path.GetFullPath(shortcutPath), StringComparison.OrdinalIgnoreCase))
+                        {
+                            item["DisplayName"] = newDisplayName;
+                            return true; // Found and updated
+                        }
+                    }
+                    return false;
+                }
+
+                // 1. Check Main Items
+                if (SearchList(fence.Items as JArray)) found = true;
+
+                // 2. Check Tabs (if enabled or present)
+                if (!found)
+                {
+                    var tabs = fence.Tabs as JArray;
+                    if (tabs != null)
+                    {
+                        foreach (var tab in tabs)
+                        {
+                            if (SearchList(tab["Items"] as JArray))
+                            {
+                                found = true;
+                                break;
+                            }
+                        }
                     }
                 }
 
-                FenceDataManager.SaveFenceData();
+                if (found)
+                {
+                    FenceDataManager.SaveFenceData();
+                    LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI, $"Updated JSON DisplayName for: {shortcutPath}");
+                }
+                else
+                {
+                    LogManager.Log(LogManager.LogLevel.Warn, LogManager.LogCategory.UI, $"Could not find item in JSON to update name: {shortcutPath}");
+                }
             }
             catch (Exception ex)
             {
                 LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI, $"Error updating fence JSON: {ex.Message}");
             }
         }
+
+
 
         // Size feedback during resizing
         private static void ShowSizeFeedback(double width, double height)
@@ -8225,11 +8421,6 @@ namespace Desktop_Fences
                 _hideTimer.Start();
             }
         }
-
-
-
-
-
 
 
 

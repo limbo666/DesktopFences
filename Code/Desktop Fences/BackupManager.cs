@@ -216,7 +216,7 @@ namespace Desktop_Fences
                 string exeDir = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
                 string fenceTitle = fence.Title.ToString();
 
-                // Sanitize folder name for filesystem compatibility
+                // Sanitize folder name
                 foreach (char c in Path.GetInvalidFileNameChars())
                 {
                     fenceTitle = fenceTitle.Replace(c, '_');
@@ -227,75 +227,89 @@ namespace Desktop_Fences
 
                 // Ensure exports directory exists
                 string exportsDir = Path.Combine(exeDir, "Exports");
-                if (!Directory.Exists(exportsDir))
-                {
-                    Directory.CreateDirectory(exportsDir);
-                    LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.ImportExport, $"Created Exports directory: {exportsDir}");
-                }
+                if (!Directory.Exists(exportsDir)) Directory.CreateDirectory(exportsDir);
 
-                // Cleanup existing export files
-                if (Directory.Exists(exportFolder))
-                {
-                    Directory.Delete(exportFolder, true);
-                    LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.ImportExport, $"Cleaned up existing export folder: {exportFolder}");
-                }
-                if (File.Exists(fencePath))
-                {
-                    File.Delete(fencePath);
-                    LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.ImportExport, $"Cleaned up existing fence file: {fencePath}");
-                }
+                // Cleanup previous runs
+                if (Directory.Exists(exportFolder)) Directory.Delete(exportFolder, true);
+                if (File.Exists(fencePath)) File.Delete(fencePath);
 
                 Directory.CreateDirectory(exportFolder);
 
-                // Save fence data as JSON
+                // 1. Save Metadata
                 string fenceJson = JsonConvert.SerializeObject(fence, Formatting.Indented);
                 File.WriteAllText(Path.Combine(exportFolder, "fence.json"), fenceJson);
-                LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.ImportExport, "Exported fence metadata to fence.json");
 
-                // Copy shortcuts for Data fences
+                // 2. Copy Shortcuts (TAB-AWARE FIX)
                 if (fence.ItemsType?.ToString() == "Data")
                 {
                     string shortcutsDestDir = Path.Combine(exportFolder, "Shortcuts");
                     Directory.CreateDirectory(shortcutsDestDir);
-
                     int copiedShortcuts = 0;
-                    foreach (var item in fence.Items)
+
+                    // Helper to copy a list of items
+                    void CopyItems(JArray items)
                     {
-                        string filename = item.Filename?.ToString();
-                        if (!string.IsNullOrEmpty(filename))
+                        if (items == null) return;
+                        foreach (var item in items)
                         {
-                            string sourcePath = Path.Combine(exeDir, filename);
-                            if (File.Exists(sourcePath))
+                            string filename = item["Filename"]?.ToString();
+                            if (!string.IsNullOrEmpty(filename))
                             {
-                                string destName = Path.GetFileName(filename);
-                                File.Copy(sourcePath, Path.Combine(shortcutsDestDir, destName));
-                                copiedShortcuts++;
-                            }
-                            else
-                            {
-                                LogManager.Log(LogManager.LogLevel.Warn, LogManager.LogCategory.ImportExport, $"Shortcut file not found for export: {sourcePath}");
+                                string sourcePath = Path.Combine(exeDir, filename);
+                                if (File.Exists(sourcePath))
+                                {
+                                    string destName = Path.GetFileName(filename);
+                                    string destPath = Path.Combine(shortcutsDestDir, destName);
+
+                                    // Avoid duplicate copy crashes
+                                    if (!File.Exists(destPath))
+                                    {
+                                        File.Copy(sourcePath, destPath);
+                                        copiedShortcuts++;
+                                    }
+                                }
                             }
                         }
                     }
-                    LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.ImportExport, $"Copied {copiedShortcuts} shortcuts to export");
+
+                    // A. Copy Main Items
+                    var mainItems = fence.Items as JArray;
+                    if (mainItems != null) CopyItems(mainItems);
+
+                    // B. Copy Tab Items (The Fix)
+                    bool tabsEnabled = fence.TabsEnabled?.ToString().ToLower() == "true";
+                    if (tabsEnabled)
+                    {
+                        var tabs = fence.Tabs as JArray;
+                        if (tabs != null)
+                        {
+                            foreach (var tab in tabs)
+                            {
+                                var tabItems = tab["Items"] as JArray;
+                                if (tabItems != null) CopyItems(tabItems);
+                            }
+                        }
+                    }
+
+                    LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.ImportExport, $"Copied {copiedShortcuts} total shortcuts to export");
                 }
 
-                // Create zip file and cleanup temporary folder
+                // 3. Zip It
                 ZipFile.CreateFromDirectory(exportFolder, fencePath);
                 Directory.Delete(exportFolder, true);
 
-                LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.ImportExport, $"Fence exported successfully to: {fencePath}");
+                LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.ImportExport, $"Fence exported successfully: {fencePath}");
                 MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Fence exported to:\n{fencePath}", "Export Successful");
             }
             catch (Exception ex)
             {
-                LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.ImportExport, $"Export failed: {ex.Message}\nStack trace: {ex.StackTrace}");
+                LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.ImportExport, $"Export failed: {ex.Message}");
                 MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Export failed: {ex.Message}", "Error");
             }
         }
 
-
         // Imports a fence from a .fence file with comprehensive validation
+
 
         public static void ImportFence()
         {
@@ -314,47 +328,28 @@ namespace Desktop_Fences
                     Title = "Select Fence Export File"
                 };
 
-                if (openDialog.ShowDialog() != true)
-                {
-                    LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.ImportExport, "Import cancelled by user");
-                    return;
-                }
+                if (openDialog.ShowDialog() != true) return;
 
                 string selectedFile = openDialog.FileName;
-                LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.ImportExport, $"Selected file for import: {selectedFile}");
-
-                // Create temporary directory for extraction
                 string tempDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
                 Directory.CreateDirectory(tempDir);
 
                 try
                 {
-                    // Extract ZIP contents
                     ZipFile.ExtractToDirectory(selectedFile, tempDir);
-                    LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.ImportExport, $"Extracted import file to: {tempDir}");
 
-                    // Validate export structure
                     string fenceJsonPath = Path.Combine(tempDir, "fence.json");
-                    if (!File.Exists(fenceJsonPath))
-                    {
-                        throw new FileNotFoundException("Missing fence.json in export file - invalid fence export");
-                    }
+                    if (!File.Exists(fenceJsonPath)) throw new FileNotFoundException("Invalid export: missing fence.json");
 
-                    // Deserialize fence data with validation
                     string jsonContent = File.ReadAllText(fenceJsonPath);
                     dynamic importedFence = JsonConvert.DeserializeObject<JObject>(jsonContent);
+                    if (importedFence == null) throw new InvalidDataException("Invalid JSON data");
 
-                    if (importedFence == null)
-                    {
-                        throw new InvalidDataException("Invalid fence data in export file");
-                    }
-
-                    // Generate new ID to prevent conflicts with existing fences
+                    // New ID to avoid conflicts
                     string newId = Guid.NewGuid().ToString();
                     importedFence["Id"] = newId;
-                    LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.ImportExport, $"Assigned new fence ID: {newId}");
 
-                    // Handle shortcuts for Data fences
+                    // Handle Shortcuts (TAB-AWARE FIX)
                     if (importedFence.ItemsType?.ToString() == "Data")
                     {
                         string sourceShortcuts = Path.Combine(tempDir, "Shortcuts");
@@ -362,16 +357,14 @@ namespace Desktop_Fences
 
                         if (Directory.Exists(sourceShortcuts))
                         {
-                            // Ensure destination shortcuts directory exists
                             Directory.CreateDirectory(destShortcuts);
 
-                            int importedShortcuts = 0;
                             foreach (string srcPath in Directory.GetFiles(sourceShortcuts))
                             {
                                 string fileName = Path.GetFileName(srcPath);
                                 string destPath = Path.Combine(destShortcuts, fileName);
 
-                                // Handle duplicate filenames by appending counter
+                                // Handle collisions
                                 int counter = 1;
                                 while (File.Exists(destPath))
                                 {
@@ -380,51 +373,61 @@ namespace Desktop_Fences
                                 }
 
                                 File.Copy(srcPath, destPath);
-                                importedShortcuts++;
+                                string finalFileName = Path.GetFileName(destPath);
 
-                                // Update shortcut references in fence items to reflect any name changes
-                                var items = importedFence.Items as JArray;
-                                if (items != null)
+                                // Update References Helper
+                                void UpdateReferences(JArray items)
                                 {
-                                    foreach (var item in items.Where(i => i["Filename"]?.ToString() == fileName))
+                                    if (items == null) return;
+                                    // Find items that matched the ORIGINAL filename (fileName)
+                                    // Update them to the NEW filename (finalFileName)
+                                    foreach (var item in items)
                                     {
-                                        item["Filename"] = Path.Combine("Shortcuts", Path.GetFileName(destPath));
+                                        string itemFile = Path.GetFileName(item["Filename"]?.ToString() ?? "");
+                                        if (itemFile.Equals(fileName, StringComparison.OrdinalIgnoreCase))
+                                        {
+                                            item["Filename"] = Path.Combine("Shortcuts", finalFileName);
+                                        }
+                                    }
+                                }
+
+                                // 1. Update Main Items
+                                UpdateReferences(importedFence.Items as JArray);
+
+                                // 2. Update Tab Items (The Fix)
+                                var tabs = importedFence.Tabs as JArray;
+                                if (tabs != null)
+                                {
+                                    foreach (var tab in tabs)
+                                    {
+                                        UpdateReferences(tab["Items"] as JArray);
                                     }
                                 }
                             }
-                            LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.ImportExport, $"Imported {importedShortcuts} shortcuts");
-                        }
-                        else
-                        {
-                            LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.ImportExport, "No shortcuts folder found in import file");
                         }
                     }
 
-                    // Add to fence data and create the fence
+                    // Add and Create
                     var fenceData = FenceManager.GetFenceData();
                     fenceData.Add(importedFence);
                     FenceManager.CreateFence(importedFence, new TargetChecker(1000));
                     FenceDataManager.SaveFenceData();
 
-                    LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.ImportExport, $"Fence '{importedFence.Title}' imported successfully");
                     MessageBoxesManager.ShowOKOnlyMessageBoxForm("Fence imported successfully!", "Import Complete");
                 }
                 finally
                 {
-                    // Cleanup temporary files
-                    if (Directory.Exists(tempDir))
-                    {
-                        Directory.Delete(tempDir, true);
-                        LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.ImportExport, $"Cleaned up temporary directory: {tempDir}");
-                    }
+                    if (Directory.Exists(tempDir)) Directory.Delete(tempDir, true);
                 }
             }
             catch (Exception ex)
             {
-                LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.ImportExport, $"Fence import failed: {ex.Message}\nStack trace: {ex.StackTrace}");
+                LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.ImportExport, $"Import failed: {ex.Message}");
                 MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Failed to import fence: {ex.Message}", "Import Error");
             }
         }
+
+
         #endregion
 
         #region Deletion Backup Management
@@ -432,6 +435,8 @@ namespace Desktop_Fences
         // Backs up a fence that's being deleted for potential restoration
 
         // <param name="fence">The fence being deleted</param>
+        // Backs up a fence that's being deleted for potential restoration
+        // Updated to be TAB-AWARE (Backs up shortcuts from tabs too)
         public static void BackupDeletedFence(dynamic fence)
         {
             try
@@ -458,26 +463,60 @@ namespace Desktop_Fences
                 // Backup shortcuts for Data fences
                 if (fence.ItemsType?.ToString() == "Data")
                 {
-                    var items = fence.Items as JArray;
-                    if (items != null)
+                    int backedUpShortcuts = 0;
+
+                    // Helper to backup a list of items
+                    void BackupItems(JArray items)
                     {
-                        int backedUpShortcuts = 0;
+                        if (items == null) return;
                         foreach (var item in items)
                         {
                             string itemFilePath = item["Filename"]?.ToString();
-                            if (!string.IsNullOrEmpty(itemFilePath) && File.Exists(itemFilePath))
+                            if (!string.IsNullOrEmpty(itemFilePath))
                             {
-                                string shortcutPath = Path.Combine(_lastDeletedFolderPath, Path.GetFileName(itemFilePath));
-                                File.Copy(itemFilePath, shortcutPath, true);
-                                backedUpShortcuts++;
-                            }
-                            else if (!string.IsNullOrEmpty(itemFilePath))
-                            {
-                                LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.ImportExport, $"Skipped backing up missing file: {itemFilePath}");
+                                // Handle both full paths and relative paths
+                                string fullSourcePath = Path.IsPathRooted(itemFilePath)
+                                    ? itemFilePath
+                                    : Path.Combine(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), itemFilePath);
+
+                                if (File.Exists(fullSourcePath))
+                                {
+                                    string destPath = Path.Combine(_lastDeletedFolderPath, Path.GetFileName(itemFilePath));
+                                    // Prevent duplicate copy errors
+                                    if (!File.Exists(destPath))
+                                    {
+                                        File.Copy(fullSourcePath, destPath, true);
+                                        backedUpShortcuts++;
+                                    }
+                                }
+                                else
+                                {
+                                    LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.ImportExport, $"Skipped backing up missing file: {itemFilePath}");
+                                }
                             }
                         }
-                        LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.ImportExport, $"Backed up {backedUpShortcuts} shortcuts for deletion");
                     }
+
+                    // 1. Backup Main Items
+                    var mainItems = fence.Items as JArray;
+                    if (mainItems != null) BackupItems(mainItems);
+
+                    // 2. Backup Tab Items (The Fix)
+                    bool tabsEnabled = fence.TabsEnabled?.ToString().ToLower() == "true";
+                    if (tabsEnabled)
+                    {
+                        var tabs = fence.Tabs as JArray;
+                        if (tabs != null)
+                        {
+                            foreach (var tab in tabs)
+                            {
+                                var tabItems = tab["Items"] as JArray;
+                                if (tabItems != null) BackupItems(tabItems);
+                            }
+                        }
+                    }
+
+                    LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.ImportExport, $"Backed up {backedUpShortcuts} shortcuts for deletion");
                 }
 
                 // Save fence info to JSON for complete restoration
@@ -492,8 +531,6 @@ namespace Desktop_Fences
                 // Don't throw - deletion should continue even if backup fails
             }
         }
-
-
         // Cleans the last deleted fence backup folder and resets restore availability
 
         public static void CleanLastDeletedFolder()

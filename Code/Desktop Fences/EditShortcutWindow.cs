@@ -489,6 +489,25 @@ public partial class EditShortcutWindow : Window
     {
         try
         {
+            // FIX: Manual parsing for .url files
+            // WshShell often fails to read the "Target" of a .url file if the header is non-standard.
+            if (System.IO.Path.GetExtension(shortcutPath).ToLower() == ".url")
+            {
+                if (System.IO.File.Exists(shortcutPath))
+                {
+                    // Read file as text to find URL=...
+                    string[] lines = System.IO.File.ReadAllLines(shortcutPath);
+                    foreach (string line in lines)
+                    {
+                        if (line.Trim().StartsWith("URL=", StringComparison.OrdinalIgnoreCase))
+                        {
+                            return line.Trim().Substring(4);
+                        }
+                    }
+                }
+            }
+
+            // Fallback to WshShell for .lnk files
             WshShell shell = new WshShell();
             IWshShortcut shortcut = (IWshShortcut)shell.CreateShortcut(shortcutPath);
             return shortcut.TargetPath ?? "";
@@ -515,10 +534,40 @@ public partial class EditShortcutWindow : Window
         }
     }
 
+
+
     private string GetCurrentIconLocation()
     {
         try
         {
+            // FIX: Robust manual parsing for .url files
+            if (System.IO.Path.GetExtension(shortcutPath).ToLower() == ".url")
+            {
+                if (System.IO.File.Exists(shortcutPath))
+                {
+                    var lines = System.IO.File.ReadAllLines(shortcutPath);
+                    string iconFile = null;
+                    string iconIndex = null;
+
+                    foreach (var line in lines)
+                    {
+                        string trimmed = line.Trim();
+                        if (trimmed.StartsWith("IconFile=", StringComparison.OrdinalIgnoreCase))
+                            iconFile = trimmed.Substring(9).Trim();
+                        else if (trimmed.StartsWith("IconIndex=", StringComparison.OrdinalIgnoreCase))
+                            iconIndex = trimmed.Substring(10).Trim();
+                    }
+
+                    if (!string.IsNullOrEmpty(iconFile))
+                    {
+                        // Return in format "path,index" or just "path"
+                        return string.IsNullOrEmpty(iconIndex) ? iconFile : $"{iconFile},{iconIndex}";
+                    }
+                }
+                return "Default";
+            }
+
+            // Standard .lnk handling
             WshShell shell = new WshShell();
             IWshShortcut shortcut = (IWshShortcut)shell.CreateShortcut(shortcutPath);
             return string.IsNullOrEmpty(shortcut.IconLocation) ? "Default" : shortcut.IconLocation;
@@ -529,6 +578,8 @@ public partial class EditShortcutWindow : Window
             return "Default";
         }
     }
+
+
 
     private void BrowseTarget_Click(object sender, RoutedEventArgs e)
     {
@@ -599,18 +650,43 @@ public partial class EditShortcutWindow : Window
         {
             LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.UI, $"Restoring default values for shortcut: {shortcutPath}");
 
-            WshShell shell = new WshShell();
-            IWshShortcut shortcut = (IWshShortcut)shell.CreateShortcut(shortcutPath);
-
-            string originalTarget = shortcut.TargetPath ?? "";
+            string originalTarget = "";
             string originalName = System.IO.Path.GetFileNameWithoutExtension(shortcutPath) ?? "";
+            bool isUrl = System.IO.Path.GetExtension(shortcutPath).ToLower() == ".url";
 
+            if (isUrl)
+            {
+                // FIX: Manual parsing for .url files to avoid COM errors
+                if (System.IO.File.Exists(shortcutPath))
+                {
+                    var lines = System.IO.File.ReadAllLines(shortcutPath);
+                    foreach (var line in lines)
+                    {
+                        if (line.Trim().StartsWith("URL=", StringComparison.OrdinalIgnoreCase))
+                        {
+                            originalTarget = line.Trim().Substring(4);
+                            break;
+                        }
+                    }
+                }
+            }
+            else
+            {
+                // Standard .lnk handling
+                WshShell shell = new WshShell();
+                IWshShortcut shortcut = (IWshShortcut)shell.CreateShortcut(shortcutPath);
+                originalTarget = shortcut.TargetPath ?? "";
+            }
+
+            // Reset UI Fields
             nameBox.Text = originalName;
             targetPathBox.Text = originalTarget;
             argumentsBox.Text = "";
+
+            // Setting this to "Default" triggers the removal logic in Save_Click
             iconPathBox.Text = "Default";
 
-            // Update icon preview to show default icon
+            // Force the preview to update immediately
             LoadIconPreview("Default");
 
             LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI, "Default values restored successfully");
@@ -631,90 +707,106 @@ public partial class EditShortcutWindow : Window
 
             string newDisplayName = nameBox?.Text?.Trim() ?? "";
             string newTargetPath = targetPathBox?.Text?.Trim() ?? "";
-            string newArguments = argumentsBox?.Text?.Trim() ?? "";
             string newIconPath = iconPathBox?.Text?.Trim() ?? "";
 
-            if (string.IsNullOrWhiteSpace(newDisplayName))
+            if (string.IsNullOrWhiteSpace(newDisplayName) || string.IsNullOrWhiteSpace(newTargetPath))
             {
-                MessageBoxesManager.ShowOKOnlyMessageBoxForm("Display name cannot be empty.", "Validation Error");
+                MessageBoxesManager.ShowOKOnlyMessageBoxForm("Display name and Target path cannot be empty.", "Validation Error");
                 return;
             }
 
-            if (string.IsNullOrWhiteSpace(newTargetPath))
+            bool isUrl = System.IO.Path.GetExtension(shortcutPath).ToLower() == ".url";
+
+            if (isUrl)
             {
-                MessageBoxesManager.ShowOKOnlyMessageBoxForm("Target path cannot be empty.", "Validation Error");
-                return;
+                // --- FIX: ROBUST INI WRITING FOR .URL ---
+                var lines = System.IO.File.ReadAllLines(shortcutPath).ToList();
+
+                void UpdateIniKey(string key, string value)
+                {
+                    // Find existing key properly ignoring case and whitespace
+                    int idx = lines.FindIndex(l => l.Trim().StartsWith(key + "=", StringComparison.OrdinalIgnoreCase));
+
+                    if (idx != -1)
+                    {
+                        if (value == null) lines.RemoveAt(idx);
+                        else lines[idx] = $"{key}={value}";
+                    }
+                    else if (value != null)
+                    {
+                        // Key missing: Find header to insert after
+                        int headerIdx = lines.FindIndex(l => l.Trim().Equals("[InternetShortcut]", StringComparison.OrdinalIgnoreCase));
+                        if (headerIdx == -1)
+                        {
+                            // Header missing? Add it at the top (safest fallback)
+                            lines.Insert(0, "[InternetShortcut]");
+                            headerIdx = 0;
+                        }
+                        lines.Insert(headerIdx + 1, $"{key}={value}");
+                    }
+                }
+
+                UpdateIniKey("URL", newTargetPath);
+
+                // Handle Icon
+                if (!string.IsNullOrEmpty(newIconPath) && newIconPath != "Default")
+                {
+                    string iconFile = newIconPath;
+                    string iconIndex = "0";
+                    if (newIconPath.Contains(","))
+                    {
+                        var parts = newIconPath.Split(',');
+                        iconFile = parts[0];
+                        if (parts.Length > 1) iconIndex = parts[1];
+                    }
+                    UpdateIniKey("IconFile", iconFile);
+                    UpdateIniKey("IconIndex", iconIndex);
+                }
+                else
+                {
+                    // Reset: Remove the keys entirely
+                    UpdateIniKey("IconFile", null);
+                    UpdateIniKey("IconIndex", null);
+                }
+
+                System.IO.File.WriteAllLines(shortcutPath, lines);
             }
-
-            WshShell shell = new WshShell();
-            IWshShortcut shortcut = (IWshShortcut)shell.CreateShortcut(shortcutPath);
-
-            // 1. Update Target
-            if (!string.IsNullOrEmpty(newTargetPath))
+            else
             {
+                // Standard .lnk Saving (Keep existing working logic)
+                WshShell shell = new WshShell();
+                IWshShortcut shortcut = (IWshShortcut)shell.CreateShortcut(shortcutPath);
                 shortcut.TargetPath = newTargetPath;
+                string newArguments = argumentsBox?.Text?.Trim() ?? "";
+                if (!string.IsNullOrEmpty(newArguments)) shortcut.Arguments = newArguments;
 
-                // Set working directory logic
+                // Handle Working Directory
                 try
                 {
                     if (System.IO.File.Exists(newTargetPath))
                     {
-                        string workingDir = System.IO.Path.GetDirectoryName(newTargetPath);
-                        if (!string.IsNullOrEmpty(workingDir)) shortcut.WorkingDirectory = workingDir;
-                    }
-                    else if (System.IO.Directory.Exists(newTargetPath))
-                    {
-                        shortcut.WorkingDirectory = newTargetPath;
+                        string wd = System.IO.Path.GetDirectoryName(newTargetPath);
+                        if (!string.IsNullOrEmpty(wd)) shortcut.WorkingDirectory = wd;
                     }
                 }
-                catch (Exception dirEx)
-                {
-                    LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI, $"Could not set working directory: {dirEx.Message}");
-                }
-            }
+                catch { }
 
-            // 2. Update Arguments
-            if (newArguments != null)
-            {
-                shortcut.Arguments = newArguments;
-            }
-
-            // 3. Update Icon Location (The Fix)
-            if (!string.IsNullOrEmpty(newIconPath) && newIconPath != "Default")
-            {
-                // User selected a specific custom icon
-                shortcut.IconLocation = newIconPath;
-                LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI, $"Set custom icon: {newIconPath}");
-            }
-            else
-            {
-                // Resetting to Default
-                if (!string.IsNullOrEmpty(newTargetPath) && System.IO.File.Exists(newTargetPath))
-                {
-                    // FILE: Point to the executable itself
-                    shortcut.IconLocation = $"{newTargetPath},0";
-                    LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI, $"Set default icon to target: {newTargetPath},0");
-                }
+                // Handle Icon
+                if (!string.IsNullOrEmpty(newIconPath) && newIconPath != "Default")
+                    shortcut.IconLocation = newIconPath;
                 else
                 {
-                    // FOLDER or MISSING TARGET: 
-                    // FIX: Set to ",0" instead of empty string "" to avoid "Value does not fall within expected range" error.
-                    // This effectively clears the custom icon, causing the main app to fall back to the White Folder theme.
-                    shortcut.IconLocation = ",0";
-                    LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI, "Cleared icon location (reset to ,0)");
+                    if (System.IO.File.Exists(newTargetPath)) shortcut.IconLocation = $"{newTargetPath},0";
+                    else shortcut.IconLocation = ",0";
                 }
+                shortcut.Save();
             }
 
-            shortcut.Save();
-
             NewDisplayName = newDisplayName;
-
-            System.Windows.Application.Current.Dispatcher.Invoke(() =>
-            {
+            System.Windows.Application.Current.Dispatcher.Invoke(() => {
                 FenceManager.RefreshIconClickHandlers(shortcutPath, newDisplayName);
             });
 
-            LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.UI, "Shortcut saved successfully");
             DialogResult = true;
             Close();
         }
@@ -725,121 +817,12 @@ public partial class EditShortcutWindow : Window
         }
     }
 
-    //private void Save_Click(object sender, RoutedEventArgs e)
-    //{
-    //    try
-    //    {
-    //        LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.UI, $"Starting save process for shortcut: {shortcutPath}");
-
-    //        string newDisplayName = nameBox?.Text?.Trim() ?? "";
-    //        string newTargetPath = targetPathBox?.Text?.Trim() ?? "";
-    //        string newArguments = argumentsBox?.Text?.Trim() ?? "";
-    //        string newIconPath = iconPathBox?.Text?.Trim() ?? "";
-
-    //        if (string.IsNullOrWhiteSpace(newDisplayName))
-    //        {
-    //            MessageBoxesManager.ShowOKOnlyMessageBoxForm("Display name cannot be empty.", "Validation Error");
-    //            return;
-    //        }
-
-    //        if (string.IsNullOrWhiteSpace(newTargetPath))
-    //        {
-    //            MessageBoxesManager.ShowOKOnlyMessageBoxForm("Target path cannot be empty.", "Validation Error");
-    //            return;
-    //        }
 
 
 
 
 
-    //        WshShell shell = new WshShell();
-    //        IWshShortcut shortcut = (IWshShortcut)shell.CreateShortcut(shortcutPath);
 
-    //        // Only update properties that have valid values
-    //        if (!string.IsNullOrEmpty(newTargetPath))
-    //        {
-    //            shortcut.TargetPath = newTargetPath;
-
-    //            // Set working directory only if target path is valid
-    //            try
-    //            {
-    //                if (System.IO.File.Exists(newTargetPath))
-    //                {
-    //                    string workingDir = System.IO.Path.GetDirectoryName(newTargetPath);
-    //                    if (!string.IsNullOrEmpty(workingDir))
-    //                    {
-    //                        shortcut.WorkingDirectory = workingDir;
-    //                    }
-    //                }
-    //                else if (System.IO.Directory.Exists(newTargetPath))
-    //                {
-    //                    shortcut.WorkingDirectory = newTargetPath;
-    //                }
-    //            }
-    //            catch (Exception dirEx)
-    //            {
-    //                LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI, $"Could not set working directory: {dirEx.Message}");
-    //                // Don't set working directory if there's an issue
-    //            }
-    //        }
-
-    //        // Handle arguments - only set if not null
-    //        if (newArguments != null)
-    //        {
-    //            shortcut.Arguments = newArguments;
-    //        }
-
-
-
-    //        // Handle icon location 
-    //        if (!string.IsNullOrEmpty(newIconPath) && newIconPath != "Default")
-    //        {
-    //            shortcut.IconLocation = newIconPath;
-    //            LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI, $"Set custom icon: {newIconPath}");
-    //        }
-    //        else if (newIconPath == "Default")
-    //        {
-    //            // For default icon, set IconLocation to target executable at index 0
-    //            if (!string.IsNullOrEmpty(newTargetPath) && System.IO.File.Exists(newTargetPath))
-    //            {
-    //                shortcut.IconLocation = $"{newTargetPath},0";
-    //                LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI, $"Set default icon to target: {newTargetPath},0");
-    //            }
-    //            else
-    //            {
-    //                shortcut.IconLocation = "";
-    //                LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI, "Target doesn't exist, clearing icon location");
-    //            }
-    //        }
-    //        else
-    //        {
-    //            shortcut.IconLocation = "";
-    //            LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI, "Cleared icon location");
-    //        }
-
-
-
-
-    //            shortcut.Save();
-
-
-    //        NewDisplayName = newDisplayName;
-
-    //        System.Windows.Application.Current.Dispatcher.Invoke(() =>
-    //        {
-    //            FenceManager.RefreshIconClickHandlers(shortcutPath, newDisplayName);
-    //        });
-
-    //        LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.UI, "Shortcut saved successfully");
-    //        DialogResult = true;
-    //        Close();
-    //    }
-    //    catch (Exception ex)
-    //    {
-    //        LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI, $"Error saving shortcut: {ex.Message}");
-    //        MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Failed to save shortcut: {ex.Message}", "Save Error");
-    //    }
-    //}
 
     /// <summary>
     /// Loads and displays the icon in the preview Image control
@@ -849,15 +832,29 @@ public partial class EditShortcutWindow : Window
         try
         {
             ImageSource iconSource = null;
+            bool isUrl = System.IO.Path.GetExtension(shortcutPath).ToLower() == ".url";
 
-            // Handle different icon path formats
+            // Handle "Default" case
             if (string.IsNullOrEmpty(iconPath) || iconPath == "Default")
             {
-                // Load icon from target executable
-                string targetPath = GetCurrentTargetPath();
-                if (!string.IsNullOrEmpty(targetPath) && System.IO.File.Exists(targetPath))
+                if (isUrl)
                 {
-                    iconSource = IconManager.ExtractIconFromFile(targetPath, 0);
+                    // FIX: Show the correct App Theme icon for Web Links
+                    iconSource = new BitmapImage(new Uri("pack://application:,,,/Resources/link-White.png"));
+                }
+                else
+                {
+                    // Standard .lnk logic (Extract from target)
+                    string targetPath = GetCurrentTargetPath();
+
+                    if (!string.IsNullOrEmpty(targetPath) && System.IO.File.Exists(targetPath))
+                    {
+                        iconSource = IconManager.ExtractIconFromFile(targetPath, 0);
+                    }
+                    else if (System.IO.Directory.Exists(targetPath))
+                    {
+                        iconSource = new BitmapImage(new Uri("pack://application:,,,/Resources/folder-White.png"));
+                    }
                 }
             }
             else if (iconPath.Contains(","))
@@ -868,49 +865,38 @@ public partial class EditShortcutWindow : Window
                 int iconIndex = 0;
 
                 if (parts.Length == 2 && int.TryParse(parts[1], out int parsedIndex))
-                {
                     iconIndex = parsedIndex;
-                }
 
                 if (System.IO.File.Exists(filePath))
-                {
                     iconSource = IconManager.ExtractIconFromFile(filePath, iconIndex);
-                }
             }
             else
             {
-                // Handle direct icon file path
+                // Handle direct file path
                 if (System.IO.File.Exists(iconPath))
                 {
                     string extension = System.IO.Path.GetExtension(iconPath).ToLower();
                     if (extension == ".ico")
-                    {
                         iconSource = new BitmapImage(new Uri(iconPath));
-                    }
                     else if (extension == ".exe" || extension == ".dll")
-                    {
                         iconSource = IconManager.ExtractIconFromFile(iconPath, 0);
-                    }
                 }
             }
 
-            // Apply the icon to preview or show default
+            // Apply to UI
             if (iconSource != null)
             {
                 iconPreview.Source = iconSource;
-                LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI, $"Loaded icon preview for: {iconPath}");
             }
             else
             {
-                // Show default application icon as fallback
+                // Fallback for unknowns
                 iconPreview.Source = new BitmapImage(new Uri("pack://application:,,,/Resources/file-WhiteX.png"));
-                LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI, "Loaded fallback icon for preview");
             }
         }
         catch (Exception ex)
         {
             LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI, $"Error loading icon preview: {ex.Message}");
-            // Show fallback icon on error
             iconPreview.Source = new BitmapImage(new Uri("pack://application:,,,/Resources/file-WhiteX.png"));
         }
     }

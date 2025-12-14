@@ -14,17 +14,12 @@ namespace Desktop_Fences
 {
     public static class OptionsFormManager
     {
-
-
-        private static int _lastSelectedTabIndex = 0; // Default to 0 (General)
-
-
+        private static int _lastSelectedTabIndex = 0;
         private static TabControl _tabControl;
         private static Window _optionsWindow;
         private static Color _userAccentColor;
 
         // Colors for tabs
-        private static readonly Color ColorGeneral = Utility.GetColorFromName(SettingsManager.SelectedColor); // Dynamic
         private static readonly Color ColorStyle = Color.FromRgb(128, 0, 128); // Purple
         private static readonly Color ColorTools = Color.FromRgb(34, 139, 34); // Green
         private static readonly Color ColorLookDeeper = Color.FromRgb(220, 53, 69); // Red
@@ -38,7 +33,7 @@ namespace Desktop_Fences
                 _optionsWindow = new Window
                 {
                     Title = "Desktop Fences + Options",
-                    Width = 800, // Slightly wider for side-by-side options if needed
+                    Width = 800,
                     Height = 850,
                     WindowStartupLocation = WindowStartupLocation.CenterScreen,
                     ResizeMode = ResizeMode.NoResize,
@@ -47,21 +42,18 @@ namespace Desktop_Fences
                     AllowsTransparency = true
                 };
 
-                // Set icon
                 try
                 {
                     _optionsWindow.Icon = System.Windows.Interop.Imaging.CreateBitmapSourceFromHIcon(
                         System.Drawing.Icon.ExtractAssociatedIcon(Process.GetCurrentProcess().MainModule.FileName).Handle,
                         Int32Rect.Empty,
-                        BitmapSizeOptions.FromEmptyOptions()
-                    );
+                        BitmapSizeOptions.FromEmptyOptions());
                 }
                 catch { }
 
                 Border mainBorder = new Border
                 {
                     Background = Brushes.White,
-                    CornerRadius = new CornerRadius(0),
                     Margin = new Thickness(8),
                     Effect = new DropShadowEffect { Color = Colors.Black, Direction = 270, ShadowDepth = 2, BlurRadius = 10, Opacity = 0.2 }
                 };
@@ -90,26 +82,23 @@ namespace Desktop_Fences
                     VerticalAlignment = VerticalAlignment.Center,
                     Margin = new Thickness(20, 0, 0, 0)
                 };
-                Grid.SetColumn(titleBlock, 0);
 
                 Button closeButton = new Button
                 {
                     Content = "✕",
                     Width = 32,
                     Height = 32,
-                    FontSize = 14,
                     Foreground = Brushes.White,
                     Background = Brushes.Transparent,
                     BorderThickness = new Thickness(0),
                     Cursor = Cursors.Hand
                 };
                 closeButton.Click += (s, e) => _optionsWindow.Close();
-                Grid.SetColumn(closeButton, 1);
 
-                headerGrid.Children.Add(titleBlock);
-                headerGrid.Children.Add(closeButton);
+                Grid.SetColumn(titleBlock, 0); headerGrid.Children.Add(titleBlock);
+                Grid.SetColumn(closeButton, 1); headerGrid.Children.Add(closeButton);
                 headerBorder.Child = headerGrid;
-                headerBorder.MouseLeftButtonDown += (sender, e) => { if (e.ButtonState == MouseButtonState.Pressed) _optionsWindow.DragMove(); };
+                headerBorder.MouseLeftButtonDown += (s, e) => { if (e.ButtonState == MouseButtonState.Pressed) _optionsWindow.DragMove(); };
 
                 CreateTabContent(mainGrid);
                 CreateFooter(mainGrid);
@@ -118,21 +107,14 @@ namespace Desktop_Fences
                 mainGrid.Children.Add(headerBorder);
                 mainBorder.Child = mainGrid;
                 _optionsWindow.Content = mainBorder;
+                _optionsWindow.KeyDown += (s, e) => { if (e.Key == Key.Enter) SaveOptions(); else if (e.Key == Key.Escape) _optionsWindow.Close(); };
 
-                _optionsWindow.KeyDown += OptionsForm_KeyDown;
                 _optionsWindow.ShowDialog();
             }
             catch (Exception ex)
             {
-                LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI, $"Error showing Options form: {ex.Message}");
-                MessageBoxesManager.ShowOKOnlyMessageBoxForm($"An error occurred: {ex.Message}", "Error");
+                LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI, $"Error showing Options: {ex.Message}");
             }
-        }
-
-        private static void OptionsForm_KeyDown(object sender, KeyEventArgs e)
-        {
-            if (e.Key == Key.Enter) { SaveOptions(); e.Handled = true; }
-            else if (e.Key == Key.Escape) { _optionsWindow.Close(); e.Handled = true; }
         }
 
         private static void CreateTabContent(Grid mainGrid)
@@ -143,43 +125,28 @@ namespace Desktop_Fences
             Grid.SetRow(contentGrid, 1);
 
             StackPanel tabPanel = new StackPanel { Background = new SolidColorBrush(Color.FromRgb(240, 240, 240)), Margin = new Thickness(0, 20, 0, 0) };
-            Grid.SetColumn(tabPanel, 0);
-
-            Border contentBorder = new Border
-            {
-                Background = Brushes.White,
-                BorderBrush = new SolidColorBrush(Color.FromRgb(218, 220, 224)),
-                BorderThickness = new Thickness(1, 0, 0, 0),
-                Padding = new Thickness(20),
-                Margin = new Thickness(0, 20, 0, 0)
-            };
-            Grid.SetColumn(contentBorder, 1);
+            Border contentBorder = new Border { Background = Brushes.White, BorderBrush = new SolidColorBrush(Color.FromRgb(218, 220, 224)), BorderThickness = new Thickness(1, 0, 0, 0), Padding = new Thickness(20), Margin = new Thickness(0, 20, 0, 0) };
 
             _tabControl = new TabControl { Background = Brushes.Transparent, BorderThickness = new Thickness(0) };
             var template = new ControlTemplate(typeof(TabControl));
-            var contentPresenter = new FrameworkElementFactory(typeof(ContentPresenter));
-            contentPresenter.SetValue(ContentPresenter.ContentSourceProperty, "SelectedContent");
-            template.VisualTree = contentPresenter;
+            template.VisualTree = new FrameworkElementFactory(typeof(ContentPresenter));
+            ((FrameworkElementFactory)template.VisualTree).SetValue(ContentPresenter.ContentSourceProperty, "SelectedContent");
             _tabControl.Template = template;
 
-            // Create Tabs
             CreateGeneralTab();
             CreateStyleTab();
             CreateToolsTab();
             CreateLookDeeperTab();
 
-            // --- CHANGE: Set the index from the static variable ---
             _tabControl.SelectedIndex = _lastSelectedTabIndex;
-
-            // --- CHANGE: Set the button state based on the variable ---
             CreateTabButton(tabPanel, "General", 0, _lastSelectedTabIndex == 0);
             CreateTabButton(tabPanel, "Style", 1, _lastSelectedTabIndex == 1);
             CreateTabButton(tabPanel, "Tools", 2, _lastSelectedTabIndex == 2);
             CreateTabButton(tabPanel, "Look Deeper", 3, _lastSelectedTabIndex == 3);
 
             contentBorder.Child = _tabControl;
-            contentGrid.Children.Add(tabPanel);
-            contentGrid.Children.Add(contentBorder);
+            Grid.SetColumn(tabPanel, 0); contentGrid.Children.Add(tabPanel);
+            Grid.SetColumn(contentBorder, 1); contentGrid.Children.Add(contentBorder);
             mainGrid.Children.Add(contentGrid);
         }
 
@@ -198,42 +165,19 @@ namespace Desktop_Fences
                 Padding = new Thickness(20, 0, 0, 0),
                 Margin = new Thickness(0, 0, 0, 2)
             };
-
             SetTabButtonColors(tabButton, title, isSelected);
             tabButton.Click += (s, e) => SelectTab(tabIndex, tabButton);
             tabButton.MouseEnter += (s, e) => { if (_tabControl.SelectedIndex != tabIndex) SetTabButtonColors(tabButton, title, false, true); };
             tabButton.MouseLeave += (s, e) => { if (_tabControl.SelectedIndex != tabIndex) SetTabButtonColors(tabButton, title, false, false); };
-
             parent.Children.Add(tabButton);
         }
 
         private static void SetTabButtonColors(Button button, string title, bool isSelected, bool isHover = false)
         {
-            Color activeColor;
-            switch (title)
-            {
-                case "General": activeColor = _userAccentColor; break;
-                case "Style": activeColor = ColorStyle; break;
-                case "Tools": activeColor = ColorTools; break;
-                case "Look Deeper": activeColor = ColorLookDeeper; break;
-                default: activeColor = Colors.Gray; break;
-            }
-
-            if (isSelected)
-            {
-                button.Background = new SolidColorBrush(activeColor);
-                button.Foreground = Brushes.White;
-            }
-            else if (isHover)
-            {
-                button.Background = new SolidColorBrush(Color.FromRgb((byte)(activeColor.R + 40), (byte)(activeColor.G + 40), (byte)(activeColor.B + 40)));
-                button.Foreground = Brushes.White;
-            }
-            else
-            {
-                button.Background = new SolidColorBrush(Color.FromRgb(200, 200, 200));
-                button.Foreground = new SolidColorBrush(Color.FromRgb(60, 60, 60));
-            }
+            Color activeColor = title switch { "Style" => ColorStyle, "Tools" => ColorTools, "Look Deeper" => ColorLookDeeper, _ => _userAccentColor };
+            if (isSelected) { button.Background = new SolidColorBrush(activeColor); button.Foreground = Brushes.White; }
+            else if (isHover) { button.Background = new SolidColorBrush(Color.FromRgb((byte)(activeColor.R + 40), (byte)(activeColor.G + 40), (byte)(activeColor.B + 40))); button.Foreground = Brushes.White; }
+            else { button.Background = new SolidColorBrush(Color.FromRgb(200, 200, 200)); button.Foreground = new SolidColorBrush(Color.FromRgb(60, 60, 60)); }
         }
 
         private static void SelectTab(int tabIndex, Button selectedButton)
@@ -241,401 +185,209 @@ namespace Desktop_Fences
             _lastSelectedTabIndex = tabIndex;
             _tabControl.SelectedIndex = tabIndex;
             StackPanel tabPanel = (StackPanel)selectedButton.Parent;
-            for (int i = 0; i < tabPanel.Children.Count; i++)
-            {
-                if (tabPanel.Children[i] is Button btn)
-                {
-                    SetTabButtonColors(btn, btn.Content.ToString(), i == tabIndex);
-                }
-            }
+            for (int i = 0; i < tabPanel.Children.Count; i++) if (tabPanel.Children[i] is Button btn) SetTabButtonColors(btn, btn.Content.ToString(), i == tabIndex);
         }
 
+        // --- Tabs ---
         private static void CreateGeneralTab()
         {
-            TabItem generalTab = new TabItem();
-            ScrollViewer scrollViewer = new ScrollViewer { VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
-            StackPanel content = new StackPanel();
-
-            // Startup
-            CreateSectionHeader(content, "Startup", _userAccentColor);
-            CreateCheckBox(content, "Start with Windows", "StartWithWindows", TrayManager.IsStartWithWindows);
-
-            // Selections
-            CreateSectionHeader(content, "Selections", _userAccentColor);
-            CreateCheckBox(content, "Single Click to Launch", "SingleClickToLaunch", SettingsManager.SingleClickToLaunch);
-            CreateCheckBox(content, "Enable Snap Near Fences", "EnableSnapNearFences", SettingsManager.IsSnapEnabled);
-            CreateCheckBox(content, "Enable Dimension Snap", "EnableDimensionSnap", SettingsManager.EnableDimensionSnap);
-            CreateCheckBox(content, "Enable Tray Icon", "EnableTrayIcon", SettingsManager.ShowInTray);
-            CreateCheckBox(content, "Use Recycle Bin on Portal Fences 'Delete item' command", "UseRecycleBin", SettingsManager.UseRecycleBin);
-
-            scrollViewer.Content = content;
-            generalTab.Content = scrollViewer;
-            _tabControl.Items.Add(generalTab);
+            TabItem t = new TabItem();
+            StackPanel c = new StackPanel();
+            CreateSectionHeader(c, "Startup", _userAccentColor);
+            CreateCheckBox(c, "Start with Windows", "StartWithWindows", TrayManager.IsStartWithWindows);
+            CreateSectionHeader(c, "Selections", _userAccentColor);
+            CreateCheckBox(c, "Single Click to Launch", "SingleClickToLaunch", SettingsManager.SingleClickToLaunch);
+            CreateCheckBox(c, "Enable Snap Near Fences", "EnableSnapNearFences", SettingsManager.IsSnapEnabled);
+            CreateCheckBox(c, "Enable Dimension Snap", "EnableDimensionSnap", SettingsManager.EnableDimensionSnap);
+            CreateCheckBox(c, "Enable Tray Icon", "EnableTrayIcon", SettingsManager.ShowInTray);
+            CreateCheckBox(c, "Use Recycle Bin on Portal Fences 'Delete item' command", "UseRecycleBin", SettingsManager.UseRecycleBin);
+            t.Content = new ScrollViewer { Content = c, VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
+            _tabControl.Items.Add(t);
         }
 
         private static void CreateStyleTab()
         {
-            TabItem styleTab = new TabItem();
-            ScrollViewer scrollViewer = new ScrollViewer { VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
-            StackPanel content = new StackPanel();
+            TabItem t = new TabItem();
+            StackPanel c = new StackPanel();
+            CreateSectionHeader(c, "Choices", ColorStyle);
+            CreateCheckBox(c, "Enable Portal Fences Watermark", "EnablePortalWatermark", SettingsManager.ShowBackgroundImageOnPortalFences);
+            var n = CreateCheckBoxReturn(c, "Enable Note Fences Watermark (Coming Soon)", "EnableNoteWatermark", false);
+            n.IsEnabled = false; n.Foreground = Brushes.Gray;
+            CreateCheckBox(c, "Disable Fence Scrollbars", "DisableFenceScrollbars", SettingsManager.DisableFenceScrollbars);
+            CreateCheckBox(c, "Enable Sounds", "EnableSounds", SettingsManager.EnableSounds);
 
-            // Choices
-            CreateSectionHeader(content, "Choices", ColorStyle);
-            CreateCheckBox(content, "Enable Portal Fences Watermark", "EnablePortalWatermark", SettingsManager.ShowBackgroundImageOnPortalFences);
+            CreateSectionHeader(c, "Appearance", ColorStyle);
+            CreateSliderControl(c, "Fence Tint", "TintSlider", SettingsManager.TintValue);
+            CreateSliderControl(c, "Menu Tint", "MenuTintSlider", SettingsManager.MenuTintValue);
+            CreateColorComboBox(c);
+            CreateLaunchEffectComboBox(c);
 
-            // Future implementation logic for Note Watermark
-            var noteWatermark = CreateCheckBoxReturn(content, "Enable Note Fences Watermark (Coming Soon)", "EnableNoteWatermark", false);
-            noteWatermark.IsEnabled = false; // Placeholder status
-            noteWatermark.Foreground = Brushes.Gray;
+            CreateSectionHeader(c, "Icons", ColorStyle);
+            c.Children.Add(new TextBlock { Text = "Menu Icon", FontWeight = FontWeights.SemiBold, Margin = new Thickness(15, 5, 0, 5) });
+            CreateIconRadioButtonGroup(c, "MenuIconGroup", new Dictionary<string, int> { { "♥", 0 }, { "☰", 1 }, { "≣", 2 }, { "𓃑", 3 } }, SettingsManager.MenuIcon);
+            c.Children.Add(new TextBlock { Text = "Lock Icon", FontWeight = FontWeights.SemiBold, Margin = new Thickness(15, 10, 0, 5) });
+            CreateIconRadioButtonGroup(c, "LockIconGroup", new Dictionary<string, int> { { "🛡️", 0 }, { "🔑", 1 }, { "🔐", 2 }, { "🔒", 3 } }, SettingsManager.LockIcon);
 
-            CreateCheckBox(content, "Disable Fence Scrollbars", "DisableFenceScrollbars", SettingsManager.DisableFenceScrollbars);
-            CreateCheckBox(content, "Enable Sounds", "EnableSounds", SettingsManager.EnableSounds);
-
-            // Appearance
-            CreateSectionHeader(content, "Appearance", ColorStyle);
-            CreateSliderControl(content, "Fence Tint", "TintSlider", SettingsManager.TintValue);
-            CreateSliderControl(content, "Menu Tint", "MenuTintSlider", SettingsManager.MenuTintValue);
-            CreateColorComboBox(content);
-            CreateLaunchEffectComboBox(content);
-
-            // Icons
-            CreateSectionHeader(content, "Icons", ColorStyle);
-
-            // Menu Icon Radio Buttons
-            content.Children.Add(new TextBlock { Text = "Menu Icon", FontWeight = FontWeights.SemiBold, Margin = new Thickness(15, 5, 0, 5) });
-            var menuIcons = new Dictionary<string, int> { { "♥", 0 }, { "☰", 1 }, { "≣", 2 }, { "𓃑", 3 } };
-            CreateIconRadioButtonGroup(content, "MenuIconGroup", menuIcons, SettingsManager.MenuIcon);
-
-            // Lock Icon Radio Buttons
-            content.Children.Add(new TextBlock { Text = "Lock Icon", FontWeight = FontWeights.SemiBold, Margin = new Thickness(15, 10, 0, 5) });
-            var lockIcons = new Dictionary<string, int> { { "🛡️", 0 }, { "🔑", 1 }, { "🔐", 2 }, { "🔒", 3 } };
-            CreateIconRadioButtonGroup(content, "LockIconGroup", lockIcons, SettingsManager.LockIcon);
-
-            scrollViewer.Content = content;
-            styleTab.Content = scrollViewer;
-            _tabControl.Items.Add(styleTab);
+            t.Content = new ScrollViewer { Content = c, VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
+            _tabControl.Items.Add(t);
         }
-
-
 
         private static void CreateToolsTab()
         {
-            TabItem toolsTab = new TabItem();
-            StackPanel content = new StackPanel();
+            TabItem t = new TabItem();
+            StackPanel c = new StackPanel();
+            CreateSectionHeader(c, "Tools", ColorTools);
 
-            CreateSectionHeader(content, "Tools", ColorTools);
+            Grid g = new Grid { Margin = new Thickness(0, 10, 0, 0) };
+            g.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(120) });
+            g.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(15) });
+            g.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(120) });
+            g.RowDefinitions.Add(new RowDefinition { Height = new GridLength(45) });
+            g.RowDefinitions.Add(new RowDefinition { Height = new GridLength(15) });
+            g.RowDefinitions.Add(new RowDefinition { Height = new GridLength(45) });
 
-            // --- Grid for Standard Tools ---
-            // Width Calculation: 120 + 15 + 120 = 255 Total Width
-            // Row Height: 45
-            Grid buttonGrid = new Grid { Margin = new Thickness(0, 10, 0, 0) };
-            buttonGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(120) });
-            buttonGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(15) });
-            buttonGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(120) });
-            buttonGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(45) });
-            buttonGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(15) });
-            buttonGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(45) });
+            Button b1 = CreateStyledButton("Backup", ColorTools); b1.Click += (s, e) => BackupManager.BackupData();
+            Button b2 = CreateStyledButton("Restore...", Color.FromRgb(255, 152, 0)); b2.Click += (s, e) => RestoreBackup();
+            Button b3 = CreateStyledButton("Open Backups Folder", Color.FromRgb(0, 123, 191)); b3.Click += (s, e) => OpenBackupsFolder();
+            Grid.SetRow(b1, 0); Grid.SetColumn(b1, 0);
+            Grid.SetRow(b2, 0); Grid.SetColumn(b2, 2);
+            Grid.SetRow(b3, 2); Grid.SetColumn(b3, 0); Grid.SetColumnSpan(b3, 3);
+            g.Children.Add(b1); g.Children.Add(b2); g.Children.Add(b3);
+            c.Children.Add(g);
 
-            Button backupButton = CreateStyledButton("Backup", ColorTools);
-            backupButton.Click += (s, e) => BackupManager.BackupData();
-            Grid.SetRow(backupButton, 0); Grid.SetColumn(backupButton, 0);
+            CreateCheckBox(c, "Automatic Backup (Daily)", "EnableAutoBackup", SettingsManager.EnableAutoBackup);
 
-            Button restoreButton = CreateStyledButton("Restore...", Color.FromRgb(255, 152, 0));
-            restoreButton.Click += (s, e) => RestoreBackup();
-            Grid.SetRow(restoreButton, 0); Grid.SetColumn(restoreButton, 2);
+            CreateSectionHeader(c, "Reset", Colors.Red);
+            Button r1 = CreateStyledButton("Reset Styles", Color.FromRgb(108, 117, 125));
+            r1.Width = 255; r1.Height = 45; r1.Margin = new Thickness(0, 0, 0, 15);
+            r1.Click += (s, e) => { if (MessageBoxesManager.ShowCustomYesNoMessageBox("Reset all visual customizations?", "Reset")) { FenceManager.ResetAllCustomizations(); _optionsWindow.Close(); } };
 
-            Button openBackupsButton = CreateStyledButton("Open Backups Folder", Color.FromRgb(0, 123, 191));
-            openBackupsButton.Click += (s, e) => OpenBackupsFolder();
-            Grid.SetRow(openBackupsButton, 2); Grid.SetColumn(openBackupsButton, 0); Grid.SetColumnSpan(openBackupsButton, 3);
+            Button r2 = CreateStyledButton("Clear All Data", Color.FromRgb(220, 53, 69));
+            r2.Width = 255; r2.Height = 45;
+            r2.Click += (s, e) => PerformFullFactoryReset();
 
-            buttonGrid.Children.Add(backupButton);
-            buttonGrid.Children.Add(restoreButton);
-            buttonGrid.Children.Add(openBackupsButton);
-            content.Children.Add(buttonGrid);
+            StackPanel rs = new StackPanel { HorizontalAlignment = HorizontalAlignment.Left };
+            rs.Children.Add(r1); rs.Children.Add(r2);
+            c.Children.Add(rs);
 
-            // --- 1. Automatic Backup Checkbox ---
-            CreateCheckBox(content, "Automatic Backup (Daily)", "EnableAutoBackup", SettingsManager.EnableAutoBackup);
-
-            // --- 2. Reset Section ---
-            CreateSectionHeader(content, "Reset", Colors.Red);
-
-            StackPanel resetStack = new StackPanel
-            {
-                Orientation = Orientation.Vertical,
-                HorizontalAlignment = HorizontalAlignment.Left,
-                Margin = new Thickness(0, 0, 0, 0)
-            };
-
-            // Dimensions to match "Open Backups Folder" exactly
-            double uniformWidth = 255;
-            double uniformHeight = 45;
-
-            // [Reset all Customizations]
-            Button resetCustomButton = CreateStyledButton("Reset Styles", Color.FromRgb(108, 117, 125)); // Gray
-            resetCustomButton.Width = uniformWidth;
-            resetCustomButton.Height = uniformHeight;
-            resetCustomButton.Margin = new Thickness(0, 0, 0, 15); // Gap between buttons
-            resetCustomButton.ToolTip = "Resets colors, fonts, and sizes to default. Content remains safe.";
-            resetCustomButton.Click += (s, e) =>
-            {
-                if (MessageBoxesManager.ShowCustomYesNoMessageBox("Reset all visual customizations to default?\nYour icons and fences will remain.", "Reset Styles"))
-                {
-                    FenceManager.ResetAllCustomizations();
-                    _optionsWindow.Close();
-                }
-            };
-
-            // [Clear all data]
-            Button clearDataButton = CreateStyledButton("Clear All Data", Color.FromRgb(220, 53, 69)); // Red
-            clearDataButton.Width = uniformWidth;
-            clearDataButton.Height = uniformHeight;
-            clearDataButton.ToolTip = "WARNING: Deletes all fences, shortcuts, and settings.";
-            clearDataButton.Click += (s, e) => PerformFullFactoryReset();
-
-            resetStack.Children.Add(resetCustomButton);
-            resetStack.Children.Add(clearDataButton);
-            content.Children.Add(resetStack);
-
-            toolsTab.Content = content;
-            _tabControl.Items.Add(toolsTab);
-        }
-        private static void PerformFullFactoryReset()
-        {
-            bool confirm = MessageBoxesManager.ShowCustomYesNoMessageBox(
-                "WARNING: This will delete ALL fences, shortcuts, and settings!\n\n" +
-                "Are you sure you want to proceed?",
-                "Factory Reset");
-
-            if (confirm)
-            {
-                try
-                {
-                    // 1. Silent Backup (Unique name, no success popup)
-                    string timestamp = DateTime.Now.ToString("yyMMddHHmm");
-                    string backupName = $"{timestamp}_backup_reset";
-                    BackupManager.CreateBackup(backupName, silent: true);
-
-                    // 2. Clean Folders
-                    string exeDir = System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
-                    string[] foldersToClean = { "Temp Shortcuts", "Shortcuts", "Last Fence Deleted", "CopiedItem" };
-
-                    foreach (string folder in foldersToClean)
-                    {
-                        string path = System.IO.Path.Combine(exeDir, folder);
-                        if (System.IO.Directory.Exists(path))
-                        {
-                            try
-                            {
-                                System.IO.Directory.Delete(path, true); // Recursive delete
-                                System.IO.Directory.CreateDirectory(path); // Recreate empty
-                            }
-                            catch (Exception ex)
-                            {
-                                LogManager.Log(LogManager.LogLevel.Warn, LogManager.LogCategory.Error, $"Failed to clean folder {folder}: {ex.Message}");
-                            }
-                        }
-                    }
-
-                    // 3. Reset JSON Files (Delete them)
-                    string fencesJson = System.IO.Path.Combine(exeDir, "fences.json");
-                    string optionsJson = System.IO.Path.Combine(exeDir, "options.json");
-
-                    if (System.IO.File.Exists(fencesJson)) System.IO.File.Delete(fencesJson);
-                    if (System.IO.File.Exists(optionsJson)) System.IO.File.Delete(optionsJson);
-
-                    // 4. Reload Application State
-                    // A. Reset Settings in memory (loads defaults since file is gone)
-                    SettingsManager.LoadSettings();
-
-                    // B. Reload Fences (destroys old windows, creates defaults)
-                    FenceManager.ReloadFences();
-
-                    // C. Close Options Window (it reflects old state)
-                    _optionsWindow.Close();
-
-                    // Optional: Minimal confirmation
-                    // MessageBoxesManager.ShowOKOnlyMessageBoxForm("Factory reset complete.", "Reset");
-                }
-                catch (Exception ex)
-                {
-                    LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.Error, $"Factory reset failed: {ex.Message}");
-                    MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Reset failed: {ex.Message}", "Error");
-                }
-            }
+            t.Content = c;
+            _tabControl.Items.Add(t);
         }
 
         private static void CreateLookDeeperTab()
         {
-            TabItem lookDeeperTab = new TabItem();
-            ScrollViewer scrollViewer = new ScrollViewer { VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
-            StackPanel content = new StackPanel();
+            TabItem t = new TabItem();
+            StackPanel c = new StackPanel();
+            CreateSectionHeader(c, "Log", ColorLookDeeper);
+            CreateCheckBox(c, "Enable logging", "EnableLogging", SettingsManager.IsLogEnabled);
+            Button b = CreateStyledButton("Open Log", ColorLookDeeper); b.Width = 100; b.Height = 25; b.HorizontalAlignment = HorizontalAlignment.Left;
+            b.Click += (s, e) => OpenLogFile();
+            c.Children.Add(b);
 
-            CreateSectionHeader(content, "Log", ColorLookDeeper);
-            CreateCheckBox(content, "Enable logging", "EnableLogging", SettingsManager.IsLogEnabled);
+            CreateSectionHeader(c, "Log configuration", ColorLookDeeper);
+            CreateLogLevelComboBox(c);
+            CreateSectionHeader(c, "Log Categories", ColorLookDeeper);
 
-            Button openLogButton = CreateStyledButton("Open Log", ColorLookDeeper);
-            openLogButton.Width = 100; openLogButton.Height = 25; openLogButton.HorizontalAlignment = HorizontalAlignment.Left;
-            openLogButton.Click += (s, e) => OpenLogFile();
-            content.Children.Add(openLogButton);
+            // This method creates checkboxes for all Enums (except Error now)
+            CreateLogCategoryCheckBoxes(c);
 
-            CreateSectionHeader(content, "Log configuration", ColorLookDeeper);
-            CreateLogLevelComboBox(content);
-
-            CreateSectionHeader(content, "Log Categories", ColorLookDeeper);
-            CreateLogCategoryCheckBoxes(content);
-            CreateCheckBox(content, "Enable Background Validation Logging", "EnableBackgroundValidation", SettingsManager.EnableBackgroundValidationLogging);
-
-            scrollViewer.Content = content;
-            lookDeeperTab.Content = scrollViewer;
-            _tabControl.Items.Add(lookDeeperTab);
+            t.Content = new ScrollViewer { Content = c, VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
+            _tabControl.Items.Add(t);
         }
 
-        // --- Helper Methods ---
+        // --- Helpers ---
+        private static void CreateSectionHeader(StackPanel p, string t, Color c) => p.Children.Add(new TextBlock { Text = t, FontFamily = new FontFamily("Segoe UI"), FontSize = 16, FontWeight = FontWeights.Bold, Foreground = new SolidColorBrush(c), Margin = new Thickness(0, 10, 0, 15) });
+        private static void CreateCheckBox(StackPanel p, string t, string n, bool c) => p.Children.Add(new CheckBox { Name = n, Content = t, IsChecked = c, FontFamily = new FontFamily("Segoe UI"), FontSize = 13, Margin = new Thickness(15, 8, 0, 8) });
+        private static CheckBox CreateCheckBoxReturn(StackPanel p, string t, string n, bool c) { var cb = new CheckBox { Name = n, Content = t, IsChecked = c, FontFamily = new FontFamily("Segoe UI"), FontSize = 13, Margin = new Thickness(15, 8, 0, 8) }; p.Children.Add(cb); return cb; }
 
-        private static void CreateSectionHeader(StackPanel parent, string title, Color headerColor)
+        private static void CreateSliderControl(StackPanel p, string l, string n, int v)
         {
-            parent.Children.Add(new TextBlock
+            Grid g = new Grid { Margin = new Thickness(0, 5, 0, 5) };
+            g.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(100) });
+            g.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(150) });
+            g.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(50) });
+            TextBlock lbl = new TextBlock { Text = l, FontSize = 13, VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 0, 10, 0) };
+            Slider sl = new Slider { Name = n, Minimum = 1, Maximum = 100, Value = v, TickFrequency = 1, IsSnapToTickEnabled = true, VerticalAlignment = VerticalAlignment.Center };
+            TextBlock val = new TextBlock { Text = v.ToString(), FontSize = 13, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(15, 0, 0, 0) };
+            sl.ValueChanged += (s, e) => val.Text = ((int)e.NewValue).ToString();
+            Grid.SetColumn(lbl, 0); Grid.SetColumn(sl, 1); Grid.SetColumn(val, 2);
+            g.Children.Add(lbl); g.Children.Add(sl); g.Children.Add(val);
+            p.Children.Add(g);
+        }
+
+        private static void CreateIconRadioButtonGroup(StackPanel p, string gName, Dictionary<string, int> icons, int sel)
+        {
+            StackPanel sp = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(15, 5, 0, 15), Tag = gName };
+            foreach (var i in icons) sp.Children.Add(new RadioButton { Content = i.Key, Tag = i.Value, GroupName = gName, IsChecked = i.Value == sel, Margin = new Thickness(0, 0, 15, 0), FontSize = 16, FontFamily = new FontFamily("Segoe UI Symbol") });
+            p.Children.Add(sp);
+        }
+
+        private static void CreateColorComboBox(StackPanel p)
+        {
+            Grid g = new Grid { Margin = new Thickness(0, 10, 0, 10) };
+            g.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(100) });
+            g.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(150) });
+            g.Children.Add(new TextBlock { Text = "Color", FontSize = 13, VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 0, 10, 0) });
+            ComboBox cb = new ComboBox { Name = "ColorComboBox", Height = 25, FontSize = 13, VerticalAlignment = VerticalAlignment.Center };
+            foreach (string c in new[] { "Gray", "Black", "White", "Beige", "Green", "Purple", "Fuchsia", "Yellow", "Orange", "Red", "Blue", "Bismark" }) cb.Items.Add(c);
+            cb.SelectedItem = SettingsManager.SelectedColor;
+            Grid.SetColumn(cb, 1); g.Children.Add(cb); p.Children.Add(g);
+        }
+
+        private static void CreateLaunchEffectComboBox(StackPanel p)
+        {
+            Grid g = new Grid { Margin = new Thickness(0, 10, 0, 10) };
+            g.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(100) });
+            g.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(150) });
+            g.Children.Add(new TextBlock { Text = "Effect", FontSize = 13, VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 0, 10, 0) });
+            ComboBox cb = new ComboBox { Name = "LaunchEffectComboBox", Height = 25, FontSize = 13, VerticalAlignment = VerticalAlignment.Center };
+            foreach (string e in new[] { "Zoom", "Bounce", "FadeOut", "SlideUp", "Rotate", "Agitate", "GrowAndFly", "Pulse", "Elastic", "Flip3D", "Spiral", "Shockwave", "Matrix", "Supernova", "Teleport" }) cb.Items.Add(e);
+            cb.SelectedIndex = (int)SettingsManager.LaunchEffect;
+            Grid.SetColumn(cb, 1); g.Children.Add(cb); p.Children.Add(g);
+        }
+
+        private static Button CreateStyledButton(string t, Color c) => new Button { Content = t, FontFamily = new FontFamily("Segoe UI"), FontSize = 13, FontWeight = FontWeights.Bold, Background = new SolidColorBrush(c), Foreground = Brushes.White, BorderThickness = new Thickness(0), Cursor = Cursors.Hand, HorizontalAlignment = HorizontalAlignment.Stretch, VerticalAlignment = VerticalAlignment.Stretch };
+
+        private static void CreateLogLevelComboBox(StackPanel p)
+        {
+            Grid g = new Grid { Margin = new Thickness(0, 10, 0, 10) };
+            g.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(120) });
+            g.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(120) });
+            g.Children.Add(new TextBlock { Text = "Minimum Log Level", FontSize = 13, VerticalAlignment = VerticalAlignment.Center });
+            ComboBox cb = new ComboBox { Name = "LogLevelComboBox", Height = 25, FontSize = 13, VerticalAlignment = VerticalAlignment.Center };
+            foreach (var l in new[] { "Debug", "Info", "Warn", "Error" }) cb.Items.Add(l);
+            cb.SelectedItem = SettingsManager.MinLogLevel.ToString();
+            Grid.SetColumn(cb, 1); g.Children.Add(cb); p.Children.Add(g);
+        }
+
+        // --- Log Categories (Optimized & Fixed) ---
+        private static void CreateLogCategoryCheckBoxes(StackPanel p)
+        {
+            Grid g = new Grid { Name = "LogCategoryGrid" };
+            g.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            g.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            StackPanel l = new StackPanel(); StackPanel r = new StackPanel();
+
+            // FIX: Filter out the "Error" category from UI, as it's a Level, not a Category
+            var cats = Enum.GetValues(typeof(LogManager.LogCategory))
+                .Cast<LogManager.LogCategory>()
+                .Where(c => c != LogManager.LogCategory.Error) // Hide Error
+                .ToList();
+
+            int half = (cats.Count + 1) / 2;
+
+            for (int i = 0; i < cats.Count; i++)
             {
-                Text = title,
-                FontFamily = new FontFamily("Segoe UI"),
-                FontSize = 16,
-                FontWeight = FontWeights.Bold,
-                Foreground = new SolidColorBrush(headerColor),
-                Margin = new Thickness(0, 10, 0, 15)
-            });
-        }
-
-        private static void CreateCheckBox(StackPanel parent, string text, string name, bool isChecked)
-        {
-            parent.Children.Add(new CheckBox
-            {
-                Name = name,
-                Content = text,
-                IsChecked = isChecked,
-                FontFamily = new FontFamily("Segoe UI"),
-                FontSize = 13,
-                Margin = new Thickness(15, 8, 0, 8)
-            });
-        }
-
-        private static CheckBox CreateCheckBoxReturn(StackPanel parent, string text, string name, bool isChecked)
-        {
-            var cb = new CheckBox
-            {
-                Name = name,
-                Content = text,
-                IsChecked = isChecked,
-                FontFamily = new FontFamily("Segoe UI"),
-                FontSize = 13,
-                Margin = new Thickness(15, 8, 0, 8)
-            };
-            parent.Children.Add(cb);
-            return cb;
-        }
-
-        private static void CreateSliderControl(StackPanel parent, string labelText, string sliderName, int currentValue)
-        {
-            Grid sliderGrid = new Grid();
-            sliderGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(100) }); // Label
-            sliderGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(150) }); // Slider
-            sliderGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(50) });  // Value
-            sliderGrid.Margin = new Thickness(0, 5, 0, 5);
-
-            TextBlock label = new TextBlock { Text = labelText, FontSize = 13, VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 0, 10, 0) };
-            Grid.SetColumn(label, 0);
-
-            Slider slider = new Slider { Name = sliderName, Minimum = 1, Maximum = 100, Value = currentValue, TickFrequency = 1, IsSnapToTickEnabled = true, VerticalAlignment = VerticalAlignment.Center };
-            Grid.SetColumn(slider, 1);
-
-            TextBlock valueDisplay = new TextBlock { Text = currentValue.ToString(), FontSize = 13, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(15, 0, 0, 0) };
-            Grid.SetColumn(valueDisplay, 2);
-
-            slider.ValueChanged += (s, e) => valueDisplay.Text = ((int)e.NewValue).ToString();
-
-            sliderGrid.Children.Add(label);
-            sliderGrid.Children.Add(slider);
-            sliderGrid.Children.Add(valueDisplay);
-            parent.Children.Add(sliderGrid);
-        }
-
-        private static void CreateIconRadioButtonGroup(StackPanel parent, string groupName, Dictionary<string, int> icons, int selectedIndex)
-        {
-            StackPanel panel = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(15, 5, 0, 15), Tag = groupName };
-
-            foreach (var icon in icons)
-            {
-                RadioButton rb = new RadioButton
-                {
-                    Content = icon.Key,
-                    Tag = icon.Value, // Store int value in Tag
-                    GroupName = groupName,
-                    IsChecked = icon.Value == selectedIndex,
-                    Margin = new Thickness(0, 0, 15, 0),
-                    FontSize = 16,
-                    FontFamily = new FontFamily("Segoe UI Symbol") // Ensure symbol support
-                };
-                panel.Children.Add(rb);
+                var cb = new CheckBox { Content = cats[i].ToString(), Tag = cats[i], IsChecked = SettingsManager.EnabledLogCategories.Contains(cats[i]), FontSize = 13, Margin = new Thickness(15, 8, 0, 8) };
+                if (i < half) l.Children.Add(cb); else r.Children.Add(cb);
             }
-            parent.Children.Add(panel);
+
+            Grid.SetColumn(l, 0); Grid.SetColumn(r, 1);
+            g.Children.Add(l); g.Children.Add(r);
+            p.Children.Add(g);
         }
 
-        private static void CreateColorComboBox(StackPanel parent)
-        {
-            Grid colorGrid = new Grid { Margin = new Thickness(0, 10, 0, 10) };
-            colorGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(100) });
-            colorGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(150) });
-
-            TextBlock label = new TextBlock { Text = "Color", FontSize = 13, VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 0, 10, 0) };
-            Grid.SetColumn(label, 0);
-
-            ComboBox comboBox = new ComboBox { Name = "ColorComboBox", Height = 25, FontSize = 13, VerticalAlignment = VerticalAlignment.Center };
-            string[] colors = { "Gray", "Black", "White", "Beige", "Green", "Purple", "Fuchsia", "Yellow", "Orange", "Red", "Blue", "Bismark" };
-            foreach (string color in colors) comboBox.Items.Add(color);
-            comboBox.SelectedItem = SettingsManager.SelectedColor;
-            Grid.SetColumn(comboBox, 1);
-
-            colorGrid.Children.Add(label);
-            colorGrid.Children.Add(comboBox);
-            parent.Children.Add(colorGrid);
-        }
-
-        private static void CreateLaunchEffectComboBox(StackPanel parent)
-        {
-            Grid effectGrid = new Grid { Margin = new Thickness(0, 10, 0, 10) };
-            effectGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(100) });
-            effectGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(150) });
-
-            TextBlock label = new TextBlock { Text = "Effect", FontSize = 13, VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 0, 10, 0) };
-            Grid.SetColumn(label, 0);
-
-            ComboBox comboBox = new ComboBox { Name = "LaunchEffectComboBox", Height = 25, FontSize = 13, VerticalAlignment = VerticalAlignment.Center };
-            string[] effects = { "Zoom", "Bounce", "FadeOut", "SlideUp", "Rotate", "Agitate", "GrowAndFly", "Pulse", "Elastic", "Flip3D", "Spiral", "Shockwave", "Matrix", "Supernova", "Teleport" };
-            foreach (string effect in effects) comboBox.Items.Add(effect);
-            comboBox.SelectedIndex = (int)SettingsManager.LaunchEffect;
-            Grid.SetColumn(comboBox, 1);
-
-            effectGrid.Children.Add(label);
-            effectGrid.Children.Add(comboBox);
-            parent.Children.Add(effectGrid);
-        }
-
-        private static Button CreateStyledButton(string text, Color color)
-        {
-            return new Button
-            {
-                Content = text,
-                FontFamily = new FontFamily("Segoe UI"),
-                FontSize = 13,
-                FontWeight = FontWeights.Bold,
-                Background = new SolidColorBrush(color),
-                Foreground = Brushes.White,
-                BorderThickness = new Thickness(0),
-                Cursor = Cursors.Hand,
-                HorizontalAlignment = HorizontalAlignment.Stretch,
-                VerticalAlignment = VerticalAlignment.Stretch
-            };
-        }
-
+        // --- SAVING ---
         private static void SaveOptions()
         {
             try
@@ -644,265 +396,147 @@ namespace Desktop_Fences
                 bool newPortalWatermarkState = false;
                 bool newShowInTrayState = false;
 
-                // --- 1. General Tab ---
-                TabItem generalTab = (TabItem)_tabControl.Items[0];
-                StackPanel generalContent = (StackPanel)((ScrollViewer)generalTab.Content).Content;
-
+                // 1. General
+                var generalContent = (StackPanel)((ScrollViewer)((TabItem)_tabControl.Items[0]).Content).Content;
                 foreach (var child in generalContent.Children)
                 {
-                    if (child is CheckBox checkBox)
+                    if (child is CheckBox cb)
                     {
-                        switch (checkBox.Name)
+                        if (cb.Name == "StartWithWindows" && cb.IsChecked != TrayManager.IsStartWithWindows) TrayManager.Instance?.ToggleStartWithWindows(cb.IsChecked == true);
+                        if (cb.Name == "SingleClickToLaunch") SettingsManager.SingleClickToLaunch = cb.IsChecked == true;
+                        if (cb.Name == "EnableSnapNearFences") SettingsManager.IsSnapEnabled = cb.IsChecked == true;
+                        if (cb.Name == "EnableDimensionSnap") SettingsManager.EnableDimensionSnap = cb.IsChecked == true;
+                        if (cb.Name == "UseRecycleBin") SettingsManager.UseRecycleBin = cb.IsChecked == true;
+                        if (cb.Name == "EnableTrayIcon")
                         {
-                            case "StartWithWindows":
-                                if (checkBox.IsChecked != TrayManager.IsStartWithWindows)
-                                    TrayManager.Instance?.ToggleStartWithWindows(checkBox.IsChecked == true);
-                                break;
-                            case "SingleClickToLaunch": SettingsManager.SingleClickToLaunch = checkBox.IsChecked == true; break;
-                            case "EnableSnapNearFences": SettingsManager.IsSnapEnabled = checkBox.IsChecked == true; break;
-                            case "EnableDimensionSnap": SettingsManager.EnableDimensionSnap = checkBox.IsChecked == true; break;
-                            case "EnableTrayIcon":
-                                newShowInTrayState = checkBox.IsChecked == true;
-                                SettingsManager.ShowInTray = newShowInTrayState;
-                                if (TrayManager.Instance != null)
-                                    TrayManager.Instance.GetType().GetField("Showintray", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(TrayManager.Instance, newShowInTrayState);
-                                break;
-                            case "UseRecycleBin": SettingsManager.UseRecycleBin = checkBox.IsChecked == true; break;
+                            newShowInTrayState = cb.IsChecked == true;
+                            SettingsManager.ShowInTray = newShowInTrayState;
+                            if (TrayManager.Instance != null) TrayManager.Instance.GetType().GetField("Showintray", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(TrayManager.Instance, newShowInTrayState);
                         }
                     }
                 }
 
-                // --- 2. Style Tab ---
-                TabItem styleTab = (TabItem)_tabControl.Items[1];
-                StackPanel styleContent = (StackPanel)((ScrollViewer)styleTab.Content).Content;
-
+                // 2. Style
+                var styleContent = (StackPanel)((ScrollViewer)((TabItem)_tabControl.Items[1]).Content).Content;
                 foreach (var child in styleContent.Children)
                 {
-                    if (child is CheckBox checkBox)
+                    if (child is CheckBox cb)
                     {
-                        switch (checkBox.Name)
-                        {
-                            case "EnablePortalWatermark":
-                                newPortalWatermarkState = checkBox.IsChecked == true;
-                                SettingsManager.ShowBackgroundImageOnPortalFences = newPortalWatermarkState;
-                                break;
-                            case "DisableFenceScrollbars": SettingsManager.DisableFenceScrollbars = checkBox.IsChecked == true; break;
-                            case "EnableSounds": SettingsManager.EnableSounds = checkBox.IsChecked == true; break;
-                                // Case for NoteWatermark reserved for future use
-                        }
+                        if (cb.Name == "EnablePortalWatermark") { newPortalWatermarkState = cb.IsChecked == true; SettingsManager.ShowBackgroundImageOnPortalFences = newPortalWatermarkState; }
+                        if (cb.Name == "DisableFenceScrollbars") SettingsManager.DisableFenceScrollbars = cb.IsChecked == true;
+                        if (cb.Name == "EnableSounds") SettingsManager.EnableSounds = cb.IsChecked == true;
                     }
-                    else if (child is Grid grid)
+                    else if (child is Grid g)
                     {
-                        var tintSlider = grid.Children.OfType<Slider>().FirstOrDefault(s => s.Name == "TintSlider");
-                        if (tintSlider != null) SettingsManager.TintValue = (int)tintSlider.Value;
-
-                        var menuTintSlider = grid.Children.OfType<Slider>().FirstOrDefault(s => s.Name == "MenuTintSlider");
-                        if (menuTintSlider != null) SettingsManager.MenuTintValue = (int)menuTintSlider.Value;
-
-                        var colorCombo = grid.Children.OfType<ComboBox>().FirstOrDefault(c => c.Name == "ColorComboBox");
-                        if (colorCombo?.SelectedItem != null) SettingsManager.SelectedColor = colorCombo.SelectedItem.ToString();
-
-                        var effectCombo = grid.Children.OfType<ComboBox>().FirstOrDefault(c => c.Name == "LaunchEffectComboBox");
-                        if (effectCombo != null) SettingsManager.LaunchEffect = (LaunchEffectsManager.LaunchEffect)effectCombo.SelectedIndex;
+                        var tint = g.Children.OfType<Slider>().FirstOrDefault(s => s.Name == "TintSlider"); if (tint != null) SettingsManager.TintValue = (int)tint.Value;
+                        var mtint = g.Children.OfType<Slider>().FirstOrDefault(s => s.Name == "MenuTintSlider"); if (mtint != null) SettingsManager.MenuTintValue = (int)mtint.Value;
+                        var col = g.Children.OfType<ComboBox>().FirstOrDefault(c => c.Name == "ColorComboBox"); if (col?.SelectedItem != null) SettingsManager.SelectedColor = col.SelectedItem.ToString();
+                        var eff = g.Children.OfType<ComboBox>().FirstOrDefault(c => c.Name == "LaunchEffectComboBox"); if (eff != null) SettingsManager.LaunchEffect = (LaunchEffectsManager.LaunchEffect)eff.SelectedIndex;
                     }
-                    else if (child is StackPanel stackPanel)
+                    else if (child is StackPanel sp)
                     {
-                        // Handle Radio Buttons for Icons
-                        if (stackPanel.Tag?.ToString() == "MenuIconGroup")
-                        {
-                            foreach (RadioButton rb in stackPanel.Children.OfType<RadioButton>())
-                                if (rb.IsChecked == true) SettingsManager.MenuIcon = (int)rb.Tag;
-                        }
-                        else if (stackPanel.Tag?.ToString() == "LockIconGroup")
-                        {
-                            foreach (RadioButton rb in stackPanel.Children.OfType<RadioButton>())
-                                if (rb.IsChecked == true) SettingsManager.LockIcon = (int)rb.Tag;
-                        }
+                        if (sp.Tag?.ToString() == "MenuIconGroup") foreach (RadioButton rb in sp.Children.OfType<RadioButton>()) if (rb.IsChecked == true) SettingsManager.MenuIcon = (int)rb.Tag;
+                        if (sp.Tag?.ToString() == "LockIconGroup") foreach (RadioButton rb in sp.Children.OfType<RadioButton>()) if (rb.IsChecked == true) SettingsManager.LockIcon = (int)rb.Tag;
                     }
                 }
 
+                // 3. Tools
+                var toolsContent = (StackPanel)((TabItem)_tabControl.Items[2]).Content;
+                foreach (var child in toolsContent.Children) if (child is CheckBox cb && cb.Name == "EnableAutoBackup") SettingsManager.EnableAutoBackup = cb.IsChecked == true;
 
-                // --- 3a. Tools Tab ---
-                TabItem toolsTabItem = (TabItem)_tabControl.Items[2];
-                if (toolsTabItem.Content is StackPanel toolsContent)
-                {
-                    foreach (var child in toolsContent.Children)
-                    {
-                        if (child is CheckBox checkBox && checkBox.Name == "EnableAutoBackup")
-                        {
-                            SettingsManager.EnableAutoBackup = checkBox.IsChecked == true;
-                        }
-                    }
-                }
-
-
-                // --- 3b. Look Deeper Tab ---
-                TabItem lookDeeperTab = (TabItem)_tabControl.Items[3]; // Index 3 now
-                StackPanel lookDeeperContent = (StackPanel)((ScrollViewer)lookDeeperTab.Content).Content;
+                // 4. Look Deeper (Logs)
+                var logContent = (StackPanel)((ScrollViewer)((TabItem)_tabControl.Items[3]).Content).Content;
                 var newEnabledCategories = new List<LogManager.LogCategory>();
 
-                foreach (var child in lookDeeperContent.Children)
-                {
-                    if (child is CheckBox checkBox)
-                    {
-                        if (checkBox.Name == "EnableLogging") SettingsManager.IsLogEnabled = checkBox.IsChecked == true;
-                        if (checkBox.Name == "EnableBackgroundValidation") SettingsManager.EnableBackgroundValidationLogging = checkBox.IsChecked == true;
-                    }
-                    else if (child is Grid grid)
-                    {
-                        var logLevelCombo = grid.Children.OfType<ComboBox>().FirstOrDefault(c => c.Name == "LogLevelComboBox");
-                        if (logLevelCombo?.SelectedItem != null && Enum.TryParse<LogManager.LogLevel>(logLevelCombo.SelectedItem.ToString(), out var logLevel))
-                            SettingsManager.SetMinLogLevel(logLevel);
+                // FIX: Force enable the hidden "Error" category so existing log calls don't break.
+                // It will only be filtered by the "Minimum Log Level" dropdown now.
+                newEnabledCategories.Add(LogManager.LogCategory.Error);
 
-                        if (grid.Name == "LogCategoryGrid") ProcessLogCategoryCheckboxes(grid, newEnabledCategories);
+                foreach (var child in logContent.Children)
+                {
+                    if (child is CheckBox cb)
+                    {
+                        if (cb.Name == "EnableLogging") SettingsManager.IsLogEnabled = cb.IsChecked == true;
+                    }
+                    else if (child is Grid g)
+                    {
+                        var lvl = g.Children.OfType<ComboBox>().FirstOrDefault(c => c.Name == "LogLevelComboBox");
+                        if (lvl?.SelectedItem != null && Enum.TryParse<LogManager.LogLevel>(lvl.SelectedItem.ToString(), out var ll)) SettingsManager.SetMinLogLevel(ll);
+
+                        if (g.Name == "LogCategoryGrid")
+                        {
+                            foreach (var stack in g.Children.OfType<StackPanel>())
+                            {
+                                // FIX: Renamed inner variable 'catBox' to prevent conflict
+                                foreach (var catBox in stack.Children.OfType<CheckBox>())
+                                {
+                                    if (catBox.IsChecked == true && catBox.Tag is LogManager.LogCategory cat)
+                                    {
+                                        newEnabledCategories.Add(cat);
+                                        // Sync the boolean for background validation
+                                        if (cat == LogManager.LogCategory.BackgroundValidation)
+                                            SettingsManager.EnableBackgroundValidationLogging = true;
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
 
-                // Save and Apply
+                if (!newEnabledCategories.Contains(LogManager.LogCategory.BackgroundValidation))
+                    SettingsManager.EnableBackgroundValidationLogging = false;
+
                 SettingsManager.SetEnabledLogCategories(newEnabledCategories);
                 LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.Settings, "Options saved successfully");
 
-                if (tempPortalImageState != newPortalWatermarkState)
-                { 
-                TrayManager.reloadAllFences();
-            }
+                if (tempPortalImageState != newPortalWatermarkState) TrayManager.reloadAllFences();
                 TrayManager.Instance?.UpdateTrayIcon();
-
-
-                // --- NEW UPDATE CALL ---
                 Utility.UpdateFenceVisuals();
-    
 
                 _optionsWindow.Close();
             }
             catch (Exception ex)
             {
                 LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.Settings, $"Error saving options: {ex.Message}");
-                MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Error saving settings: {ex.Message}", "Save Error");
+                MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Error: {ex.Message}", "Save Error");
             }
         }
 
-        // --- Reused Helpers (Log Checkboxes, etc) ---
-        private static void CreateLogLevelComboBox(StackPanel parent)
-        {
-            Grid levelGrid = new Grid { Margin = new Thickness(0, 10, 0, 10) };
-            levelGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(120) });
-            levelGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(120) });
-
-            TextBlock label = new TextBlock { Text = "Minimum Log Level", FontSize = 13, VerticalAlignment = VerticalAlignment.Center };
-            Grid.SetColumn(label, 0);
-
-            ComboBox comboBox = new ComboBox { Name = "LogLevelComboBox", Height = 25, FontSize = 13, VerticalAlignment = VerticalAlignment.Center };
-            comboBox.Items.Add("Debug"); comboBox.Items.Add("Info"); comboBox.Items.Add("Warn"); comboBox.Items.Add("Error");
-            comboBox.SelectedItem = SettingsManager.MinLogLevel.ToString();
-            Grid.SetColumn(comboBox, 1);
-
-            levelGrid.Children.Add(label); levelGrid.Children.Add(comboBox);
-            parent.Children.Add(levelGrid);
-        }
-
-        private static void CreateLogCategoryCheckBoxes(StackPanel parent)
-        {
-            Grid categoryGrid = new Grid { Name = "LogCategoryGrid" };
-            categoryGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            categoryGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-
-            StackPanel leftColumn = new StackPanel();
-            StackPanel rightColumn = new StackPanel();
-
-            var logCategories = new[] {
-                LogManager.LogCategory.General, LogManager.LogCategory.FenceCreation,
-                LogManager.LogCategory.FenceUpdate, LogManager.LogCategory.UI,
-                LogManager.LogCategory.IconHandling, LogManager.LogCategory.Error,
-                LogManager.LogCategory.ImportExport, LogManager.LogCategory.Settings
-            };
-
-            for (int i = 0; i < 4; i++) CreateLogCategoryCheckBox(leftColumn, logCategories[i].ToString(), SettingsManager.EnabledLogCategories.Contains(logCategories[i]));
-            for (int i = 4; i < 8; i++) CreateLogCategoryCheckBox(rightColumn, logCategories[i].ToString(), SettingsManager.EnabledLogCategories.Contains(logCategories[i]));
-
-            Grid.SetColumn(leftColumn, 0); Grid.SetColumn(rightColumn, 1);
-            categoryGrid.Children.Add(leftColumn); categoryGrid.Children.Add(rightColumn);
-            parent.Children.Add(categoryGrid);
-        }
-
-        private static void CreateLogCategoryCheckBox(StackPanel parent, string categoryName, bool isEnabled)
-        {
-            parent.Children.Add(new CheckBox { Name = "LogCategory" + categoryName, Content = categoryName, IsChecked = isEnabled, FontSize = 13, Margin = new Thickness(15, 8, 0, 8) });
-        }
-
-        private static void ProcessLogCategoryCheckboxes(Grid categoryGrid, List<LogManager.LogCategory> enabledCategories)
-        {
-            foreach (var gridChild in categoryGrid.Children)
-            {
-                if (gridChild is StackPanel stackPanel)
-                {
-                    foreach (var stackChild in stackPanel.Children)
-                    {
-                        if (stackChild is CheckBox checkBox && checkBox.Name.StartsWith("LogCategory") && checkBox.IsChecked == true)
-                        {
-                            string categoryName = checkBox.Name.Substring("LogCategory".Length);
-                            if (Enum.TryParse<LogManager.LogCategory>(categoryName, out var category))
-                                if (!enabledCategories.Contains(category)) enabledCategories.Add(category);
-                        }
-                    }
-                }
-            }
-        }
-
-        // Keep existing CreateFooter, CreateDonationSection, RestoreBackup, OpenBackupsFolder, OpenLogFile 
-        // (They are unchanged logic, included here for compilation completeness if copy-pasted)
         private static void CreateFooter(Grid mainGrid)
         {
-            Border footerBorder = new Border
-            {
-                Background = new SolidColorBrush(Color.FromRgb(248, 249, 250)),
-                BorderBrush = new SolidColorBrush(Color.FromRgb(218, 220, 224)),
-                BorderThickness = new Thickness(0, 1, 0, 0),
-                Padding = new Thickness(20, 8, 20, 8)
-            };
-            Grid.SetRow(footerBorder, 2);
+            Border f = new Border { Background = new SolidColorBrush(Color.FromRgb(248, 249, 250)), BorderBrush = new SolidColorBrush(Color.FromRgb(218, 220, 224)), BorderThickness = new Thickness(0, 1, 0, 0), Padding = new Thickness(20, 8, 20, 8) };
+            Grid.SetRow(f, 2);
+            StackPanel sp = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
 
-            StackPanel buttonPanel = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
+            Button c = new Button { Content = "Cancel", Width = 100, Height = 34, FontWeight = FontWeights.Bold, Background = Brushes.White, BorderBrush = new SolidColorBrush(Color.FromRgb(218, 220, 224)), BorderThickness = new Thickness(1), Margin = new Thickness(0, 0, 10, 0), Cursor = Cursors.Hand };
+            c.Click += (s, e) => _optionsWindow.Close();
 
-            Button cancelButton = new Button { Content = "Cancel", Width = 100, Height = 34, FontWeight = FontWeights.Bold, Background = Brushes.White, BorderBrush = new SolidColorBrush(Color.FromRgb(218, 220, 224)), BorderThickness = new Thickness(1), Margin = new Thickness(0, 0, 10, 0), Cursor = Cursors.Hand };
-            cancelButton.Click += (s, e) => _optionsWindow.Close();
+            Button sv = new Button { Content = "Save", Width = 100, Height = 34, FontWeight = FontWeights.Bold, Background = new SolidColorBrush(_userAccentColor), Foreground = Brushes.White, BorderThickness = new Thickness(0), Cursor = Cursors.Hand };
+            sv.Click += (s, e) => SaveOptions();
 
-            Button saveButton = new Button { Content = "Save", Width = 100, Height = 34, FontWeight = FontWeights.Bold, Background = new SolidColorBrush(_userAccentColor), Foreground = Brushes.White, BorderThickness = new Thickness(0), Cursor = Cursors.Hand };
-            saveButton.Click += (s, e) => SaveOptions();
-
-            buttonPanel.Children.Add(cancelButton);
-            buttonPanel.Children.Add(saveButton);
-            footerBorder.Child = buttonPanel;
-            mainGrid.Children.Add(footerBorder);
+            sp.Children.Add(c); sp.Children.Add(sv); f.Child = sp; mainGrid.Children.Add(f);
         }
 
         private static void CreateDonationSection(Grid mainGrid)
         {
-            Border donationBorder = new Border { Background = new SolidColorBrush(Color.FromRgb(255, 248, 225)), BorderBrush = new SolidColorBrush(Color.FromRgb(255, 193, 7)), BorderThickness = new Thickness(0, 1, 0, 0), Padding = new Thickness(20) };
-            Grid.SetRow(donationBorder, 3);
-            StackPanel donationPanel = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
-            TextBlock donationText = new TextBlock { Text = "Support the Maintenance and Enhancement of This Project by Donating", FontSize = 13, Foreground = new SolidColorBrush(Color.FromRgb(102, 77, 3)), VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 15, 0) };
-            Button paypalButton = new Button { Content = "♥ Donate via PayPal", FontSize = 14, Background = new SolidColorBrush(Color.FromRgb(255, 193, 7)), Foreground = Brushes.White, BorderThickness = new Thickness(0), Padding = new Thickness(15, 6, 15, 6), Cursor = Cursors.Hand };
-            paypalButton.Click += (s, e) => { try { Process.Start(new ProcessStartInfo { FileName = "https://www.paypal.com/donate/?hosted_button_id=M8H4M4R763RBE", UseShellExecute = true }); } catch { } };
-            donationPanel.Children.Add(donationText); donationPanel.Children.Add(paypalButton);
-            donationBorder.Child = donationPanel;
-            mainGrid.Children.Add(donationBorder);
+            Border d = new Border { Background = new SolidColorBrush(Color.FromRgb(255, 248, 225)), BorderBrush = new SolidColorBrush(Color.FromRgb(255, 193, 7)), BorderThickness = new Thickness(0, 1, 0, 0), Padding = new Thickness(20) };
+            Grid.SetRow(d, 3);
+            StackPanel sp = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
+            sp.Children.Add(new TextBlock { Text = "Support the Maintenance and Enhancement of This Project by Donating", FontSize = 13, Foreground = new SolidColorBrush(Color.FromRgb(102, 77, 3)), VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 15, 0) });
+            Button b = new Button { Content = "♥ Donate via PayPal", FontSize = 14, Background = new SolidColorBrush(Color.FromRgb(255, 193, 7)), Foreground = Brushes.White, BorderThickness = new Thickness(0), Padding = new Thickness(15, 6, 15, 6), Cursor = Cursors.Hand };
+            b.Click += (s, e) => { try { Process.Start(new ProcessStartInfo { FileName = "https://www.paypal.com/donate/?hosted_button_id=M8H4M4R763RBE", UseShellExecute = true }); } catch { } };
+            sp.Children.Add(b); d.Child = sp; mainGrid.Children.Add(d);
         }
 
         private static void RestoreBackup()
         {
             try
             {
-                string rootDir = System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
-                string backupsDir = System.IO.Path.Combine(rootDir, "Backups");
-                using (var dialog = new System.Windows.Forms.FolderBrowserDialog { SelectedPath = System.IO.Directory.Exists(backupsDir) ? backupsDir : rootDir })
+                string r = System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
+                string b = System.IO.Path.Combine(r, "Backups");
+                using (var d = new System.Windows.Forms.FolderBrowserDialog { SelectedPath = System.IO.Directory.Exists(b) ? b : r })
                 {
-                    if (dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
-                    {
-                        BackupManager.RestoreFromBackup(dialog.SelectedPath);
-                        _optionsWindow.Close();
-                        TrayManager.reloadAllFences();
-                    }
+                    if (d.ShowDialog() == System.Windows.Forms.DialogResult.OK) { BackupManager.RestoreFromBackup(d.SelectedPath); _optionsWindow.Close(); TrayManager.reloadAllFences(); }
                 }
             }
             catch (Exception ex) { MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Restore failed: {ex.Message}", "Error"); }
@@ -912,10 +546,9 @@ namespace Desktop_Fences
         {
             try
             {
-                string rootDir = System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
-                string backupsDir = System.IO.Path.Combine(rootDir, "Backups");
-                if (!System.IO.Directory.Exists(backupsDir)) System.IO.Directory.CreateDirectory(backupsDir);
-                Process.Start(new ProcessStartInfo { FileName = backupsDir, UseShellExecute = true });
+                string p = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "Backups");
+                if (!System.IO.Directory.Exists(p)) System.IO.Directory.CreateDirectory(p);
+                Process.Start(new ProcessStartInfo { FileName = p, UseShellExecute = true });
             }
             catch (Exception ex) { MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Error: {ex.Message}", "Error"); }
         }
@@ -924,11 +557,39 @@ namespace Desktop_Fences
         {
             try
             {
-                string logPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "Desktop_Fences.log");
-                if (System.IO.File.Exists(logPath)) Process.Start(new ProcessStartInfo { FileName = logPath, UseShellExecute = true });
+                string p = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "Desktop_Fences.log");
+                if (System.IO.File.Exists(p)) Process.Start(new ProcessStartInfo { FileName = p, UseShellExecute = true });
                 else MessageBoxesManager.ShowOKOnlyMessageBoxForm("Log file not found.", "Information");
             }
             catch { }
+        }
+
+        private static void PerformFullFactoryReset()
+        {
+            if (MessageBoxesManager.ShowCustomYesNoMessageBox("WARNING: This will delete ALL fences, shortcuts, and settings!\n\nAre you sure you want to proceed?", "Factory Reset"))
+            {
+                try
+                {
+                    string ts = DateTime.Now.ToString("yyMMddHHmm");
+                    BackupManager.CreateBackup($"{ts}_backup_reset", silent: true);
+                    string ed = System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
+                    foreach (string f in new[] { "Temp Shortcuts", "Shortcuts", "Last Fence Deleted", "CopiedItem" })
+                    {
+                        string p = System.IO.Path.Combine(ed, f);
+                        if (System.IO.Directory.Exists(p)) { try { System.IO.Directory.Delete(p, true); System.IO.Directory.CreateDirectory(p); } catch { } }
+                    }
+                    string fj = System.IO.Path.Combine(ed, "fences.json"); if (System.IO.File.Exists(fj)) System.IO.File.Delete(fj);
+                    string oj = System.IO.Path.Combine(ed, "options.json"); if (System.IO.File.Exists(oj)) System.IO.File.Delete(oj);
+                    SettingsManager.LoadSettings();
+                    FenceManager.ReloadFences();
+                    _optionsWindow.Close();
+                }
+                catch (Exception ex)
+                {
+                    LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.Error, $"Factory reset failed: {ex.Message}");
+                    MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Reset failed: {ex.Message}", "Error");
+                }
+            }
         }
     }
 }
