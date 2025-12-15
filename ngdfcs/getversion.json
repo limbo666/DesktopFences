@@ -4,18 +4,5 @@
     "CriticalUpdate": false,
     "DownloadUrl": "https://github.com/limbo666/DesktopFences/releases/tag/2.5.4.188",
     "ForceKillSwitch": false
-  },
-  "Announcements": [
-    {
-      "TargetVersionMin": "0.0.0.0",
-      "TargetVersionMax": "2.5.4.187",
-      "MaxDisplayCount": 3,
-      "AutoCloseSeconds": 0,
-      "CanUserDismiss": true
-    }
-  ],
-  "RemoteSettings": {
-    "EnableBackgroundLogging": false,
-    "SearchEngineUrl": ""
   }
 }
