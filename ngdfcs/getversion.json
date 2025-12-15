@@ -7,11 +7,6 @@
   },
   "Announcements": [
     {
-      "Id": "MSG_Release_9",
-      "Type": "Info",
-      "Title": "NEW VERSION!",
-      "Body": "New Features: \r\nTabs\r\nPortal fences improvements\r\nIcon customization\r\n",
-      "Link": "",
       "TargetVersionMin": "0.0.0.0",
       "TargetVersionMax": "2.5.4.187",
       "MaxDisplayCount": 3,
