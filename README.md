@@ -283,7 +283,7 @@ Even small contributions mean a lot. Thank you for keeping this project alive an
 - **Added**: Basic folder navigation for Portal Fences.
 - **Changed**: Tab naming pattern.
 
-## 2.5.4.188
+## 2.5.4.188 (Release 9)
 - **Added**: ⤵️ Import tab function.
 - **Fixed**: 🐛 Tab renaming bug fixed.
 
