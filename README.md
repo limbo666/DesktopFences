@@ -35,7 +35,7 @@ Desktop Fences+ has been significantly enhanced and optimized for improved perfo
 
 ##  TIPS 
 
-https://github.com/limbo666/DesktopFences/blob/main/TIPS.md
+**Advanced usage tips** https://github.com/limbo666/DesktopFences/blob/main/TIPS.md
 
 ---
 
