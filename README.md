@@ -30,12 +30,15 @@ Desktop Fences+ has been significantly enhanced and optimized for improved perfo
 
 ##  Manual
 
-**A simple how to use guide is located here:** https://github.com/limbo666/DesktopFences/blob/main/desktop_fences_simple_manual.md
-<br> Read it before starting an issue. 
+**$\color{red}{\text{A simple how to use guide is located here:}}$** https://github.com/limbo666/DesktopFences/blob/main/desktop_fences_simple_manual.md
+
 
 ##  TIPS 
 
-**Advanced usage tips** https://github.com/limbo666/DesktopFences/blob/main/TIPS.md
+**$\color{red}{\text{Also spome advanced usage tips:}}$**  https://github.com/limbo666/DesktopFences/blob/main/TIPS.md
+
+
+<br> Read them before starting an issue. 
 
 ---
 
