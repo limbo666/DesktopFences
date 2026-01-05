@@ -5,8 +5,7 @@
 <img src="https://img.shields.io/github/stars/limbo666/DesktopFences?style=flat-square" alt="Stars"/>
   <img src="https://img.shields.io/github/forks/limbo666/DesktopFences?style=flat-square" alt="Forks"/>
   <img src="https://img.shields.io/github/issues/limbo666/DesktopFences?style=flat-square" alt="Issues"/>
-  <img src="https://img.shields.io/github/license/limbo666/DesktopFences?style=flat-square" alt="License"/>
-  <img src="https://img.shields.io/github/last-commit/limbo666/DesktopFences?style=flat-square" alt="Last Commit"/>
+   <img src="https://img.shields.io/github/last-commit/limbo666/DesktopFences?style=flat-square" alt="Last Commit"/>
 </p>
 
 <p align="center">
