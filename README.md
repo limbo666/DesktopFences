@@ -293,6 +293,9 @@ Even small contributions mean a lot. Thank you for keeping this project alive an
 - **Added**: ⤵️ Import tab function.
 - **Fixed**: 🐛 Tab renaming bug fixed.
 
+## 2.6.5.210 (Release 10)
+- **TBA**
+
 ---
 
 ##  Summary
