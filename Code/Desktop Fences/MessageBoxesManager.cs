@@ -272,7 +272,53 @@ namespace Desktop_Fences
         }
 
 
+        // --- ADD TO UTILITY.CS or FENCEMANAGER.CS ---
 
+        public static Border CreateUnifiedMessage(string message)
+        {
+            var border = new Border
+            {
+                Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#F21F1F1F")), // Dark, High Opacity
+                BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#33FFFFFF")),
+                BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(8),
+                Padding = new Thickness(20, 12, 20, 12),
+                Effect = new DropShadowEffect { Color = Colors.Black, BlurRadius = 10, ShadowDepth = 3, Opacity = 0.4 },
+                IsHitTestVisible = false // Clicks pass through
+            };
+
+            var stack = new StackPanel { Orientation = Orientation.Vertical };
+
+            // 1. Main Message
+            var msgBlock = new TextBlock
+            {
+                Text = message,
+                Foreground = Brushes.White,
+                FontFamily = new FontFamily("Segoe UI"),
+                FontSize = 14,
+                FontWeight = FontWeights.SemiBold,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                TextAlignment = TextAlignment.Center
+            };
+
+            // 2. Branding Subtitle
+            var brandBlock = new TextBlock
+            {
+                Text = "Desktop Fences +",
+                Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#99FFFFFF")), // Dimmed White
+                FontFamily = new FontFamily("Segoe UI"),
+                FontSize = 9,
+                FontWeight = FontWeights.Normal,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                Margin = new Thickness(0, 4, 0, 0)
+            };
+
+            stack.Children.Add(msgBlock);
+            stack.Children.Add(brandBlock);
+            border.Child = stack;
+
+            return border;
+        }
 
         #region AutoClosingMessageBoxWindow - Internal WPF Window Class
         /// <summary>

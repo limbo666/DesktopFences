@@ -1,120 +1,180 @@
 ﻿using System;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
+
 namespace Desktop_Fences
 {
     public partial class App : Application
     {
         private TrayManager _trayManager;
         private TargetChecker _targetChecker;
-        private static bool _desktopIsShown = false; // Add this line
-
-
-
+        private static bool _desktopIsShown = false;
+        private static Mutex _mutex;
+        private const string UNIQUE_APP_NAME = "Global\\DesktopFences_Mutex_UniqueId_v2";
 
         private void Application_Startup(object sender, StartupEventArgs e)
         {
-          
-            // Fix Working Directory so Registry Startup finds json files correctly
-            System.IO.Directory.SetCurrentDirectory(System.AppDomain.CurrentDomain.BaseDirectory);
-           
+            // --- 1. SINGLE INSTANCE PROTECTION START ---
+            bool isNewInstance;
+            _mutex = new Mutex(true, UNIQUE_APP_NAME, out isNewInstance);
+
+            if (!isNewInstance)
             {
-                // Initialize settings FIRST
-                SettingsManager.LoadSettings();
-
-                // NEW: Initialize InterCore system
-                InterCore.Initialize();
-
-                // Initialize TrayManager BEFORE fences
-                _trayManager = new TrayManager();
-                _trayManager.InitializeTray();
-
-                // Initialize TargetChecker
-                _targetChecker = new TargetChecker(1000);
-                _targetChecker.Start();
-
-                // Load fences (hidden ones will auto-register with TrayManager)
-                FenceManager.LoadAndCreateFences(_targetChecker);
-
-                // Force tray icon update after all fences are loaded
-                _trayManager.UpdateTrayIcon();
-                _trayManager.UpdateHiddenFencesMenu();
-                // Initialize global hotkey monitoring
+                // --- DEBUGGING GHOSTS START ---
                 try
                 {
-                    GlobalHotkeyManager.WindowsPlusDDetected += OnWindowsPlusDDetected;
-                    GlobalHotkeyManager.StartMonitoring();
-                    LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General,
-                        "GlobalHotkeyManager: Successfully initialized hotkey monitoring");
+                    string debugLog = $"[{DateTime.Now}] Instance 2 Started.\n";
+                    debugLog += $"Args (e.Args): {string.Join(" | ", e.Args)}\n";
+                    debugLog += $"Args (Environment): {string.Join(" | ", Environment.GetCommandLineArgs())}\n";
+
+                    // Robust Check
+                    bool isDrawCommand = e.Args.Any(arg => arg.IndexOf("-create", StringComparison.OrdinalIgnoreCase) >= 0)
+                                         || Environment.GetCommandLineArgs().Any(arg => arg.IndexOf("-create", StringComparison.OrdinalIgnoreCase) >= 0);
+
+                    debugLog += $"Detected -create? {isDrawCommand}\n";
+
+                    if (isDrawCommand)
+                    {
+                        string cmd = $"CMD_DRAW|{Guid.NewGuid()}";
+                        RegistryHelper.WriteTrigger(cmd);
+                        debugLog += $"Action: Sent {cmd}";
+                    }
+                    else
+                    {
+                        RegistryHelper.WriteTrigger(null);
+                        debugLog += "Action: Sent NULL (Wake Up)";
+                    }
+
                 }
-                catch (System.Exception ex)
+                catch { }
+                // --- DEBUGGING GHOSTS END ---
+
+                // Close this second instance immediately
+                Shutdown();
+                return;
+            }
+            // --- SINGLE INSTANCE PROTECTION END ---
+
+            try
+            {
+                // 1. PHASE 1: INITIALIZE PROFILE SYSTEM (CRITICAL)
+                ProfileManager.Initialize();
+
+                // --- NEW: Sanitize Registry on Startup ---
+                // Prevents "Ghost" commands from previous sessions triggering automatically
+                RegistryHelper.DeleteTrigger();
+                // -----------------------------------------
+
+                // 2. SET WORKING DIRECTORY TO PROFILE
+                System.IO.Directory.SetCurrentDirectory(ProfileManager.CurrentProfileDir);
+
+                // Debug Log
+                LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General,
+                    $"Startup: Working Directory set to {ProfileManager.CurrentProfileDir}");
+
+                // 3. Continue Normal Startup
                 {
-                    LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.General,
-                        $"GlobalHotkeyManager: Failed to initialize: {ex.Message}");
+                    // Initialize settings (Now loads from Profile/options.json)
+                    SettingsManager.LoadSettings();
+
+                    // --- NEW: Self-Heal Context Menu Path ---
+                    // Ensures the registry key points to the current EXE location
+                    RegistryHelper.RefreshContextMenuPath();
+
+                    // Initialize InterCore system
+                    InterCore.Initialize();
+
+                    // Initialize TrayManager BEFORE fences
+                    _trayManager = new TrayManager();
+                    _trayManager.InitializeTray();
+
+                    // Initialize TargetChecker
+                    _targetChecker = new TargetChecker(1000);
+                    _targetChecker.Start();
+
+                    // Load fences (Now loads from Profile/fences.json)
+                    FenceManager.LoadAndCreateFences(_targetChecker);
+
+                    // --- PRODUCTION START LOGIC ---
+                    if (SettingsManager.EnableProfileAutomation)
+                    {
+                        AutomationManager.Start();
+                        LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, "Startup: Profile Automation Engine ignited.");
+                    }
+
+                    // Ensure UI reflects the current state of profiles and automation
+                    _trayManager.UpdateProfilesMenu();
+                    _trayManager.UpdateTrayIcon();
+                    _trayManager.UpdateHiddenFencesMenu();
+
+                    // Initialize global hotkey monitoring
+                    try
+                    {
+                        GlobalHotkeyManager.WindowsPlusDDetected += OnWindowsPlusDDetected;
+                        GlobalHotkeyManager.StartMonitoring();
+                        LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General,
+                            "GlobalHotkeyManager: Successfully initialized hotkey monitoring");
+                    }
+                    catch (System.Exception ex)
+                    {
+                        LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.General,
+                            $"GlobalHotkeyManager: Failed to initialize: {ex.Message}");
+                    }
+
+                    // --- NEW: Direct Draw Mode Check ---
+                    // If this MAIN instance was started via Context Menu, trigger draw mode now.
+                    // Use the same robust check as above.
+                    var allArgs = Environment.GetCommandLineArgs();
+                    bool isDrawStartup = e.Args.Any(arg => arg.IndexOf("-create", StringComparison.OrdinalIgnoreCase) >= 0)
+                                         || allArgs.Any(arg => arg.IndexOf("-create", StringComparison.OrdinalIgnoreCase) >= 0);
+
+                    if (isDrawStartup)
+                    {
+                        // Wait 500ms for UI to settle, then draw
+                        Task.Delay(500).ContinueWith(t => Dispatcher.Invoke(() => FenceManager.StartDrawMode()));
+                    }
                 }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Critical Startup Error: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                Shutdown();
             }
         }
 
         protected override void OnExit(ExitEventArgs e)
         {
-            // NEW: Cleanup InterCore system
             InterCore.Cleanup();
-            // Cleanup global hotkey monitoring
             try
             {
                 GlobalHotkeyManager.StopMonitoring();
-                LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General,
-                    "GlobalHotkeyManager: Successfully stopped hotkey monitoring");
             }
-            catch (System.Exception ex)
-            {
-                LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.General,
-                    $"GlobalHotkeyManager: Error during cleanup: {ex.Message}");
-            }
+            catch { }
             _trayManager?.Dispose();
             base.OnExit(e);
         }
-       
-
-
 
         private static void OnWindowsPlusDDetected(object sender, System.EventArgs e)
         {
             try
             {
-                // Toggle the state
                 _desktopIsShown = !_desktopIsShown;
-
-                LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General,
-                    $"Windows+D detected - desktop shown: {_desktopIsShown}");
-
                 if (_desktopIsShown)
                 {
-                    // Desktop is shown - restore fences after delay
                     var restoreTimer = new System.Windows.Threading.DispatcherTimer
                     {
                         Interval = TimeSpan.FromMilliseconds(800)
                     };
-
                     restoreTimer.Tick += (timerSender, timerArgs) =>
                     {
-                        try
-                        {
-                            restoreTimer.Stop();
-                            LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General,
-                                "Restoring fences after Windows+D");
-                            RestoreAllFenceWindows();
-                        }
-                        catch (System.Exception ex)
-                        {
-                            LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.General,
-                                $"Error restoring fences: {ex.Message}");
-                        }
+                        restoreTimer.Stop();
+                        RestoreAllFenceWindows();
                     };
                     restoreTimer.Start();
                 }
 
-                // Auto-reset state after 10 seconds in case of missed detection
                 var resetTimer = new System.Windows.Threading.DispatcherTimer
                 {
                     Interval = TimeSpan.FromSeconds(10)
@@ -123,20 +183,12 @@ namespace Desktop_Fences
                 {
                     resetTimer.Stop();
                     _desktopIsShown = false;
-                    LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.General,
-                        "Auto-reset Windows+D state");
                 };
                 resetTimer.Start();
             }
-            catch (System.Exception ex)
-            {
-                LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.General,
-                    $"Error handling Windows+D detection: {ex.Message}");
-            }
+            catch { }
         }
-        /// <summary>
-        /// Restores visibility of all fence windows after Windows+D
-        /// </summary>
+
         private static void RestoreAllFenceWindows()
         {
             try
@@ -145,50 +197,23 @@ namespace Desktop_Fences
                     .OfType<NonActivatingWindow>()
                     .ToList();
 
-                LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General,
-                    $"Found {fenceWindows.Count} fence windows to restore");
-
                 foreach (var fenceWindow in fenceWindows)
                 {
                     try
                     {
-                        // Restore window if it was minimized/hidden
                         if (fenceWindow.WindowState == WindowState.Minimized)
-                        {
                             fenceWindow.WindowState = WindowState.Normal;
-                        }
 
-                        // Ensure window is visible
                         if (!fenceWindow.IsVisible)
-                        {
                             fenceWindow.Show();
-                        }
 
-                        // Bring to front (but don't activate to avoid stealing focus)
                         fenceWindow.Topmost = true;
                         fenceWindow.Topmost = false;
-
-                        LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.General,
-                            $"Restored fence window: {fenceWindow.Tag}");
                     }
-                    catch (System.Exception ex)
-                    {
-                        LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.General,
-                            $"Error restoring individual fence window: {ex.Message}");
-                    }
+                    catch { }
                 }
-
-                LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General,
-                    "Completed fence window restoration");
             }
-            catch (System.Exception ex)
-            {
-                LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.General,
-                    $"Error in RestoreAllFenceWindows: {ex.Message}");
-            }
+            catch { }
         }
-
-
-
     }
 }

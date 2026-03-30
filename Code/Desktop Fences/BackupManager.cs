@@ -14,17 +14,13 @@ using System.Windows.Media.Effects;
 
 namespace Desktop_Fences
 {
-    // <summary>
-    // Manages backup operations for Desktop Fences data, including the fences configuration file
-    // and associated shortcut files. Backups are stored in timestamped folders for easy recovery.
-    // Refactored to centralize all backup/restore functionality.
-
+    /// <summary>
+    /// Manages backup operations for Desktop Fences data, including the fences configuration file
+    /// and associated shortcut files. Backups are stored in timestamped folders for easy recovery.
+    /// Refactored to centralize all backup/restore functionality and support Multi-Profile.
+    /// </summary>
     public static class BackupManager
     {
-
-
-
-
         #region Private Fields
         // Track active legendary effects to allow cleanup/reversion
         private static readonly Dictionary<string, Storyboard> _legendaryEffects = new Dictionary<string, Storyboard>();
@@ -32,96 +28,54 @@ namespace Desktop_Fences
         private static readonly Dictionary<string, Thickness> _originalBorderThicknesses = new Dictionary<string, Thickness>();
         private static readonly Dictionary<string, Effect> _originalEffects = new Dictionary<string, Effect>();
 
-
-
         // Manage last deleted fence restoration
         private static string _lastDeletedFolderPath;
         private static dynamic _lastDeletedFence;
         private static bool _isRestoreAvailable;
+        private static System.Windows.Threading.DispatcherTimer _autoBackupTimer;
         #endregion
 
         #region Public Properties
-
         // Gets whether a restore operation is available for the last deleted fence
-
         public static bool IsRestoreAvailable => _isRestoreAvailable;
 
-
         // Gets the path to the last deleted fence backup folder
-
         public static string LastDeletedFolderPath => _lastDeletedFolderPath;
         #endregion
 
+        #region Public UI Helpers (NEW)
+
+        /// <summary>
+        /// Opens the "Backups" folder for the CURRENT ACTIVE PROFILE in File Explorer.
+        /// </summary>
+        public static void OpenBackupsFolder()
+        {
+            try
+            {
+                string path = ProfileManager.GetProfileFilePath("Backups");
+                if (!Directory.Exists(path)) Directory.CreateDirectory(path);
+                Process.Start("explorer.exe", path);
+            }
+            catch (Exception ex)
+            {
+                LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.ImportExport, $"Failed to open backups folder: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Returns the full path to the "Backups" folder for the CURRENT ACTIVE PROFILE.
+        /// Useful for initializing OpenFileDialogs.
+        /// </summary>
+        public static string GetBackupsFolderPath()
+        {
+            string path = ProfileManager.GetProfileFilePath("Backups");
+            if (!Directory.Exists(path)) Directory.CreateDirectory(path);
+            return path;
+        }
+
+        #endregion
+
         #region Existing Backup Method (Enhanced)
-
-        // Creates a complete backup of all fences and shortcuts with enhanced logging
-        //public static void BackupData()
-        //{
-        //    try
-        //    {
-        //        LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.ImportExport, "Starting complete data backup");
-
-        //        // Get the directory of the executing assembly
-        //        string exePath = Assembly.GetEntryAssembly().Location;
-        //        string exeDir = Path.GetDirectoryName(exePath);
-
-        //        // Define source paths for fences.json and Shortcuts folder
-        //        string jsonFilePath = Path.Combine(exeDir, "fences.json");
-        //        string shortcutsFolderPath = Path.Combine(exeDir, "Shortcuts");
-
-        //        // Define the destination "Backups" folder
-        //        string backupsFolderPath = Path.Combine(exeDir, "Backups");
-        //        if (!Directory.Exists(backupsFolderPath))
-        //        {
-        //            Directory.CreateDirectory(backupsFolderPath); // Create Backups folder if it doesn't exist
-        //            LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.ImportExport, $"Created Backups directory: {backupsFolderPath}");
-        //        }
-
-        //        // Create a new backup folder with the current date and time (e.g., "2503181234_backup")
-        //        string backupFolderName = DateTime.Now.ToString("yyMMddHHmm") + "_backup";
-        //        string backupFolderPath = Path.Combine(backupsFolderPath, backupFolderName);
-        //        Directory.CreateDirectory(backupFolderPath);
-
-        //        // Copy the fences.json file to the backup folder
-        //        string backupJsonFilePath = Path.Combine(backupFolderPath, "fences.json");
-        //        if (File.Exists(jsonFilePath))
-        //        {
-        //            File.Copy(jsonFilePath, backupJsonFilePath, true); // Overwrite if exists
-        //            LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.ImportExport, $"Backed up fences.json to: {backupJsonFilePath}");
-        //        }
-        //        else
-        //        {
-        //            LogManager.Log(LogManager.LogLevel.Warn, LogManager.LogCategory.ImportExport, "fences.json not found for backup");
-        //        }
-
-        //        // Copy the entire "Shortcuts" folder, if it exists
-        //        string backupShortcutsFolderPath = Path.Combine(backupFolderPath, "Shortcuts");
-        //        if (Directory.Exists(shortcutsFolderPath))
-        //        {
-        //            Directory.CreateDirectory(backupShortcutsFolderPath);
-
-        //            // Use our helper method to copy directory recursively
-        //            CopyDirectory(shortcutsFolderPath, backupShortcutsFolderPath);
-
-        //            var fileCount = Directory.GetFiles(backupShortcutsFolderPath, "*.*", SearchOption.AllDirectories).Length;
-        //            LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.ImportExport, $"Backed up {fileCount} files from Shortcuts folder");
-        //        }
-        //        else
-        //        {
-        //            LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.ImportExport, "Shortcuts folder not found, skipping shortcut backup");
-        //        }
-
-        //        // Notify the user of successful backup
-        //        MessageBoxesManager.ShowOKOnlyMessageBoxForm("Backup completed successfully.", "Backup");
-        //        LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.ImportExport, $"Complete data backup finished successfully: {backupFolderPath}");
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        // Handle any errors during the backup process and inform the user
-        //        LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.ImportExport, $"Backup failed: {ex.Message}\nStack trace: {ex.StackTrace}");
-        //        MessageBoxesManager.ShowOKOnlyMessageBoxForm($"An error occurred during backup: {ex.Message}", "Error");
-        //    }
-        //}
 
         // Replaces existing BackupData to use the new shared helper
         public static void BackupData()
@@ -132,17 +86,9 @@ namespace Desktop_Fences
             CreateBackup(backupName, silent: false);
         }
 
-
         #endregion
 
         #region Restore Operations
-
-        // Restores fences and shortcuts from a backup folder with comprehensive validation
-
-        // <param name="backupFolder">Path to the backup folder to restore from</param>
-    
-
-        // Restores the last deleted fence from backup with validation
 
         public static void RestoreLastDeletedFence()
         {
@@ -161,7 +107,9 @@ namespace Desktop_Fences
                 if (Directory.Exists(_lastDeletedFolderPath))
                 {
                     var shortcutFiles = Directory.GetFiles(_lastDeletedFolderPath, "*.lnk");
-                    string shortcutsDir = Path.Combine(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "Shortcuts");
+
+                    // FIX: Use Profile Path for Shortcuts
+                    string shortcutsDir = ProfileManager.GetProfileFilePath("Shortcuts");
 
                     // Ensure shortcuts directory exists
                     if (!Directory.Exists(shortcutsDir))
@@ -204,9 +152,6 @@ namespace Desktop_Fences
 
         #region Fence Export/Import Operations
 
-        // Exports a single fence to a .fence file with all associated shortcuts
-
-        // <param name="fence">The fence to export</param>
         public static void ExportFence(dynamic fence)
         {
             try
@@ -222,6 +167,7 @@ namespace Desktop_Fences
                     fenceTitle = fenceTitle.Replace(c, '_');
                 }
 
+                // Exports go to GLOBAL "Exports" folder (shared between profiles)
                 string exportFolder = Path.Combine(exeDir, "Exports", fenceTitle);
                 string fencePath = Path.Combine(exeDir, "Exports", $"{fenceTitle}.fence");
 
@@ -255,7 +201,9 @@ namespace Desktop_Fences
                             string filename = item["Filename"]?.ToString();
                             if (!string.IsNullOrEmpty(filename))
                             {
-                                string sourcePath = Path.Combine(exeDir, filename);
+                                // FIX: Resolve source path from Profile
+                                string sourcePath = Path.Combine(ProfileManager.CurrentProfileDir, filename);
+
                                 if (File.Exists(sourcePath))
                                 {
                                     string destName = Path.GetFileName(filename);
@@ -308,9 +256,6 @@ namespace Desktop_Fences
             }
         }
 
-        // Imports a fence from a .fence file with comprehensive validation
-
-
         public static void ImportFence()
         {
             try
@@ -353,11 +298,13 @@ namespace Desktop_Fences
                     if (importedFence.ItemsType?.ToString() == "Data")
                     {
                         string sourceShortcuts = Path.Combine(tempDir, "Shortcuts");
-                        string destShortcuts = Path.Combine(exeDir, "Shortcuts");
+
+                        // FIX: Target current Profile Shortcuts folder
+                        string destShortcuts = ProfileManager.GetProfileFilePath("Shortcuts");
 
                         if (Directory.Exists(sourceShortcuts))
                         {
-                            Directory.CreateDirectory(destShortcuts);
+                            if (!Directory.Exists(destShortcuts)) Directory.CreateDirectory(destShortcuts);
 
                             foreach (string srcPath in Directory.GetFiles(sourceShortcuts))
                             {
@@ -427,24 +374,19 @@ namespace Desktop_Fences
             }
         }
 
-
         #endregion
 
         #region Deletion Backup Management
 
-        // Backs up a fence that's being deleted for potential restoration
-
-        // <param name="fence">The fence being deleted</param>
-        // Backs up a fence that's being deleted for potential restoration
-        // Updated to be TAB-AWARE (Backs up shortcuts from tabs too)
         public static void BackupDeletedFence(dynamic fence)
         {
             try
             {
                 LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.ImportExport, $"Creating deletion backup for fence: {fence.Title}");
 
-                // Ensure the backup folder exists
-                _lastDeletedFolderPath = Path.Combine(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "Last Fence Deleted");
+                // FIX: Use Profile Path
+                _lastDeletedFolderPath = ProfileManager.GetProfileFilePath("Last Fence Deleted");
+
                 if (!Directory.Exists(_lastDeletedFolderPath))
                 {
                     Directory.CreateDirectory(_lastDeletedFolderPath);
@@ -456,7 +398,6 @@ namespace Desktop_Fences
                     File.Delete(file);
                 }
 
-                // Store fence reference and mark restore as available
                 _lastDeletedFence = fence;
                 _isRestoreAvailable = true;
 
@@ -465,7 +406,6 @@ namespace Desktop_Fences
                 {
                     int backedUpShortcuts = 0;
 
-                    // Helper to backup a list of items
                     void BackupItems(JArray items)
                     {
                         if (items == null) return;
@@ -474,24 +414,18 @@ namespace Desktop_Fences
                             string itemFilePath = item["Filename"]?.ToString();
                             if (!string.IsNullOrEmpty(itemFilePath))
                             {
-                                // Handle both full paths and relative paths
                                 string fullSourcePath = Path.IsPathRooted(itemFilePath)
                                     ? itemFilePath
-                                    : Path.Combine(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), itemFilePath);
+                                    : Path.Combine(ProfileManager.CurrentProfileDir, itemFilePath);
 
                                 if (File.Exists(fullSourcePath))
                                 {
                                     string destPath = Path.Combine(_lastDeletedFolderPath, Path.GetFileName(itemFilePath));
-                                    // Prevent duplicate copy errors
                                     if (!File.Exists(destPath))
                                     {
                                         File.Copy(fullSourcePath, destPath, true);
                                         backedUpShortcuts++;
                                     }
-                                }
-                                else
-                                {
-                                    LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.ImportExport, $"Skipped backing up missing file: {itemFilePath}");
                                 }
                             }
                         }
@@ -501,7 +435,7 @@ namespace Desktop_Fences
                     var mainItems = fence.Items as JArray;
                     if (mainItems != null) BackupItems(mainItems);
 
-                    // 2. Backup Tab Items (The Fix)
+                    // 2. Backup Tab Items
                     bool tabsEnabled = fence.TabsEnabled?.ToString().ToLower() == "true";
                     if (tabsEnabled)
                     {
@@ -515,11 +449,8 @@ namespace Desktop_Fences
                             }
                         }
                     }
-
-                    LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.ImportExport, $"Backed up {backedUpShortcuts} shortcuts for deletion");
                 }
 
-                // Save fence info to JSON for complete restoration
                 string fenceJsonPath = Path.Combine(_lastDeletedFolderPath, "fence.json");
                 File.WriteAllText(fenceJsonPath, JsonConvert.SerializeObject(fence, Formatting.Indented));
 
@@ -528,55 +459,41 @@ namespace Desktop_Fences
             catch (Exception ex)
             {
                 LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.ImportExport, $"Error creating deletion backup: {ex.Message}");
-                // Don't throw - deletion should continue even if backup fails
             }
         }
-        // Cleans the last deleted fence backup folder and resets restore availability
 
         public static void CleanLastDeletedFolder()
         {
             try
             {
-                _lastDeletedFolderPath = Path.Combine(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "Last Fence Deleted");
+                _lastDeletedFolderPath = ProfileManager.GetProfileFilePath("Last Fence Deleted");
 
                 if (Directory.Exists(_lastDeletedFolderPath))
                 {
-                    // Clear all files in the backup folder
                     foreach (var file in Directory.GetFiles(_lastDeletedFolderPath))
                     {
                         File.Delete(file);
                     }
-                    LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.ImportExport, "Cleaned last deleted folder contents");
                 }
                 else
                 {
-                    // Create the directory if it doesn't exist
                     Directory.CreateDirectory(_lastDeletedFolderPath);
-                    LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.ImportExport, $"Created last deleted folder: {_lastDeletedFolderPath}");
                 }
 
-                // Reset backup state
                 _isRestoreAvailable = false;
                 _lastDeletedFence = null;
-
-                // Update heart context menus to reflect that no restore is available
                 FenceManager.UpdateAllHeartContextMenus();
-
-                LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.ImportExport, "Reset deletion backup state");
             }
             catch (Exception ex)
             {
                 LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.ImportExport, $"Error cleaning last deleted folder: {ex.Message}");
             }
         }
+
         #endregion
 
         #region Helper Methods
 
-        // Recursively copies a directory and all its contents
-
-        // <param name="sourceDir">Source directory path</param>
-        // <param name="destDir">Destination directory path</param>
         public static void CopyDirectory(string sourceDir, string destDir)
         {
             try
@@ -584,52 +501,42 @@ namespace Desktop_Fences
                 DirectoryInfo dir = new DirectoryInfo(sourceDir);
                 DirectoryInfo[] dirs = dir.GetDirectories();
 
-                // Create destination directory
                 Directory.CreateDirectory(destDir);
 
-                // Copy all files in the current directory
                 foreach (FileInfo file in dir.GetFiles())
                 {
                     string targetFilePath = Path.Combine(destDir, file.Name);
                     file.CopyTo(targetFilePath, false);
                 }
 
-                // Recursively copy all subdirectories
                 foreach (DirectoryInfo subDir in dirs)
                 {
                     string newDestDir = Path.Combine(destDir, subDir.Name);
                     CopyDirectory(subDir.FullName, newDestDir);
                 }
-
-                LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.ImportExport, $"Copied directory: {sourceDir} -> {destDir}");
             }
             catch (Exception ex)
             {
                 LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.ImportExport, $"Error copying directory {sourceDir}: {ex.Message}");
-                throw; // Re-throw to allow caller to handle
+                throw;
             }
         }
         #endregion
 
-
-
         #region Auto-Backup & Core Logic
-
-        private static System.Windows.Threading.DispatcherTimer _autoBackupTimer;
 
         // Called at startup to schedule the daily auto-backup
         public static void InitializeAutoBackup()
         {
             if (!SettingsManager.EnableAutoBackup) return;
 
-            // Check if already ran today to prevent spamming backups on every restart
+            // Check if already ran today FOR THE CURRENT PROFILE
             if (SettingsManager.LastAutoBackupDate.Date == DateTime.Today)
             {
                 LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.ImportExport, "Auto-backup skipped: Already ran today.");
                 return;
             }
 
-            // Schedule for 5 minutes later to avoid slowing down startup
             _autoBackupTimer = new System.Windows.Threading.DispatcherTimer
             {
                 Interval = TimeSpan.FromMinutes(5)
@@ -647,17 +554,16 @@ namespace Desktop_Fences
         {
             try
             {
-                // Double-check setting
+                // Double-check setting (in case it changed since startup)
                 if (!SettingsManager.EnableAutoBackup) return;
 
-                // Format: [datetime]_backup_auto
                 string timestamp = DateTime.Now.ToString("yyMMddHHmm");
                 string backupFolderName = $"{timestamp}_backup_auto";
 
-                // Run backup silently (no message box)
+                // This calls CreateBackup which resolves Profile Path dynamically
                 CreateBackup(backupFolderName, silent: true);
 
-                // Update last run date
+                // Update last run date (saves to Active Profile or Master)
                 SettingsManager.LastAutoBackupDate = DateTime.Now;
                 SettingsManager.SaveSettings();
 
@@ -670,21 +576,17 @@ namespace Desktop_Fences
         }
 
         // Refactored Helper: Centralizes the actual backup work
-        // Includes options.json now
         public static void CreateBackup(string folderName, bool silent = false)
         {
             try
             {
-                string exePath = Assembly.GetEntryAssembly().Location;
-                string exeDir = Path.GetDirectoryName(exePath);
+                // SOURCE: Profile Directory (Dynamic)
+                string jsonFilePath = ProfileManager.GetProfileFilePath("fences.json");
+                string optionsFilePath = ProfileManager.GetProfileFilePath("options.json");
+                string shortcutsFolderPath = ProfileManager.GetProfileFilePath("Shortcuts");
 
-                // Source Paths
-                string jsonFilePath = Path.Combine(exeDir, "fences.json");
-                string optionsFilePath = Path.Combine(exeDir, "options.json"); // NEW
-                string shortcutsFolderPath = Path.Combine(exeDir, "Shortcuts");
-
-                // Dest Paths
-                string backupsFolderPath = Path.Combine(exeDir, "Backups");
+                // DEST: Profile Directory -> Backups
+                string backupsFolderPath = ProfileManager.GetProfileFilePath("Backups");
                 string backupFolderPath = Path.Combine(backupsFolderPath, folderName);
 
                 if (!Directory.Exists(backupsFolderPath))
@@ -700,7 +602,7 @@ namespace Desktop_Fences
                     File.Copy(jsonFilePath, backupJsonFilePath, true);
                 }
 
-                // 2. Copy options.json (NEW)
+                // 2. Copy options.json
                 string backupOptionsFilePath = Path.Combine(backupFolderPath, "options.json");
                 if (File.Exists(optionsFilePath))
                 {
@@ -732,14 +634,12 @@ namespace Desktop_Fences
             }
         }
 
-        // Restores fences, shortcuts, AND optionally settings from a backup
         public static void RestoreFromBackup(string backupFolder)
         {
             try
             {
                 LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.ImportExport, $"Starting restore from backup: {backupFolder}");
 
-                // 1. Validate basic structure
                 string backupFencesPath = Path.Combine(backupFolder, "fences.json");
                 string backupShortcutsPath = Path.Combine(backupFolder, "Shortcuts");
 
@@ -750,7 +650,6 @@ namespace Desktop_Fences
                     return;
                 }
 
-                string exeDir = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
                 bool restartRequired = false;
 
                 // 2. Handle options.json
@@ -766,7 +665,7 @@ namespace Desktop_Fences
                     {
                         try
                         {
-                            string currentOptionsPath = Path.Combine(exeDir, "options.json");
+                            string currentOptionsPath = ProfileManager.GetProfileFilePath("options.json");
                             File.Copy(backupOptionsPath, currentOptionsPath, true);
                             LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.ImportExport, "Restored options.json");
                             restartRequired = true;
@@ -779,8 +678,8 @@ namespace Desktop_Fences
                 }
 
                 // 3. Clear & Copy Data
-                string currentFencesPath = Path.Combine(exeDir, "fences.json");
-                string currentShortcutsPath = Path.Combine(exeDir, "Shortcuts");
+                string currentFencesPath = ProfileManager.GetProfileFilePath("fences.json");
+                string currentShortcutsPath = ProfileManager.GetProfileFilePath("Shortcuts");
 
                 var fenceData = FenceManager.GetFenceData();
                 fenceData?.Clear();
@@ -792,29 +691,22 @@ namespace Desktop_Fences
                     Directory.Delete(currentShortcutsPath, true);
                 }
                 Directory.CreateDirectory(currentShortcutsPath);
-                CopyDirectory(backupShortcutsPath, currentShortcutsPath);
+                BackupManager.CopyDirectory(backupShortcutsPath, currentShortcutsPath);
 
                 LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.ImportExport, "Files restored successfully.");
 
-                // 4. DECISION TIME
                 if (restartRequired)
                 {
                     MessageBoxesManager.ShowOKOnlyMessageBoxForm(
                         "Global settings have been restored.\nThe application will now restart to apply changes.",
                         "Restart Required");
 
-                    // FIX: Use Environment.Exit(0) to stop execution IMMEDIATELY.
-                    // Application.Current.Shutdown() allows subsequent code (like TrayManager.reloadAllFences)
-                    // to run while the app is dying, causing NullReferenceException.
                     string appPath = Process.GetCurrentProcess().MainModule.FileName;
                     Process.Start(appPath);
                     Environment.Exit(0);
                 }
                 else
                 {
-                    // Optimization: We DO NOT reload fences here anymore.
-                    // The caller (OptionsFormManager) calls TrayManager.reloadAllFences() immediately after we return.
-                    // Removing this prevents Double-Loading.
                     MessageBoxesManager.ShowOKOnlyMessageBoxForm("Restore completed successfully.", "Restore");
                 }
             }
@@ -825,9 +717,5 @@ namespace Desktop_Fences
             }
         }
         #endregion
-
-
-
-
     }
 }

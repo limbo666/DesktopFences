@@ -379,59 +379,92 @@ namespace Desktop_Fences
                 if (firstMatch != null) LaunchResult(firstMatch);
             }
         }
-
         private void LaunchResult(SearchResult result)
         {
+            if (result == null) return;
+
             try
             {
-                // Resolve Path logic (Same as before)
-                string path = result.Path;
-                if (!System.IO.Path.IsPathRooted(path))
+                // 1. PATH RESOLUTION (The "Profile Aware" Fix)
+                // We ignore the path stored in the result if it doesn't exist.
+                // We force a look-up in the current Active Profile's shortcuts.
+                string finalPath = result.Path;
+
+                if (!System.IO.File.Exists(finalPath) && !System.IO.Directory.Exists(finalPath))
                 {
-                    string exeDir = AppDomain.CurrentDomain.BaseDirectory;
-                    path = System.IO.Path.Combine(exeDir, path);
+                    string fileName = System.IO.Path.GetFileName(finalPath);
+                    string profileShortcuts = ProfileManager.GetProfileFilePath("Shortcuts");
+
+                    // A. Check Root
+                    string candidate = System.IO.Path.Combine(profileShortcuts, fileName);
+                    if (System.IO.File.Exists(candidate))
+                    {
+                        finalPath = candidate;
+                    }
+                    // B. Deep Search (Subfolders/Tabs)
+                    else if (System.IO.Directory.Exists(profileShortcuts))
+                    {
+                        try
+                        {
+                            var found = System.IO.Directory.GetFiles(profileShortcuts, fileName, System.IO.SearchOption.AllDirectories).FirstOrDefault();
+                            if (!string.IsNullOrEmpty(found))
+                            {
+                                finalPath = found;
+                            }
+                        }
+                        catch { }
+                    }
                 }
 
-                bool isStoreApp = Utility.IsStoreAppShortcut(path);
-                bool isUrlFile = path.EndsWith(".url", StringComparison.OrdinalIgnoreCase);
-                bool isWebString = result.Path.StartsWith("http", StringComparison.OrdinalIgnoreCase) ||
-                                   result.Path.StartsWith("www", StringComparison.OrdinalIgnoreCase);
+                // 2. IDENTIFY TYPE (Mimicking FenceManager Logic)
+                bool isStoreApp = false;
+                if (finalPath.EndsWith(".lnk", StringComparison.OrdinalIgnoreCase))
+                {
+                    isStoreApp = Utility.IsStoreAppShortcut(finalPath);
+                }
 
+                // 3. LAUNCH CONFIGURATION
                 System.Diagnostics.ProcessStartInfo psi = new System.Diagnostics.ProcessStartInfo();
                 psi.UseShellExecute = true;
 
-                if (isWebString) psi.FileName = result.Path;
-                else if (isStoreApp)
+                if (isStoreApp)
                 {
+                    // Logic for Store Apps (Netflix, Calculator, etc.)
                     psi.FileName = "explorer.exe";
-                    psi.Arguments = $"\"{path}\"";
+                    psi.Arguments = $"\"{finalPath}\"";
                     psi.WorkingDirectory = "";
                 }
                 else if (result.IsFolder)
                 {
+                    // Logic for Folders
                     psi.FileName = "explorer.exe";
-                    psi.Arguments = $"\"{path}\"";
-                }
-                else if (isUrlFile)
-                {
-                    psi.FileName = path;
+                    psi.Arguments = $"\"{finalPath}\"";
                 }
                 else
                 {
-                    if (!System.IO.File.Exists(path))
+                    // Logic for Standard Files & .URL files
+                    if (!System.IO.File.Exists(finalPath) && !finalPath.StartsWith("http"))
                     {
-                        MessageBoxesManager.ShowOKOnlyMessageBoxForm($"File not found: {path}", "Launch Error");
+                        MessageBoxesManager.ShowOKOnlyMessageBoxForm($"File not found in active profile:\n{finalPath}", "Launch Error");
                         return;
                     }
-                    psi.FileName = path;
-                    try
+
+                    psi.FileName = finalPath;
+
+                    // Only set WorkingDirectory for executables/regular files, NOT for .lnk or .url
+                    string ext = System.IO.Path.GetExtension(finalPath).ToLower();
+                    if (ext != ".lnk" && ext != ".url")
                     {
-                        string dir = System.IO.Path.GetDirectoryName(path);
-                        if (!string.IsNullOrEmpty(dir)) psi.WorkingDirectory = dir;
+                        try
+                        {
+                            string dir = System.IO.Path.GetDirectoryName(finalPath);
+                            if (!string.IsNullOrEmpty(dir)) psi.WorkingDirectory = dir;
+                        }
+                        catch { }
                     }
-                    catch { }
                 }
 
+                // 4. EXECUTE
                 System.Diagnostics.Process.Start(psi);
                 this.SafeClose();
             }
@@ -440,5 +473,67 @@ namespace Desktop_Fences
                 MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Error launching: {ex.Message}", "Error");
             }
         }
+        //private void LaunchResult(SearchResult result)
+        //{
+        //    try
+        //    {
+        //        // Resolve Path logic (Same as before)
+        //        string path = result.Path;
+
+
+        //        if (!System.IO.Path.IsPathRooted(path))
+        //        {
+        //            string exeDir = AppDomain.CurrentDomain.BaseDirectory;
+        //            path = System.IO.Path.Combine(exeDir, path);
+        //        }
+
+        //        bool isStoreApp = Utility.IsStoreAppShortcut(path);
+        //        bool isUrlFile = path.EndsWith(".url", StringComparison.OrdinalIgnoreCase);
+        //        bool isWebString = result.Path.StartsWith("http", StringComparison.OrdinalIgnoreCase) ||
+        //                           result.Path.StartsWith("www", StringComparison.OrdinalIgnoreCase);
+
+        //        System.Diagnostics.ProcessStartInfo psi = new System.Diagnostics.ProcessStartInfo();
+        //        psi.UseShellExecute = true;
+
+        //        if (isWebString) psi.FileName = result.Path;
+        //        else if (isStoreApp)
+        //        {
+        //            psi.FileName = "explorer.exe";
+        //            psi.Arguments = $"\"{path}\"";
+        //            psi.WorkingDirectory = "";
+        //        }
+        //        else if (result.IsFolder)
+        //        {
+        //            psi.FileName = "explorer.exe";
+        //            psi.Arguments = $"\"{path}\"";
+        //        }
+        //        else if (isUrlFile)
+        //        {
+        //            psi.FileName = path;
+        //        }
+        //        else
+        //        {
+        //            if (!System.IO.File.Exists(path))
+        //            {
+        //                MessageBoxesManager.ShowOKOnlyMessageBoxForm($"File not found: {path}", "Launch Error");
+        //                return;
+        //            }
+        //            psi.FileName = path;
+        //            try
+        //            {
+        //                string dir = System.IO.Path.GetDirectoryName(path);
+        //                if (!string.IsNullOrEmpty(dir)) psi.WorkingDirectory = dir;
+        //            }
+        //            catch { }
+        //        }
+
+        //        System.Diagnostics.Process.Start(psi);
+        //        this.SafeClose();
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Error launching: {ex.Message}", "Error");
+        //    }
+        //}
     }
 }

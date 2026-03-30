@@ -33,6 +33,8 @@ namespace Desktop_Fences
         private static readonly List<HiddenFence> HiddenFences = new List<HiddenFence>();
     
         private ToolStripMenuItem _showHiddenFencesItem;
+
+        private ToolStripMenuItem _profilesMenuItem;
         public static TrayManager Instance { get; private set; } // Singleton instance
 
         private bool _areFencesTempHidden = false;
@@ -45,13 +47,25 @@ namespace Desktop_Fences
 
         private const int HT_CAPTION = 0x2;
 
+        private ToolStripMenuItem _automationMenuItem; //
+
         private class HiddenFence
         {
             public string Title { get; set; }
             public NonActivatingWindow Window { get; set; }
         }
 
-
+        public void UpdateAutomationMenuCheck(bool isChecked)
+        {
+            if (_automationMenuItem != null)
+            {
+                // This prevents infinite loops by checking the value first
+                if (_automationMenuItem.Checked != isChecked)
+                {
+                    _automationMenuItem.Checked = isChecked;
+                }
+            }
+        }
 
         public TrayManager()
         {
@@ -162,42 +176,66 @@ namespace Desktop_Fences
                     $"TrayIcon: Error in click handler: {ex.Message}");
             }
         }
+
         public void InitializeTray()
         {
             string exePath = Process.GetCurrentProcess().MainModule.FileName;
+
+            // Dispose old icon if re-initializing to prevent ghosting
+            if (_trayIcon != null) { _trayIcon.Visible = false; _trayIcon.Dispose(); }
+
             _trayIcon = new NotifyIcon
             {
                 Icon = Icon.ExtractAssociatedIcon(exePath),
                 Visible = true,
-                Text = "Desktop Fences"
+                Text = $"Desktop Fences ({ProfileManager.CurrentProfileName})"
             };
 
             _trayIcon.DoubleClick += OnTrayIconDoubleClick;
-            _trayIcon.MouseClick += OnTrayIconClick; // Add single click handler
+            _trayIcon.MouseClick += OnTrayIconClick;
+
+            // Explicitly detach and clear any existing context menu to prevent duplication
+            if (_trayIcon.ContextMenuStrip != null)
+            {
+                var oldMenu = _trayIcon.ContextMenuStrip;
+                _trayIcon.ContextMenuStrip = null;
+                oldMenu.Dispose();
+            }
 
             var trayMenu = new ContextMenuStrip();
             trayMenu.Items.Add("About", null, (s, e) => AboutFormManager.ShowAboutForm());
             trayMenu.Items.Add("Options", null, (s, e) => OptionsFormManager.ShowOptionsForm());
-          //trayMenu.Items.Add("Registry Test", null, (s, e) => InterCore.ActivateLighthouseSweep()); // TEST NEW OPTIONS FORM
-            trayMenu.Items.Add("Reload All Fences", null, async (s, e) =>
-            {
-                reloadAllFences();
+            trayMenu.Items.Add(new ToolStripSeparator());
 
-            });
-            trayMenu.Items.Add("-");
-            _showHiddenFencesItem = new ToolStripMenuItem("Show Hidden Fences")
-            {
-                Enabled = false
+            // Profiles Submenu
+            _profilesMenuItem = new ToolStripMenuItem("Profiles");
+            trayMenu.Items.Add(_profilesMenuItem);
+
+            // Standalone Automation Toggle with explicit Save
+            _automationMenuItem = new ToolStripMenuItem("Profile Automation") { CheckOnClick = true };
+            _automationMenuItem.Checked = SettingsManager.EnableProfileAutomation;
+            _automationMenuItem.Click += (s, e) => {
+                SettingsManager.EnableProfileAutomation = _automationMenuItem.Checked;
+                SettingsManager.SaveSettings(); //
+                if (SettingsManager.EnableProfileAutomation) AutomationManager.Start(); //
             };
+            trayMenu.Items.Add(_automationMenuItem);
+
+            trayMenu.Items.Add(new ToolStripSeparator());
+            trayMenu.Items.Add("Reload All Fences", null, async (s, e) => { await reloadAllFences(); });
+
+            trayMenu.Items.Add(new ToolStripSeparator());
+            _showHiddenFencesItem = new ToolStripMenuItem("Show Hidden Fences") { Enabled = false };
             trayMenu.Items.Add(_showHiddenFencesItem);
-            trayMenu.Items.Add("-");
+            trayMenu.Items.Add(new ToolStripSeparator());
             trayMenu.Items.Add("Exit", null, (s, e) => System.Windows.Application.Current.Shutdown());
+
             _trayIcon.ContextMenuStrip = trayMenu;
 
+            UpdateProfilesMenu();
             UpdateHiddenFencesMenu();
             UpdateTrayIcon();
         }
-
 
 
         public static async Task reloadAllFences()
@@ -411,6 +449,80 @@ namespace Desktop_Fences
         }
 
 
+        public void UpdateProfilesMenu()
+        {
+            if (_profilesMenuItem == null) return;
+
+            _profilesMenuItem.DropDownItems.Clear();
+            string currentProfile = ProfileManager.CurrentProfileName;
+
+            // Get sorted list of profiles
+            var profiles = ProfileManager.GetProfiles();
+
+            // 1. List Existing Profiles
+            foreach (var profile in profiles)
+            {
+                // Format: "Default [0]" or "Work [1]"
+                string label = $"{profile.Name} [{profile.Id}]";
+                var item = new ToolStripMenuItem(label);
+
+                if (string.Equals(profile.Name, currentProfile, StringComparison.OrdinalIgnoreCase))
+                {
+                    item.Checked = true;
+                    item.Enabled = false; // Disable clicking the active one
+                }
+                else
+                {
+                    item.Click += (s, e) =>
+                    {
+                        ProfileManager.SwitchToProfile(profile.Name);
+                        // Update the 'Home' profile so automation reverts to this manual choice later
+                        ProfileManager.SetManualBaseProfile(profile.Name);
+                        _trayIcon.Text = $"Desktop Fences ({profile.Name})";
+                        UpdateProfilesMenu();
+                    };
+                }
+                _profilesMenuItem.DropDownItems.Add(item);
+            }
+
+            _profilesMenuItem.DropDownItems.Add(new ToolStripSeparator());
+
+            // 2. Quick Action: Create New Profile (Keep this for speed)
+            var createItem = new ToolStripMenuItem("Create New Profile...");
+            createItem.Click += (s, e) =>
+            {
+                string newName = Microsoft.VisualBasic.Interaction.InputBox("Enter name for new profile:", "New Profile");
+
+                if (!string.IsNullOrWhiteSpace(newName))
+                {
+                    if (ProfileManager.CreateProfile(newName))
+                    {
+                        UpdateProfilesMenu();
+                        MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Profile '{newName}' created successfully.", "Success");
+                    }
+                    else
+                    {
+                        MessageBoxesManager.ShowOKOnlyMessageBoxForm("Failed to create profile. Name invalid or already exists.", "Error");
+                    }
+                }
+            };
+            _profilesMenuItem.DropDownItems.Add(createItem);
+
+            // 3. Full UI: Manage Profiles (The new form)
+            var manageItem = new ToolStripMenuItem("Manage Profiles...");
+            manageItem.Click += (s, e) =>
+            {
+                // Open the new Manager Window
+                var form = new ProfileManagerForm();
+                form.ShowDialog();
+
+                // Refresh menu immediately after closing the manager
+                // This ensures renames/reorders/deletes are reflected in the tray instantly
+                UpdateProfilesMenu();
+            };
+            _profilesMenuItem.DropDownItems.Add(manageItem);
+        }
+
 
         // --- NEW METHODS START ---
 
@@ -550,15 +662,13 @@ namespace Desktop_Fences
 
         public void UpdateTrayIcon()
         {
-
             if (Showintray == true)
             {
+                // FIX: Update the tooltip text to match the current profile
+                _trayIcon.Text = $"Desktop Fences ({ProfileManager.CurrentProfileName})";
 
                 if (HiddenFences.Count > 0)
                 {
-
-
-
                     _trayIcon.Icon = GenerateIconWithNumber(HiddenFences.Count + _tempHiddenFences.Count);
                 }
                 else
@@ -566,14 +676,29 @@ namespace Desktop_Fences
                     string exePath = Process.GetCurrentProcess().MainModule.FileName;
                     _trayIcon.Icon = Icon.ExtractAssociatedIcon(exePath);
                 }
+                _trayIcon.Visible = true;
             }
             else
             {
-                _trayIcon.Icon = null; // Hide the icon if Showintray is false
+                _trayIcon.Visible = false; // Properly hide the icon
             }
         }
 
-           
+        /// <summary>
+        /// Clears all references to hidden fences. 
+        /// Call this when switching profiles or reloading fences to prevent "Zombie" windows.
+        /// </summary>
+// Add inside TrayManager class
+        public void ClearHiddenFences()
+        {
+            HiddenFences.Clear();
+            _tempHiddenFences.Clear();
+            _areFencesTempHidden = false;
+            UpdateHiddenFencesMenu();
+            UpdateTrayIcon();
+        }
+
+
 
     }
 }

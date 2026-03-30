@@ -2,515 +2,286 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Windows.Forms.VisualStyles;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace Desktop_Fences
 {
-
-
     public enum IconVisibilityEffect
     {
         None, Glow, Shadow, Outline, AngelGlow, ColoredGlow, StrongShadow
     }
 
-
     /// <summary>
-    /// Manages the application's settings, including snapping, tint, color, and logging preferences.
-    /// Loads settings from and saves them to a JSON file (options.json) in the application directory.
+    /// Manages application settings with Strict "Hard Switch" Master support.
     /// </summary>
     public static class SettingsManager
     {
-
-
-        /// <summary>
-        /// Values for the automatic backup feature
-        /// </summary>
-        public static bool EnableAutoBackup { get; set; } = true; // Default true
+        // --- Properties ---
+        public static bool EnableAutoBackup { get; set; } = true;
         public static DateTime LastAutoBackupDate { get; set; } = DateTime.MinValue;
-
-        /// <summary>
-        /// Gets or sets whether extension will be visible on portal fences
-        /// </summary>
         public static bool ShowPortalExtensions { get; set; } = false;
-
-
-        /// <summary>
-        /// Enables disables wildcards (*) in portal filter strings.
-        /// </summary>
         public static bool NoWildcardsOnPortalFilter { get; set; } = false;
-
-        /// <summary>
-        /// Gets or sets whether snapping is enabled for fence alignment.
-        /// </summary>
         public static bool IsSnapEnabled { get; set; } = true;
-
-        /// <summary>
-        /// Gets or sets whether the background image should be displayed on portal fences.
-        /// </summary>
         public static bool ShowBackgroundImageOnPortalFences { get; set; } = true;
-        /// <summary>
-        /// Gets or sets whether the portal fence deletion method will use the recycle bin.
-        /// </summary>
         public static bool UseRecycleBin { get; set; } = true;
-
-        /// <summary>
-        /// Gets or sets whether the tray icon will be shown.
-        /// </summary>
         public static bool ShowInTray { get; set; } = true;
-
-
-        /// <summary>
-        /// Gets or sets whether the sounds will be enabled.
-        /// </summary>
         public static bool EnableSounds { get; set; } = true;
-
-
-        /// <summary>
-        /// Gets or sets the tint value (0-100) that controls fence transparency.
-        /// </summary>
         public static int TintValue { get; set; } = 85;
-
-
-        /// <summary>
-        /// Gets or sets the tint value (0-100) that controls menu icons transparency.
-        /// </summary>
         public static int MenuTintValue { get; set; } = 30;
-
-
-        /// <summary>
-        /// Gets or sets the tint value (0-3) that controls the menu icon.
-        /// </summary>
         public static int MenuIcon { get; set; } = 0;
-
-
-
-        /// <summary>
-        /// Gets or sets the tint value (0-3) that controls the menu icon.
-        /// </summary>
         public static int LockIcon { get; set; } = 0;
-
-
-        /// <summary>
-        /// Gets or sets the selected color name for fence backgrounds.
-        /// </summary>
         public static string SelectedColor { get; set; } = "Gray";
-
-        /// <summary>
-        /// Gets or sets whether logging is enabled for snapping events.
-        /// </summary>
         public static bool IsLogEnabled { get; set; } = false;
-
-
-        /// <summary>
-        /// Gets or sets the maximum number of characters to display before truncating with "...".
-        /// Valid range: 5-50 characters.
-        /// </summary>
-        public static int MaxDisplayNameLength { get; set; } = 20; // Default to current behavior
-
-        /// <summary>
-        /// Gets or sets the opacity of the portal fence background image (0-100).
-        /// </summary>
-        public static int PortalBackgroundOpacity { get; set; } = 30; // Default to existing opacity
-
-        /// <summary>
-        /// Gets or sets whether icon glow effect is enabled for better visibility.
-        /// </summary>
-        public static bool EnableIconGlowEffect { get; set; } = true; // Default disabled
-
-        /// <summary>
-        /// Gets or sets whether to disable single instance enforcement, allowing multiple instances to run simultaneously.
-        /// Hidden option - not exposed in GUI, manually configurable in options.json
-        /// When true, multiple instances can run without triggering effects or forced exits
-        /// Default: false (single instance enforced)
-        /// </summary>
-        public static bool DisableSingleInstance { get; set; } = false; // Default disabled (single instance enforced)
-
-
-        /// <summary>
-        /// Gets or sets whether to delete the previous log file on application startup.
-        /// </summary>
-        public static bool DeletePreviousLogOnStart { get; set; } = false; // Default disabled
-
-        /// <summary>
-        /// Gets or sets whether to enable background validation logging (file existence checks, icon updates).
-        /// When disabled, reduces log volume by suppressing repetitive validation operations.
-        /// </summary>
-        public static bool EnableBackgroundValidationLogging { get; set; } = false; // Default disabled to reduce log noise
-
-
-        /// <summary>
-        /// Gets or sets whether to suppress launch warning messages for applications that return unusual exit codes
-        /// Useful for media players like PotPlayer that may trigger false error messages during successful launches
-        /// Hidden option - not exposed in GUI, manually configurable in options.json
-        /// </summary>
-        public static bool SuppressLaunchWarnings { get; set; } = false; // Default disabled
-
-
-
-        /// <summary>
-        /// Gets or sets whether to disable automatic scrollbars on fence content areas
-        /// When true, removes scrollbars from Data and Portal fences for a cleaner appearance
-        /// Hidden option - not exposed in GUI, manually configurable in options.json
-        /// </summary>
-        public static bool DisableFenceScrollbars { get; set; } = false; // Default disabled
-
-
-        /// <summary>
-        /// Gets or sets whether to disable auto-save for note fences, requiring manual save via Done button.
-        /// </summary>
+        public static int MaxDisplayNameLength { get; set; } = 20;
+        public static int PortalBackgroundOpacity { get; set; } = 30;
+        public static bool EnableIconGlowEffect { get; set; } = true;
+        public static bool DisableSingleInstance { get; set; } = false;
+        public static bool DeletePreviousLogOnStart { get; set; } = false;
+        public static bool EnableBackgroundValidationLogging { get; set; } = false;
+        public static bool SuppressLaunchWarnings { get; set; } = false;
+        public static bool DisableFenceScrollbars { get; set; } = false;
         public static bool DisableNoteAutoSave { get; set; } = false;
 
-        /// <summary>
-        /// Gets or sets the icon visibility effect type.
-        /// Valid values: None, Glow, Shadow, Outline, AngelGlow, ColoredGlow, StrongShadow
-        /// </summary>
+
+        public static bool EnableProfileAutomation { get; set; } = false;
+        // --- NEW: Hidden Option for Manual Repositioning ---
+        public static bool AllowAutoReposition { get; set; } = true;
+
+        // --- NEW: Context Menu Option ---
+        public static bool EnableContextMenu { get; set; } = false;
+
 
         public static IconVisibilityEffect IconVisibilityEffect { get; set; } = IconVisibilityEffect.None;
-
-        /// <summary>
-        /// Hidden Tweak: Automatically export icons to desktop when deleting a fence.
-        /// </summary>
         public static bool ExportShortcutsOnFenceDeletion { get; set; } = false;
-
-        /// <summary>
-        /// Hidden Tweak: Delete the original .lnk file from Desktop after dropping it into a fence.
-        /// </summary>
         public static bool DeleteOriginalShortcutsOnDrop { get; set; } = false;
-
-        // --- Hidden Tweaks for SpotSearch ---
         public static bool EnableSpotSearchHotkey { get; set; } = true;
-        public static int SpotSearchKey { get; set; } = 192; // Default: ~ (Tilde)
-        public static string SpotSearchModifier { get; set; } = "Control"; // Default: Control
-
-
-        /*
- * SPOTSEARCH HOTKEY CUSTOMIZATION GUIDE
- * -------------------------------------
- * Users can manually edit 'options.json' to change the SpotSearch hotkey (Default: Ctrl + ~).
- *
- * JSON Parameters:
- * "EnableSpotSearchHotkey": true/false  -> Master switch to enable/disable the hotkey.
- * "SpotSearchModifier": "Control"       -> The modifier key. Options: "Control", "Alt", "Shift", "None".
- * "SpotSearchKey": "~"                  -> The trigger key. Accepts friendly names or integer key codes.
- *
- * Supported "SpotSearchKey" Values:
- * - Friendly Names: "~", "Tilde", "Space", "Q", "F1" (Case insensitive)
- * - Key Codes: 192 (~), 32 (Space), 81 (Q), 112 (F1), etc. (See Windows Virtual Key Codes)
- *
- * EXAMPLES:
- * 1. Default (Ctrl + ~):
- * "EnableSpotSearchHotkey": true, "SpotSearchModifier": "Control", "SpotSearchKey": "~"
- *
- * 2. Alt + Space (Spotlight Style):
- * "EnableSpotSearchHotkey": true, "SpotSearchModifier": "Alt", "SpotSearchKey": "Space"
- *
- * 3. F1 Only (No Modifier):
- * "EnableSpotSearchHotkey": true, "SpotSearchModifier": "None", "SpotSearchKey": "F1"
- */
-
+        public static int SpotSearchKey { get; set; } = 192;
+        public static string SpotSearchModifier { get; set; } = "Control";
+        public static bool EnableDimensionSnap { get; set; } = false;
+        public static bool SingleClickToLaunch { get; set; } = true;
+        public static LaunchEffectsManager.LaunchEffect LaunchEffect { get; set; } = LaunchEffectsManager.LaunchEffect.Zoom;
         public static LogManager.LogLevel MinLogLevel { get; set; } = LogManager.LogLevel.Info;
         public static List<LogManager.LogCategory> EnabledLogCategories { get; set; } = new List<LogManager.LogCategory>
-{
-    LogManager.LogCategory.General,
-    LogManager.LogCategory.Error,
-    LogManager.LogCategory.ImportExport,
-    LogManager.LogCategory.Settings
-};
+        {
+            LogManager.LogCategory.General,
+            LogManager.LogCategory.Error,
+            LogManager.LogCategory.ImportExport,
+            LogManager.LogCategory.Settings
+        };
 
-        // Default categories for production
-        public static bool EnableDimensionSnap { get; set; } = false;
-
-        public static bool SingleClickToLaunch { get; set; } = true;
-
-        // Add LaunchEffect property
-        public static LaunchEffectsManager.LaunchEffect LaunchEffect { get; set; } = LaunchEffectsManager.LaunchEffect.Zoom; // Default to Zoom
-
-
-
-
+        private static string _activeOptionsPath;
 
         public static void LoadSettings()
         {
-            // Determine the path to options.json based on the application directory
-            string optionsFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "options.json");
+            // 1. DETERMINE SOURCE
+            string appRoot = AppDomain.CurrentDomain.BaseDirectory;
+            string masterPath = Path.Combine(appRoot, "MasterOptions.json");
+            string localPath = ProfileManager.GetProfileFilePath("options.json");
 
+            if (File.Exists(masterPath))
+            {
+                _activeOptionsPath = masterPath;
+                LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.Settings, "MasterOptions.json found. Switched to Global Configuration Mode.");
+            }
+            else
+            {
+                _activeOptionsPath = localPath;
+            }
+
+            // 2. READ DATA
             try
             {
-                if (System.IO.File.Exists(optionsFilePath))
+                if (File.Exists(_activeOptionsPath))
                 {
-                    // Read and validate JSON content
-                    string jsonContent = File.ReadAllText(optionsFilePath);
-
-                    // Validate JSON structure before parsing
-                    if (string.IsNullOrWhiteSpace(jsonContent))
+                    string jsonContent = File.ReadAllText(_activeOptionsPath);
+                    if (!string.IsNullOrWhiteSpace(jsonContent))
                     {
-                        SaveSettings();
-                        return;
-                    }
-
-                    dynamic optionsData;
-                    try
-                    {
-                        optionsData = JsonConvert.DeserializeObject(jsonContent);
-                        if (optionsData == null)
+                        try
                         {
-                            SaveSettings();
-                            return;
+                            var optionsData = JsonConvert.DeserializeObject<dynamic>(jsonContent);
+                            if (optionsData != null) ApplyJsonToProperties(optionsData);
                         }
-                    }
-                    catch (JsonException)
-                    {
-                        // JSON is corrupted, recreate with defaults
-                        SaveSettings();
-                        return;
-                    }
-
-                    try { EnableAutoBackup = optionsData.EnableAutoBackup ?? false; } catch { EnableAutoBackup = false; }
-                    try { LastAutoBackupDate = optionsData.LastAutoBackupDate ?? DateTime.MinValue; } catch { LastAutoBackupDate = DateTime.MinValue; }
-
-                    // Load settings with individual property protection
-                    try { IsSnapEnabled = optionsData.IsSnapEnabled ?? true; } catch { IsSnapEnabled = true; }
-                    try { ShowBackgroundImageOnPortalFences = optionsData.ShowBackgroundImageOnPortalFences ?? true; } catch { ShowBackgroundImageOnPortalFences = true; }
-                    try { ShowInTray = optionsData.ShowInTray ?? true; } catch { ShowInTray = true; }
-                    try { EnableSounds = optionsData.EnableSounds ?? true; } catch { EnableSounds = true; }
-
-                    try { UseRecycleBin = optionsData.UseRecycleBin ?? true; } catch { UseRecycleBin = true; }
-                    try { TintValue = optionsData.TintValue ?? 85; } catch { TintValue = 85; }
-                    try { MenuTintValue = optionsData.MenuTintValue ?? 30; } catch { MenuTintValue = 30; }
-                    try { MenuIcon = optionsData.MenuIcon ?? 0; } catch { MenuIcon = 0; }
-                    try { LockIcon = optionsData.LockIcon ?? 0; } catch { LockIcon = 0; }
-                    try { SelectedColor = optionsData.SelectedColor ?? "Gray"; } catch { SelectedColor = "Gray"; }
-                    try { IsLogEnabled = optionsData.IsLogEnabled ?? false; } catch { IsLogEnabled = false; }
-                    try { SingleClickToLaunch = optionsData.SingleClickToLaunch ?? true; } catch { SingleClickToLaunch = true; }
-                    try { EnableDimensionSnap = optionsData.EnableDimensionSnap ?? false; } catch { EnableDimensionSnap = false; }
-                    try { PortalBackgroundOpacity = optionsData.PortalBackgroundOpacity ?? 30; } catch { PortalBackgroundOpacity = 30; }
-                    try { DisableFenceScrollbars = optionsData.DisableFenceScrollbars ?? false; } catch { DisableFenceScrollbars = false; }
-                    // Load DisableNoteAutoSave with protection
-                    try { DisableNoteAutoSave = optionsData.DisableNoteAutoSave ?? false; } catch { DisableNoteAutoSave = false; }
-               
-                    try { ExportShortcutsOnFenceDeletion = optionsData.ExportShortcutsOnFenceDeletion ?? false; } catch { ExportShortcutsOnFenceDeletion = false; }
-                    try { DeleteOriginalShortcutsOnDrop = optionsData.DeleteOriginalShortcutsOnDrop ?? false; } catch { DeleteOriginalShortcutsOnDrop = false; }
-                    //   try { MaxDisplayNameLength = optionsData.MaxDisplayNameLength ?? 20; } catch { MaxDisplayNameLength = 20; }
-
-
-                    // Load SpotSearch Tweaks
-                    try { EnableSpotSearchHotkey = optionsData.EnableSpotSearchHotkey ?? true; } catch { EnableSpotSearchHotkey = true; }
-                    try { SpotSearchModifier = optionsData.SpotSearchModifier?.ToString() ?? "Control"; } catch { SpotSearchModifier = "Control"; }
-                    try { ShowPortalExtensions = optionsData.ShowPortalExtensions ?? false; } catch { ShowPortalExtensions = false; }
-                    try { NoWildcardsOnPortalFilter = optionsData.NoWildcardsOnPortalFilter ?? false; } catch { NoWildcardsOnPortalFilter = false; }
-
-                    // Smart Key Parser
-                    try
-                    {
-                        SpotSearchKey = ParseKey(optionsData.SpotSearchKey);
-                    }
-                    catch
-                    {
-                        SpotSearchKey = 192; // Default ~
-                    }
-
-
-                    try
-                    {
-                        int value = optionsData.MaxDisplayNameLength ?? 20;
-                        MaxDisplayNameLength = Math.Max(5, Math.Min(50, value)); // Clamp between 5-50
-                    }
-                    catch
-                    {
-                        MaxDisplayNameLength = 20;
-                    }
-
-                    // Load DisableSingleInstance with protection  
-                    try { DisableSingleInstance = optionsData.DisableSingleInstance ?? false; }
-                    catch { DisableSingleInstance = false; }
-
-
-                    try
-                    {
-                        string effectName = optionsData.IconVisibilityEffect?.ToString() ?? "None";
-
-                        LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.General, "effectName is: " + effectName);
-                        if (Enum.TryParse<IconVisibilityEffect>(effectName, true, out IconVisibilityEffect parsedEffect))
-                        {
-                            IconVisibilityEffect = parsedEffect;
-                        }
-                        else
-                        {
-                            IconVisibilityEffect = IconVisibilityEffect.None;
-                        }
-
-                        LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.General, "IconVisibilityEffect is: " + IconVisibilityEffect);
-                    }
-                    catch
-                    {
-                        IconVisibilityEffect = IconVisibilityEffect.None;
-                    }
-
-
-                    // Load LaunchEffect with protection
-                    try
-                    {
-                        LaunchEffect = optionsData.LaunchEffect != null
-                            ? Enum.Parse(typeof(LaunchEffectsManager.LaunchEffect), optionsData.LaunchEffect.ToString())
-                            : LaunchEffectsManager.LaunchEffect.Zoom;
-                    }
-                    catch
-                    {
-                        LaunchEffect = LaunchEffectsManager.LaunchEffect.Zoom;
-                    }
-
-                    // Load DeletePreviousLogOnStart with protection
-                    try { DeletePreviousLogOnStart = optionsData.DeletePreviousLogOnStart ?? false; }
-                    catch { DeletePreviousLogOnStart = false; }
-
-                    // Load SuppressLaunchWarnings with protection  
-                    try { SuppressLaunchWarnings = optionsData.SuppressLaunchWarnings ?? false; }
-                    catch { SuppressLaunchWarnings = false; }
-
-                    // Load EnableBackgroundValidationLogging with protection  
-                    try { EnableBackgroundValidationLogging = optionsData.EnableBackgroundValidationLogging ?? false; }
-                    catch { EnableBackgroundValidationLogging = false; }
-
-                    // Load MinLogLevel with protection
-                    try
-                    {
-                        MinLogLevel = optionsData.MinLogLevel != null
-                            ? Enum.Parse(typeof(LogManager.LogLevel), optionsData.MinLogLevel.ToString())
-                            : LogManager.LogLevel.Info;
-                    }
-                    catch
-                    {
-                        MinLogLevel = LogManager.LogLevel.Info;
-                    }
-
-                    // Load EnabledLogCategories with protection
-                    try
-                    {
-                        EnabledLogCategories = optionsData.EnabledLogCategories != null
-                            ? ((JArray)optionsData.EnabledLogCategories)
-                                .Select(c => Enum.Parse(typeof(LogManager.LogCategory), c.ToString()))
-                                .Cast<LogManager.LogCategory>()
-                                .ToList()
-                            : new List<LogManager.LogCategory>
-                            {
-                        LogManager.LogCategory.General,
-                        LogManager.LogCategory.Error,
-                        LogManager.LogCategory.ImportExport,
-                        LogManager.LogCategory.Settings
-                            };
-                    }
-                    catch
-                    {
-                        EnabledLogCategories = new List<LogManager.LogCategory>
-                {
-                    LogManager.LogCategory.General,
-                    LogManager.LogCategory.Error,
-                    LogManager.LogCategory.ImportExport,
-                    LogManager.LogCategory.Settings
-                };
+                        catch { /* Corrupt file, defaults will apply */ }
                     }
                 }
                 else
                 {
-                    // If the file doesn't exist, save the default settings
                     SaveSettings();
                 }
             }
             catch (Exception ex)
             {
-                // Handle potential errors (e.g., file corruption, access issues) by reverting to defaults
                 Console.WriteLine($"Error loading settings: {ex.Message}");
-                SaveSettings(); // Ensure a valid options.json exists
+                if (string.IsNullOrEmpty(_activeOptionsPath)) _activeOptionsPath = localPath;
+                SaveSettings();
             }
         }
-        /// <summary>
-        /// Converts friendly key names or integers into Virtual Key codes.
-        /// </summary>
-        private static int ParseKey(dynamic value)
-        {
-            if (value == null) return 192; // Default ~
-
-            // If it's already a number, return it
-            if (int.TryParse(value.ToString(), out int code)) return code;
-
-            // Parse friendly strings
-            string keyName = value.ToString().ToLower().Trim();
-            return keyName switch
-            {
-                "~" => 192,
-                "tilde" => 192,
-                "space" => 32,
-                "q" => 81,
-                "f1" => 112,
-                _ => 192 // Fallback to Tilde
-            };
-        }
-
 
         public static void SaveSettings()
         {
-            // Determine the path to options.json
-            string optionsFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "options.json");
+            if (string.IsNullOrEmpty(_activeOptionsPath))
+            {
+                _activeOptionsPath = ProfileManager.GetProfileFilePath("options.json");
+            }
 
             try
             {
-                // Create an anonymous object with the current settings
-                var optionsData = new
-                {
-                    IsSnapEnabled,
-                    ShowBackgroundImageOnPortalFences,
-                    ShowInTray,
-                    EnableSounds,
-                    UseRecycleBin,
-                    TintValue,
-                    MenuTintValue,
-                    MenuIcon,
-                    LockIcon,
-                    SelectedColor,
-                    IsLogEnabled,
-                    SingleClickToLaunch,
-                    EnableDimensionSnap,
-                    PortalBackgroundOpacity,
-                    MaxDisplayNameLength,
-                    IconVisibilityEffect = IconVisibilityEffect.ToString(),
-                    LaunchEffect = LaunchEffect.ToString(), // Save as string for JSON compatibility
-                    MinLogLevel = MinLogLevel.ToString(), // Save as string for JSON compatibility
-                    EnabledLogCategories = EnabledLogCategories.Select(c => c.ToString()).ToList(),
-                    DeletePreviousLogOnStart,
-                    SuppressLaunchWarnings,
-                    EnableBackgroundValidationLogging, // 
-                    DisableSingleInstance, // Multiple instances option  
-                    DisableFenceScrollbars, // Scrollbar control option
-                    DisableNoteAutoSave, // Note auto-save control option
-                    ExportShortcutsOnFenceDeletion,
-                    DeleteOriginalShortcutsOnDrop,
-                    EnableSpotSearchHotkey,
-                    SpotSearchKey,
-                    SpotSearchModifier,
-                    NoWildcardsOnPortalFilter,
-                    ShowPortalExtensions,
-                    EnableAutoBackup,
-                    LastAutoBackupDate
-
-                };
-
-                // Serialize to JSON with indentation for readability
+                // 3. WRITE TO THE ACTIVE SOURCE (Includes AllowAutoReposition now)
+                var optionsData = GetCurrentPropertiesAsObject();
                 string formattedJson = JsonConvert.SerializeObject(optionsData, Formatting.Indented);
-
-                // Write the JSON to the file
-                File.WriteAllText(optionsFilePath, formattedJson);
+                File.WriteAllText(_activeOptionsPath, formattedJson);
             }
             catch (Exception ex)
             {
-
+                LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.Settings, $"Failed to save settings to {_activeOptionsPath}: {ex.Message}");
             }
         }
 
+        // --- Helpers ---
 
+        private static object GetCurrentPropertiesAsObject()
+        {
+            return new
+            {
+                IsSnapEnabled,
+                ShowBackgroundImageOnPortalFences,
+                ShowInTray,
+                EnableSounds,
+                UseRecycleBin,
+                TintValue,
+                MenuTintValue,
+                MenuIcon,
+                LockIcon,
+                SelectedColor,
+                IsLogEnabled,
+                SingleClickToLaunch,
+                EnableDimensionSnap,
+                PortalBackgroundOpacity,
+                MaxDisplayNameLength,
+                IconVisibilityEffect = IconVisibilityEffect.ToString(),
+                LaunchEffect = LaunchEffect.ToString(),
+                MinLogLevel = MinLogLevel.ToString(),
+                EnabledLogCategories = EnabledLogCategories.Select(c => c.ToString()).ToList(),
+                DeletePreviousLogOnStart,
+                SuppressLaunchWarnings,
+                EnableBackgroundValidationLogging,
+                DisableSingleInstance,
+                DisableFenceScrollbars,
+                DisableNoteAutoSave,
+                ExportShortcutsOnFenceDeletion,
+                DeleteOriginalShortcutsOnDrop,
+                EnableSpotSearchHotkey,
+                SpotSearchKey,
+                SpotSearchModifier,
+                NoWildcardsOnPortalFilter,
+                ShowPortalExtensions,
+                EnableAutoBackup,
+                LastAutoBackupDate,
 
-        /// Sets the minimum log level and saves the settings.
+                AllowAutoReposition,
+                EnableProfileAutomation,
+                // NEW
+                EnableContextMenu
+            };
+        }
+
+        private static void ApplyJsonToProperties(dynamic data)
+        {
+            try { EnableAutoBackup = data.EnableAutoBackup ?? false; } catch { EnableAutoBackup = false; }
+            try { LastAutoBackupDate = data.LastAutoBackupDate ?? DateTime.MinValue; } catch { LastAutoBackupDate = DateTime.MinValue; }
+            try { IsSnapEnabled = data.IsSnapEnabled ?? true; } catch { IsSnapEnabled = true; }
+            try { ShowBackgroundImageOnPortalFences = data.ShowBackgroundImageOnPortalFences ?? true; } catch { ShowBackgroundImageOnPortalFences = true; }
+            try { ShowInTray = data.ShowInTray ?? true; } catch { ShowInTray = true; }
+            try { EnableSounds = data.EnableSounds ?? true; } catch { EnableSounds = true; }
+            try { UseRecycleBin = data.UseRecycleBin ?? true; } catch { UseRecycleBin = true; }
+            try { TintValue = data.TintValue ?? 85; } catch { TintValue = 85; }
+            try { MenuTintValue = data.MenuTintValue ?? 30; } catch { MenuTintValue = 30; }
+            try { MenuIcon = data.MenuIcon ?? 0; } catch { MenuIcon = 0; }
+            try { LockIcon = data.LockIcon ?? 0; } catch { LockIcon = 0; }
+            try { SelectedColor = data.SelectedColor ?? "Gray"; } catch { SelectedColor = "Gray"; }
+            try { IsLogEnabled = data.IsLogEnabled ?? false; } catch { IsLogEnabled = false; }
+            try { SingleClickToLaunch = data.SingleClickToLaunch ?? true; } catch { SingleClickToLaunch = true; }
+            try { EnableDimensionSnap = data.EnableDimensionSnap ?? false; } catch { EnableDimensionSnap = false; }
+            try { PortalBackgroundOpacity = data.PortalBackgroundOpacity ?? 30; } catch { PortalBackgroundOpacity = 30; }
+            try { DisableFenceScrollbars = data.DisableFenceScrollbars ?? false; } catch { DisableFenceScrollbars = false; }
+            try { DisableNoteAutoSave = data.DisableNoteAutoSave ?? false; } catch { DisableNoteAutoSave = false; }
+            try { ExportShortcutsOnFenceDeletion = data.ExportShortcutsOnFenceDeletion ?? false; } catch { ExportShortcutsOnFenceDeletion = false; }
+            try { DeleteOriginalShortcutsOnDrop = data.DeleteOriginalShortcutsOnDrop ?? false; } catch { DeleteOriginalShortcutsOnDrop = false; }
+            try { EnableSpotSearchHotkey = data.EnableSpotSearchHotkey ?? true; } catch { EnableSpotSearchHotkey = true; }
+            try { SpotSearchModifier = data.SpotSearchModifier?.ToString() ?? "Control"; } catch { SpotSearchModifier = "Control"; }
+            try { ShowPortalExtensions = data.ShowPortalExtensions ?? false; } catch { ShowPortalExtensions = false; }
+            try { NoWildcardsOnPortalFilter = data.NoWildcardsOnPortalFilter ?? false; } catch { NoWildcardsOnPortalFilter = false; }
+
+            try { AllowAutoReposition = data.AllowAutoReposition ?? true; } catch { AllowAutoReposition = true; }
+            try { EnableProfileAutomation = data.EnableProfileAutomation ?? false; } catch { EnableProfileAutomation = false; }
+
+            // NEW
+            try { EnableContextMenu = data.EnableContextMenu ?? false; } catch { EnableContextMenu = false; }
+
+            try { SpotSearchKey = ParseKey(data.SpotSearchKey); } catch { SpotSearchKey = 192; }
+
+            try
+            {
+                int value = data.MaxDisplayNameLength ?? 20;
+                MaxDisplayNameLength = Math.Max(5, Math.Min(50, value));
+            }
+            catch { MaxDisplayNameLength = 20; }
+
+            try { DisableSingleInstance = data.DisableSingleInstance ?? false; } catch { DisableSingleInstance = false; }
+
+            try
+            {
+                string effectName = data.IconVisibilityEffect?.ToString() ?? "None";
+                if (Enum.TryParse<IconVisibilityEffect>(effectName, true, out IconVisibilityEffect parsedEffect))
+                    IconVisibilityEffect = parsedEffect;
+                else
+                    IconVisibilityEffect = IconVisibilityEffect.None;
+            }
+            catch { IconVisibilityEffect = IconVisibilityEffect.None; }
+
+            try
+            {
+                LaunchEffect = data.LaunchEffect != null
+                    ? Enum.Parse(typeof(LaunchEffectsManager.LaunchEffect), data.LaunchEffect.ToString())
+                    : LaunchEffectsManager.LaunchEffect.Zoom;
+            }
+            catch { LaunchEffect = LaunchEffectsManager.LaunchEffect.Zoom; }
+
+            try { DeletePreviousLogOnStart = data.DeletePreviousLogOnStart ?? false; } catch { DeletePreviousLogOnStart = false; }
+            try { SuppressLaunchWarnings = data.SuppressLaunchWarnings ?? false; } catch { SuppressLaunchWarnings = false; }
+            try { EnableBackgroundValidationLogging = data.EnableBackgroundValidationLogging ?? false; } catch { EnableBackgroundValidationLogging = false; }
+
+            try
+            {
+                MinLogLevel = data.MinLogLevel != null
+                    ? Enum.Parse(typeof(LogManager.LogLevel), data.MinLogLevel.ToString())
+                    : LogManager.LogLevel.Info;
+            }
+            catch { MinLogLevel = LogManager.LogLevel.Info; }
+
+            try
+            {
+                EnabledLogCategories = data.EnabledLogCategories != null
+                    ? ((JArray)data.EnabledLogCategories)
+                        .Select(c => Enum.Parse(typeof(LogManager.LogCategory), c.ToString()))
+                        .Cast<LogManager.LogCategory>()
+                        .ToList()
+                    : new List<LogManager.LogCategory> { LogManager.LogCategory.General, LogManager.LogCategory.Error, LogManager.LogCategory.ImportExport, LogManager.LogCategory.Settings };
+            }
+            catch
+            {
+                EnabledLogCategories = new List<LogManager.LogCategory> { LogManager.LogCategory.General, LogManager.LogCategory.Error, LogManager.LogCategory.ImportExport, LogManager.LogCategory.Settings };
+            }
+        }
+
+        private static int ParseKey(dynamic value)
+        {
+            if (value == null) return 192;
+            if (int.TryParse(value.ToString(), out int code)) return code;
+            string keyName = value.ToString().ToLower().Trim();
+            return keyName switch { "~" => 192, "tilde" => 192, "space" => 32, "q" => 81, "f1" => 112, _ => 192 };
+        }
 
         public static void SetMinLogLevel(LogManager.LogLevel level)
         {
@@ -518,20 +289,10 @@ namespace Desktop_Fences
             SaveSettings();
         }
 
-
-
-
-        /// Sets the enabled log categories and saves the settings.
-
         public static void SetEnabledLogCategories(List<LogManager.LogCategory> categories)
         {
             EnabledLogCategories = categories;
             SaveSettings();
         }
-
-  
-
-
-
     }
 }

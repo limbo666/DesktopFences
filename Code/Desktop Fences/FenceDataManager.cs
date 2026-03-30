@@ -57,10 +57,8 @@ namespace Desktop_Fences
         {
             try
             {
-                // Set JSON file path relative to executable
-                _jsonFilePath = Path.Combine(
-                    Path.GetDirectoryName(Assembly.GetEntryAssembly().Location),
-                    "fences.json");
+                // FIX: Use ProfileManager to get the path relative to the active profile
+                _jsonFilePath = ProfileManager.GetProfileFilePath("fences.json");
 
                 LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.FenceCreation,
                     $"FenceDataManager initialized with path: {_jsonFilePath}");

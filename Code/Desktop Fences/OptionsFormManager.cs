@@ -24,6 +24,10 @@ namespace Desktop_Fences
         private static readonly Color ColorTools = Color.FromRgb(34, 139, 34); // Green
         private static readonly Color ColorLookDeeper = Color.FromRgb(220, 53, 69); // Red
 
+
+        private static readonly Color ColorProfiles = Color.FromRgb(255, 20, 147); // Deep Pink
+
+
         public static void ShowOptionsForm()
         {
             try
@@ -136,13 +140,15 @@ namespace Desktop_Fences
             CreateGeneralTab();
             CreateStyleTab();
             CreateToolsTab();
+            CreateProfilesTab();
             CreateLookDeeperTab();
 
             _tabControl.SelectedIndex = _lastSelectedTabIndex;
             CreateTabButton(tabPanel, "General", 0, _lastSelectedTabIndex == 0);
             CreateTabButton(tabPanel, "Style", 1, _lastSelectedTabIndex == 1);
             CreateTabButton(tabPanel, "Tools", 2, _lastSelectedTabIndex == 2);
-            CreateTabButton(tabPanel, "Look Deeper", 3, _lastSelectedTabIndex == 3);
+            CreateTabButton(tabPanel, "Profiles", 3, _lastSelectedTabIndex == 3);
+            CreateTabButton(tabPanel, "Look Deeper", 4, _lastSelectedTabIndex == 4);
 
             contentBorder.Child = _tabControl;
             Grid.SetColumn(tabPanel, 0); contentGrid.Children.Add(tabPanel);
@@ -174,7 +180,7 @@ namespace Desktop_Fences
 
         private static void SetTabButtonColors(Button button, string title, bool isSelected, bool isHover = false)
         {
-            Color activeColor = title switch { "Style" => ColorStyle, "Tools" => ColorTools, "Look Deeper" => ColorLookDeeper, _ => _userAccentColor };
+            Color activeColor = title switch { "Style" => ColorStyle, "Tools" => ColorTools, "Profiles" => ColorProfiles,  "Look Deeper" => ColorLookDeeper, _ => _userAccentColor };
             if (isSelected) { button.Background = new SolidColorBrush(activeColor); button.Foreground = Brushes.White; }
             else if (isHover) { button.Background = new SolidColorBrush(Color.FromRgb((byte)(activeColor.R + 40), (byte)(activeColor.G + 40), (byte)(activeColor.B + 40))); button.Foreground = Brushes.White; }
             else { button.Background = new SolidColorBrush(Color.FromRgb(200, 200, 200)); button.Foreground = new SolidColorBrush(Color.FromRgb(60, 60, 60)); }
@@ -200,7 +206,10 @@ namespace Desktop_Fences
             CreateCheckBox(c, "Enable Snap Near Fences", "EnableSnapNearFences", SettingsManager.IsSnapEnabled);
             CreateCheckBox(c, "Enable Dimension Snap", "EnableDimensionSnap", SettingsManager.EnableDimensionSnap);
             CreateCheckBox(c, "Enable Tray Icon", "EnableTrayIcon", SettingsManager.ShowInTray);
+            // NEW: Context Menu Option
+            CreateCheckBox(c, "Show 'New Fence' in Desktop Context Menu", "EnableContextMenu", SettingsManager.EnableContextMenu);
             CreateCheckBox(c, "Use Recycle Bin on Portal Fences 'Delete item' command", "UseRecycleBin", SettingsManager.UseRecycleBin);
+       //     CreateCheckBox(c, "Enable Profile Automation", "EnableProfileAutomation", SettingsManager.EnableProfileAutomation);
             t.Content = new ScrollViewer { Content = c, VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
             _tabControl.Items.Add(t);
         }
@@ -257,6 +266,41 @@ namespace Desktop_Fences
 
             CreateCheckBox(c, "Automatic Backup (Daily)", "EnableAutoBackup", SettingsManager.EnableAutoBackup);
 
+
+
+            // --- Maintenance Section ---
+            Color darkPink = Color.FromRgb(199, 21, 133); // MediumVioletRed
+            CreateSectionHeader(c, "Maintenance", darkPink);
+
+            Button btnBound = CreateStyledButton("Screen Bound Fences", darkPink);
+            btnBound.Width = 255;
+            btnBound.Height = 45;
+            btnBound.Margin = new Thickness(0, 0, 0, 15);
+            btnBound.HorizontalAlignment = HorizontalAlignment.Left;
+
+            // Enable ONLY if Auto-Reposition is OFF (Manual Mode)
+            btnBound.IsEnabled = !SettingsManager.AllowAutoReposition;
+
+            if (btnBound.IsEnabled)
+            {
+                btnBound.Click += (s, e) =>
+                {
+                    // This calls the wrapper that handles the variable flipping
+                    FenceManager.ForceRepositionAllFences();
+
+                    MessageBoxesManager.ShowOKOnlyMessageBoxForm("All fences have been checked and moved within valid screen bounds.", "Success");
+                };
+            }
+            else
+            {
+                btnBound.Opacity = 0.90;
+                btnBound.ToolTip = "Auto-reposition is active (Hidden Setting). Fences are already managed automatically.";
+            }
+
+            c.Children.Add(btnBound);
+
+
+
             CreateSectionHeader(c, "Reset", Colors.Red);
             Button r1 = CreateStyledButton("Reset Styles", Color.FromRgb(108, 117, 125));
             r1.Width = 255; r1.Height = 45; r1.Margin = new Thickness(0, 0, 0, 15);
@@ -273,6 +317,58 @@ namespace Desktop_Fences
             t.Content = c;
             _tabControl.Items.Add(t);
         }
+
+
+
+
+
+        private static void CreateProfilesTab()
+        {
+            TabItem t = new TabItem();
+            StackPanel c = new StackPanel();
+            CreateSectionHeader(c, "Profile Management", ColorProfiles);
+
+            // Button 1: Manage Profiles (Green)
+            Button btnManageProfiles = CreateStyledButton("Manage Profiles", Color.FromRgb(34, 139, 34)); // Tools Green
+            btnManageProfiles.Width = 255; btnManageProfiles.Height = 45; btnManageProfiles.Margin = new Thickness(15, 0, 0, 15);
+            btnManageProfiles.HorizontalAlignment = HorizontalAlignment.Left;
+            btnManageProfiles.Click += (s, e) => { new ProfileManagerForm().ShowDialog(); };
+
+            // Button 2: Manage Automation (Blue)
+            Button btnManageAutomation = CreateStyledButton("Manage Automation", Color.FromRgb(0, 123, 191)); // Tools Blue
+            btnManageAutomation.Width = 255; btnManageAutomation.Height = 45; btnManageAutomation.Margin = new Thickness(15, 0, 0, 15);
+            btnManageAutomation.HorizontalAlignment = HorizontalAlignment.Left;
+            btnManageAutomation.Click += (s, e) => { new AutomationRulesForm().ShowDialog(); };
+
+            // Separator and Toggle
+            c.Children.Add(btnManageProfiles);
+            c.Children.Add(btnManageAutomation);
+
+            // Checkbox for Automation (Synchronized with Tray)
+            CheckBox autoCb = new CheckBox
+            {
+                Name = "EnableProfileAutomation",
+                Content = "Enable Profile Automation",
+                IsChecked = SettingsManager.EnableProfileAutomation,
+                FontFamily = new FontFamily("Segoe UI"),
+                FontSize = 13,
+                Margin = new Thickness(15, 10, 0, 8)
+            };
+            // Use Click event to ensure it only fires on user interaction, then SaveSettings immediately
+            autoCb.Click += (s, e) => {
+                bool isChecked = autoCb.IsChecked == true;
+                SettingsManager.EnableProfileAutomation = isChecked;
+                SettingsManager.SaveSettings(); // Force write to JSON immediately
+                TrayManager.Instance?.UpdateAutomationMenuCheck(isChecked);
+                if (isChecked) AutomationManager.Start();
+            };
+            c.Children.Add(autoCb);
+
+            t.Content = new ScrollViewer { Content = c, VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
+            _tabControl.Items.Add(t);
+        }
+
+
 
         private static void CreateLookDeeperTab()
         {
@@ -413,6 +509,24 @@ namespace Desktop_Fences
                             SettingsManager.ShowInTray = newShowInTrayState;
                             if (TrayManager.Instance != null) TrayManager.Instance.GetType().GetField("Showintray", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(TrayManager.Instance, newShowInTrayState);
                         }
+
+                        // NEW: Context Menu Registry Update
+                        if (cb.Name == "EnableContextMenu")
+                        {
+                            bool newState = cb.IsChecked == true;
+                            if (SettingsManager.EnableContextMenu != newState)
+                            {
+                                SettingsManager.EnableContextMenu = newState;
+                                RegistryHelper.ToggleContextMenu(newState);
+                            }
+                        }
+                        // REMOVED: EnableProfileAutomation logic is now handled exclusively in the Profiles tab.
+                        //if (cb.Name == "EnableProfileAutomation")
+                        //{
+                        //    SettingsManager.EnableProfileAutomation = cb.IsChecked == true;
+                        //    if (SettingsManager.EnableProfileAutomation) AutomationManager.Start();
+                        //}
+
                     }
                 }
 
@@ -444,8 +558,8 @@ namespace Desktop_Fences
                 var toolsContent = (StackPanel)((TabItem)_tabControl.Items[2]).Content;
                 foreach (var child in toolsContent.Children) if (child is CheckBox cb && cb.Name == "EnableAutoBackup") SettingsManager.EnableAutoBackup = cb.IsChecked == true;
 
-                // 4. Look Deeper (Logs)
-                var logContent = (StackPanel)((ScrollViewer)((TabItem)_tabControl.Items[3]).Content).Content;
+                // 4. Look Deeper (Logs) - FIXED: Index is 4 (Profiles is 3)
+                var logContent = (StackPanel)((ScrollViewer)((TabItem)_tabControl.Items[4]).Content).Content;
                 var newEnabledCategories = new List<LogManager.LogCategory>();
 
                 // FIX: Force enable the hidden "Error" category so existing log calls don't break.
@@ -482,6 +596,9 @@ namespace Desktop_Fences
                         }
                     }
                 }
+
+
+
 
                 if (!newEnabledCategories.Contains(LogManager.LogCategory.BackgroundValidation))
                     SettingsManager.EnableBackgroundValidationLogging = false;
@@ -532,25 +649,29 @@ namespace Desktop_Fences
         {
             try
             {
-                string r = System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
-                string b = System.IO.Path.Combine(r, "Backups");
-                using (var d = new System.Windows.Forms.FolderBrowserDialog { SelectedPath = System.IO.Directory.Exists(b) ? b : r })
+                using (var d = new System.Windows.Forms.FolderBrowserDialog())
                 {
-                    if (d.ShowDialog() == System.Windows.Forms.DialogResult.OK) { BackupManager.RestoreFromBackup(d.SelectedPath); _optionsWindow.Close(); TrayManager.reloadAllFences(); }
+                    // FIX: Use the Profile-Aware path helper
+                    d.SelectedPath = BackupManager.GetBackupsFolderPath();
+                    d.Description = "Select a backup folder to restore from";
+
+                    if (d.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+                    {
+                        BackupManager.RestoreFromBackup(d.SelectedPath);
+                        _optionsWindow.Close();
+                        TrayManager.reloadAllFences();
+                    }
                 }
             }
-            catch (Exception ex) { MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Restore failed: {ex.Message}", "Error"); }
+            catch (Exception ex)
+            {
+                MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Restore failed: {ex.Message}", "Error");
+            }
         }
-
         private static void OpenBackupsFolder()
         {
-            try
-            {
-                string p = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "Backups");
-                if (!System.IO.Directory.Exists(p)) System.IO.Directory.CreateDirectory(p);
-                Process.Start(new ProcessStartInfo { FileName = p, UseShellExecute = true });
-            }
-            catch (Exception ex) { MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Error: {ex.Message}", "Error"); }
+            // Use the centralized BackupManager helper
+            BackupManager.OpenBackupsFolder();
         }
 
         private static void OpenLogFile()
@@ -566,20 +687,38 @@ namespace Desktop_Fences
 
         private static void PerformFullFactoryReset()
         {
-            if (MessageBoxesManager.ShowCustomYesNoMessageBox("WARNING: This will delete ALL fences, shortcuts, and settings!\n\nAre you sure you want to proceed?", "Factory Reset"))
+            if (MessageBoxesManager.ShowCustomYesNoMessageBox("WARNING: This will delete ALL fences, shortcuts, and settings for the CURRENT PROFILE!\n\nAre you sure you want to proceed?", "Factory Reset"))
             {
                 try
                 {
+                    // 1. Create a safety backup before wiping
                     string ts = DateTime.Now.ToString("yyMMddHHmm");
                     BackupManager.CreateBackup($"{ts}_backup_reset", silent: true);
-                    string ed = System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
+
+                    // 2. Wipe Profile-Specific Folders
+                    // FIX: Use ProfileManager.GetProfileFilePath to target the active profile
                     foreach (string f in new[] { "Temp Shortcuts", "Shortcuts", "Last Fence Deleted", "CopiedItem" })
                     {
-                        string p = System.IO.Path.Combine(ed, f);
-                        if (System.IO.Directory.Exists(p)) { try { System.IO.Directory.Delete(p, true); System.IO.Directory.CreateDirectory(p); } catch { } }
+                        string p = ProfileManager.GetProfileFilePath(f);
+                        if (System.IO.Directory.Exists(p))
+                        {
+                            try
+                            {
+                                System.IO.Directory.Delete(p, true);
+                                System.IO.Directory.CreateDirectory(p);
+                            }
+                            catch { }
+                        }
                     }
-                    string fj = System.IO.Path.Combine(ed, "fences.json"); if (System.IO.File.Exists(fj)) System.IO.File.Delete(fj);
-                    string oj = System.IO.Path.Combine(ed, "options.json"); if (System.IO.File.Exists(oj)) System.IO.File.Delete(oj);
+
+                    // 3. Wipe Profile-Specific Config Files
+                    string fj = ProfileManager.GetProfileFilePath("fences.json");
+                    if (System.IO.File.Exists(fj)) System.IO.File.Delete(fj);
+
+                    string oj = ProfileManager.GetProfileFilePath("options.json");
+                    if (System.IO.File.Exists(oj)) System.IO.File.Delete(oj);
+
+                    // 4. Reload to apply the "Empty" state
                     SettingsManager.LoadSettings();
                     FenceManager.ReloadFences();
                     _optionsWindow.Close();

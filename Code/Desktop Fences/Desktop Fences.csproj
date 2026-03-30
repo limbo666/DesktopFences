@@ -1,4 +1,5 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+﻿<?xml version="1.0" encoding="utf-16BE"?>
+<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
 		<OutputType>WinExe</OutputType>
@@ -7,10 +8,9 @@
 		<Nullable>enable</Nullable>
 		<UseWPF>true</UseWPF>
 		<UseWindowsForms>True</UseWindowsForms>
-		<AssemblyVersion>2.5.4.188</AssemblyVersion>
-		<FileVersion>2.5.4.188</FileVersion>
-		<Version>2.5.4.188
-		</Version>
+		<AssemblyVersion>2.6.5.210</AssemblyVersion>
+		<FileVersion>2.6.5.210</FileVersion>
+		<Version>2.6.5.210</Version>
 		<ApplicationIcon>Resources\logo2.ico</ApplicationIcon>
 	</PropertyGroup>
 
@@ -29,6 +29,7 @@
 		<None Remove="Resources\HWP_Logo.png" />
 		<None Remove="Resources\link-White.png" />
 		<None Remove="Resources\logo_blue.ico" />
+		<None Remove="Resources\spotify-White.png" />
 		<None Remove="Resources\steam-White.png" />
 		<None Remove="Resources\sweep-sound-effect-240243.wav" />
 		<None Remove="Resources\ui-8-warning-sound-effect-336254.wav" />
@@ -103,6 +104,9 @@
 		  <CopyToOutputDirectory>Never</CopyToOutputDirectory>
 		</Resource>
 		<Resource Include="Resources\portal.png" />
+		<Resource Include="Resources\spotify-White.png">
+		  <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+		</Resource>
 	</ItemGroup>
 
 	<ItemGroup>

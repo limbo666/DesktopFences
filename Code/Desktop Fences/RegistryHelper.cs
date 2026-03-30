@@ -1,6 +1,7 @@
 ﻿using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Reflection;
 
 namespace Desktop_Fences
@@ -11,19 +12,11 @@ namespace Desktop_Fences
     /// Compatible with existing project structure and follows established patterns
     /// </summary>
     public static class RegistryHelper
-
-
-
-
     {
-
         #region Messaging State Management (Remote Info System)
 
         private static readonly string MSG_REGISTRY_KEY_PATH = @"SOFTWARE\Desktop_Fences_Plus\Messaging";
 
-        /// <summary>
-        /// checks if a specific message ID has been permanently dismissed by the user.
-        /// </summary>
         public static bool IsMessageDismissed(string msgId)
         {
             if (string.IsNullOrEmpty(msgId)) return false;
@@ -39,9 +32,6 @@ namespace Desktop_Fences
             catch { return false; }
         }
 
-        /// <summary>
-        /// Gets how many times a specific message has been displayed.
-        /// </summary>
         public static int GetMessageDisplayCount(string msgId)
         {
             if (string.IsNullOrEmpty(msgId)) return 0;
@@ -57,9 +47,6 @@ namespace Desktop_Fences
             catch { return 0; }
         }
 
-        /// <summary>
-        /// Increments the display counter for a message. Call this when showing the window.
-        /// </summary>
         public static void IncrementMessageCount(string msgId)
         {
             if (string.IsNullOrEmpty(msgId)) return;
@@ -83,9 +70,6 @@ namespace Desktop_Fences
             }
         }
 
-        /// <summary>
-        /// Flags a message as permanently dismissed.
-        /// </summary>
         public static void SetMessageDismissed(string msgId)
         {
             if (string.IsNullOrEmpty(msgId)) return;
@@ -110,19 +94,17 @@ namespace Desktop_Fences
         // Registry path for program management values
         private static readonly string PROGRAM_REGISTRY_KEY_PATH = @"SOFTWARE\Desktop_Fences_Plus\ProgramManagement";
 
+        // Context Menu Constants
+        private const string MENU_PATH = @"Software\Classes\DesktopBackground\Shell\DesktopFences";
+        private const string COMMAND_PATH = @"Software\Classes\DesktopBackground\Shell\DesktopFences\command";
+
         #endregion
-
-
-        // Inside RegistryHelper.cs
 
         #region Migration Methods
 
         // Registry path for internal app settings/flags
         private static readonly string SETTINGS_REGISTRY_KEY_PATH = @"SOFTWARE\Desktop_Fences_Plus\Settings";
 
-        /// <summary>
-        /// Checks if the startup migration has been performed.
-        /// </summary>
         public static bool IsStartupMigrated()
         {
             try
@@ -143,9 +125,6 @@ namespace Desktop_Fences
             return false;
         }
 
-        /// <summary>
-        /// Sets the flag indicating startup migration is complete.
-        /// </summary>
         public static void SetStartupMigrated()
         {
             try
@@ -170,11 +149,11 @@ namespace Desktop_Fences
         #region Public Methods
 
         /// <summary>
-        /// Writes a trigger value to registry to signal effect activation
-        /// Used by: Single instance checker when duplicate instance found
+        /// Writes a trigger value to registry. 
+        /// Accepts optional 'customValue' for Commands (e.g. "CMD_DRAW").
+        /// If null, defaults to Timestamp (Standard Wake Up).
         /// </summary>
-        /// <returns>True if write successful, false otherwise</returns>
-        public static bool WriteTrigger()
+        public static bool WriteTrigger(string customValue = null)
         {
             try
             {
@@ -182,8 +161,9 @@ namespace Desktop_Fences
                 {
                     if (key != null)
                     {
-                        // Use current timestamp to ensure uniqueness and prevent duplicate triggers
-                        string triggerValue = DateTime.Now.Ticks.ToString();
+                        // Use provided command OR current timestamp
+                        string triggerValue = customValue ?? DateTime.Now.Ticks.ToString();
+
                         key.SetValue(TRIGGER_VALUE_NAME, triggerValue, RegistryValueKind.String);
 
                         LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.General,
@@ -201,11 +181,6 @@ namespace Desktop_Fences
             return false;
         }
 
-        /// <summary>
-        /// Checks for trigger value in registry
-        /// Used by: Registry monitor timer to detect when effect should be activated
-        /// </summary>
-        /// <returns>Trigger value if found, null if not found or error</returns>
         public static string CheckForTrigger()
         {
             try
@@ -234,11 +209,6 @@ namespace Desktop_Fences
             return null;
         }
 
-        /// <summary>
-        /// Deletes the trigger value from registry
-        /// Used by: Registry monitor after effect is triggered to prevent re-triggering
-        /// </summary>
-        /// <returns>True if delete successful or value didn't exist, false on error</returns>
         public static bool DeleteTrigger()
         {
             try
@@ -247,7 +217,6 @@ namespace Desktop_Fences
                 {
                     if (key != null)
                     {
-                        // Check if value exists before trying to delete
                         object value = key.GetValue(TRIGGER_VALUE_NAME);
                         if (value != null)
                         {
@@ -267,11 +236,6 @@ namespace Desktop_Fences
             }
         }
 
-        /// <summary>
-        /// Cleans up registry key (removes entire key path)
-        /// Used by: Application shutdown or cleanup operations (optional)
-        /// </summary>
-        /// <returns>True if cleanup successful, false otherwise</returns>
         public static bool CleanupRegistry()
         {
             try
@@ -289,11 +253,6 @@ namespace Desktop_Fences
             }
         }
 
-        /// <summary>
-        /// Test method to verify registry operations work correctly
-        /// Used by: Development/testing purposes only
-        /// </summary>
-        /// <returns>True if all operations work correctly</returns>
         public static bool TestRegistryOperations()
         {
             try
@@ -348,14 +307,9 @@ namespace Desktop_Fences
         }
 
         #endregion
+
         #region Program Management Methods
 
-        /// <summary>
-        /// Sets or updates program management values in registry
-        /// Updates values based on specified rules (some update on each run, others only if not exist)
-        /// </summary>
-        /// <param name="programVersion">Current program version</param>
-        /// <returns>True if operations successful, false otherwise</returns>
         public static bool SetProgramManagementValues(string programVersion)
         {
             try
@@ -422,10 +376,6 @@ namespace Desktop_Fences
             return false;
         }
 
-        /// <summary>
-        /// Retrieves all program management values from registry
-        /// </summary>
-        /// <returns>Dictionary containing all registry values, empty if error</returns>
         public static Dictionary<string, object> GetProgramManagementValues()
         {
             var values = new Dictionary<string, object>();
@@ -458,10 +408,6 @@ namespace Desktop_Fences
             return values;
         }
 
-        /// <summary>
-        /// Exports all program management values to a text file in program directory
-        /// </summary>
-        /// <returns>True if export successful, false otherwise</returns>
         public static bool ExportProgramManagementValues()
         {
             try
@@ -500,28 +446,19 @@ namespace Desktop_Fences
             }
         }
 
-        /// <summary>
-        /// Helper method to compare version strings
-        /// </summary>
-        /// <param name="newVersion">New version to compare</param>
-        /// <param name="existingVersion">Existing version to compare against</param>
-        /// <returns>True if newVersion is greater than existingVersion</returns>
         private static bool IsVersionGreater(string newVersion, string existingVersion)
         {
             try
             {
-                // Simple version comparison - you can enhance this based on your version format
                 if (string.IsNullOrEmpty(existingVersion)) return true;
                 if (string.IsNullOrEmpty(newVersion)) return false;
 
-                // Try to parse as Version objects for proper comparison
                 if (Version.TryParse(newVersion, out Version newVer) &&
                     Version.TryParse(existingVersion, out Version existingVer))
                 {
                     return newVer > existingVer;
                 }
 
-                // Fallback to string comparison if not valid version format
                 return string.Compare(newVersion, existingVersion, StringComparison.OrdinalIgnoreCase) > 0;
             }
             catch
@@ -531,9 +468,67 @@ namespace Desktop_Fences
         }
 
         #endregion
-      
+
+        #region Context Menu Management
+
+        public static void ToggleContextMenu(bool enable)
+        {
+            try
+            {
+                if (enable)
+                {
+                    UpdateRegistryPaths();
+                }
+                else
+                {
+                    Registry.CurrentUser.DeleteSubKeyTree(MENU_PATH, false);
+                }
+            }
+            catch (Exception ex)
+            {
+                LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.General, $"Registry Error: {ex.Message}");
+            }
+        }
+
+        public static void RefreshContextMenuPath()
+        {
+            try
+            {
+                // Only update if the key exists (meaning the user enabled the feature)
+                using (var key = Registry.CurrentUser.OpenSubKey(MENU_PATH))
+                {
+                    if (key != null)
+                    {
+                        UpdateRegistryPaths();
+                        LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, "Context Menu path auto-healed to current location.");
+                    }
+                }
+            }
+            catch { }
+        }
+
+        private static void UpdateRegistryPaths()
+        {
+            string exePath = Process.GetCurrentProcess().MainModule.FileName;
+
+            using (RegistryKey key = Registry.CurrentUser.CreateSubKey(MENU_PATH))
+            {
+                if (key != null)
+                {
+                    key.SetValue("", "Create New Fence");
+                    key.SetValue("Icon", exePath);
+                }
+            }
+
+            using (RegistryKey cmdKey = Registry.CurrentUser.CreateSubKey(COMMAND_PATH))
+            {
+                if (cmdKey != null)
+                {
+                    cmdKey.SetValue("", $"\"{exePath}\" -create");
+                }
+            }
+        }
+
+        #endregion
     }
-
-
-
 }

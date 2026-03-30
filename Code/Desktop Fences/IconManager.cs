@@ -99,6 +99,9 @@ namespace Desktop_Fences
                 ImageSource iconSource = GetIconForFile(targetPath, filePath, isFolder, isLink, isShortcut, iconDict);
                 ico.Source = iconSource;
 
+                // --- POST-CREATION OVERRIDE ---
+                ApplyPostCreationIconOverride(ico, filePath);
+
                 // Apply icon size settings
                 ApplyIconSize(ico, filePath);
                 sp.Children.Add(ico);
@@ -132,79 +135,186 @@ namespace Desktop_Fences
         /// Category: Icon Extraction
         /// Moved from: FenceManager.GetIconForFile (enhanced)
         /// </summary>
+        //public static ImageSource GetIconForFile(string targetPath, string filePath, bool isFolder = false,
+        //            bool isLink = false, bool isShortcut = false, IDictionary<string, object> iconDict = null)
+        //{
+        //    try
+        //    {
+        //        // Check cache first
+        //        if (iconCache.ContainsKey(filePath)) return iconCache[filePath];
+
+        //        ImageSource extractedIcon = null;
+
+        //        // --- 1. THE NUCLEAR PROTOCOL INTERCEPTOR ---
+        //        // Catch raw links dropped directly from the browser/app
+        //        bool isSteam = filePath.IndexOf("steam://", StringComparison.OrdinalIgnoreCase) >= 0;
+        //        bool isSpotify = filePath.IndexOf("spotify:", StringComparison.OrdinalIgnoreCase) >= 0;
+
+        //        // Catch physical .url shortcut files
+        //        if (Path.GetExtension(filePath).ToLower() == ".url" && System.IO.File.Exists(filePath))
+        //        {
+        //            try
+        //            {
+        //                // Read the raw text of the file to guarantee we don't miss the protocol
+        //                string rawText = System.IO.File.ReadAllText(filePath);
+        //                if (rawText.IndexOf("steam://", StringComparison.OrdinalIgnoreCase) >= 0) isSteam = true;
+        //                if (rawText.IndexOf("spotify:", StringComparison.OrdinalIgnoreCase) >= 0) isSpotify = true;
+
+        //                // If it's NOT Steam or Spotify, try to extract a custom game icon (Epic Games, etc.)
+        //                if (!isSteam && !isSpotify)
+        //                {
+        //                    extractedIcon = ExtractCustomIconFromUrl(filePath);
+        //                    if (extractedIcon == null) extractedIcon = Utility.GetShellIcon(filePath, false);
+        //                }
+        //            }
+        //            catch { }
+        //        }
+
+        //        // --- 2. APPLY THE SPECIFIC PROTOCOL ICON ---
+        //        if (isSteam)
+        //        {
+        //            extractedIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/steam-White.png"));
+        //        }
+        //        else if (isSpotify)
+        //        {
+        //            extractedIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/spotify-White.png"));
+        //        }
+
+        //        // --- 3. STANDARD FALLBACKS (If not Steam, Spotify, or Epic Games) ---
+        //        if (extractedIcon == null)
+        //        {
+        //            if (isLink || Path.GetExtension(filePath).ToLower() == ".url")
+        //            {
+        //                extractedIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/link-White.png"));
+        //            }
+        //            else if (isShortcut)
+        //            {
+        //                extractedIcon = ExtractShortcutIcon(filePath, targetPath);
+        //            }
+        //            else if (isFolder)
+        //            {
+        //                extractedIcon = GetFolderIcon(targetPath);
+        //            }
+        //            else
+        //            {
+        //                extractedIcon = GetFileIcon(targetPath);
+        //            }
+        //        }
+
+        //        // Cache and return
+        //        if (extractedIcon != null) iconCache[filePath] = extractedIcon;
+        //        return extractedIcon;
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.IconHandling, $"Error extracting icon for {filePath}: {ex.Message}");
+        //        var fallbackIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/file-WhiteX.png"));
+        //        iconCache[filePath] = fallbackIcon;
+        //        return fallbackIcon;
+        //    }
+        //}
+
         public static ImageSource GetIconForFile(string targetPath, string filePath, bool isFolder = false,
-            bool isLink = false, bool isShortcut = false, IDictionary<string, object> iconDict = null)
+                    bool isLink = false, bool isShortcut = false, IDictionary<string, object> iconDict = null)
         {
             try
             {
                 // Check cache first
-                if (iconCache.ContainsKey(filePath))
-                {
-                    LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.IconHandling,
-                        $"Using cached icon for {filePath}");
-                    return iconCache[filePath];
-                }
+                if (iconCache.ContainsKey(filePath)) return iconCache[filePath];
 
                 ImageSource extractedIcon = null;
 
-                // Handle different file types
-                if (isLink)
+                // ==========================================
+                // 1. RESOLVE THE TRUE TARGET OF .URL FILES
+                // ==========================================
+                string actualTarget = targetPath ?? "";
+
+                if (Path.GetExtension(filePath)?.ToLower() == ".url" && System.IO.File.Exists(filePath))
                 {
-                    extractedIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/link-White.png"));
-                    LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.IconHandling,
-                        $"Using link-White.png for web link {filePath}");
-                }
-                else if (isShortcut)
-                {
-                    extractedIcon = ExtractShortcutIcon(filePath, targetPath);
-                }
-                else if (Path.GetExtension(filePath).ToLower() == ".url")
-                {
-                    // Check if this is a Steam URL for custom icon
-                    string urlContent = CoreUtilities.ExtractUrlFromFile(filePath);
-                    if (!string.IsNullOrEmpty(urlContent) && urlContent.StartsWith("steam://", StringComparison.OrdinalIgnoreCase))
+                    // For .url files, 'targetPath' is just the file path. We MUST extract the true destination.
+                    string extractedUrl = CoreUtilities.ExtractUrlFromFile(filePath);
+                    if (!string.IsNullOrEmpty(extractedUrl))
                     {
-                        extractedIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/steam-White.png"));
-                        LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.IconHandling,
-                            $"Using steam-White.png for Steam URL file {filePath}");
+                        actualTarget = extractedUrl;
                     }
                     else
                     {
-                        extractedIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/link-White.png"));
-                        LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.IconHandling,
-                            $"Using link-White.png for .url file {filePath}");
+                        // Failsafe: Manually scrape the URL= line if the utility fails
+                        try
+                        {
+                            string[] lines = System.IO.File.ReadAllLines(filePath);
+                            foreach (string line in lines)
+                            {
+                                if (line.StartsWith("URL=", StringComparison.OrdinalIgnoreCase))
+                                {
+                                    actualTarget = line.Substring(4).Trim();
+                                    break;
+                                }
+                            }
+                        }
+                        catch { }
                     }
                 }
-                else if (isFolder)
+
+                string targetLower = actualTarget.ToLower();
+
+                // ==========================================
+                // 2. SCAN THE TRUE TARGET FOR CUSTOM PROTOCOLS
+                // ==========================================
+                if (targetLower.Contains("spotify:"))
                 {
-                    extractedIcon = GetFolderIcon(targetPath);
+                    extractedIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/spotify-White.png"));
                 }
-                else
+                else if (targetLower.Contains("steam://"))
                 {
-                    extractedIcon = GetFileIcon(targetPath);
+                    extractedIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/steam-White.png"));
+                }
+
+                // ==========================================
+                // 3. EXTRACT CUSTOM ICONS (Epic Games, etc.)
+                // ==========================================
+                if (extractedIcon == null && Path.GetExtension(filePath)?.ToLower() == ".url")
+                {
+                    extractedIcon = ExtractCustomIconFromUrl(filePath);
+                    if (extractedIcon == null) extractedIcon = Utility.GetShellIcon(filePath, false);
+                }
+
+                // ==========================================
+                // 4. STANDARD FALLBACKS
+                // ==========================================
+                if (extractedIcon == null)
+                {
+                    if (isLink || Path.GetExtension(filePath)?.ToLower() == ".url" || targetLower.StartsWith("http"))
+                    {
+                        extractedIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/link-White.png"));
+                    }
+                    else if (isShortcut)
+                    {
+                        extractedIcon = ExtractShortcutIcon(filePath, targetPath);
+                    }
+                    else if (isFolder)
+                    {
+                        extractedIcon = GetFolderIcon(targetPath);
+                    }
+                    else
+                    {
+                        extractedIcon = GetFileIcon(targetPath);
+                    }
                 }
 
                 // Cache and return
-                if (extractedIcon != null)
-                {
-                    iconCache[filePath] = extractedIcon;
-                    LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.IconHandling,
-                        $"Cached new icon for {filePath}");
-                }
-
+                if (extractedIcon != null) iconCache[filePath] = extractedIcon;
                 return extractedIcon;
             }
             catch (Exception ex)
             {
-                LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.IconHandling,
-                    $"Error extracting icon for {filePath}: {ex.Message}");
-
-                // Return fallback icon
+                LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.IconHandling, $"Error extracting icon for {filePath}: {ex.Message}");
                 var fallbackIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/file-WhiteX.png"));
                 iconCache[filePath] = fallbackIcon;
                 return fallbackIcon;
             }
         }
+
         #endregion
 
         #region Icon Update Operations - Used by: FenceManager.UpdateIcon, TargetChecker
@@ -243,9 +353,39 @@ namespace Desktop_Fences
                             new BitmapImage(new Uri("pack://application:,,,/Resources/folder-White.png")) :
                             new BitmapImage(new Uri("pack://application:,,,/Resources/folder-WhiteX.png"));
                     }
+                    //else if (System.IO.File.Exists(filePath))
+                    //{
+                    //    newIcon = System.Drawing.Icon.ExtractAssociatedIcon(filePath).ToImageSource();
+                    //}
+                    //else
+                    //{
+                    //    newIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/file-WhiteX.png"));
+                    //}
                     else if (System.IO.File.Exists(filePath))
                     {
-                        newIcon = System.Drawing.Icon.ExtractAssociatedIcon(filePath).ToImageSource();
+                        // FIX: Intercept .url files so ExtractAssociatedIcon doesn't overwrite game icons with browser icons
+                        if (Path.GetExtension(filePath).ToLower() == ".url")
+                        {
+                            newIcon = Utility.GetShellIcon(filePath, false);
+                        }
+                        else
+                        {
+                            try
+                            {
+                                newIcon = System.Drawing.Icon.ExtractAssociatedIcon(filePath).ToImageSource();
+                            }
+                            catch
+                            {
+                                // FIX: Fallback to Shell API for .pptx and other AppX aliases
+                                newIcon = Utility.GetShellIcon(filePath, false);
+                            }
+                        }
+
+                        // Ultimate fallback if nothing works
+                        if (newIcon == null)
+                        {
+                            newIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/file-WhiteX.png"));
+                        }
                     }
                     else
                     {
@@ -321,6 +461,56 @@ namespace Desktop_Fences
 
 
         #region Icon Extraction Helpers - Internal Methods
+
+        /// <summary>
+        /// POST-CREATION OVERRIDE: 
+        /// Runs immediately after the UI element is created. Forcefully swaps the icon
+        /// if the target contains specific app protocols, bypassing all Windows extraction logic.
+        /// </summary>
+        private static void ApplyPostCreationIconOverride(System.Windows.Controls.Image ico, string filePath)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(filePath) || !System.IO.File.Exists(filePath)) return;
+
+                string targetToScan = "";
+
+                // 1. Extract the raw target string from the physical file
+                if (filePath.EndsWith(".url", StringComparison.OrdinalIgnoreCase))
+                {
+                    targetToScan = CoreUtilities.ExtractUrlFromFile(filePath);
+                    // Brute-force fallback if the utility parser fails
+                    if (string.IsNullOrEmpty(targetToScan)) targetToScan = System.IO.File.ReadAllText(filePath);
+                }
+                else if (filePath.EndsWith(".lnk", StringComparison.OrdinalIgnoreCase))
+                {
+                    targetToScan = Utility.GetShortcutTarget(filePath);
+                }
+
+                if (string.IsNullOrEmpty(targetToScan)) return;
+
+                // 2. Forcefully override the UI Image Source if the string matches
+                if (targetToScan.IndexOf("spotify:", StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    ico.Source = new BitmapImage(new Uri("pack://application:,,,/Resources/spotify-White.png"));
+                    iconCache[filePath] = ico.Source; // Poison the cache with the correct icon
+                    LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.IconHandling, $"Post-Creation Override: Forced Spotify icon for {filePath}");
+                }
+                else if (targetToScan.IndexOf("steam://", StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    ico.Source = new BitmapImage(new Uri("pack://application:,,,/Resources/steam-White.png"));
+                    iconCache[filePath] = ico.Source; // Poison the cache with the correct icon
+                    LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.IconHandling, $"Post-Creation Override: Forced Steam icon for {filePath}");
+                }
+            }
+            catch (Exception ex)
+            {
+                LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.IconHandling, $"Post-Creation override failed for {filePath}: {ex.Message}");
+            }
+        }
+
+
+
         /// <summary>
         /// Extracts icon from shortcut files with custom icon handling
         /// Used by: GetIconForFile
@@ -450,6 +640,28 @@ namespace Desktop_Fences
         /// Used by: GetIconForFile
         /// Category: File Icons
         /// </summary>
+        //private static ImageSource GetFileIcon(string filePath)
+        //{
+        //    try
+        //    {
+        //        if (System.IO.File.Exists(filePath))
+        //        {
+        //            return System.Drawing.Icon.ExtractAssociatedIcon(filePath).ToImageSource();
+        //        }
+        //        else
+        //        {
+        //            return new BitmapImage(new Uri("pack://application:,,,/Resources/file-WhiteX.png"));
+        //        }
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.IconHandling,
+        //            $"Error extracting file icon for {filePath}: {ex.Message}");
+        //        return new BitmapImage(new Uri("pack://application:,,,/Resources/file-WhiteX.png"));
+        //    }
+        //}
+
+
         private static ImageSource GetFileIcon(string filePath)
         {
             try
@@ -467,12 +679,64 @@ namespace Desktop_Fences
             {
                 LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.IconHandling,
                     $"Error extracting file icon for {filePath}: {ex.Message}");
+
+                // FIX: Office/AppX Icon Crash (.pptx, .docx). Fallback to Shell API
+                ImageSource shellIcon = Utility.GetShellIcon(filePath, false);
+                if (shellIcon != null) return shellIcon;
+
                 return new BitmapImage(new Uri("pack://application:,,,/Resources/file-WhiteX.png"));
             }
         }
+
         #endregion
 
+        /// <summary>
+        /// Rips open a .url file and manually extracts the exact, game-specific icon 
+        /// (Solves Epic Games, Steam, and Spotify custom shortcut icons)
+        /// </summary>
+        private static ImageSource ExtractCustomIconFromUrl(string urlFilePath)
+        {
+            try
+            {
+                if (!System.IO.File.Exists(urlFilePath)) return null;
 
+                string[] lines = System.IO.File.ReadAllLines(urlFilePath);
+                string iconFile = null;
+                int iconIndex = 0;
+
+                foreach (string line in lines)
+                {
+                    if (line.StartsWith("IconFile=", StringComparison.OrdinalIgnoreCase))
+                    {
+                        iconFile = line.Substring(9).Trim();
+                    }
+                    else if (line.StartsWith("IconIndex=", StringComparison.OrdinalIgnoreCase))
+                    {
+                        int.TryParse(line.Substring(10).Trim(), out iconIndex);
+                    }
+                }
+
+                // If we found a specific custom icon path inside the file
+                if (!string.IsNullOrEmpty(iconFile) && System.IO.File.Exists(iconFile))
+                {
+                    LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.IconHandling,
+                        $"Found exact game/app IconFile in URL: {iconFile}");
+
+                    // Extract it directly from the source .ico or .exe
+                    var customIcon = ExtractIconFromFile(iconFile, iconIndex);
+                    if (customIcon != null) return customIcon;
+
+                    // Fallback to standard extraction if ExtractIconFromFile fails
+                    return System.Drawing.Icon.ExtractAssociatedIcon(iconFile).ToImageSource();
+                }
+            }
+            catch (Exception ex)
+            {
+                LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.IconHandling,
+                    $"Custom URL icon scraper failed: {ex.Message}");
+            }
+            return null;
+        }
 
         #region UI Creation Helpers - Internal Methods
         /// <summary>
@@ -612,9 +876,14 @@ namespace Desktop_Fences
                 ImageSource iconSource = GetIconForFile(targetPath, filePath, isFolder, isLink, isShortcut, iconDict);
                 ico.Source = iconSource;
 
+                // --- POST-CREATION OVERRIDE ---
+                ApplyPostCreationIconOverride(ico, filePath);
+
                 // Apply icon size settings from fence context
-                ApplyIconSizeFromFence(ico, fence);
+                ApplyIconSizeFromFence(ico, fence); // <--- This one is correct here!
                 sp.Children.Add(ico);
+
+
 
                 // Create and add text label
                 TextBlock lbl = CreateIconLabel(iconDict, filePath);
