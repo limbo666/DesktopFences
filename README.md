@@ -323,11 +323,13 @@ https://github.com/limbo666/DesktopFences/releases
 
 ##  Installation
 
-Simply extract the executable and run it. The necessary configuration files (`fences.json`, `options.json`) will be created on first run.
-Attention: Only user-writable locations are compatible. See (https://github.com/limbo666/DesktopFences/issues/51)
 
 >  Compatible with Windows 10/11  
 >  No installation required — fully portable
+
+Simply extract the executable (and other zip containts) into a folder and run `Desktop Fences.exe` . All necessary configuration files and folders will be created on first run.
+**Attention:** Only user-writable locations are compatible. See (https://github.com/limbo666/DesktopFences/issues/51)
+
 
 ---
 ## Stargazers over time
