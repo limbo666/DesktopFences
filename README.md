@@ -294,8 +294,18 @@ Even small contributions mean a lot. Thank you for keeping this project alive an
 - **Fixed**: 🐛 Tab renaming bug fixed.
 
 ## 2.6.5.210 (Release 10)
-- **TBA**
-
+- **Added**: 💥 Profiles<br>
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;🔖Profile Manager<br>
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;🔖Profile Automation - Switches profile based on specific program activation <br>
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;🔖Profile Swicthing Hotkeys - (`CTRL+ALT+[Profile Number]`, `CTRL+ALT+<`, `CTRL+ALT+>`) <br>
+- **Changed**: Support files `ProfileOptions.json` is automatically created to manage profile info, `Options.json` moved under profile folder,
+- **Added**: Optional `MasterOptions.json` file. This file should be manually created on program root to apply Global Configuration for all Profiles.
+- **Changed**: Support folders moved under profile name folder.
+- **Fixed**: 🐛 Bug for shortcuts displayed without their original icon.
+- **Fixed**: 🐛 Bug for powerpoint origin shorctuts.
+- **Added**: Resolution related techniques to restore fence position.
+- **Added**: Manual tool to "Screen Bound Fences" available under "Options" > "Tools".
+- **Updated**: Backup/Restore engine to support profiles.
 ---
 
 ##  Summary
