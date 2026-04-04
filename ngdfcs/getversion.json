@@ -1,8 +1,12 @@
 {
   "Meta": {
-    "LatestVersion": "2.5.4.188",
+    "LatestVersion": "2.6.5.210",
     "CriticalUpdate": false,
-    "DownloadUrl": "https://github.com/limbo666/DesktopFences/releases/tag/2.5.4.188",
+    "DownloadUrl": "https://github.com/limbo666/DesktopFences/releases/tag/2.6.5.210",
     "ForceKillSwitch": false
+  },
+  "RemoteSettings": {
+    "EnableBackgroundLogging": false,
+    "SearchEngineUrl": ""
   }
 }
