@@ -9,11 +9,16 @@ Welcome to the hidden features guide. This document highlights advanced function
 The `CTRL` key acts as a "modifier" that reveals advanced context menus and shortcuts. When in doubt, try holding `CTRL`.
 
 * **Rename:** `CTRL + Left Click` on a fence title to rename it.
-* **Hidden Icon Options:** `CTRL + Right Click` an icon to see advanced actions (e.g., *Send to Desktop*).
+* **Arrange Icons:** `CTRL + Drag` an Icon to its new location on the fence.
 * **Fence Icons Export:** `CTRL + Right Click` an empty area inside a fence to access hidden administrative tools (e.g., *Export all icons to desktop*).
 * **Portal Navigation:** `CTRL + Left Click` a folder inside a **Portal Fence** to navigate into that folder within the same fence, rather than opening a new Windows Explorer window.
+* **Portal Fence Naming:** `CTRL + Right Click` and select "Name Fence After Target Path" renames Portal Fence to target path.
+* **Adding Seperators (spacers) Data Fences:** `CTRL + Right Click` any area on a data fence and select "Add spacer" > "Blank" or "Dot" adds a spacer into the fence. You can move it by using `CTRL + Drag` to any place you like within the fence. (v2.6.5.222 and later)
+* **Export all shortcuts from a fence:** `CTRL + Right Click` any area on a data fence and select "Export all icons to desktop" 
+* **Export a single shortcut:** `CTRL + Right Click` an icon and select "Send to desktop"
+* **Run as different user:** `CTRL + Right Click` an icon and select "Run as a different user"  (v2.6.5.222 and later)
 
----
+ ---
 
 ## Portal Fence Filters
 Click the **Filter Icon** (located next to the Lock icon) to toggle the filter bar. Filters allow you to dynamically control which files are visible.
