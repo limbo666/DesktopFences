@@ -44,8 +44,34 @@ To quick show all fences above your open windows use `WIN + Shift + D`
 ---
 
 ## Focus Fence (v2.6.5.218 and later)
-Use the dedicated menu to select which fence should bring into teh front. Press hotekey combination `Ctrl + Alt + Z` (default) or use the "Focus Fence..." tray menu item.
+Use the dedicated menu to select which fence should bring into teh front. Press hotekey combination `Ctrl + Alt + Z` (default) or use the "Focus Fence..." tray menu item.  
 Double click a fence name on the list or select the name and clcik on "Focus Fence" button 
+
+
+### Profiles
+Profiles offering multiple configuration switching. It is a flexible method to switch icon collections between work and home, desk and presentation, work and fun or whatever mode you like to switch to.  
+Profiles are the best way to keep your desktop organized and grouped according to your needs.  
+Profiles can be created by using tray menu items, and/or the profile manager.   
+
+  
+Switching profiles can be done by selecting the appropriate profile name on tray menu or by using the hotkeys (default `CTRL + ALT [Profile number 0 to 9]`) or by swicthing to next (default `CTRL + ALT + .`) or previous (default `CTRL + ALT + ,`)  
+
+  Profile Manager  
+   - Profile manager can help you switch, arrange, delete and rename profiles.  
+
+  Profile automation
+   - This is a sofisticated feature taht can automaticaly make Desktop Fences switch profile according to a program activity.
+   - Switch to the profile can be permanent or while the program is active.  
+   - Profile automation can be turned off and on via tray menu or options window.  
+  
+
+### Smart Desktop  (v2.6.5.225 and later)
+ - This is an advanced file manager for desktop which can work in the background and move files to specific folder by checking their file extension or filename.  
+ - Rules can be set on "Smart Desktop Rules" window.  
+ - Multiple rules can be set and notification for every successful run can be shown on the lower right screen corner to inform user that files have been moved.
+ - The Smart Desktop Auto-Organize can be enabled and disbled by tray icon menu or by options window.
+ - Rule priority can be set by arrnging the rule order on "Smart Desktop Rules" window.  
+ 
 
 ---
 
@@ -71,9 +97,14 @@ For deeper customization, you can manually edit the `options.json` file. Below a
 | `EnableSpotSearchHotkey` | Set to `false` to completely disable the SpotSearch feature. |
 | `SpotSearchKey` | Choose the trigger key: `"q"`, `"space"`, `"~"`, or a specific key code. |
 | `SpotSearchModifier` | Change the modifier key to `"ALT"` or `"CONTROL"`. |
+Version 2.6.5.220 and later offers UI conntrols to set hotkeys for Spotsearch so tweaking json for this is not needed anymore
+
+
 ### System
 | Variable | Description |
 | :--- | :--- |
 | `DisableSingleInstance` | Set to `true` to allow running multiple separate instances of the program. |
+
+
 
 ---
