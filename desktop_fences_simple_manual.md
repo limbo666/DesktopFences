@@ -19,7 +19,7 @@ Desktop Fences + is a powerful desktop organization tool that creates virtual "f
 
 - Windows 10 or Windows 11 operating system
 - .NET Framework support
-- Administrative privileges for some features
+
 
 ### First Launch
 
@@ -41,11 +41,12 @@ Fences are containers on your desktop that group related shortcuts and files tog
 
 - **Fences (Data Fences)**: Regular containers for shortcuts targeting files or folders and web links
 - **Portal Fences**: Special fences mirroring the contents of folders
+- **Note Fences**: Fences that display text.
 
 **How to Create a Fence:**
 
-1. The first fence is created automatically on first run. look on the top left corner of your screen
-2. From there clicking the heart menu you can select New Fence to create a new Fence or New Portal Fence to create a new Portal Fence
+1. The first two fences are created automatically on first run. Look on the top left corner of your screen.
+2. From there clicking the heart menu you can select New Fence to create a new Fence, New Portal Fence to create a new Portal Fence or New Note Fence to crete a new note fence.
 
 **Rename a fence:**
 
