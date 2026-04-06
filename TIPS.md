@@ -43,6 +43,12 @@ To quick show all fences above your open windows use `WIN + Shift + D`
 
 ---
 
+## Focus Fence (v2.6.5.218 and later)
+Use the dedicated menu to select which fence should bring into teh front. Press hotekey combination `Ctrl + Alt + Z` (default) or use the "Focus Fence..." tray menu item.
+Double click a fence name on the list or select the name and clcik on "Focus Fence" button 
+
+---
+
 ## Advanced JSON Tweaks
 For deeper customization, you can manually edit the `options.json` file. Below are the most impactful variables:
 
