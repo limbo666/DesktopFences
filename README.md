@@ -336,7 +336,7 @@ https://github.com/limbo666/DesktopFences/releases
 _See (https://github.com/limbo666/DesktopFences/issues/51)_
 
 
-##  Update existing insallation
+##  Update existing installation
 
  - Download the release package
  - Extract the all files contained in zip package and overwrite existing int your Desktop Fences + folder 
