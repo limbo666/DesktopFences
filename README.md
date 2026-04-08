@@ -325,10 +325,24 @@ https://github.com/limbo666/DesktopFences/releases
 
 
 >  Compatible with Windows 10/11  
->  No installation required — fully portable
+>  Fully portable
 
-Simply extract the executable (and other zip containts) into a folder and run `Desktop Fences.exe` . All necessary configuration files and folders will be created on first run.
-**Attention:** Only user-writable locations are compatible. See (https://github.com/limbo666/DesktopFences/issues/51)
+ - Download the release package
+ - Extract the all files contained in zip package into a folder 
+ - Run `Desktop Fences.exe` .  
+   _All necessary configuration files and folders will be created on first run._
+   
+**Attention:** Only user-writable locations are compatible.  
+_See (https://github.com/limbo666/DesktopFences/issues/51)_
+
+
+##  Update existing insallation
+
+ - Download the release package
+ - Extract the all files contained in zip package and overwrite existing int your Desktop Fences + folder 
+ - Run `Desktop Fences.exe` .  
+   _Some releases may convert your configuration files and/or folders to be compatible with new functiions_  
+   _For safety measure it is suggested to backup your Desktop Fences + folder before updating_
 
 
 ---
