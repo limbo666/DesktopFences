@@ -68,14 +68,14 @@ Even small contributions mean a lot. Thank you for keeping this project alive an
 ---
 
 ## Features Compared to Original BirdyFences
-
 - **Improved Performance and Stability**
+- **More options**
+  
+  ## First release changes 🔥
 - **Fence JSON File** now placed in the same directory as the executable
 - **First Fence Line** is created automatically during the first execution
 - **Program Icon** added
 - **Error Handlers** for Move actions, Program execution, Empty or invalid JSON files
-
-## First release changes 🔥
 - **Tray Icon** indicates the application is running
 - **Program Exit Option** in the tray icon’s context menu
 - **New Fence Creation** at mouse location for intuitive placement
@@ -99,7 +99,7 @@ Even small contributions mean a lot. Thank you for keeping this project alive an
 ## 2.5.0.18
 - **Added**: Custom animation selection for each fence
 - **Added**: Custom background color selection for each fence
-- **Fixed**: 🐛 Bug on fence movement across multiscreen systems https://github.com/limbo666/DesktopFences/issues/2
+- **Fixed**: 🐛 Bug on fence movement across multiscreen systems (https://github.com/limbo666/DesktopFences/issues/2)
 - **Changed**: Start with windows option moved under `Options` window
 - **Fixed**: Passing argument in `Run as administrator` selection
 - **Fixed**: 🐛 Bug on portal fences causing program crash on startup when target folder is missing
@@ -306,7 +306,15 @@ Even small contributions mean a lot. Thank you for keeping this project alive an
 - **Added**: Resolution related techniques to restore fence position.
 - **Added**: Manual tool to "Screen Bound Fences" available under "Options" > "Tools".
 - **Updated**: Backup/Restore engine to support profiles.
+
+## 2.6.6.xxx (Release 11)
+<img width="273" height="45" alt="image" src="https://github.com/user-attachments/assets/56f5d6d2-fbe0-440f-a042-7fe032462ebe" />
+
+Delayed (stay tuned)
+
+
 ---
+
 
 ##  Summary
 
