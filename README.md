@@ -308,11 +308,6 @@ Even small contributions mean a lot. Thank you for keeping this project alive an
 - **Updated**: Backup/Restore engine to support profiles.
 
 ## 2.6.6.234 (Release 11)
-<img width="273" height="45" alt="image" src="https://github.com/user-attachments/assets/56f5d6d2-fbe0-440f-a042-7fe032462ebe" />  
-
-Release is delayed (stay tuned)  
-
-
 - **Added**: ✔️ Support for shortcuts with target spotify (e.g. "spotify:search:rock").
 - **Added**: 👻 Auto hide fences. All fences can autohide after a user selectable period of time of inactivity.
 - **Added**: ⚡Run as different user and Always run as different options for shortcuts (available under icon's `CTRL + right click` menu).
@@ -339,9 +334,6 @@ Release is delayed (stay tuned)
 - **Fixed**: 🪲 Bug on export engine for fence names ending with dots or spaces.
 - **Fixed**: 🐛 Bug on size indicator for dimension snap.
 - Some other minor fixes.
-
-
-
 
 ---
 
