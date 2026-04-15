@@ -307,10 +307,40 @@ Even small contributions mean a lot. Thank you for keeping this project alive an
 - **Added**: Manual tool to "Screen Bound Fences" available under "Options" > "Tools".
 - **Updated**: Backup/Restore engine to support profiles.
 
-## 2.6.6.xxx (Release 11)
-<img width="273" height="45" alt="image" src="https://github.com/user-attachments/assets/56f5d6d2-fbe0-440f-a042-7fe032462ebe" />
+## 2.6.6.234 (Release 11)
+<img width="273" height="45" alt="image" src="https://github.com/user-attachments/assets/56f5d6d2-fbe0-440f-a042-7fe032462ebe" />  
 
-Delayed (stay tuned)
+Release is delayed (stay tuned)  
+
+
+- **Added**: ✔️ Support for shortcuts with target spotify (e.g. "spotify:search:rock").
+- **Added**: 👻 Auto hide fences. All fences can autohide after a user selectable period of time of inactivity.
+- **Added**: ⚡Run as different user and Always run as different options for shortcuts (available under icon's `CTRL + right click` menu).
+- **Fixed**: 🪲 Bug for fence not rolling down (https://github.com/limbo666/DesktopFences/issues/85).
+- **Fixed**: 🐜 Crash on tray double click (https://github.com/limbo666/DesktopFences/issues/75)).
+- **Added**:  🎈 Support for position blank spacers (available as option on `CTRL + right click` on any fence area).
+- **Added**: 🎈 Focus fence function (available either on tray menu or by pressing hotkey combination).
+- **Improved**: Filter indicator icon on portal fences follows fade logic of other indicators.
+- **Improved**: Portal fences can be shorted by: Name, Date modified, Type, Size (cycle shorting method by `CTRL + Click` on any area on the portal fence).    
+- **Improved**: ☑️ Startup icons extraction proccess. The program now is significantly faster on startup.
+- **Added**: Icon indication effect when user tries to `CTRL + drag`, to re-arrange items order on the fence.
+- **Fixed**: Bug on `Restore` function.
+- **Improved**: Fence and tab renaming function.
+- **Fixed**: Disabling single instance bug. Now the program can be run as multi instance if needed by tweaking `options.json` file.
+- **Fixed**: Startup contents generation for `options.json` files.
+- **Improved**: File and folder paths are switched to relative to program location for safer operation and portability.
+- **Added**: ✅ Hotkey selection tab on option window. this setting forced to be applied to all profiles (requires restart).
+- **Improved**: Icon load strategy adopting Lazy loader logic from https://github.com/SMSMy/DesktopFences fork.
+- **Added**: 🦎 Chameleon mode for fences color to match wallpaper major color.
+- **Added**: 💥 Smart Desktop engine, to move files to specific portal fneces or folders. Basic rules window and functionality.
+- **Fixed**: 🐛 Bug on Portal fences navigation, where program denied navigation to subfolder with `CTRL + click`
+- **Added**: ✅ Options to disable hotkeys for Profile switching, Focus fence and Spot Search.
+- **Fixed**: 🪲 Bug on first tab elements renaming.
+- **Fixed**: 🪲 Bug on export engine for fence names ending with dots or spaces.
+- **Fixed**: 🐛 Bug on size indicator for dimension snap.
+- Some other minor fixes.
+
+
 
 
 ---
