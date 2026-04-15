@@ -222,6 +222,13 @@ namespace Desktop_Fences
 
         public static Color GetColorFromName(string colorName)
         {
+            // --- CHAMELEON MODE HOOK ---
+            // If Chameleon is enabled and this fence is using the global default color
+            if (SettingsManager.EnableChameleonMode && (string.IsNullOrEmpty(colorName) || colorName == SettingsManager.SelectedColor || colorName == "Default"))
+            {
+                return WallpaperColorManager.CurrentWallpaperColor;
+            }
+
             return colorName switch
             {
 

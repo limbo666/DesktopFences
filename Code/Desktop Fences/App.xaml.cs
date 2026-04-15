@@ -1,4 +1,6 @@
-﻿using System;
+﻿using DesktopFences;
+using Newtonsoft.Json.Linq;
+using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -14,13 +16,31 @@ namespace Desktop_Fences
         private static Mutex _mutex;
         private const string UNIQUE_APP_NAME = "Global\\DesktopFences_Mutex_UniqueId_v2";
 
+
+
         private void Application_Startup(object sender, StartupEventArgs e)
         {
-            // --- 1. SINGLE INSTANCE PROTECTION START ---
+            // --- 1. INITIALIZE PROFILES & SETTINGS FIRST ---
+            // This ensures we know the user's true DisableSingleInstance preference immediately
+            try
+            {
+                ProfileManager.Initialize();
+                System.IO.Directory.SetCurrentDirectory(ProfileManager.CurrentProfileDir);
+                SettingsManager.LoadSettings();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Profile Initialization Error: {ex.Message}", "Startup Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                Shutdown();
+                return;
+            }
+
+            // --- 2. SINGLE INSTANCE PROTECTION START ---
             bool isNewInstance;
             _mutex = new Mutex(true, UNIQUE_APP_NAME, out isNewInstance);
 
-            if (!isNewInstance)
+            // Only exit if it's not a new instance AND the user hasn't explicitly disabled the check
+            if (!isNewInstance && !SettingsManager.DisableSingleInstance)
             {
                 // --- DEBUGGING GHOSTS START ---
                 try
@@ -29,29 +49,21 @@ namespace Desktop_Fences
                     debugLog += $"Args (e.Args): {string.Join(" | ", e.Args)}\n";
                     debugLog += $"Args (Environment): {string.Join(" | ", Environment.GetCommandLineArgs())}\n";
 
-                    // Robust Check
                     bool isDrawCommand = e.Args.Any(arg => arg.IndexOf("-create", StringComparison.OrdinalIgnoreCase) >= 0)
                                          || Environment.GetCommandLineArgs().Any(arg => arg.IndexOf("-create", StringComparison.OrdinalIgnoreCase) >= 0);
 
-                    debugLog += $"Detected -create? {isDrawCommand}\n";
-
                     if (isDrawCommand)
                     {
-                        string cmd = $"CMD_DRAW|{Guid.NewGuid()}";
-                        RegistryHelper.WriteTrigger(cmd);
-                        debugLog += $"Action: Sent {cmd}";
+                        RegistryHelper.WriteTrigger($"CMD_DRAW|{Guid.NewGuid()}");
                     }
                     else
                     {
                         RegistryHelper.WriteTrigger(null);
-                        debugLog += "Action: Sent NULL (Wake Up)";
                     }
-
                 }
                 catch { }
                 // --- DEBUGGING GHOSTS END ---
 
-                // Close this second instance immediately
                 Shutdown();
                 return;
             }
@@ -59,18 +71,9 @@ namespace Desktop_Fences
 
             try
             {
-                // 1. PHASE 1: INITIALIZE PROFILE SYSTEM (CRITICAL)
-                ProfileManager.Initialize();
-
                 // --- NEW: Sanitize Registry on Startup ---
-                // Prevents "Ghost" commands from previous sessions triggering automatically
                 RegistryHelper.DeleteTrigger();
-                // -----------------------------------------
 
-                // 2. SET WORKING DIRECTORY TO PROFILE
-                System.IO.Directory.SetCurrentDirectory(ProfileManager.CurrentProfileDir);
-
-                // Debug Log
                 LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General,
                     $"Startup: Working Directory set to {ProfileManager.CurrentProfileDir}");
 
@@ -86,13 +89,31 @@ namespace Desktop_Fences
                     // Initialize InterCore system
                     InterCore.Initialize();
 
+                    // --- CHAMELEON ENGINE ---
+                    WallpaperColorManager.Initialize();
+                    // --- AUTO-ORGANIZE ENGINE ---
+                    AutoOrganizeManager.Initialize();
+                    WallpaperColorManager.WallpaperColorChanged += (s, ev) =>
+                    {
+                        // Magically update all visuals live when Windows wallpaper changes
+                        System.Windows.Application.Current?.Dispatcher.BeginInvoke(new Action(() =>
+                        {
+                            Utility.UpdateFenceVisuals();
+                        }));
+                    };
+
                     // Initialize TrayManager BEFORE fences
                     _trayManager = new TrayManager();
                     _trayManager.InitializeTray();
 
+         
+
                     // Initialize TargetChecker
                     _targetChecker = new TargetChecker(1000);
                     _targetChecker.Start();
+
+                    // Start the Background Icon Loader Engine
+                    LazyIconLoader.Start();
 
                     // Load fences (Now loads from Profile/fences.json)
                     FenceManager.LoadAndCreateFences(_targetChecker);
@@ -123,6 +144,21 @@ namespace Desktop_Fences
                             $"GlobalHotkeyManager: Failed to initialize: {ex.Message}");
                     }
 
+
+
+                    // --- NEW: Start Desktop Double-Click Listener ---
+                    try
+                    {
+                        DesktopMouseHook.Start();
+                        LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, "DesktopMouseHook started.");
+                    }
+                    catch (Exception ex)
+                    {
+                        LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.General, $"Failed to start DesktopMouseHook: {ex.Message}");
+                    }
+
+
+
                     // --- NEW: Direct Draw Mode Check ---
                     // If this MAIN instance was started via Context Menu, trigger draw mode now.
                     // Use the same robust check as above.
@@ -152,6 +188,14 @@ namespace Desktop_Fences
                 GlobalHotkeyManager.StopMonitoring();
             }
             catch { }
+
+            // --- NEW: Stop Desktop Double-Click Listener ---
+            try
+            {
+                DesktopMouseHook.Stop();
+            }
+            catch { }
+
             _trayManager?.Dispose();
             base.OnExit(e);
         }

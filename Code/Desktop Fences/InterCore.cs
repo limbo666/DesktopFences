@@ -112,7 +112,22 @@ namespace Desktop_Fences
             else
             {
                 // Timestamp or Unknown -> Trigger Wake Up (Blockage)
-                ActivateLighthouseSweep();
+                Application.Current.Dispatcher.InvokeAsync(async () =>
+                {
+                    if (FenceManager._areFencesAutoHidden)
+                    {
+                        FenceManager.WakeUpFences();
+
+                        // --- BUG FIX: The Animation Race Condition ---
+                        // We must wait for the WakeUp fade-in to finish completely before 
+                        // the sweep samples the window opacity. Otherwise, it captures Opacity=0 
+                        // and permanently hides them after the sweep completes.
+                        await System.Threading.Tasks.Task.Delay(600);
+                    }
+
+                    ActivateLighthouseSweep();
+                });
+
                 LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, $"Remote Trigger Received: Wake Up ({currentValue})");
             }
 
@@ -190,12 +205,20 @@ namespace Desktop_Fences
                     EndPoint = new Point(1, 1),
                     GradientStops = new GradientStopCollection
                     {
-                        new GradientStop(Colors.Red, 0.0),
-                        new GradientStop(Colors.Gold, 0.2),
-                        new GradientStop(Colors.Lime, 0.4),
-                        new GradientStop(Colors.Cyan, 0.6),
-                        new GradientStop(Colors.Magenta, 0.8),
-                        new GradientStop(Colors.Red, 1.0)
+                        //new GradientStop(Colors.Red, 0.0),
+                        //new GradientStop(Colors.Gold, 0.2),
+                        //new GradientStop(Colors.Lime, 0.4),
+                        //new GradientStop(Colors.Cyan, 0.6),
+                        //new GradientStop(Colors.Magenta, 0.8),
+                        //new GradientStop(Colors.Red, 1.0)
+
+                        new GradientStop(Colors.Yellow, 0.0),
+                        new GradientStop(Colors.Purple, 0.2),
+                        new GradientStop(Colors.YellowGreen, 0.4),
+                        new GradientStop(Colors.Yellow, 0.6),
+                        new GradientStop(Colors.Purple, 0.8),
+                        new GradientStop(Colors.YellowGreen, 1.0)
+
                     },
                     RelativeTransform = new RotateTransform(0, 0.5, 0.5) // Rotate around center
                 };

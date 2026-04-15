@@ -29,6 +29,7 @@ namespace Desktop_Fences
         // Triggers
         private const int VK_D = 0x44;
         private const int VK_G = 0x47; // Gravity
+        private const int VK_Z = 0x5A; // Focus Fence
         private const int VK_0 = 0x30; // 0 key
         private const int VK_9 = 0x39; // 9 key
         private const int VK_OEM_COMMA = 0xBC; // , < key
@@ -126,6 +127,28 @@ namespace Desktop_Fences
         #endregion
 
         #region Private Methods
+        /// <summary>
+        /// Strictly parses comma-separated modifiers (e.g. "Control, Alt") 
+        /// and ensures ONLY those modifiers are pressed.
+        /// </summary>
+        private static bool CheckModifiersStrict(string modifierString)
+        {
+            if (string.IsNullOrWhiteSpace(modifierString)) return false;
+            string mod = modifierString.ToLower();
+
+            bool requireCtrl = mod.Contains("ctrl") || mod.Contains("control");
+            bool requireAlt = mod.Contains("alt");
+            bool requireShift = mod.Contains("shift");
+            bool requireWin = mod.Contains("win");
+
+            bool isCtrl = (GetAsyncKeyState(VK_CONTROL) & 0x8000) != 0;
+            bool isAlt = (GetAsyncKeyState(VK_MENU) & 0x8000) != 0;
+            bool isShift = (GetAsyncKeyState(VK_SHIFT) & 0x8000) != 0;
+            bool isWin = (GetAsyncKeyState(VK_LWIN) & 0x8000) != 0 || (GetAsyncKeyState(VK_RWIN) & 0x8000) != 0;
+
+            return (requireCtrl == isCtrl) && (requireAlt == isAlt) && (requireShift == isShift) && (requireWin == isWin);
+        }
+
         private static IntPtr SetHook(LowLevelKeyboardProc proc)
         {
             using (Process curProcess = Process.GetCurrentProcess())
@@ -147,40 +170,33 @@ namespace Desktop_Fences
                     bool isKeyUp = (wParam == (IntPtr)WM_KEYUP || wParam == (IntPtr)WM_SYSKEYUP);
 
                     // ============================================================
-                    // 1. PROFILE SWITCHING (Ctrl + Alt + [0-9, <, >])
                     // ============================================================
-
-                    // STRICT MODIFIER CHECK:
-                    // Must be Ctrl AND Alt
-                    // Must NOT be Shift AND NOT be Win
-
-                    bool isCtrl = (GetAsyncKeyState(VK_CONTROL) & 0x8000) != 0;
-                    bool isAlt = (GetAsyncKeyState(VK_MENU) & 0x8000) != 0;
-                    bool isShift = (GetAsyncKeyState(VK_SHIFT) & 0x8000) != 0;
-                    bool isWin = (GetAsyncKeyState(VK_LWIN) & 0x8000) != 0 || (GetAsyncKeyState(VK_RWIN) & 0x8000) != 0;
-
-                    if (isKeyDown && isCtrl && isAlt && !isShift && !isWin)
+                    // 1. PROFILE SWITCHING (Dynamic Customizable Modifiers)
+                    // ============================================================
+                    if (isKeyDown && SettingsManager.EnableProfileHotkeys)
                     {
-                        // A. Number Keys (0-9) -> Switch by ID
-                        if (vkCode >= VK_0 && vkCode <= VK_9)
+                        // A. Configurable Keys -> Switch by ID
+                        if (CheckModifiersStrict(SettingsManager.ProfileSwitchModifier))
                         {
-                            int profileId = (int)(vkCode - VK_0);
-
-                            System.Windows.Application.Current?.Dispatcher.BeginInvoke(new Action(() =>
+                            for (int i = 0; i < SettingsManager.ProfileSwitchKeys.Length; i++)
                             {
-                                LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, $"Hotkey: Switching to Profile ID {profileId}");
-                                ProfileManager.SwitchToProfileById(profileId);
-
-                                // Refresh Tray UI if possible
-                                TrayManager.Instance?.UpdateProfilesMenu();
-                                TrayManager.Instance?.UpdateTrayIcon();
-                            }));
-
-                            return (IntPtr)1; // Swallow key
+                                if (vkCode == SettingsManager.ProfileSwitchKeys[i])
+                                {
+                                    int profileId = i;
+                                    System.Windows.Application.Current?.Dispatcher.BeginInvoke(new Action(() =>
+                                    {
+                                        LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, $"Hotkey: Switching to Profile ID {profileId}");
+                                        ProfileManager.SwitchToProfileById(profileId);
+                                        TrayManager.Instance?.UpdateProfilesMenu();
+                                        TrayManager.Instance?.UpdateTrayIcon();
+                                    }));
+                                    return (IntPtr)1; // Swallow key
+                                }
+                            }
                         }
 
-                        // B. Previous Profile (< / Comma)
-                        if (vkCode == VK_OEM_COMMA)
+                        // B. Previous Profile
+                        if (vkCode == SettingsManager.ProfilePrevKey && CheckModifiersStrict(SettingsManager.ProfilePrevModifier))
                         {
                             System.Windows.Application.Current?.Dispatcher.BeginInvoke(new Action(() =>
                             {
@@ -191,8 +207,8 @@ namespace Desktop_Fences
                             return (IntPtr)1;
                         }
 
-                        // C. Next Profile (> / Period)
-                        if (vkCode == VK_OEM_PERIOD)
+                        // C. Next Profile
+                        if (vkCode == SettingsManager.ProfileNextKey && CheckModifiersStrict(SettingsManager.ProfileNextModifier))
                         {
                             System.Windows.Application.Current?.Dispatcher.BeginInvoke(new Action(() =>
                             {
@@ -260,18 +276,33 @@ namespace Desktop_Fences
                     }
 
                     // ============================================================
-                    // 4. Easter Eggs (InterCore)
+                    // 4. Focus Fence (Dynamic Configurable)
                     // ============================================================
-                    // Dance Party (Ctrl + Alt + D)
+                    if (SettingsManager.EnableFocusFenceHotkey && vkCode == SettingsManager.FocusFenceKey && isKeyDown)
+                    {
+                        if (CheckModifiersStrict(SettingsManager.FocusFenceModifier))
+                        {
+                            System.Windows.Application.Current?.Dispatcher.BeginInvoke(new Action(() =>
+                            {
+                                FenceFocusFormManager focusManager = new FenceFocusFormManager();
+                                focusManager.ShowDialog();
+                            }));
+                            return (IntPtr)1; // Swallow the key so other apps don't process it
+                        }
+                    }
+
+                    // ============================================================
+                    // 5. Easter Eggs (InterCore)
+                    // ============================================================
+                    // Dance Party (Ctrl + Alt + Shift + D)
                     if (vkCode == VK_D && isKeyDown)
                     {
                         bool isC = (GetAsyncKeyState(VK_CONTROL) & 0x8000) != 0;
                         bool isA = (GetAsyncKeyState(VK_MENU) & 0x8000) != 0;
-                        // Strict check: No Shift, No Win
                         bool isS = (GetAsyncKeyState(VK_SHIFT) & 0x8000) != 0;
                         bool isW = (GetAsyncKeyState(VK_LWIN) & 0x8000) != 0 || (GetAsyncKeyState(VK_RWIN) & 0x8000) != 0;
 
-                        if (isC && isA && !isS && !isW)
+                        if (isC && isA && isS && !isW)
                         {
                             System.Windows.Application.Current?.Dispatcher.BeginInvoke(new Action(() =>
                             {
@@ -280,16 +311,15 @@ namespace Desktop_Fences
                         }
                     }
 
-                    // Gravity Drop (Ctrl + Shift + G)
+                    // Gravity Drop (Ctrl + Alt + Shift + G)
                     if (vkCode == VK_G && isKeyDown)
                     {
                         bool isC = (GetAsyncKeyState(VK_CONTROL) & 0x8000) != 0;
-                        bool isS = (GetAsyncKeyState(VK_SHIFT) & 0x8000) != 0;
-                        // Strict check: No Alt, No Win
                         bool isA = (GetAsyncKeyState(VK_MENU) & 0x8000) != 0;
+                        bool isS = (GetAsyncKeyState(VK_SHIFT) & 0x8000) != 0;
                         bool isW = (GetAsyncKeyState(VK_LWIN) & 0x8000) != 0 || (GetAsyncKeyState(VK_RWIN) & 0x8000) != 0;
 
-                        if (isC && isS && !isA && !isW)
+                        if (isC && isA && isS && !isW)
                         {
                             System.Windows.Application.Current?.Dispatcher.BeginInvoke(new Action(() =>
                             {

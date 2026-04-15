@@ -8,9 +8,9 @@
 		<Nullable>enable</Nullable>
 		<UseWPF>true</UseWPF>
 		<UseWindowsForms>True</UseWindowsForms>
-		<AssemblyVersion>2.6.5.210</AssemblyVersion>
-		<FileVersion>2.6.5.210</FileVersion>
-		<Version>2.6.5.210</Version>
+		<AssemblyVersion>2.6.6.234</AssemblyVersion>
+		<FileVersion>2.6.6.234</FileVersion>
+		<Version>2.6.6.234</Version>
 		<ApplicationIcon>Resources\logo2.ico</ApplicationIcon>
 	</PropertyGroup>
 
@@ -24,7 +24,9 @@
 		<None Remove="portal.png" />
 		<None Remove="Resources\ding.wav" />
 		<None Remove="Resources\donate.png" />
+		<None Remove="Resources\dot.png" />
 		<None Remove="Resources\dragon.png" />
+		<None Remove="Resources\empty.png" />
 		<None Remove="Resources\Feed.png" />
 		<None Remove="Resources\HWP_Logo.png" />
 		<None Remove="Resources\link-White.png" />
@@ -67,6 +69,12 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <Resource Include="Resources\empty.png">
+	    <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+	  </Resource>
+	</ItemGroup>
+
+	<ItemGroup>
 		<EmbeddedResource Include="Resources\ding.wav" />
 		<EmbeddedResource Include="Resources\dragon.png" />
 		<EmbeddedResource Include="Resources\logo1.png" />
@@ -84,6 +92,9 @@
 		<EmbeddedResource Include="Resources\Feed.png">
 		  <CopyToOutputDirectory>Never</CopyToOutputDirectory>
 		</EmbeddedResource>
+		<Resource Include="Resources\dot.png">
+		  <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+		</Resource>
 		<Resource Include="Resources\file-WhiteX.png" />
 		<Resource Include="Resources\fileX.png" />
 		<Resource Include="Resources\folder-White.png">

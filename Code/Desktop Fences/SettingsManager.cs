@@ -43,20 +43,34 @@ namespace Desktop_Fences
         public static bool DisableFenceScrollbars { get; set; } = false;
         public static bool DisableNoteAutoSave { get; set; } = false;
 
-
+        public static bool EnableChameleonMode { get; set; } = false;
         public static bool EnableProfileAutomation { get; set; } = false;
+
+        public static bool EnableAutoOrganize { get; set; } = false;
+
+        public static bool EnableAutoOrganizeNotifications { get; set; } = true;
+
         // --- NEW: Hidden Option for Manual Repositioning ---
         public static bool AllowAutoReposition { get; set; } = true;
 
         // --- NEW: Context Menu Option ---
         public static bool EnableContextMenu { get; set; } = false;
 
+        // --- NEW: Auto-Hide Fences Options ---
+        public static bool AutoHideFences { get; set; } = false;
+        public static int AutoHideTime { get; set; } = 60;
+        public static bool AutoResetHideTimer { get; set; } = true;
+        public static bool HideFlashEffect { get; set; } = true;
+
 
         public static IconVisibilityEffect IconVisibilityEffect { get; set; } = IconVisibilityEffect.None;
         public static bool ExportShortcutsOnFenceDeletion { get; set; } = false;
         public static bool DeleteOriginalShortcutsOnDrop { get; set; } = false;
         public static bool EnableSpotSearchHotkey { get; set; } = true;
+        public static bool EnableProfileHotkeys { get; set; } = true;
+        public static bool EnableFocusFenceHotkey { get; set; } = true;
         public static int SpotSearchKey { get; set; } = 192;
+
         public static string SpotSearchModifier { get; set; } = "Control";
         public static bool EnableDimensionSnap { get; set; } = false;
         public static bool SingleClickToLaunch { get; set; } = true;
@@ -105,10 +119,13 @@ namespace Desktop_Fences
                         catch { /* Corrupt file, defaults will apply */ }
                     }
                 }
-                else
-                {
-                    SaveSettings();
-                }
+
+                // --- FIX: Universal File Hydration ---
+                // By unconditionally saving after loading the properties into memory, we guarantee:
+                // 1. 0-byte profile files are instantly populated with default JSON.
+                // 2. MasterOptions.json / options.json files from older app versions 
+                //    automatically get newly added settings injected into them.
+                SaveSettings();
             }
             catch (Exception ex)
             {
@@ -181,8 +198,28 @@ namespace Desktop_Fences
 
                 AllowAutoReposition,
                 EnableProfileAutomation,
+                EnableChameleonMode, // ADD THIS HERE
+                EnableAutoOrganize,
+                EnableAutoOrganizeNotifications,
                 // NEW
-                EnableContextMenu
+                EnableContextMenu,
+
+                // Auto-Hide
+                AutoHideFences,
+                AutoHideTime,
+                AutoResetHideTimer,
+                HideFlashEffect,
+                // Global Hotkeys
+                EnableProfileHotkeys,
+                EnableFocusFenceHotkey,
+                ProfileSwitchModifier,
+                ProfileSwitchKeys,
+                ProfilePrevModifier,
+                ProfilePrevKey,
+                ProfileNextModifier,
+                ProfileNextKey,
+                FocusFenceModifier,
+                FocusFenceKey
             };
         }
 
@@ -215,9 +252,18 @@ namespace Desktop_Fences
 
             try { AllowAutoReposition = data.AllowAutoReposition ?? true; } catch { AllowAutoReposition = true; }
             try { EnableProfileAutomation = data.EnableProfileAutomation ?? false; } catch { EnableProfileAutomation = false; }
+            try { EnableChameleonMode = data.EnableChameleonMode ?? false; } catch { EnableChameleonMode = false; } // 
+            try { EnableAutoOrganize = data.EnableAutoOrganize ?? false; } catch { EnableAutoOrganize = false; }
+            try { EnableAutoOrganizeNotifications = data.EnableAutoOrganizeNotifications ?? true; } catch { EnableAutoOrganizeNotifications = true; }
 
             // NEW
             try { EnableContextMenu = data.EnableContextMenu ?? false; } catch { EnableContextMenu = false; }
+
+            // Auto-Hide
+            try { AutoHideFences = data.AutoHideFences ?? false; } catch { AutoHideFences = false; }
+            try { AutoHideTime = data.AutoHideTime ?? 60; } catch { AutoHideTime = 60; }
+            try { AutoResetHideTimer = data.AutoResetHideTimer ?? true; } catch { AutoResetHideTimer = true; }
+            try { HideFlashEffect = data.HideFlashEffect ?? true; } catch { HideFlashEffect = true; }
 
             try { SpotSearchKey = ParseKey(data.SpotSearchKey); } catch { SpotSearchKey = 192; }
 
@@ -273,6 +319,21 @@ namespace Desktop_Fences
             {
                 EnabledLogCategories = new List<LogManager.LogCategory> { LogManager.LogCategory.General, LogManager.LogCategory.Error, LogManager.LogCategory.ImportExport, LogManager.LogCategory.Settings };
             }
+
+        
+            // Global Hotkeys
+            try { EnableProfileHotkeys = data.EnableProfileHotkeys ?? true; } catch { EnableProfileHotkeys = true; }
+            try { EnableFocusFenceHotkey = data.EnableFocusFenceHotkey ?? true; } catch { EnableFocusFenceHotkey = true; }
+            try { if (data.ProfileSwitchModifier != null) ProfileSwitchModifier = data.ProfileSwitchModifier.ToString(); } catch { }
+            try { if (data.ProfileSwitchKeys != null) ProfileSwitchKeys = ((JArray)data.ProfileSwitchKeys).Select(x => (int)x).ToArray(); } catch { }
+            try { if (data.ProfilePrevModifier != null) ProfilePrevModifier = data.ProfilePrevModifier.ToString(); } catch { }
+            try { if (data.ProfilePrevKey != null) ProfilePrevKey = (int)data.ProfilePrevKey; } catch { }
+            try { if (data.ProfileNextModifier != null) ProfileNextModifier = data.ProfileNextModifier.ToString(); } catch { }
+            try { if (data.ProfileNextKey != null) ProfileNextKey = (int)data.ProfileNextKey; } catch { }
+            try { if (data.FocusFenceModifier != null) FocusFenceModifier = data.FocusFenceModifier.ToString(); } catch { }
+            try { if (data.FocusFenceKey != null) FocusFenceKey = (int)data.FocusFenceKey; } catch { }
+
+            SanitizeHotkeys(); // Ensure nulls or invalid manual edits are safely overwritten
         }
 
         private static int ParseKey(dynamic value)
@@ -294,5 +355,98 @@ namespace Desktop_Fences
             EnabledLogCategories = categories;
             SaveSettings();
         }
+
+        #region Global Hotkey Configurations
+        public static string ProfileSwitchModifier { get; set; } = "Control, Alt";
+        public static int[] ProfileSwitchKeys { get; set; } = new int[] { 0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39 }; // Defaults to standard 0-9
+
+        public static string ProfilePrevModifier { get; set; } = "Control, Alt";
+        public static int ProfilePrevKey { get; set; } = 0xBC; // Default: VK_OEM_COMMA
+
+        public static string ProfileNextModifier { get; set; } = "Control, Alt";
+        public static int ProfileNextKey { get; set; } = 0xBE; // Default: VK_OEM_PERIOD
+
+        public static string FocusFenceModifier { get; set; } = "Control, Alt";
+        public static int FocusFenceKey { get; set; } = 0x5A; // Default: VK_Z
+
+        /// <summary>
+        /// Validates and repairs hotkey configuration to prevent hook crashes from manual JSON edits.
+        /// </summary>
+        public static void SanitizeHotkeys()
+        {
+            // Ensure modifiers aren't completely blank or null
+            if (string.IsNullOrWhiteSpace(ProfileSwitchModifier)) ProfileSwitchModifier = "Control, Alt";
+            if (string.IsNullOrWhiteSpace(ProfilePrevModifier)) ProfilePrevModifier = "Control, Alt";
+            if (string.IsNullOrWhiteSpace(ProfileNextModifier)) ProfileNextModifier = "Control, Alt";
+            if (string.IsNullOrWhiteSpace(FocusFenceModifier)) FocusFenceModifier = "Control, Alt";
+
+            // Fallback for missing or broken Profile Switch Array
+            if (ProfileSwitchKeys == null || ProfileSwitchKeys.Length < 10)
+                ProfileSwitchKeys = new int[] { 0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39 };
+
+            // Fallback for totally invalid Virtual Key codes (must be within 0x01 and 0xFE)
+            if (ProfilePrevKey <= 0 || ProfilePrevKey > 254) ProfilePrevKey = 0xBC;
+            if (ProfileNextKey <= 0 || ProfileNextKey > 254) ProfileNextKey = 0xBE;
+            if (FocusFenceKey <= 0 || FocusFenceKey > 254) FocusFenceKey = 0x5A;
+        }
+
+        /// <summary>
+        /// Injects the current hotkey settings into every available profile's options.json.
+        /// This ensures uniform hotkey behavior regardless of the active profile, while respecting MasterOptions override.
+        /// </summary>
+        public static void BroadcastHotkeysToAllProfiles()
+        {
+            try
+            {
+                string appRoot = AppDomain.CurrentDomain.BaseDirectory;
+                string profilesDir = Path.Combine(appRoot, "Profiles");
+
+                if (!Directory.Exists(profilesDir)) return;
+
+                foreach (string dir in Directory.GetDirectories(profilesDir))
+                {
+                    string optionsFile = Path.Combine(dir, "options.json");
+                    if (File.Exists(optionsFile))
+                    {
+                        try
+                        {
+                            string jsonContent = File.ReadAllText(optionsFile);
+                            JObject data = JsonConvert.DeserializeObject<JObject>(jsonContent);
+                            if (data == null) continue;
+
+                            // Overwrite strictly the hotkey values
+                            data["ProfileSwitchModifier"] = ProfileSwitchModifier;
+                            data["ProfileSwitchKeys"] = JArray.FromObject(ProfileSwitchKeys ?? new int[] { 0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39 });
+                            data["ProfilePrevModifier"] = ProfilePrevModifier;
+                            data["ProfilePrevKey"] = ProfilePrevKey;
+                            data["ProfileNextModifier"] = ProfileNextModifier;
+                            data["ProfileNextKey"] = ProfileNextKey;
+                            data["FocusFenceModifier"] = FocusFenceModifier;
+                            data["FocusFenceKey"] = FocusFenceKey;
+                            data["SpotSearchModifier"] = SpotSearchModifier;
+                            data["SpotSearchKey"] = SpotSearchKey;
+                            data["EnableProfileHotkeys"] = EnableProfileHotkeys;
+                            data["EnableFocusFenceHotkey"] = EnableFocusFenceHotkey;
+                            data["EnableSpotSearchHotkey"] = EnableSpotSearchHotkey;
+
+                            File.WriteAllText(optionsFile, JsonConvert.SerializeObject(data, Formatting.Indented));
+                        }
+                        catch (Exception ex)
+                        {
+                            LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.Settings, $"Failed to broadcast hotkeys to {optionsFile}: {ex.Message}");
+                        }
+                    }
+                }
+                LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.Settings, "Global hotkeys successfully broadcasted to all individual profiles.");
+            }
+            catch (Exception ex)
+            {
+                LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.Settings, $"Critical failure broadcasting hotkeys: {ex.Message}");
+            }
+        }
+        #endregion
+
     }
+
+
 }

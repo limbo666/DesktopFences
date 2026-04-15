@@ -40,19 +40,23 @@ namespace Desktop_Fences
                 }
             }
 
-            // Run immediately outside the lock to prevent potential deadlocks
-            try
-            {
-                checkAction.Invoke();
-            }
-            catch (Exception ex)
-            {
-                if (SettingsManager.EnableBackgroundValidationLogging)
-                {
-                    LogManager.Log(LogManager.LogLevel.Warn, LogManager.LogCategory.BackgroundValidation,
-                        $"Error in immediate target check for {key}: {ex.Message}");
-                }
-            }
+
+            // FIX: Removed synchronous checkAction.Invoke()
+            // Letting the existing timer perform the first pass drastically reduces work 
+            // during logon and bulk adds, keeping the UI instantly responsive.
+            //// Run immediately outside the lock to prevent potential deadlocks
+            //try
+            //{
+            //    checkAction.Invoke();
+            //}
+            //catch (Exception ex)
+            //{
+            //    if (SettingsManager.EnableBackgroundValidationLogging)
+            //    {
+            //        LogManager.Log(LogManager.LogLevel.Warn, LogManager.LogCategory.BackgroundValidation,
+            //            $"Error in immediate target check for {key}: {ex.Message}");
+            //    }
+            //}
         }
         public void RemoveCheckAction(string key)
         {

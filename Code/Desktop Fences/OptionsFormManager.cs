@@ -23,10 +23,9 @@ namespace Desktop_Fences
         private static readonly Color ColorStyle = Color.FromRgb(128, 0, 128); // Purple
         private static readonly Color ColorTools = Color.FromRgb(34, 139, 34); // Green
         private static readonly Color ColorLookDeeper = Color.FromRgb(220, 53, 69); // Red
-
-
         private static readonly Color ColorProfiles = Color.FromRgb(255, 20, 147); // Deep Pink
-
+        private static readonly Color ColorHotkeys = Color.FromRgb(139, 69, 19); // SaddleBrown
+        private static readonly Color ColorSmartDesktop = Color.FromRgb(41, 74, 122); // Semi Dark Blue
 
         public static void ShowOptionsForm()
         {
@@ -112,8 +111,14 @@ namespace Desktop_Fences
                 mainBorder.Child = mainGrid;
                 _optionsWindow.Content = mainBorder;
                 _optionsWindow.KeyDown += (s, e) => { if (e.Key == Key.Enter) SaveOptions(); else if (e.Key == Key.Escape) _optionsWindow.Close(); };
+                // Add Pause Here:
+                AutoOrganizeManager.Pause();
 
                 _optionsWindow.ShowDialog();
+
+                // Add Resume Here:
+                AutoOrganizeManager.Resume();
+
             }
             catch (Exception ex)
             {
@@ -141,6 +146,8 @@ namespace Desktop_Fences
             CreateStyleTab();
             CreateToolsTab();
             CreateProfilesTab();
+            CreateHotkeysTab();
+            CreateSmartDesktopTab();
             CreateLookDeeperTab();
 
             _tabControl.SelectedIndex = _lastSelectedTabIndex;
@@ -148,7 +155,9 @@ namespace Desktop_Fences
             CreateTabButton(tabPanel, "Style", 1, _lastSelectedTabIndex == 1);
             CreateTabButton(tabPanel, "Tools", 2, _lastSelectedTabIndex == 2);
             CreateTabButton(tabPanel, "Profiles", 3, _lastSelectedTabIndex == 3);
-            CreateTabButton(tabPanel, "Look Deeper", 4, _lastSelectedTabIndex == 4);
+            CreateTabButton(tabPanel, "Hotkeys", 4, _lastSelectedTabIndex == 4);
+            CreateTabButton(tabPanel, "Smart Desktop", 5, _lastSelectedTabIndex == 5);
+            CreateTabButton(tabPanel, "Look Deeper", 6, _lastSelectedTabIndex == 6);
 
             contentBorder.Child = _tabControl;
             Grid.SetColumn(tabPanel, 0); contentGrid.Children.Add(tabPanel);
@@ -180,7 +189,7 @@ namespace Desktop_Fences
 
         private static void SetTabButtonColors(Button button, string title, bool isSelected, bool isHover = false)
         {
-            Color activeColor = title switch { "Style" => ColorStyle, "Tools" => ColorTools, "Profiles" => ColorProfiles,  "Look Deeper" => ColorLookDeeper, _ => _userAccentColor };
+            Color activeColor = title switch { "Style" => ColorStyle, "Tools" => ColorTools, "Profiles" => ColorProfiles, "Hotkeys" => ColorHotkeys, "Smart Desktop" => ColorSmartDesktop, "Look Deeper" => ColorLookDeeper, _ => _userAccentColor };
             if (isSelected) { button.Background = new SolidColorBrush(activeColor); button.Foreground = Brushes.White; }
             else if (isHover) { button.Background = new SolidColorBrush(Color.FromRgb((byte)(activeColor.R + 40), (byte)(activeColor.G + 40), (byte)(activeColor.B + 40))); button.Foreground = Brushes.White; }
             else { button.Background = new SolidColorBrush(Color.FromRgb(200, 200, 200)); button.Foreground = new SolidColorBrush(Color.FromRgb(60, 60, 60)); }
@@ -206,9 +215,18 @@ namespace Desktop_Fences
             CreateCheckBox(c, "Enable Snap Near Fences", "EnableSnapNearFences", SettingsManager.IsSnapEnabled);
             CreateCheckBox(c, "Enable Dimension Snap", "EnableDimensionSnap", SettingsManager.EnableDimensionSnap);
             CreateCheckBox(c, "Enable Tray Icon", "EnableTrayIcon", SettingsManager.ShowInTray);
+            CreateCheckBox(c, "Use Recycle Bin on Portal Fences 'Delete item' command", "UseRecycleBin", SettingsManager.UseRecycleBin);
+
             // NEW: Context Menu Option
             CreateCheckBox(c, "Show 'New Fence' in Desktop Context Menu", "EnableContextMenu", SettingsManager.EnableContextMenu);
-            CreateCheckBox(c, "Use Recycle Bin on Portal Fences 'Delete item' command", "UseRecycleBin", SettingsManager.UseRecycleBin);
+
+            // --- NEW: Auto-Hide Options ---
+            CreateSectionHeader(c, "Auto-Hide Fences", _userAccentColor);
+            CreateCheckBox(c, "Auto hide fences", "AutoHideFences", SettingsManager.AutoHideFences);
+            // FIX: Pass 300 as the explicit max for this specific slider
+            CreateSliderControl(c, "Auto hide time (sec)", "AutoHideTimeSlider", SettingsManager.AutoHideTime, 300);
+
+           
        //     CreateCheckBox(c, "Enable Profile Automation", "EnableProfileAutomation", SettingsManager.EnableProfileAutomation);
             t.Content = new ScrollViewer { Content = c, VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
             _tabControl.Items.Add(t);
@@ -226,6 +244,11 @@ namespace Desktop_Fences
             CreateCheckBox(c, "Enable Sounds", "EnableSounds", SettingsManager.EnableSounds);
 
             CreateSectionHeader(c, "Appearance", ColorStyle);
+
+            // --- CHAMELEON TOGGLE ---
+            var chamCb = CreateCheckBoxReturn(c, "Enable Chameleon Mode (Auto-match Wallpaper Color)", "EnableChameleon", SettingsManager.EnableChameleonMode);
+            chamCb.ToolTip = "Fences will automatically change color to blend perfectly with your desktop background.";
+
             CreateSliderControl(c, "Fence Tint", "TintSlider", SettingsManager.TintValue);
             CreateSliderControl(c, "Menu Tint", "MenuTintSlider", SettingsManager.MenuTintValue);
             CreateColorComboBox(c);
@@ -368,7 +391,164 @@ namespace Desktop_Fences
             _tabControl.Items.Add(t);
         }
 
+        private static readonly Dictionary<string, int> AvailableKeys = new Dictionary<string, int>
+        {
+            {"A", 0x41}, {"B", 0x42}, {"C", 0x43}, {"D", 0x44}, {"E", 0x45}, {"F", 0x46}, {"G", 0x47}, {"H", 0x48}, {"I", 0x49}, {"J", 0x4A}, {"K", 0x4B}, {"L", 0x4C}, {"M", 0x4D}, {"N", 0x4E}, {"O", 0x4F}, {"P", 0x50}, {"Q", 0x51}, {"R", 0x52}, {"S", 0x53}, {"T", 0x54}, {"U", 0x55}, {"V", 0x56}, {"W", 0x57}, {"X", 0x58}, {"Y", 0x59}, {"Z", 0x5A},
+            {"0", 0x30}, {"1", 0x31}, {"2", 0x32}, {"3", 0x33}, {"4", 0x34}, {"5", 0x35}, {"6", 0x36}, {"7", 0x37}, {"8", 0x38}, {"9", 0x39},
+            {"F1", 0x70}, {"F2", 0x71}, {"F3", 0x72}, {"F4", 0x73}, {"F5", 0x74}, {"F6", 0x75}, {"F7", 0x76}, {"F8", 0x77}, {"F9", 0x78}, {"F10", 0x79}, {"F11", 0x7A}, {"F12", 0x7B},
+            {"Comma (,)", 0xBC}, {"Period (.)", 0xBE}, {"Tilde (~)", 192}, {"Space", 32}, {"Tab", 9}, {"Enter", 13}, {"Escape", 27}
+        };
 
+        private static void CreateHotkeysTab()
+        {
+            TabItem t = new TabItem();
+            StackPanel c = new StackPanel();
+
+            CreateSectionHeader(c, "Profile Switching", ColorHotkeys);
+            CheckBox cbProf = CreateCheckBoxReturn(c, "Enable Profile Switching Hotkeys", "EnableProfileHotkeys", SettingsManager.EnableProfileHotkeys);
+            Grid gProf1 = CreateHotkeyEditor(c, "Direct Profile [0-9]", "ProfSwitch", SettingsManager.ProfileSwitchModifier, 0, false);
+            Grid gProf2 = CreateHotkeyEditor(c, "Previous Profile", "ProfPrev", SettingsManager.ProfilePrevModifier, SettingsManager.ProfilePrevKey, true);
+            Grid gProf3 = CreateHotkeyEditor(c, "Next Profile", "ProfNext", SettingsManager.ProfileNextModifier, SettingsManager.ProfileNextKey, true);
+
+            // Bind initial state and live toggling
+            gProf1.IsEnabled = gProf2.IsEnabled = gProf3.IsEnabled = cbProf.IsChecked == true;
+            cbProf.Click += (s, e) => gProf1.IsEnabled = gProf2.IsEnabled = gProf3.IsEnabled = cbProf.IsChecked == true;
+
+            CreateSectionHeader(c, "Utilities", ColorHotkeys);
+
+            CheckBox cbFocus = CreateCheckBoxReturn(c, "Enable Focus Fence Hotkey", "EnableFocusFenceHotkey", SettingsManager.EnableFocusFenceHotkey);
+            Grid gFocus = CreateHotkeyEditor(c, "Focus Fence", "FocusFence", SettingsManager.FocusFenceModifier, SettingsManager.FocusFenceKey, true);
+            gFocus.IsEnabled = cbFocus.IsChecked == true;
+            cbFocus.Click += (s, e) => gFocus.IsEnabled = cbFocus.IsChecked == true;
+
+            CheckBox cbSpot = CreateCheckBoxReturn(c, "Enable Spot Search Hotkey", "EnableSpotSearchHotkey", SettingsManager.EnableSpotSearchHotkey);
+            Grid gSpot = CreateHotkeyEditor(c, "Spot Search", "SpotSearch", SettingsManager.SpotSearchModifier, SettingsManager.SpotSearchKey, true);
+            gSpot.IsEnabled = cbSpot.IsChecked == true;
+            cbSpot.Click += (s, e) => gSpot.IsEnabled = cbSpot.IsChecked == true;
+
+            TextBlock infoText = new TextBlock
+            {
+                Text = "Note: Changes to Global Hotkeys require an application restart to take effect.",
+                FontStyle = FontStyles.Italic,
+                Foreground = Brushes.Gray,
+                Margin = new Thickness(15, 20, 0, 0)
+            };
+            c.Children.Add(infoText);
+
+            t.Content = new ScrollViewer { Content = c, VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
+            _tabControl.Items.Add(t);
+        }
+
+        private static Grid CreateHotkeyEditor(StackPanel p, string label, string namePrefix, string currentMod, int currentKey, bool hasKeySelector)
+        {
+            Grid g = new Grid { Margin = new Thickness(15, 5, 0, 15) };
+            g.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(160) });
+            g.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+
+            TextBlock lbl = new TextBlock { Text = label, FontSize = 13, VerticalAlignment = VerticalAlignment.Center };
+            Grid.SetColumn(lbl, 0); g.Children.Add(lbl);
+
+            StackPanel spMods = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
+
+            string curModLower = (currentMod ?? "").ToLower();
+
+            CheckBox chkCtrl = new CheckBox { Name = namePrefix + "Ctrl", Content = "Ctrl", IsChecked = curModLower.Contains("ctrl") || curModLower.Contains("control"), Margin = new Thickness(0, 0, 10, 0), VerticalAlignment = VerticalAlignment.Center };
+            CheckBox chkAlt = new CheckBox { Name = namePrefix + "Alt", Content = "Alt", IsChecked = curModLower.Contains("alt"), Margin = new Thickness(0, 0, 10, 0), VerticalAlignment = VerticalAlignment.Center };
+            CheckBox chkShift = new CheckBox { Name = namePrefix + "Shift", Content = "Shift", IsChecked = curModLower.Contains("shift"), Margin = new Thickness(0, 0, 10, 0), VerticalAlignment = VerticalAlignment.Center };
+            CheckBox chkWin = new CheckBox { Name = namePrefix + "Win", Content = "Win", IsChecked = curModLower.Contains("win"), Margin = new Thickness(0, 0, 15, 0), VerticalAlignment = VerticalAlignment.Center };
+
+            spMods.Children.Add(chkCtrl);
+            spMods.Children.Add(chkAlt);
+            spMods.Children.Add(chkShift);
+            spMods.Children.Add(chkWin);
+
+            if (hasKeySelector)
+            {
+                spMods.Children.Add(new TextBlock { Text = "+", VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 10, 0) });
+                ComboBox cmb = new ComboBox { Name = namePrefix + "Key", Width = 100, VerticalAlignment = VerticalAlignment.Center };
+                foreach (var kvp in AvailableKeys)
+                {
+                    ComboBoxItem item = new ComboBoxItem { Content = kvp.Key, Tag = kvp.Value };
+                    cmb.Items.Add(item);
+                    if (kvp.Value == currentKey) cmb.SelectedItem = item;
+                }
+                if (cmb.SelectedIndex == -1 && cmb.Items.Count > 0) cmb.SelectedIndex = 0;
+                spMods.Children.Add(cmb);
+            }
+
+            Grid.SetColumn(spMods, 1);
+            g.Children.Add(spMods);
+            p.Children.Add(g);
+            return g;
+        }
+
+
+        private static void CreateSmartDesktopTab()
+        {
+            TabItem t = new TabItem();
+            StackPanel c = new StackPanel();
+
+            CreateSectionHeader(c, "Smart Desktop (Auto-Organize)", ColorSmartDesktop);
+
+            CheckBox cbMain = CreateCheckBoxReturn(c, "Enable Auto-Organize", "EnableAutoOrganize", SettingsManager.EnableAutoOrganize);
+
+            CheckBox cbNotif = CreateCheckBoxReturn(c, "Show execution toast notifications", "EnableAutoOrganizeNotifications", SettingsManager.EnableAutoOrganizeNotifications);
+            cbNotif.Margin = new Thickness(35, 0, 0, 8); // Indent it!
+            cbNotif.IsEnabled = cbMain.IsChecked == true;
+
+            // NEW: Live Rule Statistics (Horizontal Layout)
+            StackPanel statsPanel = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(15, 15, 0, 15) };
+            TextBlock txtTotalRules = new TextBlock { Text = $"Total number of rules: {AutoOrganizeManager.Rules.Count}", FontFamily = new FontFamily("Segoe UI"), FontSize = 13, FontWeight = FontWeights.Medium };
+            TextBlock txtSeparator = new TextBlock { Text = "   -   ", FontFamily = new FontFamily("Segoe UI"), FontSize = 13, FontWeight = FontWeights.Medium, Foreground = Brushes.Gray };
+            TextBlock txtEnabledRules = new TextBlock { Text = $"Enabled: {AutoOrganizeManager.Rules.Count(r => r.IsEnabled)}", FontFamily = new FontFamily("Segoe UI"), FontSize = 13, FontWeight = FontWeights.Bold, Foreground = new SolidColorBrush(Color.FromRgb(34, 139, 34)) };
+            statsPanel.Children.Add(txtTotalRules);
+            statsPanel.Children.Add(txtSeparator);
+            statsPanel.Children.Add(txtEnabledRules);
+            c.Children.Add(statsPanel);
+
+            // Navy Blue - Manage Rules Button
+            Button btnManageRules = CreateStyledButton("Smart Desktop Rules...", Color.FromRgb(0, 0, 128));
+            btnManageRules.Width = 255;
+            btnManageRules.Height = 45;
+            btnManageRules.Margin = new Thickness(15, 0, 0, 15);
+            btnManageRules.HorizontalAlignment = HorizontalAlignment.Left;
+            btnManageRules.Click += (s, e) =>
+            {
+                new AutoOrganizeForm().ShowDialog();
+                // Refresh statistics when the editor closes
+                txtTotalRules.Text = $"Total number of rules: {AutoOrganizeManager.Rules.Count}";
+                txtEnabledRules.Text = $"Enabled: {AutoOrganizeManager.Rules.Count(r => r.IsEnabled)}";
+            };
+            c.Children.Add(btnManageRules);
+
+            // Dark Red - Organize Desktop Now Button
+            Button btnOrganizeNow = CreateStyledButton("Organize Now (Run)", Color.FromRgb(139, 0, 0));
+            btnOrganizeNow.Width = 255;
+            btnOrganizeNow.Height = 45;
+            btnOrganizeNow.Margin = new Thickness(15, 0, 0, 15);
+            btnOrganizeNow.HorizontalAlignment = HorizontalAlignment.Left;
+            btnOrganizeNow.Click += (s, e) =>
+            {
+                if (MessageBoxesManager.ShowCustomYesNoMessageBox("This will move existing files on your desktop to your target folders based on your rules.\n\nProceed?", "Sweep Desktop"))
+                {
+                    AutoOrganizeManager.ProcessDesktopNow();
+                }
+            };
+            c.Children.Add(btnOrganizeNow);
+
+            TextBlock infoText = new TextBlock
+            {
+                Text = "Note: Auto-Organize continuously monitors your Desktop for new files. When a file matches an enabled rule's conditions, it is automatically and physically moved to your target Portal Fence or Folder. Use this to keep your Desktop permanently clean and automatically route downloads to their proper locations.",
+                FontStyle = FontStyles.Italic,
+                Foreground = Brushes.Gray,
+                Margin = new Thickness(15, 20, 0, 0),
+                TextWrapping = TextWrapping.Wrap
+            };
+            c.Children.Add(infoText);
+
+            t.Content = new ScrollViewer { Content = c, VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
+            _tabControl.Items.Add(t);
+        }
 
         private static void CreateLookDeeperTab()
         {
@@ -396,14 +576,17 @@ namespace Desktop_Fences
         private static void CreateCheckBox(StackPanel p, string t, string n, bool c) => p.Children.Add(new CheckBox { Name = n, Content = t, IsChecked = c, FontFamily = new FontFamily("Segoe UI"), FontSize = 13, Margin = new Thickness(15, 8, 0, 8) });
         private static CheckBox CreateCheckBoxReturn(StackPanel p, string t, string n, bool c) { var cb = new CheckBox { Name = n, Content = t, IsChecked = c, FontFamily = new FontFamily("Segoe UI"), FontSize = 13, Margin = new Thickness(15, 8, 0, 8) }; p.Children.Add(cb); return cb; }
 
-        private static void CreateSliderControl(StackPanel p, string l, string n, int v)
+        // FIX: Added 'max' parameter (defaulting to 100) to fix the Tint sliders while supporting AutoHideTime
+        private static void CreateSliderControl(StackPanel p, string l, string n, int v, int max = 100)
         {
             Grid g = new Grid { Margin = new Thickness(0, 5, 0, 5) };
-            g.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(100) });
+            g.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto }); // Responsive Label Width
             g.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(150) });
             g.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(50) });
+            // Add a slight margin to the slider itself so it spaces out nicely from the dynamic label
+            g.Margin = new Thickness(15, 5, 0, 5);
             TextBlock lbl = new TextBlock { Text = l, FontSize = 13, VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 0, 10, 0) };
-            Slider sl = new Slider { Name = n, Minimum = 1, Maximum = 100, Value = v, TickFrequency = 1, IsSnapToTickEnabled = true, VerticalAlignment = VerticalAlignment.Center };
+            Slider sl = new Slider { Name = n, Minimum = 1, Maximum = max, Value = v, TickFrequency = 1, IsSnapToTickEnabled = true, VerticalAlignment = VerticalAlignment.Center };
             TextBlock val = new TextBlock { Text = v.ToString(), FontSize = 13, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(15, 0, 0, 0) };
             sl.ValueChanged += (s, e) => val.Text = ((int)e.NewValue).ToString();
             Grid.SetColumn(lbl, 0); Grid.SetColumn(sl, 1); Grid.SetColumn(val, 2);
@@ -520,15 +703,33 @@ namespace Desktop_Fences
                                 RegistryHelper.ToggleContextMenu(newState);
                             }
                         }
-                        // REMOVED: EnableProfileAutomation logic is now handled exclusively in the Profiles tab.
-                        //if (cb.Name == "EnableProfileAutomation")
-                        //{
-                        //    SettingsManager.EnableProfileAutomation = cb.IsChecked == true;
-                        //    if (SettingsManager.EnableProfileAutomation) AutomationManager.Start();
-                        //}
 
+                        // NEW: Auto-Hide Options
+                        if (cb.Name == "AutoHideFences")
+                        {
+                            SettingsManager.AutoHideFences = cb.IsChecked == true;
+                            FenceManager.ResetAutoHideTimer();
+                        }
                     }
+                    else if (child is Grid g)
+                    {
+                        var autoHideTime = g.Children.OfType<Slider>().FirstOrDefault(s => s.Name == "AutoHideTimeSlider");
+                        if (autoHideTime != null)
+                        {
+                            SettingsManager.AutoHideTime = (int)autoHideTime.Value;
+                            FenceManager.ResetAutoHideTimer();
+                        }
+                    }
+
+                    // REMOVED: EnableProfileAutomation logic is now handled exclusively in the Profiles tab.
+                    //if (cb.Name == "EnableProfileAutomation")
+                    //{
+                    //    SettingsManager.EnableProfileAutomation = cb.IsChecked == true;
+                    //    if (SettingsManager.EnableProfileAutomation) AutomationManager.Start();
+                    //}
+
                 }
+
 
                 // 2. Style
                 var styleContent = (StackPanel)((ScrollViewer)((TabItem)_tabControl.Items[1]).Content).Content;
@@ -536,14 +737,14 @@ namespace Desktop_Fences
                 {
                     if (child is CheckBox cb)
                     {
+                        if (cb.Name == "EnableChameleon") SettingsManager.EnableChameleonMode = cb.IsChecked == true;
                         if (cb.Name == "EnablePortalWatermark") { newPortalWatermarkState = cb.IsChecked == true; SettingsManager.ShowBackgroundImageOnPortalFences = newPortalWatermarkState; }
                         if (cb.Name == "DisableFenceScrollbars") SettingsManager.DisableFenceScrollbars = cb.IsChecked == true;
                         if (cb.Name == "EnableSounds") SettingsManager.EnableSounds = cb.IsChecked == true;
                     }
                     else if (child is Grid g)
                     {
-                        var tint = g.Children.OfType<Slider>().FirstOrDefault(s => s.Name == "TintSlider"); if (tint != null) SettingsManager.TintValue = (int)tint.Value;
-                        var mtint = g.Children.OfType<Slider>().FirstOrDefault(s => s.Name == "MenuTintSlider"); if (mtint != null) SettingsManager.MenuTintValue = (int)mtint.Value;
+                        var tint = g.Children.OfType<Slider>().FirstOrDefault(s => s.Name == "TintSlider"); if (tint != null) SettingsManager.TintValue = (int)tint.Value; var mtint = g.Children.OfType<Slider>().FirstOrDefault(s => s.Name == "MenuTintSlider"); if (mtint != null) SettingsManager.MenuTintValue = (int)mtint.Value;
                         var col = g.Children.OfType<ComboBox>().FirstOrDefault(c => c.Name == "ColorComboBox"); if (col?.SelectedItem != null) SettingsManager.SelectedColor = col.SelectedItem.ToString();
                         var eff = g.Children.OfType<ComboBox>().FirstOrDefault(c => c.Name == "LaunchEffectComboBox"); if (eff != null) SettingsManager.LaunchEffect = (LaunchEffectsManager.LaunchEffect)eff.SelectedIndex;
                     }
@@ -558,8 +759,90 @@ namespace Desktop_Fences
                 var toolsContent = (StackPanel)((TabItem)_tabControl.Items[2]).Content;
                 foreach (var child in toolsContent.Children) if (child is CheckBox cb && cb.Name == "EnableAutoBackup") SettingsManager.EnableAutoBackup = cb.IsChecked == true;
 
-                // 4. Look Deeper (Logs) - FIXED: Index is 4 (Profiles is 3)
-                var logContent = (StackPanel)((ScrollViewer)((TabItem)_tabControl.Items[4]).Content).Content;
+                // 4. Hotkeys (NEW)
+                var hotkeysContent = (StackPanel)((ScrollViewer)((TabItem)_tabControl.Items[4]).Content).Content;
+                bool hotkeysChanged = false;
+                foreach (var child in hotkeysContent.Children)
+                {
+                    if (child is CheckBox hotkeyCb)
+                    {
+                        if (hotkeyCb.Name == "EnableProfileHotkeys" && SettingsManager.EnableProfileHotkeys != (hotkeyCb.IsChecked == true)) { SettingsManager.EnableProfileHotkeys = hotkeyCb.IsChecked == true; hotkeysChanged = true; }
+                        if (hotkeyCb.Name == "EnableFocusFenceHotkey" && SettingsManager.EnableFocusFenceHotkey != (hotkeyCb.IsChecked == true)) { SettingsManager.EnableFocusFenceHotkey = hotkeyCb.IsChecked == true; hotkeysChanged = true; }
+                        if (hotkeyCb.Name == "EnableSpotSearchHotkey" && SettingsManager.EnableSpotSearchHotkey != (hotkeyCb.IsChecked == true)) { SettingsManager.EnableSpotSearchHotkey = hotkeyCb.IsChecked == true; hotkeysChanged = true; }
+                    }
+
+                    if (child is Grid g && g.Children.Count > 1 && g.Children[1] is StackPanel spMods)
+                    {
+                        string prefix = "";
+                        foreach (var elem in spMods.Children)
+                        {
+                            if (elem is CheckBox cb && cb.Name.EndsWith("Ctrl"))
+                            {
+                                prefix = cb.Name.Substring(0, cb.Name.Length - 4);
+                                break;
+                            }
+                        }
+                        if (!string.IsNullOrEmpty(prefix))
+                        {
+                            List<string> mods = new List<string>();
+                            int key = 0;
+                            foreach (var elem in spMods.Children)
+                            {
+                                if (elem is CheckBox cb && cb.IsChecked == true)
+                                {
+                                    if (cb.Name.EndsWith("Ctrl")) mods.Add("Control");
+                                    else if (cb.Name.EndsWith("Alt")) mods.Add("Alt");
+                                    else if (cb.Name.EndsWith("Shift")) mods.Add("Shift");
+                                    else if (cb.Name.EndsWith("Win")) mods.Add("Win");
+                                }
+                                if (elem is ComboBox cmb && cmb.SelectedItem is ComboBoxItem item && item.Tag is int val)
+                                {
+                                    key = val;
+                                }
+                            }
+                            string modString = string.Join(", ", mods);
+
+                            if (prefix == "ProfSwitch") { if (SettingsManager.ProfileSwitchModifier != modString) { SettingsManager.ProfileSwitchModifier = modString; hotkeysChanged = true; } }
+                            if (prefix == "ProfPrev") { if (SettingsManager.ProfilePrevModifier != modString || SettingsManager.ProfilePrevKey != key) { SettingsManager.ProfilePrevModifier = modString; SettingsManager.ProfilePrevKey = key; hotkeysChanged = true; } }
+                            if (prefix == "ProfNext") { if (SettingsManager.ProfileNextModifier != modString || SettingsManager.ProfileNextKey != key) { SettingsManager.ProfileNextModifier = modString; SettingsManager.ProfileNextKey = key; hotkeysChanged = true; } }
+                            if (prefix == "FocusFence") { if (SettingsManager.FocusFenceModifier != modString || SettingsManager.FocusFenceKey != key) { SettingsManager.FocusFenceModifier = modString; SettingsManager.FocusFenceKey = key; hotkeysChanged = true; } }
+                            if (prefix == "SpotSearch") { if (SettingsManager.SpotSearchModifier != modString || SettingsManager.SpotSearchKey != key) { SettingsManager.SpotSearchModifier = modString; SettingsManager.SpotSearchKey = key; hotkeysChanged = true; } }
+                        }
+                    }
+                }
+
+                if (hotkeysChanged)
+                {
+                    // Propagate the new hotkeys across all existing profiles
+                    SettingsManager.BroadcastHotkeysToAllProfiles();
+
+                    MessageBoxesManager.ShowOKOnlyMessageBoxForm("Global Hotkey changes have been saved and applied to all profiles.\n\nPlease restart Desktop Fences to activate the new shortcuts.", "Restart Required");
+                }
+
+                // 5. Smart Desktop (Auto-Organize)
+                var smartDesktopContent = (StackPanel)((ScrollViewer)((TabItem)_tabControl.Items[5]).Content).Content;
+                foreach (var child in smartDesktopContent.Children)
+                {
+                    if (child is CheckBox cb && cb.Name == "EnableAutoOrganize")
+                    {
+                        bool wasEnabled = SettingsManager.EnableAutoOrganize;
+                        SettingsManager.EnableAutoOrganize = cb.IsChecked == true;
+
+                        // Sync with the Tray icon context menu!
+                        TrayManager.Instance?.UpdateAutoOrganizeMenuCheck(SettingsManager.EnableAutoOrganize);
+
+                        // Live toggle the background engine
+                        if (!wasEnabled && SettingsManager.EnableAutoOrganize) AutoOrganizeManager.Start();
+                        else if (wasEnabled && !SettingsManager.EnableAutoOrganize) AutoOrganizeManager.Stop();
+                    }
+                    if (child is CheckBox cbn && cbn.Name == "EnableAutoOrganizeNotifications")
+                    {
+                        SettingsManager.EnableAutoOrganizeNotifications = cbn.IsChecked == true;
+                    }
+                }
+
+                // 6. Look Deeper (Logs) - Index shifted to 6
+                var logContent = (StackPanel)((ScrollViewer)((TabItem)_tabControl.Items[6]).Content).Content;
                 var newEnabledCategories = new List<LogManager.LogCategory>();
 
                 // FIX: Force enable the hidden "Error" category so existing log calls don't break.

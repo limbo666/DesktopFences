@@ -82,7 +82,7 @@ namespace Desktop_Fences
         {
             LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.ImportExport, "Starting manual backup");
             // Standard format: [datetime]_backup
-            string backupName = DateTime.Now.ToString("yyMMddHHmm") + "_backup";
+            string backupName = DateTime.Now.ToString("yyMMddHHmmss") + "_backup";
             CreateBackup(backupName, silent: false);
         }
 
@@ -166,6 +166,16 @@ namespace Desktop_Fences
                 {
                     fenceTitle = fenceTitle.Replace(c, '_');
                 }
+
+                // --- BUG FIX: Windows prohibits trailing spaces and dots in folder names ---
+                fenceTitle = fenceTitle.TrimEnd(' ', '.');
+
+                // Fallback in case the name was completely stripped
+                if (string.IsNullOrWhiteSpace(fenceTitle))
+                {
+                    fenceTitle = "ExportedFence_" + Guid.NewGuid().ToString().Substring(0, 8);
+                }
+                // ---------------------------------------------------------------------------
 
                 // Exports go to GLOBAL "Exports" folder (shared between profiles)
                 string exportFolder = Path.Combine(exeDir, "Exports", fenceTitle);
@@ -506,7 +516,8 @@ namespace Desktop_Fences
                 foreach (FileInfo file in dir.GetFiles())
                 {
                     string targetFilePath = Path.Combine(destDir, file.Name);
-                    file.CopyTo(targetFilePath, false);
+                    // FIX: Allow overwrite to prevent crashes on rapid consecutive backups
+                    file.CopyTo(targetFilePath, true);
                 }
 
                 foreach (DirectoryInfo subDir in dirs)
@@ -557,7 +568,7 @@ namespace Desktop_Fences
                 // Double-check setting (in case it changed since startup)
                 if (!SettingsManager.EnableAutoBackup) return;
 
-                string timestamp = DateTime.Now.ToString("yyMMddHHmm");
+                string timestamp = DateTime.Now.ToString("yyMMddHHmmss");
                 string backupFolderName = $"{timestamp}_backup_auto";
 
                 // This calls CreateBackup which resolves Profile Path dynamically
@@ -702,7 +713,19 @@ namespace Desktop_Fences
                         "Restart Required");
 
                     string appPath = Process.GetCurrentProcess().MainModule.FileName;
-                    Process.Start(appPath);
+
+                    // Spawns a hidden command prompt that waits ~2 seconds before launching the app,
+                    // guaranteeing the current instance has fully released the Single Instance Mutex.
+                    Process.Start(new ProcessStartInfo
+                    {
+                        FileName = "cmd.exe",
+                        Arguments = $"/c ping 127.0.0.1 -n 3 > nul & start \"\" \"{appPath}\"",
+                        WindowStyle = ProcessWindowStyle.Hidden,
+                        CreateNoWindow = true
+                    });
+
+                    // FIX: Instantly terminate the process to prevent background threads from 
+                    // throwing NullReferenceExceptions during a graceful WPF teardown.
                     Environment.Exit(0);
                 }
                 else

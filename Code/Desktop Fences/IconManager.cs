@@ -1,4 +1,7 @@
-﻿using System;
+﻿using IWshRuntimeLibrary;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
@@ -9,12 +12,13 @@ using System.Windows.Controls;
 using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using IWshRuntimeLibrary;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+using System.Windows.Threading;
 
 namespace Desktop_Fences
 {
+    
+    
+    
     /// <summary>
     /// Manages all icon operations including extraction, caching, rendering, and updates
     /// Extracted from FenceManager for better code organization and maintainability
@@ -32,7 +36,8 @@ namespace Desktop_Fences
 
         #region Private Fields - Icon Cache
         // Icon cache for performance optimization - moved from FenceManager
-        private static readonly Dictionary<string, ImageSource> iconCache = new Dictionary<string, ImageSource>();
+        // FIX: Made case-insensitive to survive FileSystemWatcher string mutations
+        private static readonly Dictionary<string, ImageSource> iconCache = new Dictionary<string, ImageSource>(StringComparer.OrdinalIgnoreCase);
         #endregion
 
         #region Public Properties - Cache Access
@@ -42,6 +47,31 @@ namespace Desktop_Fences
         /// Category: Cache Management
         /// </summary>
         public static Dictionary<string, ImageSource> IconCache => iconCache;
+        #endregion
+
+        #region Async Thread-Safe Helpers
+        /// <summary>
+        /// Safely creates a frozen BitmapImage that can be passed across background threads without crashing WPF.
+        /// </summary>
+        public static BitmapImage CreateFrozenBitmap(string uriString)
+        {
+            var bmp = new BitmapImage();
+            bmp.BeginInit();
+            bmp.CacheOption = BitmapCacheOption.OnLoad; // CRITICAL: Forces synchronous load
+            bmp.UriSource = new Uri(uriString);
+            bmp.EndInit();
+            bmp.Freeze(); // CRITICAL: Makes cross-thread safe
+            return bmp;
+        }
+
+        private static ImageSource FreezeIcon(ImageSource source)
+        {
+            if (source != null && source.CanFreeze && !source.IsFrozen)
+            {
+                source.Freeze();
+            }
+            return source;
+        }
         #endregion
 
         #region Main Icon Operations - Used by: FenceManager, PortalFenceManager, IconDragDropManager
@@ -96,14 +126,38 @@ namespace Desktop_Fences
 
                 // Create and add icon image
                 System.Windows.Controls.Image ico = new System.Windows.Controls.Image();
-                ImageSource iconSource = GetIconForFile(targetPath, filePath, isFolder, isLink, isShortcut, iconDict);
-                ico.Source = iconSource;
 
-                // --- POST-CREATION OVERRIDE ---
-                ApplyPostCreationIconOverride(ico, filePath);
-
-                // Apply icon size settings
+                // Apply icon size settings FIRST so placeholders scale correctly
                 ApplyIconSize(ico, filePath);
+
+                ImageSource cachedIcon = null;
+                lock (iconCache)
+                {
+                    if (iconCache.TryGetValue(filePath, out var cached)) cachedIcon = cached;
+                }
+
+                if (cachedIcon != null)
+                {
+                    ico.Source = cachedIcon;
+                    ApplyPostCreationIconOverride(ico, filePath);
+                }
+                else
+                {
+                    ico.Source = CreateFrozenBitmap("pack://application:,,,/Resources/file-WhiteX.png");
+
+                    LazyIconLoader.RequestIcon(new IconLoadRequest
+                    {
+                        FilePath = filePath,
+                        TargetPath = targetPath,
+                        IsFolder = isFolder,
+                        IsLink = isLink,
+                        IsShortcut = isShortcut,
+                        IconDict = iconDict,
+                        TargetImage = ico,
+                        OnLoaded = () => ApplyPostCreationIconOverride(ico, filePath)
+                    });
+                }
+
                 sp.Children.Add(ico);
 
                 // Create and add text label
@@ -129,98 +183,34 @@ namespace Desktop_Fences
             }
         }
 
-        /// <summary>
-        /// Comprehensive icon extraction with caching and fallback handling
-        /// Used by: AddIcon, UpdateIcon methods
-        /// Category: Icon Extraction
-        /// Moved from: FenceManager.GetIconForFile (enhanced)
-        /// </summary>
-        //public static ImageSource GetIconForFile(string targetPath, string filePath, bool isFolder = false,
-        //            bool isLink = false, bool isShortcut = false, IDictionary<string, object> iconDict = null)
-        //{
-        //    try
-        //    {
-        //        // Check cache first
-        //        if (iconCache.ContainsKey(filePath)) return iconCache[filePath];
-
-        //        ImageSource extractedIcon = null;
-
-        //        // --- 1. THE NUCLEAR PROTOCOL INTERCEPTOR ---
-        //        // Catch raw links dropped directly from the browser/app
-        //        bool isSteam = filePath.IndexOf("steam://", StringComparison.OrdinalIgnoreCase) >= 0;
-        //        bool isSpotify = filePath.IndexOf("spotify:", StringComparison.OrdinalIgnoreCase) >= 0;
-
-        //        // Catch physical .url shortcut files
-        //        if (Path.GetExtension(filePath).ToLower() == ".url" && System.IO.File.Exists(filePath))
-        //        {
-        //            try
-        //            {
-        //                // Read the raw text of the file to guarantee we don't miss the protocol
-        //                string rawText = System.IO.File.ReadAllText(filePath);
-        //                if (rawText.IndexOf("steam://", StringComparison.OrdinalIgnoreCase) >= 0) isSteam = true;
-        //                if (rawText.IndexOf("spotify:", StringComparison.OrdinalIgnoreCase) >= 0) isSpotify = true;
-
-        //                // If it's NOT Steam or Spotify, try to extract a custom game icon (Epic Games, etc.)
-        //                if (!isSteam && !isSpotify)
-        //                {
-        //                    extractedIcon = ExtractCustomIconFromUrl(filePath);
-        //                    if (extractedIcon == null) extractedIcon = Utility.GetShellIcon(filePath, false);
-        //                }
-        //            }
-        //            catch { }
-        //        }
-
-        //        // --- 2. APPLY THE SPECIFIC PROTOCOL ICON ---
-        //        if (isSteam)
-        //        {
-        //            extractedIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/steam-White.png"));
-        //        }
-        //        else if (isSpotify)
-        //        {
-        //            extractedIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/spotify-White.png"));
-        //        }
-
-        //        // --- 3. STANDARD FALLBACKS (If not Steam, Spotify, or Epic Games) ---
-        //        if (extractedIcon == null)
-        //        {
-        //            if (isLink || Path.GetExtension(filePath).ToLower() == ".url")
-        //            {
-        //                extractedIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/link-White.png"));
-        //            }
-        //            else if (isShortcut)
-        //            {
-        //                extractedIcon = ExtractShortcutIcon(filePath, targetPath);
-        //            }
-        //            else if (isFolder)
-        //            {
-        //                extractedIcon = GetFolderIcon(targetPath);
-        //            }
-        //            else
-        //            {
-        //                extractedIcon = GetFileIcon(targetPath);
-        //            }
-        //        }
-
-        //        // Cache and return
-        //        if (extractedIcon != null) iconCache[filePath] = extractedIcon;
-        //        return extractedIcon;
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.IconHandling, $"Error extracting icon for {filePath}: {ex.Message}");
-        //        var fallbackIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/file-WhiteX.png"));
-        //        iconCache[filePath] = fallbackIcon;
-        //        return fallbackIcon;
-        //    }
-        //}
+      
 
         public static ImageSource GetIconForFile(string targetPath, string filePath, bool isFolder = false,
-                    bool isLink = false, bool isShortcut = false, IDictionary<string, object> iconDict = null)
+                            bool isLink = false, bool isShortcut = false, IDictionary<string, object> iconDict = null)
         {
             try
             {
-                // Check cache first
-                if (iconCache.ContainsKey(filePath)) return iconCache[filePath];
+                // --- ULTIMATE SAFETY NET: Filename Fallback ---
+                // If the file is locked and we can't read the target, but the file is literally named "Spotify", force the icon.
+                string fileLower = Path.GetFileName(filePath).ToLower();
+                if (fileLower.Contains("spotify"))
+                {
+                    var spotIcon = CreateFrozenBitmap("pack://application:,,,/Resources/spotify-White.png");
+                    lock (iconCache) { iconCache[filePath] = spotIcon; }
+                    return spotIcon;
+                }
+                if (fileLower.Contains("steam") && isShortcut)
+                {
+                    var steamIcon = CreateFrozenBitmap("pack://application:,,,/Resources/steam-White.png");
+                    lock (iconCache) { iconCache[filePath] = steamIcon; }
+                    return steamIcon;
+                }
+
+                // Check cache first (Thread-safe)
+                lock (iconCache)
+                {
+                    if (iconCache.ContainsKey(filePath)) return iconCache[filePath];
+                }
 
                 ImageSource extractedIcon = null;
 
@@ -261,13 +251,13 @@ namespace Desktop_Fences
                 // ==========================================
                 // 2. SCAN THE TRUE TARGET FOR CUSTOM PROTOCOLS
                 // ==========================================
-                if (targetLower.Contains("spotify:"))
+                if (targetLower.Contains("spotify:") || targetLower.Contains("spotify.com"))
                 {
-                    extractedIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/spotify-White.png"));
+                    extractedIcon = CreateFrozenBitmap("pack://application:,,,/Resources/spotify-White.png");
                 }
                 else if (targetLower.Contains("steam://"))
                 {
-                    extractedIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/steam-White.png"));
+                    extractedIcon = CreateFrozenBitmap("pack://application:,,,/Resources/steam-White.png");
                 }
 
                 // ==========================================
@@ -276,7 +266,7 @@ namespace Desktop_Fences
                 if (extractedIcon == null && Path.GetExtension(filePath)?.ToLower() == ".url")
                 {
                     extractedIcon = ExtractCustomIconFromUrl(filePath);
-                    if (extractedIcon == null) extractedIcon = Utility.GetShellIcon(filePath, false);
+                    if (extractedIcon == null) extractedIcon = FreezeIcon(Utility.GetShellIcon(filePath, false));
                 }
 
                 // ==========================================
@@ -286,7 +276,7 @@ namespace Desktop_Fences
                 {
                     if (isLink || Path.GetExtension(filePath)?.ToLower() == ".url" || targetLower.StartsWith("http"))
                     {
-                        extractedIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/link-White.png"));
+                        extractedIcon = CreateFrozenBitmap("pack://application:,,,/Resources/link-White.png"); // check
                     }
                     else if (isShortcut)
                     {
@@ -302,15 +292,21 @@ namespace Desktop_Fences
                     }
                 }
 
-                // Cache and return
-                if (extractedIcon != null) iconCache[filePath] = extractedIcon;
+                // Cache and return (Thread-safe)
+                if (extractedIcon != null)
+                {
+                    lock (iconCache)
+                    {
+                        iconCache[filePath] = extractedIcon;
+                    }
+                }
                 return extractedIcon;
             }
             catch (Exception ex)
             {
                 LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.IconHandling, $"Error extracting icon for {filePath}: {ex.Message}");
-                var fallbackIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/file-WhiteX.png"));
-                iconCache[filePath] = fallbackIcon;
+                var fallbackIcon = CreateFrozenBitmap("pack://application:,,,/Resources/file-WhiteX.png");
+                lock (iconCache) { iconCache[filePath] = fallbackIcon; }
                 return fallbackIcon;
             }
         }
@@ -329,82 +325,80 @@ namespace Desktop_Fences
             try
             {
                 var ico = sp.Children.OfType<System.Windows.Controls.Image>().FirstOrDefault();
-                if (ico == null)
+                if (ico == null) return;
+
+                if (!System.IO.File.Exists(filePath) && !Directory.Exists(filePath))
                 {
-                    LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.IconHandling,
-                        $"Image not found in StackPanel for {filePath}");
+                    // File is missing/deleted
+                    var missingIcon = CreateFrozenBitmap("pack://application:,,,/Resources/file-WhiteX.png");
+                    if (ico.Source != missingIcon)
+                    {
+                        ico.Source = missingIcon;
+                        lock (iconCache) { iconCache[filePath] = missingIcon; }
+                    }
                     return;
                 }
 
-                ImageSource newIcon = null;
-                bool isShortcut = Path.GetExtension(filePath).ToLower() == ".lnk";
-
-                // Handle Unicode shortcuts
-                if (isShortcut && !CoreUtilities.IsAsciiPath(filePath))
+                // File exists. Priority 1: Check the cache!
+                ImageSource cachedIcon = null;
+                lock (iconCache)
                 {
-                    newIcon = UpdateUnicodeShortcutIcon(filePath, isFolder);
+                    if (iconCache.TryGetValue(filePath, out var cached))
+                    {
+                        cachedIcon = cached;
+                    }
+                }
+
+                if (cachedIcon != null)
+                {
+                    // The icon is safely in the cache. No need to ruin it with re-extraction.
+                    if (ico.Source != cachedIcon) ico.Source = cachedIcon;
                 }
                 else
                 {
-                    // Standard file/folder handling
-                    if (isFolder)
+                    // It's missing from cache (TargetChecker fired before AddIcon finished).
+                    bool isShortcut = Path.GetExtension(filePath).ToLower() == ".lnk";
+                    bool isUrl = Path.GetExtension(filePath).ToLower() == ".url";
+
+                    // Extract the true target before passing to the queue
+                    string trueTarget = filePath;
+                    try
                     {
-                        newIcon = Directory.Exists(filePath) ?
-                            new BitmapImage(new Uri("pack://application:,,,/Resources/folder-White.png")) :
-                            new BitmapImage(new Uri("pack://application:,,,/Resources/folder-WhiteX.png"));
-                    }
-                    //else if (System.IO.File.Exists(filePath))
-                    //{
-                    //    newIcon = System.Drawing.Icon.ExtractAssociatedIcon(filePath).ToImageSource();
-                    //}
-                    //else
-                    //{
-                    //    newIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/file-WhiteX.png"));
-                    //}
-                    else if (System.IO.File.Exists(filePath))
-                    {
-                        // FIX: Intercept .url files so ExtractAssociatedIcon doesn't overwrite game icons with browser icons
-                        if (Path.GetExtension(filePath).ToLower() == ".url")
+                        if (isUrl)
                         {
-                            newIcon = Utility.GetShellIcon(filePath, false);
+                            string content = System.IO.File.ReadAllText(filePath);
+                            var match = System.Text.RegularExpressions.Regex.Match(content, @"URL=([^\r\n]+)");
+                            if (match.Success) trueTarget = match.Groups[1].Value.Trim();
                         }
-                        else
+                        else if (isShortcut)
                         {
-                            try
+                            trueTarget = FilePathUtilities.GetShortcutTargetUnicodeSafe(filePath);
+                            if (string.IsNullOrEmpty(trueTarget)) trueTarget = filePath;
+                        }
+                    }
+                    catch { }
+
+                    LazyIconLoader.RequestIcon(new IconLoadRequest
+                    {
+                        FilePath = filePath,
+                        TargetPath = trueTarget,
+                        IsFolder = isFolder,
+                        IsLink = isUrl,
+                        IsShortcut = isShortcut,
+                        TargetImage = ico,
+                        OnLoaded = () =>
+                        {
+                            // Absolute Safety Net: If it's Spotify, lock it in instantly
+                            string lowerTarget = trueTarget.ToLower();
+                            if (lowerTarget.Contains("spotify:") || lowerTarget.Contains("spotify.com"))
                             {
-                                newIcon = System.Drawing.Icon.ExtractAssociatedIcon(filePath).ToImageSource();
+                                ico.Source = CreateFrozenBitmap("pack://application:,,,/Resources/spotify-White.png");
                             }
-                            catch
-                            {
-                                // FIX: Fallback to Shell API for .pptx and other AppX aliases
-                                newIcon = Utility.GetShellIcon(filePath, false);
-                            }
+
+                            ApplyPostCreationIconOverride(ico, filePath);
+                            lock (iconCache) { iconCache[filePath] = ico.Source; }
                         }
-
-                        // Ultimate fallback if nothing works
-                        if (newIcon == null)
-                        {
-                            newIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/file-WhiteX.png"));
-                        }
-                    }
-                    else
-                    {
-                        newIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/file-WhiteX.png"));
-                    }
-                }
-
-                // Update icon only if different
-                if (ico.Source != newIcon)
-                {
-                    ico.Source = newIcon;
-
-                    // Update cache
-                    if (iconCache.ContainsKey(filePath))
-                    {
-                        iconCache[filePath] = newIcon;
-                        LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.IconHandling,
-                            $"Updated icon cache for {filePath}");
-                    }
+                    });
                 }
             }
             catch (Exception ex)
@@ -490,16 +484,16 @@ namespace Desktop_Fences
                 if (string.IsNullOrEmpty(targetToScan)) return;
 
                 // 2. Forcefully override the UI Image Source if the string matches
-                if (targetToScan.IndexOf("spotify:", StringComparison.OrdinalIgnoreCase) >= 0)
+                if (targetToScan.IndexOf("spotify:", StringComparison.OrdinalIgnoreCase) >= 0 || targetToScan.IndexOf("spotify.com", StringComparison.OrdinalIgnoreCase) >= 0)
                 {
-                    ico.Source = new BitmapImage(new Uri("pack://application:,,,/Resources/spotify-White.png"));
-                    iconCache[filePath] = ico.Source; // Poison the cache with the correct icon
+                    ico.Source = CreateFrozenBitmap("pack://application:,,,/Resources/spotify-White.png");
+                    lock (iconCache) { iconCache[filePath] = ico.Source; } // Poison the cache safely
                     LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.IconHandling, $"Post-Creation Override: Forced Spotify icon for {filePath}");
                 }
                 else if (targetToScan.IndexOf("steam://", StringComparison.OrdinalIgnoreCase) >= 0)
                 {
-                    ico.Source = new BitmapImage(new Uri("pack://application:,,,/Resources/steam-White.png"));
-                    iconCache[filePath] = ico.Source; // Poison the cache with the correct icon
+                    ico.Source = CreateFrozenBitmap("pack://application:,,,/Resources/steam-White.png");
+                    lock (iconCache) { iconCache[filePath] = ico.Source; } // Poison the cache safely
                     LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.IconHandling, $"Post-Creation Override: Forced Steam icon for {filePath}");
                 }
             }
@@ -631,8 +625,8 @@ namespace Desktop_Fences
         private static ImageSource GetFolderIcon(string folderPath)
         {
             return Directory.Exists(folderPath) ?
-                new BitmapImage(new Uri("pack://application:,,,/Resources/folder-White.png")) :
-                new BitmapImage(new Uri("pack://application:,,,/Resources/folder-WhiteX.png"));
+                CreateFrozenBitmap("pack://application:,,,/Resources/folder-White.png") :
+                CreateFrozenBitmap("pack://application:,,,/Resources/folder-WhiteX.png");
         }
 
         /// <summary>
@@ -668,11 +662,11 @@ namespace Desktop_Fences
             {
                 if (System.IO.File.Exists(filePath))
                 {
-                    return System.Drawing.Icon.ExtractAssociatedIcon(filePath).ToImageSource();
+                    return FreezeIcon(System.Drawing.Icon.ExtractAssociatedIcon(filePath).ToImageSource());
                 }
                 else
                 {
-                    return new BitmapImage(new Uri("pack://application:,,,/Resources/file-WhiteX.png"));
+                    return CreateFrozenBitmap("pack://application:,,,/Resources/file-WhiteX.png");
                 }
             }
             catch (Exception ex)
@@ -682,9 +676,9 @@ namespace Desktop_Fences
 
                 // FIX: Office/AppX Icon Crash (.pptx, .docx). Fallback to Shell API
                 ImageSource shellIcon = Utility.GetShellIcon(filePath, false);
-                if (shellIcon != null) return shellIcon;
+                if (shellIcon != null) return FreezeIcon(shellIcon);
 
-                return new BitmapImage(new Uri("pack://application:,,,/Resources/file-WhiteX.png"));
+                return CreateFrozenBitmap("pack://application:,,,/Resources/file-WhiteX.png");
             }
         }
 
@@ -832,6 +826,26 @@ namespace Desktop_Fences
         #endregion
 
         #region Utility Methods - Helper Functions
+
+        /// <summary>
+        /// Applies safe hardware acceleration to existing panels without breaking drag/drop logic.
+        /// Category: UI Optimization
+        /// </summary>
+        public static void OptimizeFencePanel(WrapPanel panel, ScrollViewer scrollViewer)
+        {
+            if (panel == null) return;
+
+            panel.CacheMode = new BitmapCache { EnableClearType = false, RenderAtScale = 1.0, SnapsToDevicePixels = true };
+            panel.UseLayoutRounding = true;
+
+            if (scrollViewer != null)
+            {
+                VirtualizingPanel.SetScrollUnit(scrollViewer, ScrollUnit.Pixel);
+                RenderOptions.SetBitmapScalingMode(scrollViewer, BitmapScalingMode.LowQuality);
+            }
+        }
+
+
         /// <summary>
         /// Enhanced AddIcon with fence context for proper sizing and spacing
         /// Used by: RefreshFenceContentSimple for tabbed fences
@@ -873,14 +887,38 @@ namespace Desktop_Fences
 
                 // Create and add icon image
                 System.Windows.Controls.Image ico = new System.Windows.Controls.Image();
-                ImageSource iconSource = GetIconForFile(targetPath, filePath, isFolder, isLink, isShortcut, iconDict);
-                ico.Source = iconSource;
 
-                // --- POST-CREATION OVERRIDE ---
-                ApplyPostCreationIconOverride(ico, filePath);
+                // Apply icon size settings FIRST
+                ApplyIconSizeFromFence(ico, fence);
 
-                // Apply icon size settings from fence context
-                ApplyIconSizeFromFence(ico, fence); // <--- This one is correct here!
+                ImageSource cachedIcon = null;
+                lock (iconCache)
+                {
+                    if (iconCache.TryGetValue(filePath, out var cached)) cachedIcon = cached;
+                }
+
+                if (cachedIcon != null)
+                {
+                    ico.Source = cachedIcon;
+                    ApplyPostCreationIconOverride(ico, filePath);
+                }
+                else
+                {
+                    ico.Source = CreateFrozenBitmap("pack://application:,,,/Resources/file-WhiteX.png");
+
+                    LazyIconLoader.RequestIcon(new IconLoadRequest
+                    {
+                        FilePath = filePath,
+                        TargetPath = targetPath,
+                        IsFolder = isFolder,
+                        IsLink = isLink,
+                        IsShortcut = isShortcut,
+                        IconDict = iconDict,
+                        TargetImage = ico,
+                        OnLoaded = () => ApplyPostCreationIconOverride(ico, filePath)
+                    });
+                }
+
                 sp.Children.Add(ico);
 
 
@@ -1019,6 +1057,7 @@ namespace Desktop_Fences
         //    return path.All(c => c <= 127);
         //}
 
+
         /// <summary>
         /// Handles Unicode shortcut icon updates
         /// Used by: UpdateIcon
@@ -1026,10 +1065,14 @@ namespace Desktop_Fences
         /// </summary>
         private static ImageSource UpdateUnicodeShortcutIcon(string filePath, bool isFolder)
         {
+            // --- ULTIMATE SAFETY NET: Protect Custom Icons from Unicode overwrite ---
+            string fileLower = Path.GetFileName(filePath).ToLower();
+            if (fileLower.Contains("spotify")) return CreateFrozenBitmap("pack://application:,,,/Resources/spotify-White.png");
+            if (fileLower.Contains("steam")) return CreateFrozenBitmap("pack://application:,,,/Resources/steam-White.png");
+
             try
             {
                 string iconTargetPath = GetShortcutTargetUnicodeSafe(filePath);
-
                 if (!string.IsNullOrEmpty(iconTargetPath) && System.IO.File.Exists(iconTargetPath))
                 {
                     return System.Drawing.Icon.ExtractAssociatedIcon(iconTargetPath).ToImageSource();

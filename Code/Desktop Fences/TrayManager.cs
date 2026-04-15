@@ -48,6 +48,7 @@ namespace Desktop_Fences
         private const int HT_CAPTION = 0x2;
 
         private ToolStripMenuItem _automationMenuItem; //
+        private ToolStripMenuItem _autoOrganizeMenuItem; // NEW
 
         private class HiddenFence
         {
@@ -67,6 +68,17 @@ namespace Desktop_Fences
             }
         }
 
+        public void UpdateAutoOrganizeMenuCheck(bool isChecked)
+        {
+            if (_autoOrganizeMenuItem != null)
+            {
+                if (_autoOrganizeMenuItem.Checked != isChecked)
+                {
+                    _autoOrganizeMenuItem.Checked = isChecked;
+                }
+            }
+        }
+
         public TrayManager()
         {
             // 1. AUTO-MIGRATION: Check if we need to move from Shortcut to Registry
@@ -82,37 +94,24 @@ namespace Desktop_Fences
             Instance = this; // Set singleton instance
         }
 
-
         private void OnTrayIconDoubleClick(object sender, EventArgs e)
         {
-            if (!_areFencesTempHidden)
+            // 1. If the fences are officially hidden (either by timer or tray), wake them up!
+            if (FenceManager._areFencesAutoHidden)
             {
-                var visibleFences = System.Windows.Application.Current.Windows.OfType<NonActivatingWindow>()
-                    .Where(w => w.Visibility == Visibility.Visible &&
-                           !HiddenFences.Any(hf => hf.Window == w))
-                    .ToList();
-
-                foreach (var fence in visibleFences)
-                {
-                    fence.Visibility = Visibility.Hidden;
-                    _tempHiddenFences.Add(fence);
-                }
-                _areFencesTempHidden = true;
-                LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI, $"Temporarily hid {visibleFences.Count} fences.");
+                FenceManager.WakeUpFences();
+                LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI, "Tray Double-Click: Woke up fences.");
             }
+            // 2. Otherwise, they are visible, so force them into the official hidden state.
             else
             {
-                int count = _tempHiddenFences.Count;
-                foreach (var fence in _tempHiddenFences)
-                {
-                    fence.Visibility = Visibility.Visible;
-                }
-                _tempHiddenFences.Clear();
-                _areFencesTempHidden = false;
-                LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI, $"Restored {count} temporarily hidden fences.");
+                FenceManager.ForceHideFences();
+                LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI, "Tray Double-Click: Forced fences to hide.");
             }
+
             UpdateTrayIcon();
         }
+
 
         /// <summary>
         /// Handles single click on tray icon - checks for special key combination CTRL+ALT+SHIFT
@@ -177,6 +176,44 @@ namespace Desktop_Fences
             }
         }
 
+        private string GetFocusFenceHotkeyString()
+        {
+            try
+            {
+                string mod = SettingsManager.FocusFenceModifier ?? "";
+                int key = SettingsManager.FocusFenceKey;
+
+                if (string.IsNullOrWhiteSpace(mod) && key == 0) return "Not Set";
+
+                List<string> parts = new List<string>();
+
+                if (!string.IsNullOrWhiteSpace(mod))
+                {
+                    // Clean up the string to match standard UI format
+                    string formattedMod = mod.Replace("Control", "Ctrl").Replace(", ", "+");
+                    parts.Add(formattedMod);
+                }
+
+                if (key != 0)
+                {
+                    // FIX: Use System.Windows.Forms.Keys because it perfectly maps to Win32 Virtual Key codes
+                    string keyStr = ((System.Windows.Forms.Keys)key).ToString();
+
+                    // Clean up default enum names (converts "D1" to "1")
+                    if (keyStr.StartsWith("D") && keyStr.Length == 2 && char.IsDigit(keyStr[1]))
+                        keyStr = keyStr.Substring(1);
+
+                    parts.Add(keyStr);
+                }
+
+                return string.Join("+", parts);
+            }
+            catch
+            {
+                return "Ctrl+Alt+Z"; // Safe fallback
+            }
+        }
+
         public void InitializeTray()
         {
             string exePath = Process.GetCurrentProcess().MainModule.FileName;
@@ -203,8 +240,8 @@ namespace Desktop_Fences
             }
 
             var trayMenu = new ContextMenuStrip();
-            trayMenu.Items.Add("About", null, (s, e) => AboutFormManager.ShowAboutForm());
-            trayMenu.Items.Add("Options", null, (s, e) => OptionsFormManager.ShowOptionsForm());
+            trayMenu.Items.Add("About...", null, (s, e) => AboutFormManager.ShowAboutForm());
+            trayMenu.Items.Add("Options...", null, (s, e) => OptionsFormManager.ShowOptionsForm());
             trayMenu.Items.Add(new ToolStripSeparator());
 
             // Profiles Submenu
@@ -212,21 +249,60 @@ namespace Desktop_Fences
             trayMenu.Items.Add(_profilesMenuItem);
 
             // Standalone Automation Toggle with explicit Save
-            _automationMenuItem = new ToolStripMenuItem("Profile Automation") { CheckOnClick = true };
+            _automationMenuItem = new ToolStripMenuItem("Enable Profile Automation") { CheckOnClick = true };
             _automationMenuItem.Checked = SettingsManager.EnableProfileAutomation;
             _automationMenuItem.Click += (s, e) => {
                 SettingsManager.EnableProfileAutomation = _automationMenuItem.Checked;
-                SettingsManager.SaveSettings(); //
-                if (SettingsManager.EnableProfileAutomation) AutomationManager.Start(); //
+                try { SettingsManager.SaveSettings(); } catch { }
+                if (SettingsManager.EnableProfileAutomation) AutomationManager.Start();
             };
             trayMenu.Items.Add(_automationMenuItem);
 
             trayMenu.Items.Add(new ToolStripSeparator());
+
+            // --- SMART DESKTOP OPTIONS ---
+            trayMenu.Items.Add("Smart Desktop Rules...", null, (s, e) =>
+            {
+                System.Windows.Application.Current?.Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    new AutoOrganizeForm().ShowDialog();
+                }));
+            });
+
+            _autoOrganizeMenuItem = new ToolStripMenuItem("Enable Auto-Organize") { CheckOnClick = true };
+            _autoOrganizeMenuItem.Checked = SettingsManager.EnableAutoOrganize;
+            _autoOrganizeMenuItem.Click += (s, e) =>
+            {
+                SettingsManager.EnableAutoOrganize = _autoOrganizeMenuItem.Checked;
+                try { SettingsManager.SaveSettings(); } catch { }
+
+                if (SettingsManager.EnableAutoOrganize)
+                    AutoOrganizeManager.Start();
+                else
+                    AutoOrganizeManager.Stop();
+            };
+            trayMenu.Items.Add(_autoOrganizeMenuItem);
+
+            trayMenu.Items.Add(new ToolStripSeparator());
+            // --- END SMART DESKTOP OPTIONS ---
+
             trayMenu.Items.Add("Reload All Fences", null, async (s, e) => { await reloadAllFences(); });
 
             trayMenu.Items.Add(new ToolStripSeparator());
+
             _showHiddenFencesItem = new ToolStripMenuItem("Show Hidden Fences") { Enabled = false };
             trayMenu.Items.Add(_showHiddenFencesItem);
+
+            string focusHotkeyStr = GetFocusFenceHotkeyString();
+            trayMenu.Items.Add($"Focus Fence... ({focusHotkeyStr})", null, (s, e) =>
+            {
+                System.Windows.Application.Current?.Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    FenceFocusFormManager focusManager = new FenceFocusFormManager();
+                    focusManager.ShowDialog();
+                }));
+            });
+
             trayMenu.Items.Add(new ToolStripSeparator());
             trayMenu.Items.Add("Exit", null, (s, e) => System.Windows.Application.Current.Shutdown());
 

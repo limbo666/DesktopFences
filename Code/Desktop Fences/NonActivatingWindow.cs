@@ -79,7 +79,6 @@ public class NonActivatingWindow : Window
 
     [DllImport("user32.dll")]
     private static extern int SetWindowLong(IntPtr hWnd, int nIndex, int dwNewLong);
-
     [DllImport("user32.dll", SetLastError = true)]
     private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
 
@@ -90,4 +89,69 @@ public class NonActivatingWindow : Window
         var hwnd = new WindowInteropHelper(this).Handle;
         ShowWindow(hwnd, SW_SHOWNOACTIVATE);
     }
+
+    [DllImport("user32.dll")]
+    private static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
+
+    [DllImport("kernel32.dll")]
+    private static extern uint GetCurrentThreadId();
+
+    [DllImport("user32.dll")]
+    private static extern bool AttachThreadInput(uint idAttach, uint idAttachTo, bool fAttach);
+
+    [DllImport("user32.dll")]
+    private static extern IntPtr GetForegroundWindow();
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool SetForegroundWindow(IntPtr hWnd);
+
+    public void BeginKeyboardInteractiveEdit(UIElement targetElement)
+    {
+        EnableFocusPrevention(false);
+
+        IntPtr hwnd = new WindowInteropHelper(this).Handle;
+        IntPtr foregroundHwnd = GetForegroundWindow();
+
+        if (foregroundHwnd != hwnd && foregroundHwnd != IntPtr.Zero)
+        {
+            uint foregroundThread = GetWindowThreadProcessId(foregroundHwnd, out _);
+            uint currentThread = GetCurrentThreadId();
+
+            if (foregroundThread != currentThread)
+            {
+                AttachThreadInput(currentThread, foregroundThread, true);
+                SetForegroundWindow(hwnd);
+                AttachThreadInput(currentThread, foregroundThread, false);
+            }
+            else
+            {
+                SetForegroundWindow(hwnd);
+            }
+        }
+        else
+        {
+            SetForegroundWindow(hwnd);
+        }
+
+        // Deferred focus to ensure the OS has actually switched foreground windows
+        this.Dispatcher.BeginInvoke(new Action(() =>
+        {
+            targetElement.Focus();
+            if (targetElement is System.Windows.Controls.TextBox tb) tb.SelectAll();
+            else if (targetElement is System.Windows.Controls.ComboBox cb)
+            {
+                var innerTextBox = (System.Windows.Controls.TextBox)cb.Template.FindName("PART_EditableTextBox", cb);
+                innerTextBox?.Focus();
+                innerTextBox?.SelectAll();
+            }
+        }), System.Windows.Threading.DispatcherPriority.Input);
+    }
+
+    public void EndKeyboardInteractiveEdit()
+    {
+        EnableFocusPrevention(true);
+        System.Windows.Input.Keyboard.ClearFocus();
+    }
+
 }

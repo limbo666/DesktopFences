@@ -16,6 +16,7 @@ namespace Desktop_Fences
     {
         // New field for the active filter
         private string _currentFilter = null;
+        private int _sortMode = 0; // 0=Name, 1=Date Modified, 2=Type, 3=Size
 
 
         private readonly dynamic _fence;
@@ -141,8 +142,75 @@ namespace Desktop_Fences
         // --- FILTERING ENGINE END ---
 
 
+        // --- SORTING ENGINE START ---
+        public string CycleSortMode()
+        {
+            _sortMode++;
+            if (_sortMode > 3) _sortMode = 0;
 
+            // Save state using the existing updater
+            FenceManager.UpdateFenceProperty(_fence, "SortMode", _sortMode.ToString(), "Updated portal sort mode");
 
+            string[] modeNames = { "Name", "Date Modified", "Type", "Size" };
+            string activeMode = modeNames[_sortMode];
+
+            LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, $"Portal fence sorted by: {activeMode}");
+
+            SortContents();
+
+            return activeMode;
+        }
+
+        private void SortContents()
+        {
+            _dispatcher.Invoke(() =>
+            {
+                var children = _wpcont.Children.OfType<StackPanel>().ToList();
+                if (children.Count == 0) return;
+
+                _wpcont.Children.Clear();
+
+                string GetPath(StackPanel sp)
+                {
+                    dynamic tag = sp.Tag;
+                    return tag?.GetType().GetProperty("FilePath")?.GetValue(tag)?.ToString() ?? "";
+                }
+
+                bool IsFolder(StackPanel sp)
+                {
+                    dynamic tag = sp.Tag;
+                    return tag != null && tag.GetType().GetProperty("IsFolder")?.GetValue(tag) as bool? == true;
+                }
+
+                IEnumerable<StackPanel> sorted;
+
+                switch (_sortMode)
+                {
+                    case 1: // Date Modified (Newest first)
+                        sorted = children.OrderByDescending(IsFolder)
+                                         .ThenByDescending(sp => { try { return System.IO.File.GetLastWriteTime(GetPath(sp)); } catch { return DateTime.MinValue; } });
+                        break;
+                    case 2: // Type (A-Z)
+                        sorted = children.OrderByDescending(IsFolder)
+                                         .ThenBy(sp => System.IO.Path.GetExtension(GetPath(sp))?.ToLower() ?? "");
+                        break;
+                    case 3: // Size (Largest first)
+                        sorted = children.OrderByDescending(IsFolder)
+                                         .ThenByDescending(sp => { try { return IsFolder(sp) ? 0 : new System.IO.FileInfo(GetPath(sp)).Length; } catch { return 0; } });
+                        break;
+                    default: // 0 = Name (A-Z)
+                        sorted = children.OrderByDescending(IsFolder)
+                                         .ThenBy(sp => System.IO.Path.GetFileName(GetPath(sp))?.ToLower() ?? "");
+                        break;
+                }
+
+                foreach (var sp in sorted)
+                {
+                    _wpcont.Children.Add(sp);
+                }
+            });
+        }
+        // --- SORTING ENGINE END ---
 
 
         public PortalFenceManager(dynamic fence, WrapPanel wpcont)
@@ -166,6 +234,12 @@ namespace Desktop_Fences
             if (fenceDict.ContainsKey("FilterString"))
             {
                 _currentFilter = fenceDict["FilterString"]?.ToString();
+            }
+
+            // NEW: Load saved sort mode
+            if (fenceDict.ContainsKey("SortMode"))
+            {
+                _sortMode = Convert.ToInt32(fenceDict["SortMode"]?.ToString() ?? "0");
             }
 
             if (string.IsNullOrEmpty(_targetFolderPath))
@@ -255,6 +329,12 @@ namespace Desktop_Fences
                     }
                 }
                 VerifyFenceContents();
+
+                // Ensure items are properly sorted after updates
+                if (events.Count > 0)
+                {
+                    SortContents();
+                }
             });
         }
 
@@ -523,6 +603,9 @@ namespace Desktop_Fences
                 }
             }
             LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.General, $"Initialized fence contents for {_targetFolderPath} with {_wpcont.Children.Count} items (hidden and temporary files excluded)");
+
+            // Apply sorting rules after initialization
+            SortContents();
         }
 
         private void VerifyFenceContents()
