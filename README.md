@@ -329,12 +329,12 @@ Release is delayed (stay tuned)
 - **Fixed**: Disabling single instance bug. Now the program can be run as multi instance if needed by tweaking `options.json` file.
 - **Fixed**: Startup contents generation for `options.json` files.
 - **Improved**: File and folder paths are switched to relative to program location for safer operation and portability.
-- **Added**: ✅ Hotkey selection tab on option window. this setting forced to be applied to all profiles (requires restart).
+- **Added**: ✅ Hotkey selection tab on option window. Hotkeys can be selected by user and settings are applied to all profiles. (Program restart required).
+- **Added**: ✅ Options to disable hotkeys for Profile switching, Focus fence and Spot Search.
 - **Improved**: Icon load strategy adopting Lazy loader logic from https://github.com/SMSMy/DesktopFences fork.
 - **Added**: 🦎 Chameleon mode for fences color to match wallpaper major color.
 - **Added**: 💥 Smart Desktop engine, to move files to specific portal fneces or folders. Basic rules window and functionality.
 - **Fixed**: 🐛 Bug on Portal fences navigation, where program denied navigation to subfolder with `CTRL + click`
-- **Added**: ✅ Options to disable hotkeys for Profile switching, Focus fence and Spot Search.
 - **Fixed**: 🪲 Bug on first tab elements renaming.
 - **Fixed**: 🪲 Bug on export engine for fence names ending with dots or spaces.
 - **Fixed**: 🐛 Bug on size indicator for dimension snap.
