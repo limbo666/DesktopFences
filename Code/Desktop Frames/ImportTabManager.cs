@@ -403,8 +403,8 @@ namespace Desktop_Frames
                     // 4. Refresh UI
                     var updatedFrame = FrameDataManager.FrameData[frameIndex];
                     Framemanager.RefreshFrameContentSimple(targetWindow, updatedFrame, targetTabs.Count - 1);
-                    Framemanager.RefreshTabStyling(targetWindow, targetTabs.Count - 1);
-                    Framemanager.RefreshTabStripUI(targetWindow, updatedFrame);
+                    TabManager.RefreshTabStyling(targetWindow, targetTabs.Count - 1);
+                    TabManager.RefreshTabStripUI(targetWindow, updatedFrame);
 
                     LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.ImportExport, $"Imported tab '{newTabName}' into frame '{targetFrame.Title}'");
                 }
