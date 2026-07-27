@@ -68,8 +68,20 @@ namespace Desktop_Frames
         // --- NEW: Hidden Option for Square Corners ---
         public static bool FramesWithNoRoundCorners { get; set; } = false;
 
+        // --- NEW: Icon Tint Option ---
+        public static bool ApplyTintToIcons { get; set; } = false;
+
         // --- NEW: Context Menu Option ---
         public static bool EnableContextMenu { get; set; } = false;
+
+        // --- NEW: Portal Details View Defaults ---
+        public static string DefaultPortalView { get; set; } = "Icons"; // "Icons" or "Details"
+        public static string GlobalFontFamily { get; set; } = "Segoe UI";
+        public static int DefaultItemFontSize { get; set; } = 12;
+
+        // --- NEW: Hidden Plugin Tier System ---
+        // 0 = Disabled, 1 = Finalized, 2 = Experimental, 3 = In Development
+        public static int PluginAvailabilityLevel { get; set; } = 1;
 
         // --- NEW: Auto-Hide Frames Options ---
         public static bool AutoHideFrames { get; set; } = false;
@@ -103,7 +115,8 @@ namespace Desktop_Frames
         public static bool EnableDimensionSnap { get; set; } = false;
         public static bool SingleClickToLaunch { get; set; } = true;
 
-  
+      
+
         public static LaunchEffectsManager.LaunchEffect LaunchEffect { get; set; } = LaunchEffectsManager.LaunchEffect.Zoom;
         public static LogManager.LogLevel MinLogLevel { get; set; } = LogManager.LogLevel.Info;
         public static List<LogManager.LogCategory> EnabledLogCategories { get; set; } = new List<LogManager.LogCategory>
@@ -236,7 +249,12 @@ namespace Desktop_Frames
                 EnableAutoOrganize,
                 EnableAutoOrganizeNotifications,
                 // NEW
+                ApplyTintToIcons,
                 EnableContextMenu,
+                DefaultPortalView,
+                GlobalFontFamily,
+                DefaultItemFontSize,
+                PluginAvailabilityLevel,
 
                 // Auto-Hide
                 AutoHideFrames,
@@ -327,7 +345,12 @@ namespace Desktop_Frames
             try { EnableAutoOrganizeNotifications = data.EnableAutoOrganizeNotifications ?? true; } catch { EnableAutoOrganizeNotifications = true; }
 
             // NEW
+            try { ApplyTintToIcons = data.ApplyTintToIcons ?? false; } catch { ApplyTintToIcons = false; }
             try { EnableContextMenu = data.EnableContextMenu ?? false; } catch { EnableContextMenu = false; }
+            try { DefaultPortalView = data.DefaultPortalView?.ToString() ?? "Icons"; } catch { DefaultPortalView = "Icons"; }
+            try { GlobalFontFamily = data.GlobalFontFamily?.ToString() ?? "Segoe UI"; } catch { GlobalFontFamily = "Segoe UI"; }
+            try { DefaultItemFontSize = data.DefaultItemFontSize ?? 12; } catch { DefaultItemFontSize = 12; }
+            try { PluginAvailabilityLevel = data.PluginAvailabilityLevel ?? 1; } catch { PluginAvailabilityLevel = 1; }
 
             // Auto-Hide
             try { AutoHideFrames = data.AutoHideFrames ?? false; } catch { AutoHideFrames = false; }

@@ -220,6 +220,25 @@ namespace Desktop_Frames
             // NEW: Context Menu Option
             CreateCheckBox(c, "Show 'New Frame' in Desktop Context Menu", "EnableContextMenu", SettingsManager.EnableContextMenu);
 
+            // --- NEW: Default Portal View Dropdown ---
+            Grid portalViewGrid = new Grid { Margin = new Thickness(15, 8, 0, 8) };
+            portalViewGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(140) });
+            portalViewGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(150) });
+
+            TextBlock lblPortalView = new TextBlock { Text = "Default Portal View:", FontFamily = new FontFamily("Segoe UI"), FontSize = 13, VerticalAlignment = VerticalAlignment.Center };
+            Grid.SetColumn(lblPortalView, 0);
+
+            ComboBox cbPortalView = new ComboBox { Name = "DefaultPortalViewComboBox", Height = 25, FontFamily = new FontFamily("Segoe UI"), FontSize = 13, VerticalAlignment = VerticalAlignment.Center };
+            cbPortalView.Items.Add("Icons");
+            cbPortalView.Items.Add("Details");
+            cbPortalView.SelectedItem = string.Equals(SettingsManager.DefaultPortalView, "Details", StringComparison.OrdinalIgnoreCase) ? "Details" : "Icons";
+            Grid.SetColumn(cbPortalView, 1);
+
+            portalViewGrid.Children.Add(lblPortalView);
+            portalViewGrid.Children.Add(cbPortalView);
+            c.Children.Add(portalViewGrid);
+            // -----------------------------------------
+
             // Moved from Style Tab (Choices)
             CreateCheckBox(c, "Enable Portal Frames Watermark", "EnablePortalWatermark", SettingsManager.ShowBackgroundImageOnPortalFrames);
             var n = CreateCheckBoxReturn(c, "Enable Note Frames Watermark (Coming Soon)", "EnableNoteWatermark", false);
@@ -287,6 +306,8 @@ namespace Desktop_Frames
             // Pass the chamCb reference so we can wire up the toggle event
             CreateColorAndEffectComboBoxes(c, chamCb);
 
+            CreateCheckBox(c, "Apply Frame Tint (Opacity) to Icons and Text", "ApplyTintToIcons", SettingsManager.ApplyTintToIcons);
+
             // --- Moved from General Tab (Auto-Hide Options) ---
             CreateSectionHeader(c, "Auto-Hide Frames", ColorStyle);
             CreateCheckBox(c, "Auto hide frames", "AutoHideFrames", SettingsManager.AutoHideFrames);
@@ -300,7 +321,20 @@ namespace Desktop_Frames
 
             // --- Moved from General Tab (Idle Auto-Roll Options) ---
             CreateSectionHeader(c, "Idle Auto-Roll", ColorStyle);
+
+            // --- NEW: Contextual Help Text ---
+            c.Children.Add(new TextBlock
+            {
+                Text = "Note: Enable auto-roll individually per frame via the frame's right-click menu.",
+                FontStyle = FontStyles.Italic,
+                Foreground = Brushes.Gray,
+                FontSize = 12,
+                Margin = new Thickness(15, -10, 0, 10), // Negative top margin pulls it closer to the header
+                TextWrapping = TextWrapping.Wrap
+            });
+
             CreateSliderControl(c, "Idle Time (sec)", "AutoRollTimeSlider", SettingsManager.AutoRollTime, 300);
+
 
             // --- NEW: Desktop Icon Visibility ---
             CreateSectionHeader(c, "Desktop Icon Visibility", ColorStyle);
@@ -810,8 +844,8 @@ namespace Desktop_Frames
                         if (cb.Name == "DisableFrameScrollbars") SettingsManager.DisableFrameScrollbars = cb.IsChecked == true;
                         if (cb.Name == "EnableSounds") SettingsManager.EnableSounds = cb.IsChecked == true;
                     }
-                    
-                    // --- NEW: Catch the Sound Config Grid ---
+
+                    // --- NEW: Catch the Sound & Portal View Config Grids ---
                     else if (child is Grid genGrid)
                     {
                         var sndCombo = genGrid.Children.OfType<ComboBox>().FirstOrDefault(c => c.Name == "NotificationSoundComboBox");
@@ -826,6 +860,12 @@ namespace Desktop_Frames
                                 5 => NotificationSound.SoftDing,
                                 _ => NotificationSound.DefaultSound
                             };
+                        }
+
+                        var pvCombo = genGrid.Children.OfType<ComboBox>().FirstOrDefault(c => c.Name == "DefaultPortalViewComboBox");
+                        if (pvCombo?.SelectedItem != null)
+                        {
+                            SettingsManager.DefaultPortalView = pvCombo.SelectedItem.ToString();
                         }
                     }
 
@@ -846,8 +886,11 @@ namespace Desktop_Frames
                     if (child is CheckBox cb)
                     {
                         if (cb.Name == "EnableChameleon") SettingsManager.EnableChameleonMode = cb.IsChecked == true;
+                        if (cb.Name == "ApplyTintToIcons") SettingsManager.ApplyTintToIcons = cb.IsChecked == true;
                         // NEW: Auto-Hide & Fade Options (Moved from General)
                         if (cb.Name == "AutoHideFrames") { SettingsManager.AutoHideFrames = cb.IsChecked == true; Framemanager.ResetAutoHideTimer(); }
+
+
                         if (cb.Name == "FramesFadeOutFx") SettingsManager.FramesFadeOutFx = cb.IsChecked == true;
 
                         // NEW: Desktop Icon Visibility
@@ -1031,6 +1074,9 @@ namespace Desktop_Frames
 
                 // --- NEW: Broadcast Auto-Roll Settings ---
                 Framemanager.RefreshAutoRollSettings();
+
+                // --- NEW: Broadcast Icon Tint Settings ---
+                Framemanager.RefreshAllIconsTint();
 
                 // --- NEW: Broadcast Scrollbar Settings ---
                 Framemanager.RefreshScrollbarSettings();

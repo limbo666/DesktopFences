@@ -21,6 +21,9 @@ namespace Desktop_Frames
 
         // JSON file path - moved from Framemanager  
         private static string _jsonFilePath;
+
+        // Key: ChildId, Value: List of ParentIds (Runtime 1-to-Many Accordion Snap Graph)
+        public static Dictionary<string, List<string>> DockingMap = new Dictionary<string, List<string>>();
         #endregion
 
         #region Public Properties - Data Access
@@ -231,7 +234,8 @@ namespace Desktop_Frames
                         {
                             if (frameDict.ContainsKey(oldKey))
                             {
-                                if (frameDict[oldKey] != null && frameDict[oldKey].ToString() != "0" && frameDict[oldKey].ToString() != "")
+                                // BUG FIX: Removed '!= "0"' check. 0 is a valid integer (e.g., Border Thickness, X, Y).
+                                if (frameDict[oldKey] != null && frameDict[oldKey].ToString() != "")
                                 {
                                     rescuedValue = frameDict[oldKey];
                                 }
@@ -240,8 +244,8 @@ namespace Desktop_Frames
                         }
 
                         // Apply rescued data to the official key if it doesn't already have a valid setting
-                        bool hasValidOfficial = frameDict.ContainsKey(officialKey) && frameDict[officialKey] != null && frameDict[officialKey].ToString() != "0" && frameDict[officialKey].ToString() != "";
-
+                        // BUG FIX: Removed '!= "0"' check here to prevent wiping valid zero values.
+                        bool hasValidOfficial = frameDict.ContainsKey(officialKey) && frameDict[officialKey] != null && frameDict[officialKey].ToString() != "";
                         if (!hasValidOfficial && rescuedValue != null)
                         {
                             frameDict[officialKey] = rescuedValue;
@@ -495,6 +499,129 @@ namespace Desktop_Frames
             return _frameData.FirstOrDefault(f => f.Id?.ToString() == frameId);
         }
 
+
+
+        /// <summary>
+        /// Mutates the master JSON frame array directly to guarantee persistence across restarts
+        /// </summary>
+        public static void UpdateDockedRelationships(string childId, List<string> parentIds)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(childId) || _frameData == null) return;
+
+                if (parentIds != null && parentIds.Count > 0) DockingMap[childId] = parentIds;
+                else DockingMap.Remove(childId);
+
+                int index = _frameData.FindIndex(f => f.Id?.ToString() == childId);
+                if (index >= 0)
+                {
+                    dynamic actualFrame = _frameData[index];
+                    IDictionary<string, object> dict = actualFrame is IDictionary<string, object> d ?
+                        d : ((JObject)actualFrame).ToObject<IDictionary<string, object>>();
+
+                    if (parentIds != null && parentIds.Count > 0) dict["DockedParentId"] = string.Join(",", parentIds);
+                    else if (dict.ContainsKey("DockedParentId")) dict.Remove("DockedParentId");
+
+                    _frameData[index] = JObject.FromObject(dict);
+                    SaveFrameData();
+                    LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, $"Saved persistent multi-snap: '{childId}' -> '{string.Join(",", parentIds ?? new List<string>())}'");
+                }
+            }
+            catch (Exception ex)
+            {
+                LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.General, $"Error saving docked relationships: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Scans loaded JSON frame dictionaries, populates multi-parent DockingMap, and self-heals overlapping child coordinates
+        /// </summary>
+        public static void RebuildDockingMap()
+        {
+            try
+            {
+                DockingMap.Clear();
+                if (_frameData == null) return;
+
+                // 1. Rebuild runtime snap graph from persistent JSON attributes
+                foreach (dynamic frame in _frameData)
+                {
+                    IDictionary<string, object> dict = frame is IDictionary<string, object> d ?
+                        d : ((JObject)frame).ToObject<IDictionary<string, object>>();
+
+                    if (dict.ContainsKey("Id") && dict.ContainsKey("DockedParentId") && dict["DockedParentId"] != null)
+                    {
+                        string cId = dict["Id"].ToString();
+                        string pIdStr = dict["DockedParentId"].ToString();
+                        if (!string.IsNullOrEmpty(cId) && !string.IsNullOrEmpty(pIdStr))
+                        {
+                            var pIds = pIdStr.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).ToList();
+                            if (pIds.Count > 0) DockingMap[cId] = pIds;
+                        }
+                    }
+                }
+
+                // 2. SELF-HEALING STARTUP ALIGNMENT FOR MULTI-PARENTS
+                bool layoutHealed = false;
+                foreach (var kvp in DockingMap)
+                {
+                    string childId = kvp.Key;
+                    List<string> parentIds = kvp.Value;
+
+                    int childIdx = _frameData.FindIndex(f => f.Id?.ToString() == childId);
+                    if (childIdx >= 0 && parentIds.Count > 0)
+                    {
+                        dynamic childFrame = _frameData[childIdx];
+                        double maxExpectedMinY = 0;
+
+                        foreach (string pId in parentIds)
+                        {
+                            int parentIdx = _frameData.FindIndex(f => f.Id?.ToString() == pId);
+                            if (parentIdx >= 0)
+                            {
+                                dynamic parentFrame = _frameData[parentIdx];
+                                double parentY = Convert.ToDouble(parentFrame.Y?.ToString() ?? "0");
+
+                                // --- FIX: State-Aware Height Calculation ---
+                                bool isParentRolled = false;
+                                try { isParentRolled = parentFrame.IsRolled?.ToString().ToLower() == "true"; } catch { }
+
+                                double activeParentHeight = isParentRolled ? 28.0 : Convert.ToDouble(parentFrame.UnrolledHeight?.ToString() ?? "130");
+
+                                // Anchor exactly 10px below the active bottom edge (matching runtime CascadeStack)
+                                double expectedMinY = parentY + activeParentHeight + 10.0;
+
+                                if (expectedMinY > maxExpectedMinY) maxExpectedMinY = expectedMinY;
+                            }
+                        }
+
+                        double childY = Convert.ToDouble(childFrame.Y?.ToString() ?? "0");
+
+                        // --- FIX: Strict Exact Alignment ---
+                        // Math.Abs > 0.5 allows for tiny floating-point margins without endless saving,
+                        // while ensuring frames are pulled UP to close gaps and pushed DOWN to clear overlaps.
+                        if (maxExpectedMinY > 0 && Math.Abs(childY - maxExpectedMinY) > 0.5)
+                        {
+                            childFrame.Y = maxExpectedMinY;
+                            layoutHealed = true;
+                            LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, $"Self-Healed coordinate for multi-docked child '{childFrame.Title}' from Y={childY:F1} to Y={maxExpectedMinY:F1}");
+                        }
+                    }
+                }
+
+                if (layoutHealed)
+                {
+                    SaveFrameData();
+                }
+
+                LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, $"Restored {DockingMap.Count} persistent multi-snap links from JSON.");
+            }
+            catch (Exception ex)
+            {
+                LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.General, $"Error in RebuildDockingMap: {ex.Message}");
+            }
+        }
 
         #endregion
     }

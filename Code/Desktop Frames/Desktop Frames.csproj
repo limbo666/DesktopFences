@@ -8,9 +8,9 @@
 		<Nullable>enable</Nullable>
 		<UseWPF>true</UseWPF>
 		<UseWindowsForms>True</UseWindowsForms>
-		<AssemblyVersion>2.7.7.294</AssemblyVersion>
-		<FileVersion>2.7.7.294</FileVersion>
-		<Version>2.7.7.294</Version>
+		<AssemblyVersion>2.7.8.352</AssemblyVersion>
+		<FileVersion>2.7.8.352</FileVersion>
+		<Version>2.7.8.352</Version>
 		<ApplicationIcon>Resources\logo2.ico</ApplicationIcon>
 	</PropertyGroup>
 
@@ -23,6 +23,7 @@
 		<None Remove="folderX.png" />
 		<None Remove="portal.png" />
 		<None Remove="Resources\36505577-smooth-simple-notification-274738.wav" />
+		<None Remove="Resources\DesktopFramesVertical.png" />
 		<None Remove="Resources\ding.wav" />
 		<None Remove="Resources\donate.png" />
 		<None Remove="Resources\dot.png" />
@@ -36,6 +37,7 @@
 		<None Remove="Resources\logo_blue.ico" />
 		<None Remove="Resources\notification_message-best-notification-1-286672.wav" />
 		<None Remove="Resources\notification_message-nada-1-326000.wav" />
+		<None Remove="Resources\placeholder.png" />
 		<None Remove="Resources\soundshelfstudio-ui-notification-pop-513564.wav" />
 		<None Remove="Resources\spotify-White.png" />
 		<None Remove="Resources\steam-White.png" />
@@ -78,6 +80,9 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <Resource Include="Resources\DesktopFramesVertical.png">
+	    <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+	  </Resource>
 	  <Resource Include="Resources\empty.png">
 	    <CopyToOutputDirectory>Never</CopyToOutputDirectory>
 	  </Resource>
@@ -130,6 +135,9 @@
 		  <CopyToOutputDirectory>Never</CopyToOutputDirectory>
 		</EmbeddedResource>
 		<Resource Include="Resources\link-White.png">
+		  <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+		</Resource>
+		<Resource Include="Resources\placeholder.png">
 		  <CopyToOutputDirectory>Never</CopyToOutputDirectory>
 		</Resource>
 		<Resource Include="Resources\portal.png" />

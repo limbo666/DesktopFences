@@ -31,6 +31,7 @@ namespace Desktop_Frames
         private ComboBox _cmbTitleTextColor;
         private ComboBox _cmbTitleTextSize;
         private CheckBox _chkBoldTitleText;
+        private ComboBox _cmbPortalView; // --- NEW: Portal View Mode Selector ---
         private ComboBox _cmbIconSize;
         private NumericTextBox _nudIconSpacing;
         private ComboBox _cmbTextColor;
@@ -478,6 +479,15 @@ namespace Desktop_Frames
 
             StackPanel iconsStack = new StackPanel { Orientation = Orientation.Vertical };
 
+            // --- NEW: Portal View Dropdown (Visible strictly for Portal Frames) ---
+            CreateDropdownField(iconsStack, "Portal View:", new[] { "Icons", "Details" }, out _cmbPortalView);
+            bool isPortal = _frame.ItemsType?.ToString() == "Portal";
+            if (_cmbPortalView.Parent is FrameworkElement pvRow)
+            {
+                pvRow.Visibility = isPortal ? Visibility.Visible : Visibility.Collapsed;
+            }
+            // ----------------------------------------------------------------------
+
             CreateDropdownField(iconsStack, "Icon Size:", _validIconSizes, out _cmbIconSize);
             CreateNumericField(iconsStack, "Icon Spacing:", 0, 20, out _nudIconSpacing);
             CreateDropdownField(iconsStack, "Text Color:", _validColors, out _cmbTextColor);
@@ -816,6 +826,7 @@ namespace Desktop_Frames
                 string titleTextColor = GetDropdownValue(_cmbTitleTextColor);
                 string titleTextSize = GetDropdownValue(_cmbTitleTextSize);
                 string boldTitleText = (_chkBoldTitleText.IsChecked ?? false).ToString().ToLower();
+                string portalView = GetDropdownValue(_cmbPortalView); // --- NEW: Get Portal View for broadcast ---
                 string iconSize = GetDropdownValue(_cmbIconSize);
                 string iconSpacing = _nudIconSpacing.Value.ToString();
                 string textColor = GetDropdownValue(_cmbTextColor);
@@ -828,6 +839,9 @@ namespace Desktop_Frames
                 foreach (var f in allFramesRaw) allFrames.Add(f);
 
                 var windows = System.Windows.Application.Current.Windows.OfType<NonActivatingWindow>().ToList();
+
+                // TEST
+
 
                 // --- PHASE 1: INSTANT VISUAL UPDATE ---
                 // We update the screen first before touching the heavy JSON data engine
@@ -850,6 +864,24 @@ namespace Desktop_Frames
                         if (itemsType == "Note")
                         {
                             ApplyNoteSettings(win);
+                        }
+                        else if (itemsType == "Portal")
+                        {
+                            // --- ULTRA FIX: Live switch Portal View without destroying the active manager ---
+                            string targetView = GetDropdownValue(_cmbPortalView) ?? SettingsManager.DefaultPortalView;
+
+                            // 1. Force update in-memory property immediately so internal syncs read the new state
+                            Framemanager.UpdateFrameProperty(targetFrame, "ViewMode", targetView, "Global live view update");
+
+                            // 2. Trigger live switch on the active window manager (Bulletproof against CS0165)
+                            var pManagers = Framemanager.GetPortalFrames();
+                            var targetKey = pManagers.Keys.FirstOrDefault(k => k.Id?.ToString() == frameId);
+
+                            PortalFramemanager pManager = null; // Explicitly initialized to satisfy C# compiler
+                            if (targetKey != null && pManagers.TryGetValue(targetKey, out pManager))
+                            {
+                                pManager?.SetViewMode(targetView);
+                            }
                         }
                         else
                         {
@@ -875,6 +907,10 @@ namespace Desktop_Frames
                         // Safely execute the writes on the dispatcher, but chunked as Background Priority
                         System.Windows.Application.Current.Dispatcher.Invoke(() =>
                         {
+                            if (targetFrame.ItemsType?.ToString() == "Portal")
+                            {
+                                Framemanager.UpdateFrameProperty(targetFrame, "ViewMode", portalView, "Global Apply: ViewMode updated");
+                            }
                             Framemanager.UpdateFrameProperty(targetFrame, "CustomColor", customColor, "Global Apply: CustomColor updated");
                             Framemanager.UpdateFrameProperty(targetFrame, "CustomLaunchEffect", customLaunchEffect, "Global Apply: CustomLaunchEffect updated");
                             Framemanager.UpdateFrameProperty(targetFrame, "FrameBorderColor", frameBorderColor, "Global Apply: FrameBorderColor updated");
@@ -900,58 +936,78 @@ namespace Desktop_Frames
             }
         }
 
+
         private void LoadCurrentValues()
         {
             try
             {
-                LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.UI, $"Loading current values for frame '{_frame.Title}'");
+                // --- BULLETPROOF DYNAMIC EXTRACTOR ---
+                string GetSafeProp(string propName)
+                {
+                    try
+                    {
+                        if (_frame is Newtonsoft.Json.Linq.JObject jObj) return jObj[propName]?.ToString();
+                        if (_frame is System.Collections.Generic.IDictionary<string, object> dict && dict.ContainsKey(propName)) return dict[propName]?.ToString();
+                        return null;
+                    }
+                    catch { return null; }
+                }
+                // -------------------------------------
 
-                bool isPortalFrame = _frame.ItemsType?.ToString() == "Portal";
-                bool isnoteFrame = _frame.ItemsType?.ToString() == "Note";
+                string frameTitle = GetSafeProp("Title") ?? "Unknown";
+                LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.UI, $"Loading current values for frame '{frameTitle}'");
+
+                string itemsType = GetSafeProp("ItemsType");
+                bool isPortalFrame = itemsType == "Portal";
+                bool isnoteFrame = itemsType == "Note";
+
                 if (isPortalFrame)
-                {
-                    LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI, $"Portal frame detected - disabling icon controls for '{_frame.Title}'");
-                }
+                    LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI, $"Portal frame detected - disabling icon controls for '{frameTitle}'");
                 if (isnoteFrame)
-                {
-                    LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI, $"Note frame detected - disabling icon controls for '{_frame.Title}'");
-                }
+                    LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI, $"Note frame detected - disabling icon controls for '{frameTitle}'");
 
                 // Load Frame Section properties
-                LoadDropdownValue(_cmbCustomColor, _frame.CustomColor?.ToString(), "CustomColor");
-                LoadDropdownValue(_cmbCustomLaunchEffect, _frame.CustomLaunchEffect?.ToString(), "CustomLaunchEffect");
-                LoadDropdownValue(_cmbframeBorderColor, _frame.FrameBorderColor?.ToString(), "FrameBorderColor");
-                LoadNumericValue(_nudframeBorderThickness, _frame.FrameBorderThickness?.ToString(), "FrameBorderThickness", 0);
+                LoadDropdownValue(_cmbCustomColor, GetSafeProp("CustomColor"), "CustomColor");
+                LoadDropdownValue(_cmbCustomLaunchEffect, GetSafeProp("CustomLaunchEffect"), "CustomLaunchEffect");
+                LoadDropdownValue(_cmbframeBorderColor, GetSafeProp("FrameBorderColor"), "FrameBorderColor");
+                LoadNumericValue(_nudframeBorderThickness, GetSafeProp("FrameBorderThickness"), "FrameBorderThickness", 0);
 
                 // Load Title Section properties
-                LoadDropdownValue(_cmbTitleTextColor, _frame.TitleTextColor?.ToString(), "TitleTextColor");
-                LoadDropdownValue(_cmbTitleTextSize, _frame.TitleTextSize?.ToString(), "TitleTextSize");
-                LoadCheckboxValue(_chkBoldTitleText, _frame.BoldTitleText?.ToString(), "BoldTitleText");
+                LoadDropdownValue(_cmbTitleTextColor, GetSafeProp("TitleTextColor"), "TitleTextColor");
+                LoadDropdownValue(_cmbTitleTextSize, GetSafeProp("TitleTextSize"), "TitleTextSize");
+                LoadCheckboxValue(_chkBoldTitleText, GetSafeProp("BoldTitleText"), "BoldTitleText");
 
                 // Load Icons Section properties
-                //  if (isPortalFrame|| isnoteFrame)
-                if (isnoteFrame)
+                if (isnoteFrame || isPortalFrame)
                 {
                     DisableIconControls();
+                    if (isPortalFrame)
+                    {
+                        _cmbPortalView.IsEnabled = true;
+                        _cmbPortalView.Background = SystemColors.WindowBrush;
+                        _cmbPortalView.ToolTip = null;
+                        LoadDropdownValue(_cmbPortalView, GetSafeProp("ViewMode"), "ViewMode");
+                    }
                 }
                 else
                 {
                     EnableIconControls();
-                    LoadDropdownValue(_cmbIconSize, _frame.IconSize?.ToString(), "IconSize");
-                    LoadNumericValue(_nudIconSpacing, _frame.IconSpacing?.ToString(), "IconSpacing", 5);
-                    LoadDropdownValue(_cmbTextColor, _frame.TextColor?.ToString(), "TextColor");
-                    LoadCheckboxValue(_chkDisableTextShadow, _frame.DisableTextShadow?.ToString(), "DisableTextShadow");
-                    LoadCheckboxValue(_chkGrayscaleIcons, _frame.GrayscaleIcons?.ToString(), "GrayscaleIcons");
+                    LoadDropdownValue(_cmbIconSize, GetSafeProp("IconSize"), "IconSize");
+                    LoadNumericValue(_nudIconSpacing, GetSafeProp("IconSpacing"), "IconSpacing", 5);
+                    LoadDropdownValue(_cmbTextColor, GetSafeProp("TextColor"), "TextColor");
+                    LoadCheckboxValue(_chkDisableTextShadow, GetSafeProp("DisableTextShadow"), "DisableTextShadow");
+                    LoadCheckboxValue(_chkGrayscaleIcons, GetSafeProp("GrayscaleIcons"), "GrayscaleIcons");
                 }
 
-                LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI, $"Successfully loaded all current values for frame '{_frame.Title}' (Portal: {isPortalFrame})");
+                LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI, $"Successfully loaded all current values for frame '{frameTitle}' (Portal: {isPortalFrame})");
             }
             catch (Exception ex)
             {
-                LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI, $"Error loading current values for frame '{_frame.Title}': {ex.Message}");
-              MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Error loading frame properties: {ex.Message}", "Load Error");
+                LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI, $"Error loading current values: {ex.Message}");
+                MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Error loading frame properties: {ex.Message}", "Load Error");
             }
         }
+
 
         private void DisableIconControls()
         {
@@ -1138,6 +1194,7 @@ namespace Desktop_Frames
                 string titleTextSize = GetDropdownValue(_cmbTitleTextSize);
                 string boldTitleText = (_chkBoldTitleText.IsChecked ?? false).ToString().ToLower();
 
+                string portalView = GetDropdownValue(_cmbPortalView); // --- NEW: Get Portal View selection ---
                 string iconSize = GetDropdownValue(_cmbIconSize);
                 string iconSpacing = _nudIconSpacing.Value.ToString();
                 string textColor = GetDropdownValue(_cmbTextColor);
@@ -1152,6 +1209,10 @@ namespace Desktop_Frames
                 Framemanager.UpdateFrameProperty(_frame, "TitleTextColor", titleTextColor, $"TitleTextColor updated to '{titleTextColor}'");
                 Framemanager.UpdateFrameProperty(_frame, "TitleTextSize", titleTextSize, $"TitleTextSize updated to '{titleTextSize}'");
                 Framemanager.UpdateFrameProperty(_frame, "BoldTitleText", boldTitleText, $"BoldTitleText updated to '{boldTitleText}'");
+                if (_frame.ItemsType?.ToString() == "Portal")
+                {
+                    Framemanager.UpdateFrameProperty(_frame, "ViewMode", portalView, $"ViewMode updated to '{portalView}'");
+                }
                 Framemanager.UpdateFrameProperty(_frame, "IconSize", iconSize, $"IconSize updated to '{iconSize}'");
                 Framemanager.UpdateFrameProperty(_frame, "IconSpacing", iconSpacing, $"IconSpacing updated to '{iconSpacing}'");
                 Framemanager.UpdateFrameProperty(_frame, "TextColor", textColor, $"TextColor updated to '{textColor}'");
@@ -1193,9 +1254,23 @@ namespace Desktop_Frames
                         // Explicitly update Note visuals
                         ApplyNoteSettings(win);
                     }
+                    else if (itemsType == "Portal")
+                    {
+                        // --- ULTRA FIX: Live switch Portal View without destroying the active manager ---
+                        string targetView = GetDropdownValue(_cmbPortalView) ?? SettingsManager.DefaultPortalView;
+
+                        var pManagers = Framemanager.GetPortalFrames();
+                        var targetKey = pManagers.Keys.FirstOrDefault(k => k.Id?.ToString() == frameId);
+
+                        PortalFramemanager pManager = null; // Explicitly initialized to satisfy C# compiler
+                        if (targetKey != null && pManagers.TryGetValue(targetKey, out pManager))
+                        {
+                            pManager?.SetViewMode(targetView);
+                        }
+                    }
                     else
                     {
-                        // Update Icon visuals
+                        // Update Icon visuals for standard shortcut frames
                         ApplyIconSettings(win);
                     }
                     // --- CHANGED LOGIC END ---

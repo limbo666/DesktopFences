@@ -276,8 +276,16 @@ namespace Desktop_Frames
 
             foreach (var frame in FrameData)
             {
-                // 1. Global Exclusions: Portal and Note framess cannot receive items via this dialog
-                if (frame.ItemsType?.ToString() == "Portal" || frame.ItemsType?.ToString() == "Note")
+                //// 1. Global Exclusions: Portal and Note framess cannot receive items via this dialog
+                //if (frame.ItemsType?.ToString() == "Portal" || frame.ItemsType?.ToString() == "Note")
+                //    continue;
+
+                //string currentframeId = frame.Id?.ToString();
+
+
+                // 1. Global Exclusions: ONLY Data frames can receive items via this dialog
+                // This automatically filters out Portal, Note, and Plugin frames.
+                if (frame.ItemsType?.ToString() != "Data")
                     continue;
 
                 string currentframeId = frame.Id?.ToString();
@@ -289,7 +297,8 @@ namespace Desktop_Frames
                 if (issourceFrame && !frameHasTabs)
                     continue;
 
-                string frameTitle = frame?.ToString() ?? "Unnamed Frame";
+                // --- FIX: Add .Title so we get the name, not the whole JSON object ---
+                string frameTitle = frame.Title?.ToString() ?? "Unnamed Frame";
 
                 if (!frameHasTabs)
                 {

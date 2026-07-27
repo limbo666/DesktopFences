@@ -24,6 +24,7 @@ using System.Windows.Threading;
 using System.Xml.Linq;
 using static System.Net.Mime.MediaTypeNames;
 using Color = System.Drawing.Color;
+using Desktop_Frames.Plugins; // --- NEW: Plugins Support ---
 
 namespace Desktop_Frames
 {
@@ -84,6 +85,9 @@ namespace Desktop_Frames
 
         private static dynamic _options;
         private static Dictionary<dynamic, PortalFramemanager> _portalFrames = new Dictionary<dynamic, PortalFramemanager>();
+
+        // --- NEW: Active Plugins Registry ---
+        public static Dictionary<string, IFramePlugin> _activePlugins = new Dictionary<string, IFramePlugin>();
 
         // Stores heart TextBlock references for each frame to enable efficient ContextMenu updates
         private static readonly Dictionary<dynamic, TextBlock> _heartTextBlocks = new Dictionary<dynamic, TextBlock>();
@@ -306,11 +310,55 @@ namespace Desktop_Frames
             }
         }
 
+        public static void RefreshAllIconsTint()
+        {
+            // Calculate the target opacity exactly as we do in AddIcon
+            double targetOpacity = SettingsManager.ApplyTintToIcons ? Math.Max(0.2, SettingsManager.TintValue / 100.0) : 1.0;
+
+            var allFrames = System.Windows.Application.Current.Windows.OfType<NonActivatingWindow>();
+            foreach (var win in allFrames)
+            {
+                // --- FIX: Update Plugin Frame Opacity instantly ---
+                string frameId = win.Tag?.ToString();
+                var currentFrame = FrameDataManager.FrameData.FirstOrDefault(f => f.Id?.ToString() == frameId);
+
+                if (currentFrame != null && currentFrame.ItemsType?.ToString() == "Plugin")
+                {
+                    // CRITICAL: Release the WPF animation lock first, or the opacity change is ignored
+                    win.BeginAnimation(System.Windows.UIElement.OpacityProperty, null);
+                    win.Opacity = targetOpacity;
+                    continue; // Plugins don't use the WrapPanel, move to the next window
+                }
+                // --------------------------------------------------
+
+                var wrapPanel = FindWrapPanel(win);
+                if (wrapPanel != null)
+                {
+                    foreach (var sp in wrapPanel.Children.OfType<StackPanel>())
+                    {
+                        // 1. Update the Image (Checking direct child, then checking inside Grid for Network Icons)
+                        var img = sp.Children.OfType<System.Windows.Controls.Image>().FirstOrDefault();
+                        if (img == null)
+                        {
+                            var grid = sp.Children.OfType<Grid>().FirstOrDefault();
+                            img = grid?.Children.OfType<System.Windows.Controls.Image>().FirstOrDefault();
+                        }
+                        if (img != null) img.Opacity = targetOpacity;
+
+                        // 2. Update the TextLabel(s)
+                        foreach (var txt in sp.Children.OfType<TextBlock>())
+                        {
+                            txt.Opacity = targetOpacity;
+                        }
+                    }
+                }
+            }
+        }
+
         public static void RefreshAutoRollSettings()
         {
             int autoRollDelay = 2000;
             try { if (SettingsManager.AutoRollTime > 0) autoRollDelay = SettingsManager.AutoRollTime * 1000; } catch { }
-
             foreach (var timer in _autoRollTimers.Values)
             {
                 if (timer != null)
@@ -426,6 +474,9 @@ namespace Desktop_Frames
   
 
 
+
+
+
         /// <summary>
         /// Helper to detect UNC Roots (e.g. \\Server or \\192.168.1.10).
         /// These technically aren't "Directories" in .NET, but act as Folders in Windows.
@@ -491,11 +542,6 @@ namespace Desktop_Frames
                 LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI, $"Portal Navigation Error: {ex.Message}");
             }
         }
-
-
-
-
-
 
 
 
@@ -895,6 +941,158 @@ namespace Desktop_Frames
                 return dpiX / 96.0; // Standard DPI is 96, so scale factor = dpiX / 96
             }
         }
+
+
+
+        // --- CONSTRAINT-BASED MULTI-PARENT STACK RESOLVER ---
+        public static void CascadeStack(string parentId, double deltaY)
+        {
+            // Find all children that list this parentId in their co-parent list
+            var childrenIds = FrameDataManager.DockingMap
+                .Where(kvp => kvp.Value != null && kvp.Value.Contains(parentId))
+                .Select(kvp => kvp.Key)
+                .ToList();
+
+            foreach (var childId in childrenIds)
+            {
+                var win = System.Windows.Application.Current.Windows.OfType<NonActivatingWindow>()
+                    .FirstOrDefault(w => GetFrameIdFromWindow(w) == childId);
+
+                if (win != null && FrameDataManager.DockingMap.TryGetValue(childId, out List<string> parentIds))
+                {
+                    // Find all currently active window instances for all co-parents of this child
+                    var activeParents = System.Windows.Application.Current.Windows.OfType<NonActivatingWindow>()
+                        .Where(w => parentIds.Contains(GetFrameIdFromWindow(w)))
+                        .ToList();
+
+                    if (activeParents.Count > 0)
+                    {
+                        // The golden geometric rule: Anchor below the lowest unrolled bottom edge among all co-parents
+                        double maxParentBottom = activeParents.Max(p => p.Top + p.Height);
+                        double targetTop = maxParentBottom + 10.0; // Standard 10px snap gap
+
+                        if (Math.Abs(win.Top - targetTop) > 0.5)
+                        {
+                            double actualDeltaY = targetTop - win.Top;
+                            win.Top = targetTop;
+
+                            // Recursively cascade downstream to any frames docked beneath this child
+                            CascadeStack(childId, actualDeltaY);
+                        }
+                    }
+                }
+            }
+        }
+
+
+
+
+        public static string GetFrameIdFromWindow(NonActivatingWindow win)
+        {
+            return win?.Tag?.ToString();
+        }
+
+        // --- AUTO-ROLL GATEKEEPER HELPER (MULTI-PARENT AWARE) ---
+        private static bool IsFrameOrAncestorAutoRolled(string frameId)
+        {
+            if (string.IsNullOrEmpty(frameId)) return false;
+            if (_autoRolledFrames.Contains(frameId)) return true;
+
+            var visited = new HashSet<string>();
+            var queue = new Queue<string>();
+            queue.Enqueue(frameId);
+
+            int safetyCounter = 0;
+            while (queue.Count > 0 && safetyCounter < 100)
+            {
+                string currentId = queue.Dequeue();
+                if (visited.Contains(currentId)) continue;
+                visited.Add(currentId);
+
+                if (_autoRolledFrames.Contains(currentId)) return true;
+
+                if (FrameDataManager.DockingMap.TryGetValue(currentId, out List<string> parentIds))
+                {
+                    foreach (string pId in parentIds)
+                    {
+                        if (!string.IsNullOrEmpty(pId)) queue.Enqueue(pId);
+                    }
+                }
+                safetyCounter++;
+            }
+
+            return false;
+        }
+
+        // --- ACCORDION SNAP FEEDBACK ENGINE ---
+        // Holds a vibrant border pulse for 350ms before smoothly fading out over 650ms (1000ms total)
+        // --- INTERACTIVE SNAP FEEDBACK ENGINE ---
+        private static readonly Dictionary<NonActivatingWindow, System.Windows.Media.Brush> _snapOrigBrushes = new Dictionary<NonActivatingWindow, System.Windows.Media.Brush>();
+        private static readonly Dictionary<NonActivatingWindow, Thickness> _snapOrigThicknesses = new Dictionary<NonActivatingWindow, Thickness>();
+        private static readonly HashSet<NonActivatingWindow> _inSnapPreview = new HashSet<NonActivatingWindow>();
+
+        public static void ShowSnapPreview(NonActivatingWindow win, bool isSnapped)
+        {
+            try
+            {
+                if (win?.Content is not Border border) return;
+
+                if (isSnapped)
+                {
+                    if (!_inSnapPreview.Contains(win))
+                    {
+                        _inSnapPreview.Add(win);
+                        _snapOrigBrushes[win] = border.BorderBrush;
+                        _snapOrigThicknesses[win] = border.BorderThickness;
+
+                        border.BeginAnimation(Border.BorderBrushProperty, null);
+                        border.BorderBrush = new SolidColorBrush(System.Windows.Media.Color.FromRgb(0, 210, 255));
+                        border.BorderThickness = new Thickness(Math.Max(3, _snapOrigThicknesses[win].Top + 2));
+                    }
+                }
+                else if (_inSnapPreview.Contains(win))
+                {
+                    _inSnapPreview.Remove(win);
+                    border.BeginAnimation(Border.BorderBrushProperty, null);
+                    if (_snapOrigBrushes.TryGetValue(win, out System.Windows.Media.Brush origB)) border.BorderBrush = origB;
+                    if (_snapOrigThicknesses.TryGetValue(win, out Thickness origT)) border.BorderThickness = origT;
+                }
+            }
+            catch { }
+        }
+
+        public static void AnimateSnapConfirmation(NonActivatingWindow win)
+        {
+            try
+            {
+                if (win?.Content is not Border border || !_inSnapPreview.Contains(win)) return;
+                _inSnapPreview.Remove(win);
+
+                System.Windows.Media.Brush origBrush = _snapOrigBrushes.ContainsKey(win) ? _snapOrigBrushes[win] : border.BorderBrush;
+                Thickness origThick = _snapOrigThicknesses.ContainsKey(win) ? _snapOrigThicknesses[win] : border.BorderThickness;
+
+                var pulseBrush = new SolidColorBrush(System.Windows.Media.Color.FromRgb(0, 210, 255));
+                border.BorderBrush = pulseBrush;
+                border.BorderThickness = origThick;
+
+                var fadePulse = new System.Windows.Media.Animation.DoubleAnimation
+                {
+                    From = 1.0,
+                    To = 0.0,
+                    Duration = TimeSpan.FromMilliseconds(500),
+                    EasingFunction = new System.Windows.Media.Animation.QuadraticEase { EasingMode = System.Windows.Media.Animation.EasingMode.EaseOut }
+                };
+
+                fadePulse.Completed += (s, e) =>
+                {
+                    pulseBrush.BeginAnimation(System.Windows.Media.Brush.OpacityProperty, null);
+                    border.BorderBrush = origBrush;
+                };
+
+                pulseBrush.BeginAnimation(System.Windows.Media.Brush.OpacityProperty, fadePulse);
+            }
+            catch { }
+        }
         private static void AdjustFramePositionToScreen(NonActivatingWindow win)
         {
             // 1. CONTROL CHECK: 
@@ -956,9 +1154,8 @@ namespace Desktop_Frames
                 win.Left = newLeft;
                 win.Top = newTop;
                 LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.ImportExport, $"Adjusted frame '{win.Title}' position to ({newLeft}, {newTop}) to fit within screen bounds.");
+                FrameDataManager.SaveFrameData();
             }
-            FrameDataManager.SaveFrameData();
-  
         }
 
 
@@ -999,6 +1196,122 @@ namespace Desktop_Frames
         private static int _registryMonitorTickCount = 0;
 
 
+        public static Style GetThemedContextMenuStyle(dynamic frame)
+        {
+            try
+            {
+                // Safely extract the ID without dynamic binding crashes
+                string targetId = null;
+                try
+                {
+                    if (frame is Newtonsoft.Json.Linq.JObject jObj) targetId = jObj["Id"]?.ToString();
+                    else targetId = frame.Id?.ToString();
+                }
+                catch { }
+
+                // Fetch live data safely, avoiding FirstOrDefault cross-contamination
+                dynamic liveFrame = frame;
+                if (!string.IsNullOrEmpty(targetId))
+                {
+                    foreach (dynamic f in FrameDataManager.FrameData)
+                    {
+                        string fId = null;
+                        try { fId = (f is Newtonsoft.Json.Linq.JObject jf) ? jf["Id"]?.ToString() : f.Id?.ToString(); } catch { }
+
+                        if (fId == targetId)
+                        {
+                            liveFrame = f;
+                            break;
+                        }
+                    }
+                }
+
+                // 1. Determine Background Color safely
+                string frameColorName = null;
+                try
+                {
+                    if (liveFrame is Newtonsoft.Json.Linq.JObject jf) frameColorName = jf["CustomColor"]?.ToString();
+                    else frameColorName = liveFrame.CustomColor?.ToString();
+                }
+                catch { }
+
+                if (string.IsNullOrEmpty(frameColorName)) frameColorName = SettingsManager.SelectedColor;
+
+                System.Windows.Media.Color bgColor = System.Windows.Media.Colors.Gray;
+                try
+                {
+                    var drawingColor = Utility.GetColorFromName(frameColorName);
+                    bgColor = System.Windows.Media.Color.FromArgb(255, drawingColor.R, drawingColor.G, drawingColor.B);
+                }
+                catch { }
+
+                // 2. Determine Foreground Color (Luminance check)
+                double luminance = (0.299 * bgColor.R + 0.587 * bgColor.G + 0.114 * bgColor.B) / 255.0;
+                System.Windows.Media.Color fgColor = luminance > 0.5 ? System.Windows.Media.Colors.Black : System.Windows.Media.Colors.White;
+
+                string bgHex = $"#{bgColor.A:X2}{bgColor.R:X2}{bgColor.G:X2}{bgColor.B:X2}";
+                string fgHex = $"#{fgColor.A:X2}{fgColor.R:X2}{fgColor.G:X2}{fgColor.B:X2}";
+
+                // 3. Generate XAML Style using the universal banner
+                string xamlStyle = $@"
+                <Style xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation' 
+                       xmlns:x='http://schemas.microsoft.com/winfx/2006/xaml' 
+                       TargetType='ContextMenu'>
+                    <Style.Resources>
+                        <SolidColorBrush x:Key='{{x:Static SystemColors.MenuBrushKey}}' Color='{bgHex}'/>
+                        <SolidColorBrush x:Key='{{x:Static SystemColors.ControlBrushKey}}' Color='{bgHex}'/>
+                        <SolidColorBrush x:Key='{{x:Static SystemColors.WindowBrushKey}}' Color='{bgHex}'/>
+                        <SolidColorBrush x:Key='{{x:Static SystemColors.MenuTextBrushKey}}' Color='{fgHex}'/>
+                        <SolidColorBrush x:Key='{{x:Static SystemColors.ControlTextBrushKey}}' Color='{fgHex}'/>
+         <Style TargetType='MenuItem'>
+                            <Setter Property='Background' Value='{bgHex}'/>
+                            <Setter Property='Foreground' Value='{fgHex}'/>
+                            <Setter Property='BorderThickness' Value='0'/>
+                            <Setter Property='BorderBrush' Value='Transparent'/>
+                        </Style>
+                    </Style.Resources>
+                    <Setter Property='Background' Value='{bgHex}'/>
+                    <Setter Property='Foreground' Value='{fgHex}'/>
+                    <Setter Property='Template'>
+                        <Setter.Value>
+                            <ControlTemplate TargetType='ContextMenu'>
+                                <Border Background='{{TemplateBinding Background}}' BorderBrush='#555555' BorderThickness='1' Padding='1'>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width='30'/>
+                                            <ColumnDefinition Width='*'/>
+                                        </Grid.ColumnDefinitions>
+                                        
+                                    <Border Grid.Column='0' Background='#151515'>
+                                            <Image Source='pack://application:,,,/Resources/DesktopFramesVertical.png' Stretch='Uniform' VerticalAlignment='Top' Margin='0,5,0,0'/>
+                                        </Border>
+                                        
+                                        <ScrollViewer Grid.Column='1' Margin='2,0,0,0' VerticalScrollBarVisibility='Hidden'>
+                                            <ItemsPresenter KeyboardNavigation.DirectionalNavigation='Cycle'/>
+                                        </ScrollViewer>
+                                    </Grid>
+                                </Border>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Style>";
+
+                return (Style)System.Windows.Markup.XamlReader.Parse(xamlStyle);
+            }
+            catch (Exception ex)
+            {
+                LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI, $"Failed to parse themed ContextMenu style: {ex.Message}");
+                return null;
+            }
+        }
+
+
+
+
+
+
+
+
         // Builds the heart ContextMenu for a frame with consistent items and dynamic state
         // v2.5.4 .183: Swapped Tabs/Delete position for better UX safety
         private static ContextMenu BuildHeartContextMenu(dynamic frame, bool showTabsOption = false)
@@ -1008,6 +1321,9 @@ namespace Desktop_Frames
                 $"Building heart context menu for frame '{frame.Title}'");
 
             var menu = new ContextMenu();
+
+            Style themedStyle = GetThemedContextMenuStyle(frame);
+            if (themedStyle != null) menu.Style = themedStyle;
 
             // --- AUTO-CLOSE TIMER ---
             System.Windows.Threading.DispatcherTimer menuTimer = new System.Windows.Threading.DispatcherTimer
@@ -1068,6 +1384,35 @@ namespace Desktop_Frames
                 CreateNewFrame("", "Note", mousePosition.X, mousePosition.Y);
             };
             menu.Items.Add(newNoteFrameItem);
+
+            // --- NEW: Tiered Dynamic Plugin Menu ---
+            if (SettingsManager.PluginAvailabilityLevel > 0)
+            {
+                var addPluginMenu = new MenuItem { Header = "Add Widget | Plugin" };
+                var availablePlugins = PluginManager.GetAvailablePlugins();
+
+                if (availablePlugins != null && availablePlugins.Count > 0)
+                {
+                    foreach (var plugin in availablePlugins)
+                    {
+                        string pId = plugin.Key;
+                        var pluginItem = new MenuItem { Header = plugin.Value };
+                        pluginItem.Click += (s, e) =>
+                        {
+                            var mousePosition = System.Windows.Forms.Cursor.Position;
+                            CreateNewFrame($"New {plugin.Value}", "Plugin", mousePosition.X, mousePosition.Y, null, null, pId);
+                        };
+                        addPluginMenu.Items.Add(pluginItem);
+                    }
+                }
+                else
+                {
+                    addPluginMenu.Items.Add(new MenuItem { Header = "(No plugins available at your current level)", IsEnabled = false });
+                }
+                menu.Items.Add(addPluginMenu);
+            }
+            // If PluginAvailabilityLevel == 0, the menu option is completely hidden.
+            // --------------------------------
 
             menu.Items.Add(new Separator());
 
@@ -1214,6 +1559,9 @@ namespace Desktop_Frames
                 };
 
                 ContextMenu iconContextMenu = new ContextMenu();
+
+                Style themedStyle = GetThemedContextMenuStyle(frame);
+                if (themedStyle != null) iconContextMenu.Style = themedStyle;
 
                 // --- GROUP 1: MANIPULATION ---
                 MenuItem miEdit = new MenuItem { Header = "Edit..." };
@@ -1398,9 +1746,17 @@ namespace Desktop_Frames
 
                 // --- DYNAMIC UPDATES (On Open) ---
                 MenuItem miSendToDesktop = null;
-       
+
 
                 iconContextMenu.Opened += (s, e) => {
+                    // --- LIVE THEME FIX: Refresh style right before opening ---
+                    try
+                    {
+                        Style liveStyle = GetThemedContextMenuStyle(frame);
+                        if (liveStyle != null) iconContextMenu.Style = liveStyle;
+                    }
+                    catch { }
+
                     // Fetch live item ONCE per open to prevent variable shadowing errors
                     var currentLiveItem = GetLiveItem();
                     bool isAlwaysDiffUser = currentLiveItem != null && Convert.ToBoolean(currentLiveItem["AlwaysRunAsDifferentUser"] ?? false);
@@ -1902,9 +2258,27 @@ namespace Desktop_Frames
             try
             {
                 ContextMenu iconContextMenu = new ContextMenu();
+
+                // Fetch frame dynamically to apply style
+                try
+                {
+                    NonActivatingWindow parentWin = FindVisualParent<NonActivatingWindow>(sp);
+                    if (parentWin != null)
+                    {
+                        string frameId = parentWin.Tag?.ToString();
+                        var frame = GetFrameData().FirstOrDefault(f => f.Id?.ToString() == frameId);
+                        if (frame != null)
+                        {
+                            Style themedStyle = GetThemedContextMenuStyle(frame);
+                            if (themedStyle != null) iconContextMenu.Style = themedStyle;
+                        }
+                    }
+                }
+                catch { }
+
                 MenuItem miRemove = new MenuItem { Header = "Remove" };
 
-        
+
                 miRemove.Click += (sender, e) =>
                 {
                     try
@@ -1999,6 +2373,18 @@ namespace Desktop_Frames
                     try
                     {
                         NonActivatingWindow parentWindow = FindVisualParent<NonActivatingWindow>(sp);
+
+                        // --- LIVE THEME FIX ---
+                        if (parentWindow != null)
+                        {
+                            string frameId = parentWindow.Tag?.ToString();
+                            var liveFrame = GetFrameData().FirstOrDefault(f => f.Id?.ToString() == frameId);
+                            if (liveFrame != null)
+                            {
+                                Style liveStyle = GetThemedContextMenuStyle(liveFrame);
+                                if (liveStyle != null) iconContextMenu.Style = liveStyle;
+                            }
+                        }
                         if (parentWindow != null)
                         {
                             string frameId = parentWindow.Tag?.ToString();
@@ -2257,6 +2643,18 @@ namespace Desktop_Frames
                         bool parsedValue = value?.ToLower() == "true";
                         frameDict[propertyName] = parsedValue.ToString().ToLower(); // Store as "true" or "false"
                     }
+                    else if (propertyName == "FrameBorderThickness")
+                    {
+                        // BUG FIX: Enforce integer serialization to prevent JSON type wiping/fallback
+                        if (int.TryParse(value, out int parsedThickness))
+                        {
+                            frameDict[propertyName] = parsedThickness;
+                        }
+                        else
+                        {
+                            frameDict[propertyName] = 2; // Failsafe
+                        }
+                    }
                     else
                     {
                         // Update other properties as provided
@@ -2357,8 +2755,29 @@ namespace Desktop_Frames
                         {
                             LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.FrameUpdate, $"Set UnrolledHeight to {value} for frame '{actualFrame.Title}'");
                         }
+                        else if (propertyName == "FrameBorderThickness")
+                        {
+                            if (win.Content is Border frameBorder)
+                            {
+                                int thickness = 2;
+                                int.TryParse(value, out thickness);
+                                frameBorder.BorderThickness = new Thickness(thickness);
 
-
+                                if (thickness > 0 && frameBorder.BorderBrush == null)
+                                {
+                                    string borderColorName = actualFrame.FrameBorderColor?.ToString();
+                                    if (!string.IsNullOrEmpty(borderColorName))
+                                        frameBorder.BorderBrush = new SolidColorBrush(Utility.GetColorFromName(borderColorName));
+                                    else
+                                        frameBorder.BorderBrush = new SolidColorBrush(System.Windows.Media.Colors.Gray);
+                                }
+                                else if (thickness == 0)
+                                {
+                                    frameBorder.BorderBrush = null;
+                                }
+                                LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.FrameUpdate, $"Set runtime FrameBorderThickness to {thickness} for frame '{actualFrame.Title}'");
+                            }
+                        }
 
                         // Update context menu checkmarks
                         if (win.ContextMenu != null)
@@ -2711,6 +3130,10 @@ namespace Desktop_Frames
 
                     // Context Menu
                     ContextMenu tabContextMenu = new ContextMenu();
+
+                    Style themedStyle = GetThemedContextMenuStyle(frame);
+                    if (themedStyle != null) tabContextMenu.Style = themedStyle;
+
                     MenuItem miAddTab = new MenuItem { Header = "Add New Tab" };
                     MenuItem miRenameTab = new MenuItem { Header = "Rename Tab" };
                     MenuItem miDeleteTab = new MenuItem { Header = "Delete Tab" };
@@ -2733,6 +3156,14 @@ namespace Desktop_Frames
 
                     tabContextMenu.Opened += (s, e) =>
                     {
+                        // --- LIVE THEME FIX ---
+                        try
+                        {
+                            Style liveStyle = GetThemedContextMenuStyle(frame);
+                            if (liveStyle != null) tabContextMenu.Style = liveStyle;
+                        }
+                        catch { }
+
                         miMoveLeft.IsEnabled = capturedIndex > 0;
                         miMoveRight.IsEnabled = capturedIndex < tabs.Count - 1;
                     };
@@ -3963,6 +4394,10 @@ namespace Desktop_Frames
             FrameDataManager.Initialize();
             SettingsManager.LoadSettings();
 
+
+            // --- NEW: Register internal plugins before loading frames ---
+            PluginManager.Initialize();
+
             // --- ONE-TIME ALTGR KEYBOARD CONFLICT WARNING FOR EXISTING USERS ---
             if (!SettingsManager.AltGrWarningShown && SettingsManager.EnableProfileHotkeys)
             {
@@ -4179,7 +4614,7 @@ namespace Desktop_Frames
                     LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.FrameCreation, $"Removed Portal Frame '{frame.Title}' from FrameDataManager.FrameData");
                 }
                 FrameDataManager.SaveFrameData();
-                LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.FrameCreation, $"Saved updated fences.json after removing {invalidFrames.Count} invalid Portal Frames");
+                LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.FrameCreation, $"Saved updated frames.json after removing {invalidFrames.Count} invalid Portal Frames");
             }
 
             // Clear any stuck transition states from previous session
@@ -4202,6 +4637,9 @@ namespace Desktop_Frames
                 };
                 _transitionCleanupTimer.Start();
             }
+
+            // --- RESTORE PERSISTENT ACCORDION STACK LINKS FROM JSON ---
+            FrameDataManager.RebuildDockingMap();
 
             foreach (dynamic frame in FrameDataManager.FrameData.ToList())
             {
@@ -4315,18 +4753,18 @@ namespace Desktop_Frames
             catch (System.IO.IOException ioEx)
             {
                 LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.FrameCreation,
-                    $"IO error reading fences.json: {ioEx.Message}");
+                    $"IO error reading frames.json: {ioEx.Message}");
             }
             catch (UnauthorizedAccessException accessEx)
             {
                 LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.FrameCreation,
-                    $"Access denied reading fences.json: {accessEx.Message}");
+                    $"Access denied reading frames.json: {accessEx.Message}");
             }
             catch (JsonReaderException jsonEx)
             {
                 // Handle malformed JSON (syntax errors, invalid characters, etc.)
                 LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.FrameCreation,
-                    $"Malformed JSON detected in fences.json: {jsonEx.Message}");
+                    $"Malformed JSON detected in frames.json: {jsonEx.Message}");
 
                 // Optionally, create a backup of the corrupted file
                 CreateCorruptedFileBackup();
@@ -4334,7 +4772,7 @@ namespace Desktop_Frames
             catch (Exception ex)
             {
                 LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.FrameCreation,
-                    $"Unexpected error loading fences.json: {ex.Message}");
+                    $"Unexpected error loading frames.json: {ex.Message}");
             }
 
             return false;
@@ -4780,9 +5218,12 @@ namespace Desktop_Frames
             titleGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(30, GridUnitType.Pixel) }); // Col 3: Lock Icon
                                                                                                                       // End of ctrl+click handler
             ContextMenu CnMnFramemanager = new ContextMenu();
-        
+
+            Style themedStyle = GetThemedContextMenuStyle(frame);
+            if (themedStyle != null) CnMnFramemanager.Style = themedStyle;
+
             MenuItem miNewnoteFrame = new MenuItem { Header = "New Note Frame" };
-        
+
             // --- NEW: Auto Roll Menu Item ---
             MenuItem miAutoRoll = new MenuItem { Header = "Auto roll", IsCheckable = true };
             miAutoRoll.IsChecked = frame.AutoRoll?.ToString().ToLower() == "true";
@@ -4960,7 +5401,7 @@ namespace Desktop_Frames
                 };
             }
 
-            // 2. Open Folder (Portal Only)
+            // 2. Open Folder & Live View Toggle (Portal Only)
             if (frame.ItemsType?.ToString() == "Portal")
             {
                 MenuItem miOpenFolder = new MenuItem { Header = "Open frame folder" };
@@ -4975,6 +5416,59 @@ namespace Desktop_Frames
                     catch { }
                 };
                 CnMnFramemanager.Items.Add(miOpenFolder);
+
+                // --- LIVE VIEW MODE TOGGLE ---
+                MenuItem miViewAsDetails = new MenuItem { Header = "View as Details", IsCheckable = true };
+
+                // --- ULTRA FIX: Re-evaluate checkmark state every single time the menu opens at runtime! ---
+                CnMnFramemanager.Opened += (s, e) =>
+                {
+                    try
+                    {
+                        string fId = frame.Id?.ToString();
+                        bool isDetails = false;
+
+                        // 1. Read live running state directly from the active PortalFramemanager
+                        var activePortalEntry = _portalFrames.FirstOrDefault(kvp => kvp.Key?.Id?.ToString() == fId);
+                        if (activePortalEntry.Value != null)
+                        {
+                            isDetails = activePortalEntry.Value.IsDetailsView;
+                        }
+                        else
+                        {
+                            // 2. Fallback check from JSON if window isn't loaded yet
+                            string currentViewMode = null;
+                            try
+                            {
+                                IDictionary<string, object> viewModeDict = frame is IDictionary<string, object> vmd ? vmd : ((Newtonsoft.Json.Linq.JObject)frame).ToObject<IDictionary<string, object>>();
+                                currentViewMode = viewModeDict.ContainsKey("ViewMode") ? viewModeDict["ViewMode"]?.ToString() : null;
+                            }
+                            catch { }
+                            if (string.IsNullOrEmpty(currentViewMode)) currentViewMode = SettingsManager.DefaultPortalView;
+                            isDetails = string.Equals(currentViewMode, "Details", StringComparison.OrdinalIgnoreCase);
+                        }
+
+                        miViewAsDetails.IsChecked = isDetails;
+                    }
+                    catch { }
+                };
+
+                miViewAsDetails.Click += (s, e) =>
+                {
+                    string newMode = miViewAsDetails.IsChecked ? "Details" : "Icons";
+                    string clickId = frame.Id?.ToString();
+                    var liveFrame = FrameDataManager.FrameData.FirstOrDefault(f => f.Id?.ToString() == clickId) ?? frame;
+
+                    UpdateFrameProperty(liveFrame, "ViewMode", newMode, $"Toggled Portal View Mode to {newMode}");
+
+                    // Trigger instant live switch on the active portal manager without reloading the window
+                    var portalEntry = _portalFrames.FirstOrDefault(kvp => kvp.Key?.Id?.ToString() == clickId);
+                    if (portalEntry.Value != null)
+                    {
+                        portalEntry.Value.SetViewMode(newMode);
+                    }
+                };
+                CnMnFramemanager.Items.Add(miViewAsDetails);
             }
 
             CnMnFramemanager.Items.Add(new Separator());
@@ -4984,12 +5478,29 @@ namespace Desktop_Frames
             miPasteItem.Click += (s, e) => CopyPasteManager.PasteItem(frame);
             CnMnFramemanager.Items.Add(miPasteItem);
 
- 
+
 
 
             //  CnMnFramemanager.Items.Add(new Separator());
 
-            //CnMnFramemanager.Items.Add(miNewCustomize);
+            // --- NEW: Plugin Settings Context Menu ---
+            if (frame.ItemsType?.ToString() == "Plugin")
+            {
+                MenuItem miPluginSettings = new MenuItem { Header = "Plugin Settings..." };
+                miPluginSettings.Click += (s, e) =>
+                {
+                    string fId = frame.Id?.ToString();
+                    if (!string.IsNullOrEmpty(fId) && _activePlugins.TryGetValue(fId, out var plugin))
+                    {
+                        plugin.ShowSettingsWindow(win, frame);
+                    }
+                };
+                CnMnFramemanager.Items.Add(miPluginSettings);
+                CnMnFramemanager.Items.Add(new Separator());
+            }
+            // ---------------------------------------
+
+            // CnMnFramemanager.Items.Add(miNewCustomize);
             MenuItem miCustomize = new MenuItem { Header = "Customize..." };
             miCustomize.Click += (s, e) =>
             {
@@ -5138,6 +5649,15 @@ namespace Desktop_Frames
 
                     return;
                 }
+
+                // --- ACCORDION STACK CASCADE HOOK ---
+                // Triggers on manual grip resizing AND smooth roll-up/roll-down animations
+                if (win.IsLoaded && Math.Abs(e.NewSize.Height - e.PreviousSize.Height) > 0.1)
+                {
+                    double deltaY = e.NewSize.Height - e.PreviousSize.Height;
+                    CascadeStack(frameId, deltaY);
+                }
+                // ------------------------------------
 
                 // Skip updates if this frame is currently in a rollup/rolldown transition
                 // --- NEW: Also skip if it is Auto-Rolled (so we don't save the rolled-up height) ---
@@ -5321,6 +5841,18 @@ namespace Desktop_Frames
                             var scrollNode = dockNode.Children.OfType<ScrollViewer>().FirstOrDefault();
                             if (scrollNode?.Content is WrapPanel wpNode) wpNode.Visibility = Visibility.Collapsed;
                             else if (dockNode.Children.OfType<TextBox>().FirstOrDefault() is TextBox tbNode) tbNode.Visibility = Visibility.Collapsed;
+
+                            // --- NEW: Plugin Pause & Hide ---
+                            if (_activePlugins.TryGetValue(frameIdForTimer, out var plugin))
+                            {
+                                plugin.Pause();
+                                foreach (UIElement child in dockNode.Children)
+                                {
+                                    if (child is FrameworkElement fe && fe.Name == "FrameMenuIcon") continue;
+                                    if (DockPanel.GetDock(child) == Dock.Top) continue;
+                                    child.Visibility = Visibility.Collapsed;
+                                }
+                            }
                         }
                         _framesInTransition.Remove(frameIdForTimer);
                         win.BeginAnimation(Window.HeightProperty, null);
@@ -5384,6 +5916,18 @@ namespace Desktop_Frames
                                 else if (dockNode.Children.OfType<TextBox>().FirstOrDefault() is TextBox tbNode)
                                 {
                                     tbNode.Visibility = Visibility.Visible;
+                                }
+
+                                // --- NEW: Plugin Resume & Show ---
+                                if (_activePlugins.TryGetValue(frameIdForTimer, out var plugin))
+                                {
+                                    foreach (UIElement child in dockNode.Children)
+                                    {
+                                        if (child is FrameworkElement fe && fe.Name == "FrameMenuIcon") continue;
+                                        if (DockPanel.GetDock(child) == Dock.Top) continue;
+                                        child.Visibility = Visibility.Visible;
+                                    }
+                                    plugin.Resume();
                                 }
                             }
                             _framesInTransition.Remove(frameIdForTimer);
@@ -5552,6 +6096,16 @@ namespace Desktop_Frames
 
             CnMnFramemanager.Opened += (contextSender, contextArgs) =>
             {
+                // --- LIVE THEME FIX: Main Frame Context Menu ---
+                try
+                {
+                    string id = frame.Id?.ToString();
+                    var liveFrame = GetFrameData().FirstOrDefault(f => f.Id?.ToString() == id) ?? frame;
+                    Style liveStyle = GetThemedContextMenuStyle(liveFrame);
+                    if (liveStyle != null) CnMnFramemanager.Style = liveStyle;
+                }
+                catch { }
+
                 // A. Update Paste Visibility
                 bool hasCopiedItem = CopyPasteManager.HasCopiedItem();
                 miPasteItem.Visibility = hasCopiedItem ? Visibility.Visible : Visibility.Collapsed;
@@ -6282,6 +6836,18 @@ namespace Desktop_Frames
                                             // DebugLog("UI", frameId, "Set WrapPanel visibility to Collapsed");
                                         }
                                     }
+
+                                    // --- NEW: Plugin Pause & Hide ---
+                                    if (_activePlugins.TryGetValue(frameId, out var plugin))
+                                    {
+                                        plugin.Pause();
+                                        foreach (UIElement child in dockPanel.Children)
+                                        {
+                                            if (child is FrameworkElement fe && fe.Name == "FrameMenuIcon") continue;
+                                            if (DockPanel.GetDock(child) == Dock.Top) continue;
+                                            child.Visibility = Visibility.Collapsed;
+                                        }
+                                    }
                                 }
                             }
                             _framesInTransition.Remove(frameId);
@@ -6339,10 +6905,21 @@ namespace Desktop_Frames
                                             // DebugLog("UI", frameId, "Set WrapPanel visibility to Visible");
                                         }
                                     }
+
+                                    // --- NEW: Plugin Resume & Show ---
+                                    if (_activePlugins.TryGetValue(frameId, out var plugin))
+                                    {
+                                        foreach (UIElement child in dockPanel.Children)
+                                        {
+                                            if (child is FrameworkElement fe && fe.Name == "FrameMenuIcon") continue;
+                                            if (DockPanel.GetDock(child) == Dock.Top) continue;
+                                            child.Visibility = Visibility.Visible;
+                                        }
+                                        plugin.Resume();
+                                    }
                                 }
                             }
                             _framesInTransition.Remove(frameId);
-
                             // FIX: Release animation lock and force real height so SizeChanged updates the JSON properly
                             win.BeginAnimation(Window.HeightProperty, null);
                             win.Height = unrolledHeight;
@@ -6381,7 +6958,15 @@ namespace Desktop_Frames
                         bool isLocked = currentFrame.IsLocked?.ToString().ToLower() == "true";
                         if (!isLocked)
                         {
-                            win.DragMove();
+                            SnapManager.StartDrag(win);
+                            try
+                            {
+                                win.DragMove();
+                            }
+                            finally
+                            {
+                                SnapManager.EndDrag(win);
+                            }
                             LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.FrameCreation, $"Dragging frame '{currentFrame.Title}'");
                         }
                         else
@@ -6551,7 +7136,117 @@ namespace Desktop_Frames
                     return;
                 }
 
+                // --- NEW: Handle Plugin frames ---
+                if (frame.ItemsType?.ToString() == "Plugin")
+                {
+                    LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.FrameCreation, $"Creating Plugin frame content for '{frame.Title}'");
+                    dp.Children.Remove(wpcontscr); // Remove default Icon ScrollViewer
+
+                    string pluginId = frame.PluginId?.ToString();
+                    var pluginInstance = PluginManager.CreatePluginInstance(pluginId);
+
+                    bool isPluginRolled = frame.IsRolled?.ToString().ToLower() == "true";
+
+                    if (pluginInstance != null)
+                    {
+                        var visualElement = pluginInstance.CreateVisualElement();
+                        if (visualElement != null)
+                        {
+                            visualElement.Visibility = isPluginRolled ? Visibility.Collapsed : Visibility.Visible;
+                            dp.Children.Add(visualElement); // Inject plugin UI into frame
+
+                            // --- CLEAN OPACITY FIX: Animate the Window, not the Element ---
+                            // By fading the Window, the image fades to the desktop cleanly
+                            // without the frame's background color bleeding through it.
+                            if (SettingsManager.ApplyTintToIcons)
+                            {
+                              
+
+
+
+                                
+                                double targetOpacity = Math.Max(0.2, SettingsManager.TintValue / 100.0);
+                                win.Opacity = targetOpacity;
+
+                                win.MouseEnter += (s, ev) =>
+                                {
+                                    win.BeginAnimation(Window.OpacityProperty, null);
+                                    win.Opacity = 1.0;
+                                };
+
+                                win.MouseLeave += (s, ev) =>
+                                {
+                                    System.Windows.Media.Animation.DoubleAnimation fadeBack = new System.Windows.Media.Animation.DoubleAnimation
+                                    {
+                                        From = 1.0,
+                                        To = targetOpacity,
+                                        Duration = TimeSpan.FromMilliseconds(300),
+                                        BeginTime = TimeSpan.FromMilliseconds(500)
+                                    };
+                                    win.BeginAnimation(Window.OpacityProperty, fadeBack);
+                                };
+                            }
+                            // --------------------------------------------------------------
+
+                            // Extract settings safely into Dictionary
+                            Dictionary<string, object> pluginSettings = new Dictionary<string, object>();
+                            try
+                            {
+                                if (frame is JObject jFrame && jFrame["PluginSettings"] is JObject settingsObj)
+                                {
+                                    pluginSettings = settingsObj.ToObject<Dictionary<string, object>>();
+                                }
+                                else if (frame.PluginSettings != null)
+                                {
+                                    var settingsDict = frame.PluginSettings as IDictionary<string, object>;
+                                    if (settingsDict != null) pluginSettings = new Dictionary<string, object>(settingsDict);
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.FrameCreation, $"Failed to parse PluginSettings: {ex.Message}");
+                            }
+
+                            // Track active plugin instance and initialize it
+                            string fId = frame.Id?.ToString();
+                            if (!string.IsNullOrEmpty(fId))
+                            {
+                                _activePlugins[fId] = pluginInstance;
+                            }
+
+                            pluginInstance.Initialize(visualElement, pluginSettings);
+                            if (isPluginRolled) pluginInstance.Pause();
+                        }
+                    }
+                    else
+                    {
+                        // Safe fallback UI if plugin is missing/unregistered
+                        TextBlock errorText = new TextBlock
+                        {
+                            Text = $"Plugin '{pluginId}' missing or failed to load.",
+                            Foreground = System.Windows.Media.Brushes.Red,
+                            HorizontalAlignment = HorizontalAlignment.Center,
+                            VerticalAlignment = VerticalAlignment.Center,
+                            TextWrapping = TextWrapping.Wrap
+                        };
+                        errorText.Visibility = isPluginRolled ? Visibility.Collapsed : Visibility.Visible;
+                        dp.Children.Add(errorText);
+                    }
+                    return;
+                }
+                // ---------------------------------
+
                 // 2. Handle Data/Portal frames
+
+
+
+
+
+
+
+
+
+
                 bool isRolled = frame.IsRolled?.ToString().ToLower() == "true";
                 wpcont.Visibility = isRolled ? Visibility.Collapsed : Visibility.Visible;
                 wpcont.Children.Clear();
@@ -6612,25 +7307,36 @@ namespace Desktop_Frames
                                 bool isFolder = iconDict.ContainsKey("IsFolder") && (bool)iconDict["IsFolder"];
                                 bool isLink = iconDict.ContainsKey("IsLink") && (bool)iconDict["IsLink"];
 
+                                // --- FIX: MOVE NETWORK CHECK UP ---
+                                bool isNetwork = iconDict.ContainsKey("IsNetwork") && (bool)iconDict["IsNetwork"];
+                                if (!isNetwork && !string.IsNullOrEmpty(filePath)) isNetwork = IsNetworkPath(filePath);
+
+                                //// --- 2. Extract Arguments ---
+                                //string arguments = null;
+                                //if (System.IO.Path.GetExtension(filePath).ToLower() == ".lnk")
+                                //{
+                                //    // FIX: Do NOT use WshShell on network links during startup to prevent 30-second hangs!
+                                //    if (!isNetwork)
+                                //    {
+                                //        try
+                                //        {
+                                //            WshShell shell = new WshShell();
+                                //            IWshShortcut shortcut = (IWshShortcut)shell.CreateShortcut(filePath);
+                                //            arguments = shortcut.Arguments;
+                                //        }
+                                //        catch { }
+                                //    }
+                                //}
+
                                 // --- 2. Extract Arguments ---
-                                string arguments = null;
-                                if (System.IO.Path.GetExtension(filePath).ToLower() == ".lnk")
-                                {
-                                    try
-                                    {
-                                        WshShell shell = new WshShell();
-                                        IWshShortcut shortcut = (IWshShortcut)shell.CreateShortcut(filePath);
-                                        arguments = shortcut.Arguments;
-                                    }
-                                    catch { }
-                                }
+                                // Completely removed WshShell from main thread to prevent local .lnk files 
+                                // from auto-resolving dead network targets during startup.
+                                string arguments = iconDict.ContainsKey("Arguments") ? (string)iconDict["Arguments"] : null;
 
                                 // --- 3. Attach Click Event ---
                                 ClickEventAdder(sp, filePath, isFolder, arguments);
 
                                 // [TARGET VALIDATION ENGINE - INIT CONTENT]
-                                bool isNetwork = iconDict.ContainsKey("IsNetwork") && (bool)iconDict["IsNetwork"];
-                                if (!isNetwork && !string.IsNullOrEmpty(filePath)) isNetwork = IsNetworkPath(filePath);
                                 bool allowNetworkChecking = _options.CheckNetworkPaths ?? false;
                                 bool isShortcutFile = filePath != null && filePath.EndsWith(".lnk", StringComparison.OrdinalIgnoreCase);
 
@@ -6687,6 +7393,9 @@ namespace Desktop_Frames
                         {
                             if ((Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control)
                             {
+                                // --- STEP 6 FIX: Abort CTRL+Click background sorting completely if in Details/List View ---
+                                if (portalManager.IsDetailsView) return;
+
                                 DependencyObject parent = e.OriginalSource as DependencyObject;
                                 bool isBackground = true;
 
@@ -7122,30 +7831,43 @@ namespace Desktop_Frames
             {
                 win.SizeChanged += UpdateSizeFeedback;
             }
+
+
+
+
+
+
             win.LocationChanged += (s, e) =>
             {
-                // Get current frame reference by ID to avoid stale references
+                // --- THE UNIVERSAL DRAG GATEKEEPER ---
+                // Only save coordinates to JSON if the USER is physically dragging this window with their mouse!
+                // Completely ignores programmatic movement from Auto-Roll, Manual Roll-Up, and CascadeStack.
+                if (SnapManager.ActiveDragWindow != win) return;
+                // -------------------------------------
+
                 string frameId = win.Tag?.ToString();
-                if (string.IsNullOrEmpty(frameId))
-                {
-                    LogManager.Log(LogManager.LogLevel.Warn, LogManager.LogCategory.FrameUpdate, $"Frame Id missing during position change for window '{win.Title}'");
-                    return;
-                }
-                // Find the current frame in FrameDataManager.FrameData using ID
+                if (string.IsNullOrEmpty(frameId)) return;
+
                 var currentFrame = FrameDataManager.FrameData.FirstOrDefault(f => f.Id?.ToString() == frameId);
                 if (currentFrame != null)
                 {
-                    // Update position and save immediately
                     currentFrame.X = win.Left;
                     currentFrame.Y = win.Top;
                     FrameDataManager.SaveFrameData();
                     LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.FrameUpdate, $"Position updated for frame '{currentFrame.Title}' to X={win.Left}, Y={win.Top}");
                 }
-                else
-                {
-                    LogManager.Log(LogManager.LogLevel.Warn, LogManager.LogCategory.FrameUpdate, $"Frame with Id '{frameId}' not found during position change");
-                }
             };
+
+
+
+
+
+
+
+
+
+
+
             InitContent();
             // Add Note frame specific context menu items after content is initialized
             if (frame.ItemsType?.ToString() == "Note")
@@ -7352,233 +8074,38 @@ namespace Desktop_Frames
                 return; // Skip standard extraction
             }
 
-  
 
-
-
-            // --- ICON EXTRACTION LOGIC ---
-            ImageSource shortcutIcon = null;
+            // --- LAZY LOAD PREPARATION ---
             bool isShortcut = System.IO.Path.GetExtension(filePath).ToLower() == ".lnk";
             bool isUrlFile = System.IO.Path.GetExtension(filePath).ToLower() == ".url";
 
-            // Variables to track target state
-            string targetPath = null;
-            bool targetIsUncRoot = false;
-
-            // FIX: Unified Custom Icon Extraction for Links AND Shortcuts
-            // We check for a custom icon FIRST. If one exists, we use it immediately.
-            if (isShortcut || isLink || isUrlFile)
+            // 1. Apply base visual effects immediately so the UI draws fast
+            double targetIconOpacity = 1.0;
+            if (SettingsManager.ApplyTintToIcons)
             {
-                // NEW: Special handling for .url files using manual parser
-                if (isUrlFile || isLink)
-                {
-                    var urlIcon = GetUrlCustomIcon(filePath);
-                    if (urlIcon.Path != null)
-                    {
-                        shortcutIcon = IconManager.ExtractIconFromFile(urlIcon.Path, urlIcon.Index);
-                    }
-                }
-
-                // Existing .lnk logic
-                if (shortcutIcon == null)
-                {
-
-
-                    try
-                    {
-                        WshShell shell = new WshShell();
-                        IWshShortcut shortcut = (IWshShortcut)shell.CreateShortcut(System.IO.Path.GetFullPath(filePath));
-                        targetPath = shortcut.TargetPath;
-
-                        // 1. Try Custom Icon (Properties -> Change Icon)
-                        // Check if IconLocation is valid and NOT ",0" (which implies default)
-                        if (!string.IsNullOrEmpty(shortcut.IconLocation) && shortcut.IconLocation != ",0")
-                        {
-                            string[] iconParts = shortcut.IconLocation.Split(',');
-                            string iconPath = iconParts[0];
-                            int iconIndex = 0;
-                            if (iconParts.Length == 2 && int.TryParse(iconParts[1], out int parsedIndex))
-                                iconIndex = parsedIndex;
-
-                            if (System.IO.File.Exists(iconPath))
-                            {
-                                shortcutIcon = IconManager.ExtractIconFromFile(iconPath, iconIndex);
-                            }
-                        }
-                    }
-
-
-                    catch { }
-                }
-                }
-
-            // 2. Fallback: Determine Icon if no custom icon found
-            if (shortcutIcon == null)
-            {
-                if (isLink || isUrlFile)
-                {
-                    // --- NEW: Smart Protocol Detection ---
-                    string urlTarget = targetPath; // Inherit from .lnk extraction if available
-
-                    if (string.IsNullOrEmpty(urlTarget))
-                    {
-                        try
-                        {
-                            // Extract the actual URL from the .url file
-                            var lines = System.IO.File.ReadAllLines(filePath);
-                            var urlLine = lines.FirstOrDefault(l => l.StartsWith("URL=", StringComparison.OrdinalIgnoreCase));
-                            if (urlLine != null) urlTarget = urlLine.Substring(4).Trim();
-                        }
-                        catch { }
-                    }
-
-                    // If it's a custom app protocol (e.g., spotify:, steam:), let IconManager grab the specific internal icon
-                    if (!string.IsNullOrEmpty(urlTarget) &&
-                        !urlTarget.StartsWith("http://", StringComparison.OrdinalIgnoreCase) &&
-                        !urlTarget.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
-                    {
-                        shortcutIcon = IconManager.GetIconForFile(targetPath, filePath, isFolder, isLink, isShortcut, iconDict);
-                    }
-
-                    // If it's a standard web link, or the custom extraction failed, enforce the unified white theme
-                    if (shortcutIcon == null)
-                    {
-                        shortcutIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/link-White.png")); //check
-                    }
-                }
-                else if (isShortcut)
-                {
-                    try
-                    {
-                        // FIX: Use the robust Unicode-Safe reader (IShellLink)
-                        // This handles tricky paths better than WshShell
-                        if (string.IsNullOrEmpty(targetPath))
-                            targetPath = FilePathUtilities.GetShortcutTargetUnicodeSafe(filePath);
-
-                        // Fallback to WshShell only if utility failed and we haven't tried yet
-                        if (string.IsNullOrEmpty(targetPath))
-                        {
-                            try
-                            {
-                                WshShell shell = new WshShell();
-                                IWshShortcut shortcut = (IWshShortcut)shell.CreateShortcut(System.IO.Path.GetFullPath(filePath));
-                                targetPath = shortcut.TargetPath;
-                            }
-                            catch { }
-                        }
-
-                        // FIX 1: RUNTIME CORRECTION (Server Root)
-                        // If target is \\192.168.1.10, force isFolder=true immediately.
-                        if (IsUncRoot(targetPath))
-                        {
-                            targetIsUncRoot = true;
-                            isFolder = true;   // Force folder treatment!
-                            isNetwork = true;  // Force network flag
-                        }
-                    }
-                    catch { }
-
-                    // A. Standard Checks
-                    bool targetIsFolder = false;
-                    bool targetExists = false;
-
-                    if (!string.IsNullOrEmpty(targetPath))
-                    {
-                        targetIsFolder = System.IO.Directory.Exists(targetPath) || targetIsUncRoot;
-                        targetExists = targetIsFolder || System.IO.File.Exists(targetPath);
-                    }
-
-                    // B. SCRAPING FALLBACK
-                    // If standard checks failed, scan the file content for \\Server pattern
-                    if (!targetExists)
-                    {
-                        if (ScrapeLnkForNetworkRoot(filePath))
-                        {
-                            targetIsFolder = true;
-                            isNetwork = true;      // Network Symbol
-                            isFolder = true;       // Folder Shape
-                            targetIsUncRoot = true; // CRITICAL: Force Validity (No White X)
-                        }
-                    }
-
-                    // C. Icon Selection Logic
-                    if (!isPortal && (isFolder || targetIsFolder))
-                    {
-                        shortcutIcon = null; // Force fall-through to White Theme
-                    }
-                    else if (targetExists)
-                    {
-                        shortcutIcon = Utility.GetShellIcon(targetPath, targetIsFolder);
-                    }
-                    else
-                    {
-                        shortcutIcon = Utility.GetShellIcon(filePath, isFolder);
-                    }
-                }
-                else
-                {
-                    // Standard File/Folder (Not a shortcut/link)
-                    if (!isPortal && isFolder)
-                    {
-                        shortcutIcon = null;
-                    }
-                    else
-                    {
-                        shortcutIcon = Utility.GetShellIcon(filePath, isFolder);
-                    }
-                }
+                targetIconOpacity = Math.Max(0.2, SettingsManager.TintValue / 100.0);
+                ico.Opacity = targetIconOpacity;
             }
 
-            // Final Fallback (The White Theme Logic)
-            if (shortcutIcon == null)
-            {
-                if (isFolder)
-                {
-                    // FIX 2: VALIDATION OVERRIDE
-                    // If it is a UNC Root (either detected via shortcut target or direct path), consider it "Valid"
-                    bool isUncRoot = targetIsUncRoot || IsUncRoot(filePath);
-                    bool valid = isUncRoot || FilePathUtilities.DoesFolderExist(filePath, isFolder);
-
-                    // Double check target if shortcut
-                    if (!valid && isShortcut && !string.IsNullOrEmpty(targetPath))
-                    {
-                        valid = IsUncRoot(targetPath) || System.IO.Directory.Exists(targetPath);
-                    }
-
-                    if (valid)
-                        shortcutIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/folder-White.png"));
-                    else
-                        shortcutIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/folder-WhiteX.png"));
-                }
-                else
-                {
-                    shortcutIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/file-WhiteX.png"));
-                }
-            }
-
-            ico.Source = shortcutIcon;
-
-
-
-
-
-
-
-
-
-
-            // Apply Grayscale
-            if (grayscale && shortcutIcon is BitmapSource bmp)
-            {
-                ico.Source = new FormatConvertedBitmap(bmp, PixelFormats.Gray8, BitmapPalettes.Gray256, 0);
-            }
-            else if (grayscale)
+            if (grayscale)
             {
                 ico.Opacity = 0.6;
                 ico.Effect = new DropShadowEffect { Color = Colors.Gray, BlurRadius = 0, ShadowDepth = 0 };
             }
 
-            // --- STEP 4: Network Overlay ---
+            //// 2. Set an instant placeholder to prevent blank spaces during load
+            //ico.Source = isFolder
+            //    ? new BitmapImage(new Uri("pack://application:,,,/Resources/folder-White.png"))
+            //    : new BitmapImage(new Uri("pack://application:,,,/Resources/link-White.png"));
+
+            // 2. Set an instant placeholder to prevent layout collapsing during load
+            // OPTION A: We use your existing transparent 'empty.png' (or null).
+            // This reserves the physical space for the grid and catches mouse clicks, 
+            // but remains completely invisible until the real icon seamlessly fades in.
+            ico.Source = new BitmapImage(new Uri("pack://application:,,,/Resources/placeholder.png", UriKind.Absolute));
+
+
+            // 3. Assemble Network Overlay
             if (isNetwork)
             {
                 Grid iconGrid = new Grid { Width = iconWidth + 8, Height = iconHeight + 8 };
@@ -7594,7 +8121,6 @@ namespace Desktop_Frames
                     Margin = new Thickness(2, 2, 0, 0),
                     Effect = new DropShadowEffect { Color = Colors.Black, BlurRadius = 2, Opacity = 0.7 }
                 };
-
                 iconGrid.Children.Add(networkIndicator);
                 sp.Children.Add(iconGrid);
             }
@@ -7603,12 +8129,11 @@ namespace Desktop_Frames
                 sp.Children.Add(ico);
             }
 
-            // --- STEP 5: Text Label ---
+            // 4. Assemble Text Label
             string displayName = (!iconDict.ContainsKey("DisplayName") || iconDict["DisplayName"] == null)
                 ? System.IO.Path.GetFileNameWithoutExtension(filePath)
                 : (string)iconDict["DisplayName"];
 
-            // --- BUG FIX: Recover missing names for UNC Roots and Drives ---
             if (string.IsNullOrWhiteSpace(displayName) && !string.IsNullOrWhiteSpace(filePath))
             {
                 displayName = filePath.TrimEnd(System.IO.Path.DirectorySeparatorChar, System.IO.Path.AltDirectorySeparatorChar)
@@ -7617,6 +8142,7 @@ namespace Desktop_Frames
                 if (string.IsNullOrWhiteSpace(displayName)) displayName = "Unknown";
             }
 
+            string originalDisplayName = displayName;
             if (displayName.Length > SettingsManager.MaxDisplayNameLength)
                 displayName = displayName.Substring(0, SettingsManager.MaxDisplayNameLength) + "...";
 
@@ -7633,67 +8159,558 @@ namespace Desktop_Frames
                 TextAlignment = TextAlignment.Center,
                 HorizontalAlignment = HorizontalAlignment.Center,
                 Foreground = textBrush,
-                MaxWidth = 70
+                MaxWidth = 70,
+                Opacity = targetIconOpacity
             };
 
             if (!disableShadow)
-            {
                 lbl.Effect = new DropShadowEffect { Color = Colors.Black, Direction = 315, ShadowDepth = 2, BlurRadius = 3, Opacity = 0.8 };
-            }
 
             sp.Children.Add(lbl);
             sp.Tag = new { FilePath = filePath, IsFolder = isFolder, Arguments = (string)(iconDict.ContainsKey("Arguments") ? iconDict["Arguments"] : null) };
+            sp.ToolTip = new ToolTip { Content = originalDisplayName + "\nLoading target..." };
 
-            // FIX: Show the final target in the tooltip instead of the internal shortcut path
-            string toolTipText = displayName;
-            string resolvedTarget = filePath;
+            wpcont.Children.Add(sp); // ADD TO UI INSTANTLY!
 
-            if (System.IO.Path.GetExtension(filePath).ToLower() == ".lnk")
+            // --- 5. BACKGROUND RESOLVER TASK ---
+            // This offloads the 30-second WshShell and Directory.Exists network hangs!
+            Action backgroundLoader = () =>
             {
-                resolvedTarget = FilePathUtilities.GetShortcutTargetUnicodeSafe(filePath);
-            }
-            else if (System.IO.Path.GetExtension(filePath).ToLower() == ".url")
-            {
-                try
+                ImageSource shortcutIcon = null;
+                string targetPath = null;
+                bool targetIsUncRoot = false;
+
+                // Helper to safely create unfrozen background images for the UI
+                BitmapImage CreateSafeBitmap(string uriPath)
                 {
-                    // Try to extract the true web URL or protocol from the file
-                    string content = System.IO.File.ReadAllText(filePath);
-                    var match = System.Text.RegularExpressions.Regex.Match(content, @"URL=([^\r\n]+)");
-                    if (match.Success) resolvedTarget = match.Groups[1].Value.Trim();
+                    var bmp = new BitmapImage();
+                    bmp.BeginInit();
+                    bmp.UriSource = new Uri(uriPath);
+                    bmp.CacheOption = BitmapCacheOption.OnLoad;
+                    bmp.EndInit();
+                    bmp.Freeze(); // CRITICAL FIX: Allows passing to UI thread
+                    return bmp;
                 }
-                catch { }
-            }
 
-            // Fallback in case extraction fails
-            if (string.IsNullOrEmpty(resolvedTarget)) resolvedTarget = filePath;
+                if (isShortcut || isLink || isUrlFile)
+                {
+                    if (isUrlFile || isLink)
+                    {
+                        var urlIcon = GetUrlCustomIcon(filePath);
+                        if (urlIcon.Path != null) shortcutIcon = IconManager.ExtractIconFromFile(urlIcon.Path, urlIcon.Index);
+                    }
 
-            string displayTarget = resolvedTarget;
+                    if (shortcutIcon == null)
+                    {
+                        try
+                        {
+                            WshShell shell = new WshShell();
+                            IWshShortcut shortcut = (IWshShortcut)shell.CreateShortcut(System.IO.Path.GetFullPath(filePath));
+                            targetPath = shortcut.TargetPath;
 
-            // Clean up MS Store App AUMID targets (e.g. Microsoft.WindowsCalculator_8wekyb3d8bbwe!App)
-            if (!string.IsNullOrEmpty(displayTarget) && displayTarget.Contains("!") && !displayTarget.Contains(":\\"))
+                            if (!string.IsNullOrEmpty(shortcut.IconLocation) && shortcut.IconLocation != ",0")
+                            {
+                                string[] iconParts = shortcut.IconLocation.Split(',');
+                                string iconPath = iconParts[0];
+                                int iconIndex = 0;
+                                if (iconParts.Length == 2 && int.TryParse(iconParts[1], out int parsedIndex)) iconIndex = parsedIndex;
+                                if (System.IO.File.Exists(iconPath)) shortcutIcon = IconManager.ExtractIconFromFile(iconPath, iconIndex);
+                            }
+                        }
+                        catch { }
+                    }
+                }
+
+                if (shortcutIcon == null)
+                {
+                    if (isLink || isUrlFile)
+                    {
+                        string urlTarget = targetPath;
+                        if (string.IsNullOrEmpty(urlTarget))
+                        {
+                            try
+                            {
+                                var lines = System.IO.File.ReadAllLines(filePath);
+                                var urlLine = lines.FirstOrDefault(l => l.StartsWith("URL=", StringComparison.OrdinalIgnoreCase));
+                                if (urlLine != null) urlTarget = urlLine.Substring(4).Trim();
+                            }
+                            catch { }
+                        }
+
+                        if (!string.IsNullOrEmpty(urlTarget) && !urlTarget.StartsWith("http://", StringComparison.OrdinalIgnoreCase) && !urlTarget.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+                        {
+                            shortcutIcon = IconManager.GetIconForFile(targetPath, filePath, isFolder, isLink, isShortcut, iconDict);
+                        }
+
+                        if (shortcutIcon == null) shortcutIcon = CreateSafeBitmap("pack://application:,,,/Resources/link-White.png");
+                    }
+                    else if (isShortcut)
+                    {
+                        try
+                        {
+                            if (string.IsNullOrEmpty(targetPath)) targetPath = FilePathUtilities.GetShortcutTargetUnicodeSafe(filePath);
+                            if (string.IsNullOrEmpty(targetPath))
+                            {
+                                try { WshShell shell = new WshShell(); IWshShortcut shortcut = (IWshShortcut)shell.CreateShortcut(System.IO.Path.GetFullPath(filePath)); targetPath = shortcut.TargetPath; } catch { }
+                            }
+                            if (IsUncRoot(targetPath)) { targetIsUncRoot = true; isFolder = true; isNetwork = true; }
+                        }
+                        catch { }
+
+                        bool targetIsFolder = false;
+                        bool targetExists = false;
+                        if (!string.IsNullOrEmpty(targetPath))
+                        {
+                            targetIsFolder = System.IO.Directory.Exists(targetPath) || targetIsUncRoot;
+                            targetExists = targetIsFolder || System.IO.File.Exists(targetPath);
+                        }
+
+                        if (!targetExists && ScrapeLnkForNetworkRoot(filePath))
+                        {
+                            targetIsFolder = true; isNetwork = true; isFolder = true; targetIsUncRoot = true;
+                        }
+
+                        if (!isPortal && (isFolder || targetIsFolder)) shortcutIcon = null;
+                        else if (targetExists) shortcutIcon = Utility.GetShellIcon(targetPath, targetIsFolder);
+                        else shortcutIcon = Utility.GetShellIcon(filePath, isFolder);
+                    }
+                    else
+                    {
+                        if (!isPortal && isFolder) shortcutIcon = null;
+                        else shortcutIcon = Utility.GetShellIcon(filePath, isFolder);
+                    }
+                }
+
+                if (shortcutIcon == null)
+                {
+                    if (isFolder)
+                    {
+                        bool isUncRoot = targetIsUncRoot || IsUncRoot(filePath);
+                        bool valid = isUncRoot || FilePathUtilities.DoesFolderExist(filePath, isFolder);
+                        if (!valid && isShortcut && !string.IsNullOrEmpty(targetPath)) valid = IsUncRoot(targetPath) || System.IO.Directory.Exists(targetPath);
+                        shortcutIcon = valid ? CreateSafeBitmap("pack://application:,,,/Resources/folder-White.png") : CreateSafeBitmap("pack://application:,,,/Resources/folder-WhiteX.png");
+                    }
+                    else shortcutIcon = CreateSafeBitmap("pack://application:,,,/Resources/file-WhiteX.png");
+                }
+
+                // CRITICAL FIX: Freeze dynamically extracted shell icons as well
+                if (shortcutIcon != null && shortcutIcon.CanFreeze && !shortcutIcon.IsFrozen)
+                {
+                    shortcutIcon.Freeze();
+                }
+
+                // [Tooltip Parsing]
+                string toolTipText = originalDisplayName;
+                string resolvedTarget = filePath;
+
+                if (System.IO.Path.GetExtension(filePath).ToLower() == ".lnk") resolvedTarget = FilePathUtilities.GetShortcutTargetUnicodeSafe(filePath);
+                else if (System.IO.Path.GetExtension(filePath).ToLower() == ".url")
+                {
+                    try { string content = System.IO.File.ReadAllText(filePath); var match = System.Text.RegularExpressions.Regex.Match(content, @"URL=([^\r\n]+)"); if (match.Success) resolvedTarget = match.Groups[1].Value.Trim(); } catch { }
+                }
+                if (string.IsNullOrEmpty(resolvedTarget)) resolvedTarget = filePath;
+
+                string displayTarget = resolvedTarget;
+                if (!string.IsNullOrEmpty(displayTarget) && displayTarget.Contains("!") && !displayTarget.Contains(":\\"))
+                {
+                    string packageId = displayTarget.Split('!')[0]; int hashIndex = packageId.IndexOf('_'); if (hashIndex > 0) packageId = packageId.Substring(0, hashIndex); displayTarget = $"Windows App ({packageId})";
+                }
+                if (resolvedTarget != filePath) toolTipText += $"\nTarget: {displayTarget}"; else toolTipText += $"\nLocation: {displayTarget}";
+
+                // 6. PUSH TO UI
+                System.Windows.Application.Current.Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    if (shortcutIcon != null)
+                    {
+                        if (grayscale && shortcutIcon is BitmapSource bmp)
+                        {
+                            var formatBmp = new FormatConvertedBitmap(bmp, PixelFormats.Gray8, BitmapPalettes.Gray256, 0);
+                            formatBmp.Freeze(); // CRITICAL FIX
+                            ico.Source = formatBmp;
+                        }
+                        else ico.Source = shortcutIcon;
+                    }
+                    sp.ToolTip = new ToolTip { Content = toolTipText };
+                }), System.Windows.Threading.DispatcherPriority.Background);
+            };
+
+
+
+
+
+            // --- SAFE EXECUTION WRAPPER ---
+            Action safeBackgroundExecution = () =>
             {
-                string packageId = displayTarget.Split('!')[0];
-                int hashIndex = packageId.IndexOf('_');
-                if (hashIndex > 0) packageId = packageId.Substring(0, hashIndex);
-                displayTarget = $"Windows App ({packageId})";
-            }
+                try { backgroundLoader(); }
+                catch { /* Catch all unexpected errors so they NEVER crash the app */ }
+            };
 
-            if (resolvedTarget != filePath)
+            if (isNetwork)
             {
-                toolTipText += $"\nTarget: {displayTarget}";
+                // CRITICAL FIX: COM Objects (WshShell) MUST run on an STA thread. Task.Run is MTA!
+                System.Threading.Thread staThread = new System.Threading.Thread(new System.Threading.ThreadStart(safeBackgroundExecution));
+                staThread.SetApartmentState(System.Threading.ApartmentState.STA); // Set to Single Threaded Apartment
+                staThread.IsBackground = true;
+                staThread.Start();
             }
             else
             {
-                toolTipText += $"\nLocation: {displayTarget}";
+                // Local files are fast, run immediately to avoid visual "pop in" delays
+                safeBackgroundExecution();
             }
-
-            sp.ToolTip = new ToolTip { Content = toolTipText };
-            wpcont.Children.Add(sp);
         }
 
 
+        //    // --- ICON EXTRACTION LOGIC ---
+        //    ImageSource shortcutIcon = null;
+        //    bool isShortcut = System.IO.Path.GetExtension(filePath).ToLower() == ".lnk";
+        //    bool isUrlFile = System.IO.Path.GetExtension(filePath).ToLower() == ".url";
 
-        private static void CreateNewFrame(string title, string itemsType, double x = 20, double y = 20, string customColor = null, string customLaunchEffect = null)
+        //    // Variables to track target state
+        //    string targetPath = null;
+        //    bool targetIsUncRoot = false;
+
+        //    // FIX: Unified Custom Icon Extraction for Links AND Shortcuts
+        //    // We check for a custom icon FIRST. If one exists, we use it immediately.
+        //    if (isShortcut || isLink || isUrlFile)
+        //    {
+        //        // NEW: Special handling for .url files using manual parser
+        //        if (isUrlFile || isLink)
+        //        {
+        //            var urlIcon = GetUrlCustomIcon(filePath);
+        //            if (urlIcon.Path != null)
+        //            {
+        //                shortcutIcon = IconManager.ExtractIconFromFile(urlIcon.Path, urlIcon.Index);
+        //            }
+        //        }
+
+        //        // Existing .lnk logic
+        //        if (shortcutIcon == null)
+        //        {
+
+
+        //            try
+        //            {
+        //                WshShell shell = new WshShell();
+        //                IWshShortcut shortcut = (IWshShortcut)shell.CreateShortcut(System.IO.Path.GetFullPath(filePath));
+        //                targetPath = shortcut.TargetPath;
+
+        //                // 1. Try Custom Icon (Properties -> Change Icon)
+        //                // Check if IconLocation is valid and NOT ",0" (which implies default)
+        //                if (!string.IsNullOrEmpty(shortcut.IconLocation) && shortcut.IconLocation != ",0")
+        //                {
+        //                    string[] iconParts = shortcut.IconLocation.Split(',');
+        //                    string iconPath = iconParts[0];
+        //                    int iconIndex = 0;
+        //                    if (iconParts.Length == 2 && int.TryParse(iconParts[1], out int parsedIndex))
+        //                        iconIndex = parsedIndex;
+
+        //                    if (System.IO.File.Exists(iconPath))
+        //                    {
+        //                        shortcutIcon = IconManager.ExtractIconFromFile(iconPath, iconIndex);
+        //                    }
+        //                }
+        //            }
+
+
+        //            catch { }
+        //        }
+        //        }
+
+        //    // 2. Fallback: Determine Icon if no custom icon found
+        //    if (shortcutIcon == null)
+        //    {
+        //        if (isLink || isUrlFile)
+        //        {
+        //            // --- NEW: Smart Protocol Detection ---
+        //            string urlTarget = targetPath; // Inherit from .lnk extraction if available
+
+        //            if (string.IsNullOrEmpty(urlTarget))
+        //            {
+        //                try
+        //                {
+        //                    // Extract the actual URL from the .url file
+        //                    var lines = System.IO.File.ReadAllLines(filePath);
+        //                    var urlLine = lines.FirstOrDefault(l => l.StartsWith("URL=", StringComparison.OrdinalIgnoreCase));
+        //                    if (urlLine != null) urlTarget = urlLine.Substring(4).Trim();
+        //                }
+        //                catch { }
+        //            }
+
+        //            // If it's a custom app protocol (e.g., spotify:, steam:), let IconManager grab the specific internal icon
+        //            if (!string.IsNullOrEmpty(urlTarget) &&
+        //                !urlTarget.StartsWith("http://", StringComparison.OrdinalIgnoreCase) &&
+        //                !urlTarget.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+        //            {
+        //                shortcutIcon = IconManager.GetIconForFile(targetPath, filePath, isFolder, isLink, isShortcut, iconDict);
+        //            }
+
+        //            // If it's a standard web link, or the custom extraction failed, enforce the unified white theme
+        //            if (shortcutIcon == null)
+        //            {
+        //                shortcutIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/link-White.png")); //check
+        //            }
+        //        }
+        //        else if (isShortcut)
+        //        {
+        //            try
+        //            {
+        //                // FIX: Use the robust Unicode-Safe reader (IShellLink)
+        //                // This handles tricky paths better than WshShell
+        //                if (string.IsNullOrEmpty(targetPath))
+        //                    targetPath = FilePathUtilities.GetShortcutTargetUnicodeSafe(filePath);
+
+        //                // Fallback to WshShell only if utility failed and we haven't tried yet
+        //                if (string.IsNullOrEmpty(targetPath))
+        //                {
+        //                    try
+        //                    {
+        //                        WshShell shell = new WshShell();
+        //                        IWshShortcut shortcut = (IWshShortcut)shell.CreateShortcut(System.IO.Path.GetFullPath(filePath));
+        //                        targetPath = shortcut.TargetPath;
+        //                    }
+        //                    catch { }
+        //                }
+
+        //                // FIX 1: RUNTIME CORRECTION (Server Root)
+        //                // If target is \\192.168.1.10, force isFolder=true immediately.
+        //                if (IsUncRoot(targetPath))
+        //                {
+        //                    targetIsUncRoot = true;
+        //                    isFolder = true;   // Force folder treatment!
+        //                    isNetwork = true;  // Force network flag
+        //                }
+        //            }
+        //            catch { }
+
+        //            // A. Standard Checks
+        //            bool targetIsFolder = false;
+        //            bool targetExists = false;
+
+        //            if (!string.IsNullOrEmpty(targetPath))
+        //            {
+        //                targetIsFolder = System.IO.Directory.Exists(targetPath) || targetIsUncRoot;
+        //                targetExists = targetIsFolder || System.IO.File.Exists(targetPath);
+        //            }
+
+        //            // B. SCRAPING FALLBACK
+        //            // If standard checks failed, scan the file content for \\Server pattern
+        //            if (!targetExists)
+        //            {
+        //                if (ScrapeLnkForNetworkRoot(filePath))
+        //                {
+        //                    targetIsFolder = true;
+        //                    isNetwork = true;      // Network Symbol
+        //                    isFolder = true;       // Folder Shape
+        //                    targetIsUncRoot = true; // CRITICAL: Force Validity (No White X)
+        //                }
+        //            }
+
+        //            // C. Icon Selection Logic
+        //            if (!isPortal && (isFolder || targetIsFolder))
+        //            {
+        //                shortcutIcon = null; // Force fall-through to White Theme
+        //            }
+        //            else if (targetExists)
+        //            {
+        //                shortcutIcon = Utility.GetShellIcon(targetPath, targetIsFolder);
+        //            }
+        //            else
+        //            {
+        //                shortcutIcon = Utility.GetShellIcon(filePath, isFolder);
+        //            }
+        //        }
+        //        else
+        //        {
+        //            // Standard File/Folder (Not a shortcut/link)
+        //            if (!isPortal && isFolder)
+        //            {
+        //                shortcutIcon = null;
+        //            }
+        //            else
+        //            {
+        //                shortcutIcon = Utility.GetShellIcon(filePath, isFolder);
+        //            }
+        //        }
+        //    }
+
+        //    // Final Fallback (The White Theme Logic)
+        //    if (shortcutIcon == null)
+        //    {
+        //        if (isFolder)
+        //        {
+        //            // FIX 2: VALIDATION OVERRIDE
+        //            // If it is a UNC Root (either detected via shortcut target or direct path), consider it "Valid"
+        //            bool isUncRoot = targetIsUncRoot || IsUncRoot(filePath);
+        //            bool valid = isUncRoot || FilePathUtilities.DoesFolderExist(filePath, isFolder);
+
+        //            // Double check target if shortcut
+        //            if (!valid && isShortcut && !string.IsNullOrEmpty(targetPath))
+        //            {
+        //                valid = IsUncRoot(targetPath) || System.IO.Directory.Exists(targetPath);
+        //            }
+
+        //            if (valid)
+        //                shortcutIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/folder-White.png"));
+        //            else
+        //                shortcutIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/folder-WhiteX.png"));
+        //        }
+        //        else
+        //        {
+        //            shortcutIcon = new BitmapImage(new Uri("pack://application:,,,/Resources/file-WhiteX.png"));
+        //        }
+        //    }
+
+        //    ico.Source = shortcutIcon;
+
+
+
+
+
+
+
+
+
+
+        //    // Apply Grayscale
+        //    if (grayscale && shortcutIcon is BitmapSource bmp)
+        //    {
+        //        ico.Source = new FormatConvertedBitmap(bmp, PixelFormats.Gray8, BitmapPalettes.Gray256, 0);
+        //    }
+        //    else if (grayscale)
+        //    {
+        //        ico.Opacity = 0.6;
+        //        ico.Effect = new DropShadowEffect { Color = Colors.Gray, BlurRadius = 0, ShadowDepth = 0 };
+        //    }
+
+        //    // --- NEW: Apply Icon Tint ---
+        //    double targetIconOpacity = 1.0;
+        //    if (SettingsManager.ApplyTintToIcons)
+        //    {
+        //        // Convert TintValue (0-100) to Opacity (0.0-1.0)
+        //        // We use a slight offset because 0% tint would make icons invisible.
+        //        // A minimum of 20% opacity ensures they remain clickable.
+        //        targetIconOpacity = Math.Max(0.2, SettingsManager.TintValue / 100.0);
+        //        ico.Opacity = targetIconOpacity;
+        //    }
+
+        //    // --- STEP 4: Network Overlay ---
+        //    if (isNetwork)
+        //    {
+        //        Grid iconGrid = new Grid { Width = iconWidth + 8, Height = iconHeight + 8 };
+        //        iconGrid.Children.Add(ico);
+
+        //        TextBlock networkIndicator = new TextBlock
+        //        {
+        //            Text = "🔗",
+        //            FontSize = 14,
+        //            Foreground = new SolidColorBrush(System.Windows.Media.Color.FromRgb(65, 135, 225)),
+        //            HorizontalAlignment = HorizontalAlignment.Left,
+        //            VerticalAlignment = VerticalAlignment.Top,
+        //            Margin = new Thickness(2, 2, 0, 0),
+        //            Effect = new DropShadowEffect { Color = Colors.Black, BlurRadius = 2, Opacity = 0.7 }
+        //        };
+
+        //        iconGrid.Children.Add(networkIndicator);
+        //        sp.Children.Add(iconGrid);
+        //    }
+        //    else
+        //    {
+        //        sp.Children.Add(ico);
+        //    }
+
+        //    // --- STEP 5: Text Label ---
+        //    string displayName = (!iconDict.ContainsKey("DisplayName") || iconDict["DisplayName"] == null)
+        //        ? System.IO.Path.GetFileNameWithoutExtension(filePath)
+        //        : (string)iconDict["DisplayName"];
+
+        //    // --- BUG FIX: Recover missing names for UNC Roots and Drives ---
+        //    if (string.IsNullOrWhiteSpace(displayName) && !string.IsNullOrWhiteSpace(filePath))
+        //    {
+        //        displayName = filePath.TrimEnd(System.IO.Path.DirectorySeparatorChar, System.IO.Path.AltDirectorySeparatorChar)
+        //                              .Split(System.IO.Path.DirectorySeparatorChar, System.IO.Path.AltDirectorySeparatorChar)
+        //                              .LastOrDefault();
+        //        if (string.IsNullOrWhiteSpace(displayName)) displayName = "Unknown";
+        //    }
+
+        //    if (displayName.Length > SettingsManager.MaxDisplayNameLength)
+        //        displayName = displayName.Substring(0, SettingsManager.MaxDisplayNameLength) + "...";
+
+        //    System.Windows.Media.Brush textBrush = System.Windows.Media.Brushes.White;
+        //    if (!string.IsNullOrEmpty(textColorName))
+        //    {
+        //        try { textBrush = new SolidColorBrush(Utility.GetColorFromName(textColorName)); } catch { }
+        //    }
+
+        //    TextBlock lbl = new TextBlock
+        //    {
+        //        Text = displayName,
+        //        TextWrapping = TextWrapping.Wrap,
+        //        TextAlignment = TextAlignment.Center,
+        //        HorizontalAlignment = HorizontalAlignment.Center,
+        //        Foreground = textBrush,
+        //        MaxWidth = 70,
+        //        Opacity = SettingsManager.ApplyTintToIcons ? Math.Max(0.2, SettingsManager.TintValue / 100.0) : 1.0
+        //    };
+
+        //    if (!disableShadow)
+        //    {
+        //        lbl.Effect = new DropShadowEffect { Color = Colors.Black, Direction = 315, ShadowDepth = 2, BlurRadius = 3, Opacity = 0.8 };
+        //    }
+
+        //    sp.Children.Add(lbl);
+        //    sp.Tag = new { FilePath = filePath, IsFolder = isFolder, Arguments = (string)(iconDict.ContainsKey("Arguments") ? iconDict["Arguments"] : null) };
+
+        //    // FIX: Show the final target in the tooltip instead of the internal shortcut path
+        //    string toolTipText = displayName;
+        //    string resolvedTarget = filePath;
+
+        //    if (System.IO.Path.GetExtension(filePath).ToLower() == ".lnk")
+        //    {
+        //        resolvedTarget = FilePathUtilities.GetShortcutTargetUnicodeSafe(filePath);
+        //    }
+        //    else if (System.IO.Path.GetExtension(filePath).ToLower() == ".url")
+        //    {
+        //        try
+        //        {
+        //            // Try to extract the true web URL or protocol from the file
+        //            string content = System.IO.File.ReadAllText(filePath);
+        //            var match = System.Text.RegularExpressions.Regex.Match(content, @"URL=([^\r\n]+)");
+        //            if (match.Success) resolvedTarget = match.Groups[1].Value.Trim();
+        //        }
+        //        catch { }
+        //    }
+
+        //    // Fallback in case extraction fails
+        //    if (string.IsNullOrEmpty(resolvedTarget)) resolvedTarget = filePath;
+
+        //    string displayTarget = resolvedTarget;
+
+        //    // Clean up MS Store App AUMID targets (e.g. Microsoft.WindowsCalculator_8wekyb3d8bbwe!App)
+        //    if (!string.IsNullOrEmpty(displayTarget) && displayTarget.Contains("!") && !displayTarget.Contains(":\\"))
+        //    {
+        //        string packageId = displayTarget.Split('!')[0];
+        //        int hashIndex = packageId.IndexOf('_');
+        //        if (hashIndex > 0) packageId = packageId.Substring(0, hashIndex);
+        //        displayTarget = $"Windows App ({packageId})";
+        //    }
+
+        //    if (resolvedTarget != filePath)
+        //    {
+        //        toolTipText += $"\nTarget: {displayTarget}";
+        //    }
+        //    else
+        //    {
+        //        toolTipText += $"\nLocation: {displayTarget}";
+        //    }
+
+        //    sp.ToolTip = new ToolTip { Content = toolTipText };
+        //    wpcont.Children.Add(sp);
+        //}
+
+
+
+        private static void CreateNewFrame(string title, string itemsType, double x = 20, double y = 20, string customColor = null, string customLaunchEffect = null, string pluginId = null)
         {
             // Generate random name instead of using the passed title
             string frameName = CoreUtilities.GenerateRandomName();
@@ -7717,9 +8734,20 @@ namespace Desktop_Frames
             newframeDict["Width"] = 230;
             newframeDict["Height"] = 130;
             newframeDict["ItemsType"] = itemsType;
-            newframeDict["Items"] = itemsType == "Portal" ? "" : new JArray();
+
+            // --- NEW: Plugin Configuration ---
+            if (itemsType == "Plugin")
+            {
+                newframeDict["PluginId"] = pluginId;
+                newframeDict["PluginSettings"] = new JObject();
+                newframeDict["Items"] = new JArray(); // Safe default
+            }
+            else
+            {
+                newframeDict["Items"] = itemsType == "Portal" ? "" : new JArray();
+            }
+
             newframeDict["CustomColor"] = customColor; // Use passed value
-            newframeDict["CustomLaunchEffect"] = customLaunchEffect; // Use passed value
             newframeDict["IsHidden"] = false; // Use passed value
             newframeDict["IsLocked"] = false; // Init ISLocked
 
@@ -8693,19 +9721,14 @@ namespace Desktop_Frames
         }
 
 
-
         public static void ClickEventAdder(StackPanel sp, string path, bool isFolder, string arguments = null)
         {
             // Store only path, isFolder, and arguments in Tag
             sp.Tag = new { FilePath = path, IsFolder = isFolder, Arguments = arguments };
 
-            // Check if path is a shortcut and correct isFolder for folder shortcuts
+            // --- HANG FIX 1 (Startup): Removed synchronous Utility.GetShortcutTarget(path) from here. ---
+            // The folder double-check is deferred until the exact moment of clicking to prevent startup freezing.
             bool isShortcut = System.IO.Path.GetExtension(path).ToLower() == ".lnk";
-            string targetPath = isShortcut ? Utility.GetShortcutTarget(path) : path;
-            if (isShortcut && System.IO.Directory.Exists(targetPath))
-            {
-                isFolder = true;
-            }
 
             // --- NAMED LOCAL FUNCTIONS FOR EVENTS ---
             void MouseDownHandler(object sender, MouseButtonEventArgs e)
@@ -8736,7 +9759,14 @@ namespace Desktop_Frames
 
                     if (frame != null && frame.ItemsType?.ToString() == "Portal")
                     {
-                        if (isFolder)
+                        // Safe resolution for Portal frames
+                        bool isPortalFolder = isFolder;
+                        if (!isPortalFolder && isShortcut)
+                        {
+                            try { isPortalFolder = System.IO.Directory.Exists(Utility.GetShortcutTarget(path)); } catch { }
+                        }
+
+                        if (isPortalFolder)
                         {
                             NavigatePortalFrame(frame, path);
                             e.Handled = true;
@@ -8757,61 +9787,96 @@ namespace Desktop_Frames
 
                 bool singleClickToLaunch = SettingsManager.SingleClickToLaunch;
 
-                try
+                if ((singleClickToLaunch && e.ClickCount == 1) || (!singleClickToLaunch && e.ClickCount == 2))
                 {
-                    bool isShortcutLocal = System.IO.Path.GetExtension(path).ToLower() == ".lnk";
-                    bool targetExists;
-                    string resolvedPath = path;
+                    e.Handled = true; // Mark handled immediately so the UI thread is freed
 
-                    if (isShortcutLocal)
+                    // --- HANG FIX 2 (Click): Move network resolution to an STA Background Thread ---
+                    System.Threading.Thread launchThread = new System.Threading.Thread(() =>
                     {
-                        resolvedPath = FilePathUtilities.GetShortcutTargetUnicodeSafe(path);
-                        if (string.IsNullOrEmpty(resolvedPath))
+                        try
                         {
-                            targetExists = false;
-                        }
-                        else
-                        {
-                            targetExists = isFolder ? System.IO.Directory.Exists(resolvedPath) : System.IO.File.Exists(resolvedPath);
-                            if (!isFolder && System.IO.Directory.Exists(resolvedPath))
+                            bool isShortcutLocal = System.IO.Path.GetExtension(path).ToLower() == ".lnk";
+                            bool targetExists;
+                            string resolvedPath = path;
+                            bool dynamicIsFolder = isFolder;
+
+                            if (isShortcutLocal)
                             {
-                                isFolder = true;
-                                targetExists = true;
+                                resolvedPath = FilePathUtilities.GetShortcutTargetUnicodeSafe(path);
+                                if (string.IsNullOrEmpty(resolvedPath))
+                                {
+                                    targetExists = false;
+                                }
+                                else
+                                {
+                                    targetExists = dynamicIsFolder ? System.IO.Directory.Exists(resolvedPath) : System.IO.File.Exists(resolvedPath);
+                                    if (!dynamicIsFolder && System.IO.Directory.Exists(resolvedPath))
+                                    {
+                                        dynamicIsFolder = true;
+                                        targetExists = true;
+                                    }
+                                }
                             }
-                        }
-                    }
-                    else
-                    {
-                        targetExists = isFolder ? System.IO.Directory.Exists(path) : System.IO.File.Exists(path);
-                    }
-
-                    bool isStoreApp = false;
-                    string scrapedPath = null;
-
-                    if (!targetExists && isShortcutLocal)
-                    {
-                        isStoreApp = Utility.IsStoreAppShortcut(path);
-                        if (!isStoreApp)
-                        {
-                            scrapedPath = GetScrapedNetworkPath(path);
-                            if (!string.IsNullOrEmpty(scrapedPath))
+                            else
                             {
-                                targetExists = true;
+                                targetExists = dynamicIsFolder ? System.IO.Directory.Exists(path) : System.IO.File.Exists(path);
                             }
+
+                            bool isStoreApp = false;
+                            string scrapedPath = null;
+
+                            if (!targetExists && isShortcutLocal)
+                            {
+                                isStoreApp = Utility.IsStoreAppShortcut(path);
+                                if (!isStoreApp)
+                                {
+                                    try { scrapedPath = GetScrapedNetworkPath(path); } catch { }
+                                    if (!string.IsNullOrEmpty(scrapedPath))
+                                    {
+                                        targetExists = true;
+                                    }
+                                }
+                            }
+
+
+                            if (!targetExists && !isStoreApp) return;
+                            // NEEDS TO BE TESTED AND VERIFIED
+                            // Safely send the launch command back to the main UI thread once resolved
+                            System.Windows.Application.Current.Dispatcher.BeginInvoke(new Action(() =>
+                            {
+                                // --- THE SMART WORKAROUND: SELF-HEALING UI ---
+                                // If the user clicks a dead icon and it successfully resolves, 
+                                // we force the UI to instantly refresh the icon image to the "Alive" state!
+                                try { UpdateIcon(sp, path, dynamicIsFolder, resolvedPath); } catch { }
+
+                                LaunchItem(sp, path, dynamicIsFolder, arguments);
+                            }));
                         }
-                    }
+                        catch (Exception ex)
+                        {
+                            // FOR SAFETY REASONS WE KEEP IN COMMENT PREVIOUS APPROACH 
 
-                    if (!targetExists && !isStoreApp) return;
+                            //    if (!targetExists && !isStoreApp) return;
 
-                    if ((singleClickToLaunch && e.ClickCount == 1) || (!singleClickToLaunch && e.ClickCount == 2))
-                    {
-                        LaunchItem(sp, path, isFolder, arguments);
-                        e.Handled = true;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.General, $"Error checking target existence: {ex.Message}");
+                            //    // Safely send the launch command back to the main UI thread once resolved
+                            //    System.Windows.Application.Current.Dispatcher.BeginInvoke(new Action(() =>
+                            //    {
+                            //        LaunchItem(sp, path, dynamicIsFolder, arguments);
+                            //    }));
+                            //}
+                            //catch (Exception ex)
+                            //{
+                         
+                            
+                            
+                            LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.General, $"Error checking target existence: {ex.Message}");
+                        }
+                    });
+
+                    launchThread.SetApartmentState(System.Threading.ApartmentState.STA);
+                    launchThread.IsBackground = true;
+                    launchThread.Start();
                 }
             }
 
@@ -8873,6 +9938,185 @@ namespace Desktop_Frames
             sp.MouseLeftButtonUp += MouseUpHandler;
             sp.KeyUp += KeyUpHandler;
         }
+        //public static void ClickEventAdder(StackPanel sp, string path, bool isFolder, string arguments = null)
+        //{
+        //    // Store only path, isFolder, and arguments in Tag
+        //    sp.Tag = new { FilePath = path, IsFolder = isFolder, Arguments = arguments };
+
+        //    // Check if path is a shortcut and correct isFolder for folder shortcuts
+        //    bool isShortcut = System.IO.Path.GetExtension(path).ToLower() == ".lnk";
+        //    string targetPath = isShortcut ? Utility.GetShortcutTarget(path) : path;
+        //    if (isShortcut && System.IO.Directory.Exists(targetPath))
+        //    {
+        //        isFolder = true;
+        //    }
+
+        //    // --- NAMED LOCAL FUNCTIONS FOR EVENTS ---
+        //    void MouseDownHandler(object sender, MouseButtonEventArgs e)
+        //    {
+        //        if (e.ChangedButton != MouseButton.Left) return;
+
+        //        // Runtime Correction for Extension Mismatch
+        //        if (!System.IO.File.Exists(path) && !System.IO.Directory.Exists(path))
+        //        {
+        //            if (path.EndsWith(".lnk", StringComparison.OrdinalIgnoreCase))
+        //            {
+        //                string potentialUrlPath = System.IO.Path.ChangeExtension(path, ".url");
+        //                if (System.IO.File.Exists(potentialUrlPath))
+        //                {
+        //                    path = potentialUrlPath;
+        //                }
+        //            }
+        //        }
+
+        //        // CTRL + CLICK LOGIC
+        //        if (Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl))
+        //        {
+        //            NonActivatingWindow win = FindVisualParent<NonActivatingWindow>(sp);
+        //            string frameId = win?.Tag?.ToString();
+        //            dynamic frame = null;
+        //            if (!string.IsNullOrEmpty(frameId))
+        //                frame = FrameDataManager.FrameData.FirstOrDefault(f => f.Id?.ToString() == frameId);
+
+        //            if (frame != null && frame.ItemsType?.ToString() == "Portal")
+        //            {
+        //                if (isFolder)
+        //                {
+        //                    NavigatePortalFrame(frame, path);
+        //                    e.Handled = true;
+        //                    return;
+        //                }
+        //                else
+        //                {
+        //                    e.Handled = true;
+        //                    return;
+        //                }
+        //            }
+
+        //            System.Windows.Point mousePosition = e.GetPosition(sp);
+        //            IconDragDropManager.StartIconDrag(sp, mousePosition);
+        //            e.Handled = true;
+        //            return;
+        //        }
+
+        //        bool singleClickToLaunch = SettingsManager.SingleClickToLaunch;
+
+        //        try
+        //        {
+        //            bool isShortcutLocal = System.IO.Path.GetExtension(path).ToLower() == ".lnk";
+        //            bool targetExists;
+        //            string resolvedPath = path;
+
+        //            if (isShortcutLocal)
+        //            {
+        //                resolvedPath = FilePathUtilities.GetShortcutTargetUnicodeSafe(path);
+        //                if (string.IsNullOrEmpty(resolvedPath))
+        //                {
+        //                    targetExists = false;
+        //                }
+        //                else
+        //                {
+        //                    targetExists = isFolder ? System.IO.Directory.Exists(resolvedPath) : System.IO.File.Exists(resolvedPath);
+        //                    if (!isFolder && System.IO.Directory.Exists(resolvedPath))
+        //                    {
+        //                        isFolder = true;
+        //                        targetExists = true;
+        //                    }
+        //                }
+        //            }
+        //            else
+        //            {
+        //                targetExists = isFolder ? System.IO.Directory.Exists(path) : System.IO.File.Exists(path);
+        //            }
+
+        //            bool isStoreApp = false;
+        //            string scrapedPath = null;
+
+        //            if (!targetExists && isShortcutLocal)
+        //            {
+        //                isStoreApp = Utility.IsStoreAppShortcut(path);
+        //                if (!isStoreApp)
+        //                {
+        //                    scrapedPath = GetScrapedNetworkPath(path);
+        //                    if (!string.IsNullOrEmpty(scrapedPath))
+        //                    {
+        //                        targetExists = true;
+        //                    }
+        //                }
+        //            }
+
+        //            if (!targetExists && !isStoreApp) return;
+
+        //            if ((singleClickToLaunch && e.ClickCount == 1) || (!singleClickToLaunch && e.ClickCount == 2))
+        //            {
+        //                LaunchItem(sp, path, isFolder, arguments);
+        //                e.Handled = true;
+        //            }
+        //        }
+        //        catch (Exception ex)
+        //        {
+        //            LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.General, $"Error checking target existence: {ex.Message}");
+        //        }
+        //    }
+
+        //    void MouseMoveHandler(object sender, MouseEventArgs e)
+        //    {
+        //        if (IconDragDropManager.IsDragging)
+        //        {
+        //            try
+        //            {
+        //                System.Windows.Point screenPosition = sp.PointToScreen(e.GetPosition(sp));
+        //                IconDragDropManager.HandleDragMove(screenPosition);
+        //            }
+        //            catch { }
+        //        }
+        //    }
+
+        //    void MouseUpHandler(object sender, MouseButtonEventArgs e)
+        //    {
+        //        if (IconDragDropManager.IsDragging)
+        //        {
+        //            try
+        //            {
+        //                WrapPanel wrapPanel = FindVisualParent<WrapPanel>(sp);
+        //                if (wrapPanel != null)
+        //                {
+        //                    System.Windows.Point finalPosition = e.GetPosition(wrapPanel);
+        //                    IconDragDropManager.CompleteDrag(finalPosition);
+        //                }
+        //                else IconDragDropManager.CancelDrag();
+        //                e.Handled = true;
+        //            }
+        //            catch
+        //            {
+        //                IconDragDropManager.CancelDrag();
+        //            }
+        //        }
+        //    }
+
+        //    void KeyUpHandler(object sender, KeyEventArgs e)
+        //    {
+        //        if (IconDragDropManager.IsDragging &&
+        //            (e.Key == Key.LeftCtrl || e.Key == Key.RightCtrl) &&
+        //            !Keyboard.IsKeyDown(Key.LeftCtrl) && !Keyboard.IsKeyDown(Key.RightCtrl))
+        //        {
+        //            IconDragDropManager.CancelDrag();
+        //            e.Handled = true;
+        //        }
+        //    }
+
+        //    // --- SAFELY REMOVE PREVIOUS HANDLERS (WPF APPROACH) ---
+        //    sp.RemoveHandler(UIElement.MouseLeftButtonDownEvent, new MouseButtonEventHandler(MouseDownHandler));
+        //    sp.RemoveHandler(UIElement.MouseMoveEvent, new MouseEventHandler(MouseMoveHandler));
+        //    sp.RemoveHandler(UIElement.MouseLeftButtonUpEvent, new MouseButtonEventHandler(MouseUpHandler));
+        //    sp.RemoveHandler(UIElement.KeyUpEvent, new KeyEventHandler(KeyUpHandler));
+
+        //    // --- ATTACH FRESH HANDLERS ---
+        //    sp.MouseLeftButtonDown += MouseDownHandler;
+        //    sp.MouseMove += MouseMoveHandler;
+        //    sp.MouseLeftButtonUp += MouseUpHandler;
+        //    sp.KeyUp += KeyUpHandler;
+        //}
 
 
 
@@ -9094,7 +10338,7 @@ namespace Desktop_Frames
         }
 
 
-        private static void LaunchItem(StackPanel sp, string path, bool isFolder, string arguments)
+        public static void LaunchItem(StackPanel sp, string path, bool isFolder, string arguments = null)
         {
             try
             {
@@ -9397,6 +10641,7 @@ namespace Desktop_Frames
         }
 
         // Helper method for network path detection
+        // Helper method for network path detection
         public static bool IsNetworkPath(string filePath)
         {
             try
@@ -9405,17 +10650,18 @@ namespace Desktop_Frames
 
                 if (isShortcut)
                 {
-                    // For shortcuts, check the target path
+                    // --- HANG FIX: Bypassed Utility.GetShortcutTarget(filePath) ---
+                    // We use a fast binary scan to detect UNC paths without triggering Windows Network timeouts.
                     if (System.IO.File.Exists(filePath))
                     {
-                        string targetPath = Utility.GetShortcutTarget(filePath);
-                        if (!string.IsNullOrEmpty(targetPath))
-                        {
-                            // Check if target is UNC path
-                            bool isUncPath = targetPath.StartsWith("\\\\");
-                            LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.IconHandling, $"Shortcut {filePath} targets {targetPath}, IsUNC: {isUncPath}");
-                            return isUncPath;
-                        }
+                        byte[] fileContent = System.IO.File.ReadAllBytes(filePath);
+                        string asciiContent = System.Text.Encoding.ASCII.GetString(fileContent);
+                        string unicodeContent = System.Text.Encoding.Unicode.GetString(fileContent);
+
+                        bool isUncPath = asciiContent.Contains("\\\\") || unicodeContent.Contains("\\\\");
+
+                        LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.IconHandling, $"Shortcut {filePath} binary scan for UNC, IsUNC: {isUncPath}");
+                        return isUncPath;
                     }
                 }
                 else

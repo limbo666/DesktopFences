@@ -487,28 +487,34 @@ namespace Desktop_Frames
 
         public static void ShowHiddenFrame(string title)
         {
+            // 1. Find the target frame data and update its visibility state immediately
+            var FrameData = Framemanager.GetFrameData().FirstOrDefault(f => f.Title == title);
+            if (FrameData != null)
+            {
+                Framemanager.UpdateFrameProperty(FrameData, "IsHidden", "false", $"Unhiding frame '{title}'");
+            }
+
+            // 2. Clean up the Tray menu's internal tracking list
             var HiddenFrame = HiddenFrames.FirstOrDefault(f => f.Title == title);
             if (HiddenFrame != null)
             {
-                HiddenFrame.Window.Dispatcher.Invoke(() =>
-                {
-                    HiddenFrame.Window.Visibility = Visibility.Visible;
-                    HiddenFrame.Window.Activate();
-                    HiddenFrame.Window.Show();
-                });
-
-                var FrameData = Framemanager.GetFrameData().FirstOrDefault(f => f.Title == title);
-                if (FrameData != null)
-                {
-                    Framemanager.UpdateFrameProperty(FrameData, "IsHidden", "false", $"Showed frame '{title}'");
-                }
                 HiddenFrames.Remove(HiddenFrame);
-                LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI, $"Showed frame '{title}'");
-                Instance?.UpdateHiddenFramesMenu();
-                Instance?.UpdateTrayIcon();
             }
-        }
 
+            // 3. Surgically rebuild ONLY this frame (Bypasses all "Zombie Window" bugs)
+            if (FrameData != null)
+            {
+                System.Windows.Application.Current.Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    // Passes the specific frame, and 'null' for the target since this isn't a move operation
+                    Framemanager.ReloadSpecificFrames(FrameData, null);
+                }), System.Windows.Threading.DispatcherPriority.Background);
+            }
+
+            LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI, $"Showed frame '{title}' via specific reload");
+            Instance?.UpdateHiddenFramesMenu();
+            Instance?.UpdateTrayIcon();
+        }
         public void UpdateHiddenFramesMenu()
         {
             if (_showHiddenFramesItem == null) return;

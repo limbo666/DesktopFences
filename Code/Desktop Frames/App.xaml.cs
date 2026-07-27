@@ -115,7 +115,7 @@ namespace Desktop_Frames
                     // Start the Background Icon Loader Engine
                     LazyIconLoader.Start();
 
-                    // Load frames (Now loads from Profile/fences.json)
+                    // Load frames (Now loads from Profile/frames.json)
                     Framemanager.LoadAndCreateFrames(_targetChecker);
 
                     // --- PRODUCTION START LOGIC ---

@@ -15,25 +15,69 @@ namespace Desktop_Frames
         // Recursion guard to prevent the "fighting" loop
         private static bool _isSnapping = false;
 
+
+
+
+        public static NonActivatingWindow ActiveDragWindow = null;
+
+        public static void StartDrag(NonActivatingWindow win)
+        {
+            ActiveDragWindow = win;
+        }
+
+        public static void EndDrag(NonActivatingWindow win)
+        {
+            try
+            {
+                if (ActiveDragWindow != win) return;
+
+                string myId = Framemanager.GetFrameIdFromWindow(win);
+                if (myId != null && FrameDataManager.DockingMap.TryGetValue(myId, out List<string> parentIds))
+                {
+                    Framemanager.AnimateSnapConfirmation(win);
+                    FrameDataManager.UpdateDockedRelationships(myId, parentIds);
+                }
+                else if (myId != null)
+                {
+                    Framemanager.ShowSnapPreview(win, false);
+                    FrameDataManager.UpdateDockedRelationships(myId, null);
+                }
+            }
+            finally
+            {
+                ActiveDragWindow = null;
+            }
+        }
+
         public static void AddSnapping(NonActivatingWindow win, IDictionary<string, object> FrameData)
         {
+            string myId = FrameData.ContainsKey("Id") ? FrameData["Id"].ToString() : null;
+
+            win.PreviewMouseLeftButtonUp += (sender, e) =>
+            {
+                if (myId != null && FrameDataManager.DockingMap.TryGetValue(myId, out List<string> parentIds))
+                {
+                    Framemanager.AnimateSnapConfirmation(win);
+                    FrameDataManager.UpdateDockedRelationships(myId, parentIds);
+                }
+                else if (myId != null)
+                {
+                    Framemanager.ShowSnapPreview(win, false);
+                    FrameDataManager.UpdateDockedRelationships(myId, null);
+                }
+            };
+
             win.LocationChanged += (sender, e) =>
             {
-                // 1. Prevent Recursive Calls
                 if (_isSnapping) return;
-
-                // 2. Only snap if the user is actually doing the moving ( Mouse is Down )
-                // This prevents weird jumps during programmatic animations or restore
-                if (Control.MouseButtons != MouseButtons.Left) return;
+                if (ActiveDragWindow != win) return;
 
                 _isSnapping = true;
-
                 try
                 {
                     var allFrames = System.Windows.Application.Current.Windows.OfType<NonActivatingWindow>().ToList();
                     var (newLeft, newTop) = CalculateSnapPosition(win, allFrames);
 
-                    // Only apply if changed to reduce render jitter
                     if (Math.Abs(win.Left - newLeft) > 0.1 || Math.Abs(win.Top - newTop) > 0.1)
                     {
                         win.Left = newLeft;
@@ -41,6 +85,31 @@ namespace Desktop_Frames
                         FrameData["X"] = newLeft;
                         FrameData["Y"] = newTop;
                         FrameDataManager.SaveFrameData();
+
+                        if (myId != null)
+                        {
+                            // Find ALL co-parents sitting above this window that overlap horizontally by at least 20%
+                            var parents = allFrames.Where(f =>
+                            {
+                                if (f == win) return false;
+                                bool verticalMatch = Math.Abs(f.Top + f.Height + MinGap - newTop) < SnapThreshold;
+                                double overlapWidth = Math.Min(f.Left + f.Width, newLeft + win.Width) - Math.Max(f.Left, newLeft);
+                                return verticalMatch && overlapWidth > (Math.Min(f.Width, win.Width) * 0.2);
+                            }).ToList();
+
+                            var parentIds = parents.Select(p => Framemanager.GetFrameIdFromWindow(p)).Where(id => id != null).ToList();
+
+                            if (parentIds.Count > 0)
+                            {
+                                FrameDataManager.DockingMap[myId] = parentIds;
+                                Framemanager.ShowSnapPreview(win, true);
+                            }
+                            else
+                            {
+                                FrameDataManager.DockingMap.Remove(myId);
+                                Framemanager.ShowSnapPreview(win, false);
+                            }
+                        }
                     }
                 }
                 finally
@@ -49,6 +118,8 @@ namespace Desktop_Frames
                 }
             };
         }
+
+
 
         private static (double, double) CalculateSnapPosition(NonActivatingWindow current, List<NonActivatingWindow> allFrames)
         {

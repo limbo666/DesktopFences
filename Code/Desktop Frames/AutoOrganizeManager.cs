@@ -248,7 +248,7 @@ namespace Desktop_Frames
 
         public static void CheckAndCreatePortalFrame(string targetFolder)
         {
-            // Prevent duplicate frames: Check if a portal fence already points to this folder
+            // Prevent duplicate frames: Check if a portal frame already points to this folder
             var existingFrames = Framemanager.GetFrameData();
             foreach (var f in existingFrames)
             {
@@ -274,7 +274,7 @@ namespace Desktop_Frames
                 catch { }
             }
 
-            // Command Framemanager to generate a new Portal Fence using the exact required schema
+            // Command Framemanager to generate a new Portal Frame using the exact required schema
             dynamic newFrame = new Newtonsoft.Json.Linq.JObject();
             newFrame.Id = Guid.NewGuid().ToString();
             newFrame.Title = new DirectoryInfo(targetFolder).Name; // FIX: Changed from Name to Title
@@ -321,7 +321,7 @@ namespace Desktop_Frames
                 FrameDataManager.SaveFrameData();
             });
 
-            LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, $"Auto-Organize spawned a new Portal Fence for {targetFolder}");
+            LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, $"Auto-Organize spawned a new Portal Frame for {targetFolder}");
         }
 
         private static async Task<bool> WaitForFileUnlockAsync(string filePath, int timeoutMs)

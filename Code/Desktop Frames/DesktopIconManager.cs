@@ -184,7 +184,7 @@ namespace Desktop_Frames
 
                     _dotWindow.Content = dot;
 
-                    // Make it a non-activating window so clicking it doesn't steal focus from fences
+                    // Make it a non-activating window so clicking it doesn't steal focus from frames
                     _dotWindow.SourceInitialized += (s, e) =>
                     {
                         var hwnd = new WindowInteropHelper(_dotWindow).Handle;

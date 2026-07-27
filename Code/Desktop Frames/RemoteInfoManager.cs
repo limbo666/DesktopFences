@@ -23,8 +23,18 @@ namespace Desktop_Frames
             // Run in background
             Task.Run(async () =>
             {
-                // Wait 25 seconds so we don't slow down startup
-                await Task.Delay(25000);
+                string debugUrlFile = System.IO.Path.Combine(System.AppDomain.CurrentDomain.BaseDirectory, "developer_repo.txt");
+
+                // 3-second delay for dev testing, 25-second for production release
+                if (System.IO.File.Exists(debugUrlFile))
+                {
+                    await Task.Delay(3000);
+                }
+                else
+                {
+                    await Task.Delay(25000);
+                }
+
                 await PerformCheck();
             });
         }
@@ -38,9 +48,37 @@ namespace Desktop_Frames
                     client.DefaultRequestHeaders.UserAgent.ParseAdd("DesktopFrames/2.7"); // Identify app
                     client.Timeout = TimeSpan.FromSeconds(10);
 
-                    // FIX: Add Cache Buster to force fresh content from GitHub
-                    // We append a unique timestamp so the CDN/Proxy treats this as a new request.
-                    string urlWithNoCache = $"{MANIFEST_URL}?t={DateTime.Now.Ticks}";
+                    string targetUrl = MANIFEST_URL;
+                    string debugUrlFile = System.IO.Path.Combine(System.AppDomain.CurrentDomain.BaseDirectory, "developer_repo.txt");
+
+                    // OVERRIDE: Read secret URL and sanitize
+                    if (System.IO.File.Exists(debugUrlFile))
+                    {
+                        try
+                        {
+                            string rawContent = System.IO.File.ReadAllText(debugUrlFile).Trim();
+
+                            // Sanitize: Check if it's not empty and is a valid HTTP/HTTPS URL
+                            if (!string.IsNullOrWhiteSpace(rawContent) &&
+                                (rawContent.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
+                                 rawContent.StartsWith("https://", StringComparison.OrdinalIgnoreCase)))
+                            {
+                                targetUrl = rawContent;
+                                LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, $"RemoteInfoManager: Using validated developer repo.");
+                            }
+                            else
+                            {
+                                LogManager.Log(LogManager.LogLevel.Warn, LogManager.LogCategory.General, "RemoteInfoManager: developer_repo.txt is empty or malformed. Falling back to default URL.");
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.General, $"RemoteInfoManager: Failed to read developer_repo.txt: {ex.Message}. Falling back to default URL.");
+                        }
+                    }
+
+                    // Add Cache Buster
+                    string urlWithNoCache = $"{targetUrl}?t={DateTime.Now.Ticks}";
 
                     LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, $"RemoteInfoManager: Downloading manifest from {urlWithNoCache}");
 

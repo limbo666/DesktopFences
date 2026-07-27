@@ -1,23 +1,23 @@
 {
   "format": 1,
   "restore": {
-    "D:\\Develompent_Working_Folder\\05.C#\\DesktopFrames+\\Ultra - code\\Desktop Frames\\Desktop Frames.csproj": {}
+    "C:\\Users\\Nikos\\Desktop\\Ultra -Code\\Desktop Frames\\Desktop Frames.csproj": {}
   },
   "projects": {
-    "D:\\Develompent_Working_Folder\\05.C#\\DesktopFrames+\\Ultra - code\\Desktop Frames\\Desktop Frames.csproj": {
-      "version": "2.7.7.294",
+    "C:\\Users\\Nikos\\Desktop\\Ultra -Code\\Desktop Frames\\Desktop Frames.csproj": {
+      "version": "2.7.8.352",
       "restore": {
-        "projectUniqueName": "D:\\Develompent_Working_Folder\\05.C#\\DesktopFrames+\\Ultra - code\\Desktop Frames\\Desktop Frames.csproj",
+        "projectUniqueName": "C:\\Users\\Nikos\\Desktop\\Ultra -Code\\Desktop Frames\\Desktop Frames.csproj",
         "projectName": "Desktop Frames",
-        "projectPath": "D:\\Develompent_Working_Folder\\05.C#\\DesktopFrames+\\Ultra - code\\Desktop Frames\\Desktop Frames.csproj",
-        "packagesPath": "C:\\Users\\admin\\.nuget\\packages\\",
-        "outputPath": "D:\\Develompent_Working_Folder\\05.C#\\DesktopFrames+\\Ultra - code\\Desktop Frames\\obj\\",
+        "projectPath": "C:\\Users\\Nikos\\Desktop\\Ultra -Code\\Desktop Frames\\Desktop Frames.csproj",
+        "packagesPath": "C:\\Users\\Nikos\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\Nikos\\Desktop\\Ultra -Code\\Desktop Frames\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\admin\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\Nikos\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
@@ -31,6 +31,7 @@
         },
         "frameworks": {
           "net8.0-windows7.0": {
+            "framework": "net8.0-windows7.0",
             "targetAlias": "net8.0-windows7.0",
             "projectReferences": {}
           }
@@ -45,10 +46,11 @@
           "auditLevel": "low",
           "auditMode": "direct"
         },
-        "SdkAnalysisLevel": "10.0.200"
+        "SdkAnalysisLevel": "10.0.300"
       },
       "frameworks": {
         "net8.0-windows7.0": {
+          "framework": "net8.0-windows7.0",
           "targetAlias": "net8.0-windows7.0",
           "dependencies": {
             "NAudio": {
@@ -71,6 +73,24 @@
           ],
           "assetTargetFallback": true,
           "warn": true,
+          "downloadDependencies": [
+            {
+              "name": "Microsoft.AspNetCore.App.Ref",
+              "version": "[8.0.28, 8.0.28]"
+            },
+            {
+              "name": "Microsoft.NETCore.App.Host.win-x64",
+              "version": "[8.0.28, 8.0.28]"
+            },
+            {
+              "name": "Microsoft.NETCore.App.Ref",
+              "version": "[8.0.28, 8.0.28]"
+            },
+            {
+              "name": "Microsoft.WindowsDesktop.App.Ref",
+              "version": "[8.0.28, 8.0.28]"
+            }
+          ],
           "frameworkReferences": {
             "Microsoft.NETCore.App": {
               "privateAssets": "all"
@@ -79,7 +99,7 @@
               "privateAssets": "none"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.204/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.301/PortableRuntimeIdentifierGraph.json"
         }
       }
     }
