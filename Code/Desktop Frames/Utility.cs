@@ -215,7 +215,7 @@ namespace Desktop_Frames
             // TABS FEATURE: Refresh tab colors when frame color changes
             if (frame is NonActivatingWindow frameWindow)
             {
-                Framemanager.RefreshTabColors(frameWindow, effectiveColor);
+                TabManager.RefreshTabColors(frameWindow, effectiveColor);
             }
         }
 
