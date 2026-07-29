@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Forms; // For Screen.AllScreens
 using System.Windows.Media; // For VisualTreeHelper
 
@@ -31,15 +32,15 @@ namespace Desktop_Frames
             {
                 if (ActiveDragWindow != win) return;
 
-                string myId = Framemanager.GetFrameIdFromWindow(win);
+                string myId = GetFrameIdFromWindow(win);
                 if (myId != null && FrameDataManager.DockingMap.TryGetValue(myId, out List<string> parentIds))
                 {
-                    Framemanager.AnimateSnapConfirmation(win);
+                    AnimateSnapConfirmation(win);
                     FrameDataManager.UpdateDockedRelationships(myId, parentIds);
                 }
                 else if (myId != null)
                 {
-                    Framemanager.ShowSnapPreview(win, false);
+                    ShowSnapPreview(win, false);
                     FrameDataManager.UpdateDockedRelationships(myId, null);
                 }
             }
@@ -57,12 +58,12 @@ namespace Desktop_Frames
             {
                 if (myId != null && FrameDataManager.DockingMap.TryGetValue(myId, out List<string> parentIds))
                 {
-                    Framemanager.AnimateSnapConfirmation(win);
+                    AnimateSnapConfirmation(win);
                     FrameDataManager.UpdateDockedRelationships(myId, parentIds);
                 }
                 else if (myId != null)
                 {
-                    Framemanager.ShowSnapPreview(win, false);
+                    ShowSnapPreview(win, false);
                     FrameDataManager.UpdateDockedRelationships(myId, null);
                 }
             };
@@ -97,17 +98,17 @@ namespace Desktop_Frames
                                 return verticalMatch && overlapWidth > (Math.Min(f.Width, win.Width) * 0.2);
                             }).ToList();
 
-                            var parentIds = parents.Select(p => Framemanager.GetFrameIdFromWindow(p)).Where(id => id != null).ToList();
+                            var parentIds = parents.Select(p => GetFrameIdFromWindow(p)).Where(id => id != null).ToList();
 
                             if (parentIds.Count > 0)
                             {
                                 FrameDataManager.DockingMap[myId] = parentIds;
-                                Framemanager.ShowSnapPreview(win, true);
+                                ShowSnapPreview(win, true);
                             }
                             else
                             {
                                 FrameDataManager.DockingMap.Remove(myId);
-                                Framemanager.ShowSnapPreview(win, false);
+                                ShowSnapPreview(win, false);
                             }
                         }
                     }
@@ -219,6 +220,116 @@ namespace Desktop_Frames
             }
             catch { }
             return 1.0; // Default if fails
+        }
+        // --- CONSTRAINT-BASED MULTI-PARENT STACK RESOLVER ---
+        public static void CascadeStack(string parentId, double deltaY)
+        {
+            // Find all children that list this parentId in their co-parent list
+            var childrenIds = FrameDataManager.DockingMap
+                .Where(kvp => kvp.Value != null && kvp.Value.Contains(parentId))
+                .Select(kvp => kvp.Key)
+                .ToList();
+
+            foreach (var childId in childrenIds)
+            {
+                var win = System.Windows.Application.Current.Windows.OfType<NonActivatingWindow>()
+                    .FirstOrDefault(w => GetFrameIdFromWindow(w) == childId);
+
+                if (win != null && FrameDataManager.DockingMap.TryGetValue(childId, out List<string> parentIds))
+                {
+                    // Find all currently active window instances for all co-parents of this child
+                    var activeParents = System.Windows.Application.Current.Windows.OfType<NonActivatingWindow>()
+                        .Where(w => parentIds.Contains(GetFrameIdFromWindow(w)))
+                        .ToList();
+
+                    if (activeParents.Count > 0)
+                    {
+                        // The golden geometric rule: Anchor below the lowest unrolled bottom edge among all co-parents
+                        double maxParentBottom = activeParents.Max(p => p.Top + p.Height);
+                        double targetTop = maxParentBottom + 10.0; // Standard 10px snap gap
+
+                        if (Math.Abs(win.Top - targetTop) > 0.5)
+                        {
+                            double actualDeltaY = targetTop - win.Top;
+                            win.Top = targetTop;
+
+                            // Recursively cascade downstream to any frames docked beneath this child
+                            CascadeStack(childId, actualDeltaY);
+                        }
+                    }
+                }
+            }
+        }
+        public static string GetFrameIdFromWindow(NonActivatingWindow win)
+        {
+            return win?.Tag?.ToString();
+        }
+        // --- ACCORDION SNAP FEEDBACK ENGINE ---
+        // Holds a vibrant border pulse for 350ms before smoothly fading out over 650ms (1000ms total)
+        // --- INTERACTIVE SNAP FEEDBACK ENGINE ---
+        private static readonly Dictionary<NonActivatingWindow, System.Windows.Media.Brush> _snapOrigBrushes = new Dictionary<NonActivatingWindow, System.Windows.Media.Brush>();
+        private static readonly Dictionary<NonActivatingWindow, Thickness> _snapOrigThicknesses = new Dictionary<NonActivatingWindow, Thickness>();
+        private static readonly HashSet<NonActivatingWindow> _inSnapPreview = new HashSet<NonActivatingWindow>();
+        public static void ShowSnapPreview(NonActivatingWindow win, bool isSnapped)
+        {
+            try
+            {
+                if (win?.Content is not Border border) return;
+
+                if (isSnapped)
+                {
+                    if (!_inSnapPreview.Contains(win))
+                    {
+                        _inSnapPreview.Add(win);
+                        _snapOrigBrushes[win] = border.BorderBrush;
+                        _snapOrigThicknesses[win] = border.BorderThickness;
+
+                        border.BeginAnimation(Border.BorderBrushProperty, null);
+                        border.BorderBrush = new SolidColorBrush(System.Windows.Media.Color.FromRgb(0, 210, 255));
+                        border.BorderThickness = new Thickness(Math.Max(3, _snapOrigThicknesses[win].Top + 2));
+                    }
+                }
+                else if (_inSnapPreview.Contains(win))
+                {
+                    _inSnapPreview.Remove(win);
+                    border.BeginAnimation(Border.BorderBrushProperty, null);
+                    if (_snapOrigBrushes.TryGetValue(win, out System.Windows.Media.Brush origB)) border.BorderBrush = origB;
+                    if (_snapOrigThicknesses.TryGetValue(win, out Thickness origT)) border.BorderThickness = origT;
+                }
+            }
+            catch { }
+        }
+        public static void AnimateSnapConfirmation(NonActivatingWindow win)
+        {
+            try
+            {
+                if (win?.Content is not Border border || !_inSnapPreview.Contains(win)) return;
+                _inSnapPreview.Remove(win);
+
+                System.Windows.Media.Brush origBrush = _snapOrigBrushes.ContainsKey(win) ? _snapOrigBrushes[win] : border.BorderBrush;
+                Thickness origThick = _snapOrigThicknesses.ContainsKey(win) ? _snapOrigThicknesses[win] : border.BorderThickness;
+
+                var pulseBrush = new SolidColorBrush(System.Windows.Media.Color.FromRgb(0, 210, 255));
+                border.BorderBrush = pulseBrush;
+                border.BorderThickness = origThick;
+
+                var fadePulse = new System.Windows.Media.Animation.DoubleAnimation
+                {
+                    From = 1.0,
+                    To = 0.0,
+                    Duration = TimeSpan.FromMilliseconds(500),
+                    EasingFunction = new System.Windows.Media.Animation.QuadraticEase { EasingMode = System.Windows.Media.Animation.EasingMode.EaseOut }
+                };
+
+                fadePulse.Completed += (s, e) =>
+                {
+                    pulseBrush.BeginAnimation(System.Windows.Media.Brush.OpacityProperty, null);
+                    border.BorderBrush = origBrush;
+                };
+
+                pulseBrush.BeginAnimation(System.Windows.Media.Brush.OpacityProperty, fadePulse);
+            }
+            catch { }
         }
     }
 }
