@@ -27,17 +27,24 @@ Your support is the reason this tool exists, and corporate pressure won't stop m
 A short **how to upgrade guide** can be found on the following link:
   https://github.com/limbo666/DesktopFramesPlus/blob/main/HowToUpgradeToDesktopFramesPlus.md
 
-##  Support Me
+## Support Me
 
 If this project has helped you, please consider supporting its development! Your contribution directly impacts how fast and far this project grows.
 
 Maintaining and improving this tool takes time, effort, and resources. Donations help me:
- - Dedicate more time to fixing bugs and adding features
- - Cover the cost of tools (like AI assistance that speeds up development)
- - Stay motivated and keep pushing the project forward
+- Dedicate more time to fixing bugs and adding features
+- Cover the cost of tools (like AI assistance that speeds up development)
+- Stay motivated and keep pushing the project forward
 
-Your support literally drives the pace of development!  
-Even small contributions mean a lot. Thank you for keeping this project alive and evolving! 
+Your support literally drives the pace of development! Even small contributions mean a lot. Thank you for keeping this project alive and evolving!
+
+### Continuous Support
+If you'd like to become a regular supporter, Liberapay is a zero-fee platform designed for recurring open-source donations:
+
+[![Support via Liberapay](https://liberapay.com/assets/widgets/donate.svg)](https://liberapay.com/limbo/donate)
+
+### One-Time Tip
+If you prefer to make a single, one-time contribution, you can use PayPal:
 
 [![Donate](https://raw.githubusercontent.com/limbo666/DesktopFramesPlus/refs/heads/main/Images/paypal.png)](https://www.paypal.com/donate/?hosted_button_id=PPLWC66UC8Q42)
 
