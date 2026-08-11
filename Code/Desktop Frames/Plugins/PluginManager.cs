@@ -35,8 +35,8 @@ namespace Desktop_Frames.Plugins
             RegisterPlugin("IPInfo", "IP Info", () => new SystemIpPlugin());
             RegisterPlugin("SystemPerformancePlugin", "System Performance Gauges", () => new SystemPerformancePlugin());
             RegisterPlugin("CustomTerminal", "Terminal Emulator", () => new CustomTerminalPlugin());
- 
-     
+            RegisterPlugin("SystemQueueSaturation", "System Queue Saturation", () => new SystemQueueSaturationPlugin());
+
         }
 
         /// <summary>

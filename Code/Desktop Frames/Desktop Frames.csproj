@@ -8,9 +8,9 @@
 		<Nullable>enable</Nullable>
 		<UseWPF>true</UseWPF>
 		<UseWindowsForms>True</UseWindowsForms>
-		<AssemblyVersion>2.7.8.352</AssemblyVersion>
-		<FileVersion>2.7.8.352</FileVersion>
-		<Version>2.7.8.352</Version>
+		<AssemblyVersion>2.7.8.355</AssemblyVersion>
+		<FileVersion>2.7.8.355</FileVersion>
+		<Version>2.7.8.355</Version>
 		<ApplicationIcon>Resources\logo2.ico</ApplicationIcon>
 	</PropertyGroup>
 
@@ -23,6 +23,7 @@
 		<None Remove="folderX.png" />
 		<None Remove="portal.png" />
 		<None Remove="Resources\36505577-smooth-simple-notification-274738.wav" />
+		<None Remove="Resources\avtr.png" />
 		<None Remove="Resources\DesktopFramesVertical.png" />
 		<None Remove="Resources\ding.wav" />
 		<None Remove="Resources\donate.png" />
@@ -90,6 +91,7 @@
 
 	<ItemGroup>
 		<EmbeddedResource Include="Resources\36505577-smooth-simple-notification-274738.wav" />
+		<EmbeddedResource Include="Resources\avtr.png" />
 		<EmbeddedResource Include="Resources\ding.wav" />
 		<EmbeddedResource Include="Resources\dragon-studio-new-notification-444814.wav" />
 		<EmbeddedResource Include="Resources\dragon.png" />

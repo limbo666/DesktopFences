@@ -79,7 +79,127 @@ namespace Desktop_Frames
                 CreateFooter(rootGrid);
 
                 mainBorder.Child = rootGrid;
-                aboutWindow.Content = mainBorder;
+
+                // --- EASTER EGG OVERLAY START ---
+                // Wrap the main border in a master grid to allow a floating, non-blocking Z-index overlay
+                Grid masterOverlayGrid = new Grid();
+                masterOverlayGrid.Children.Add(mainBorder);
+
+                Image avatarOverlay = new Image
+                {
+                    Width = 220,
+                    Height = 220,
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    VerticalAlignment = VerticalAlignment.Center,
+                    Opacity = 0,
+                    IsHitTestVisible = false, // Allows all clicks to pass through to the underlying form
+                    RenderTransformOrigin = new Point(0.5, 0.5),
+                    RenderTransform = new TransformGroup
+                    {
+                        Children = new TransformCollection
+                        {
+                            new ScaleTransform(0.5, 0.5),
+                            new RotateTransform(-15)
+                        }
+                    },
+                    Effect = new DropShadowEffect
+                    {
+                        Color = Colors.Black,
+                        BlurRadius = 30,
+                        ShadowDepth = 10,
+                        Opacity = 0.6
+                    }
+                };
+
+                // Safely load the image, accounting for both standard and root namespace structures
+                try
+                {
+                    var assembly = Assembly.GetExecutingAssembly();
+                    var resourceStream = assembly.GetManifestResourceStream("Desktop_Frames.Resources.avtr.png")
+                                      ?? assembly.GetManifestResourceStream("Desktop_Frames.avtr.png");
+                    if (resourceStream != null)
+                    {
+                        BitmapImage bitmap = new BitmapImage();
+                        bitmap.BeginInit();
+                        bitmap.StreamSource = resourceStream;
+                        bitmap.EndInit();
+                        avatarOverlay.Source = bitmap;
+                    }
+                }
+                catch { }
+
+                masterOverlayGrid.Children.Add(avatarOverlay);
+                aboutWindow.Content = masterOverlayGrid;
+
+                // Master Timer Logic
+                bool isAvatarVisible = false;
+                System.Windows.Threading.DispatcherTimer avatarTimer = new System.Windows.Threading.DispatcherTimer
+                {
+                    Interval = TimeSpan.FromMilliseconds(500)
+                };
+
+                avatarTimer.Tick += (s, e) =>
+                {
+                    int currentSecond = DateTime.Now.Second;
+
+                    // Trigger the Elastic "Pop-In" if the second is 57, 58, or 59
+                    if (currentSecond >= 57 && !isAvatarVisible)
+                    {
+                        isAvatarVisible = true;
+
+                        var fadeIn = new System.Windows.Media.Animation.DoubleAnimation(0.0, 1.0, TimeSpan.FromMilliseconds(600));
+                        var scaleIn = new System.Windows.Media.Animation.DoubleAnimation(0.5, 1.2, TimeSpan.FromMilliseconds(1000))
+                        {
+                            // Adds a highly polished bounce effect as it scales up
+                            EasingFunction = new System.Windows.Media.Animation.ElasticEase { EasingMode = System.Windows.Media.Animation.EasingMode.EaseOut, Oscillations = 2, Springiness = 4 }
+                        };
+                        var rotateIn = new System.Windows.Media.Animation.DoubleAnimation(-15, 0, TimeSpan.FromMilliseconds(800))
+                        {
+                            EasingFunction = new System.Windows.Media.Animation.QuadraticEase { EasingMode = System.Windows.Media.Animation.EasingMode.EaseOut }
+                        };
+
+                        avatarOverlay.BeginAnimation(UIElement.OpacityProperty, fadeIn);
+
+                        var transformGroup = avatarOverlay.RenderTransform as TransformGroup;
+                        var scaleTransform = transformGroup.Children[0] as ScaleTransform;
+                        var rotateTransform = transformGroup.Children[1] as RotateTransform;
+
+                        scaleTransform.BeginAnimation(ScaleTransform.ScaleXProperty, scaleIn);
+                        scaleTransform.BeginAnimation(ScaleTransform.ScaleYProperty, scaleIn);
+                        rotateTransform.BeginAnimation(RotateTransform.AngleProperty, rotateIn);
+                    }
+                    // Trigger the smooth "Shrink & Fade" Out precisely when it hits 00
+                    else if (currentSecond == 0 && isAvatarVisible)
+                    {
+                        isAvatarVisible = false;
+
+                        var fadeOut = new System.Windows.Media.Animation.DoubleAnimation(1.0, 0.0, TimeSpan.FromMilliseconds(500))
+                        {
+                            EasingFunction = new System.Windows.Media.Animation.QuadraticEase { EasingMode = System.Windows.Media.Animation.EasingMode.EaseIn }
+                        };
+                        var scaleOut = new System.Windows.Media.Animation.DoubleAnimation(1.2, 0.5, TimeSpan.FromMilliseconds(500))
+                        {
+                            EasingFunction = new System.Windows.Media.Animation.QuadraticEase { EasingMode = System.Windows.Media.Animation.EasingMode.EaseIn }
+                        };
+
+                        avatarOverlay.BeginAnimation(UIElement.OpacityProperty, fadeOut);
+
+                        var transformGroup = avatarOverlay.RenderTransform as TransformGroup;
+                        var scaleTransform = transformGroup.Children[0] as ScaleTransform;
+
+                        scaleTransform.BeginAnimation(ScaleTransform.ScaleXProperty, scaleOut);
+                        scaleTransform.BeginAnimation(ScaleTransform.ScaleYProperty, scaleOut);
+                    }
+                };
+
+                avatarTimer.Start();
+
+                // Cleanly kill the timer to prevent memory leaks when the window is closed
+                aboutWindow.Closed += (s, e) =>
+                {
+                    avatarTimer.Stop();
+                };
+                // --- EASTER EGG OVERLAY END ---
 
                 // Make window draggable ONLY by header to avoid button click conflicts
                 bool isDragging = false;
@@ -141,6 +261,7 @@ namespace Desktop_Frames
             {
                 var assembly = Assembly.GetExecutingAssembly();
                 var resourceStream = assembly.GetManifestResourceStream("Desktop_Frames.Resources.logo1.png");
+             //   var resourceStream = assembly.GetManifestResourceStream("Desktop_Frames.avtr.png");
                 if (resourceStream != null)
                 {
                     BitmapImage bitmap = new BitmapImage();

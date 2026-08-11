@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
@@ -17,12 +18,11 @@ namespace Desktop_Frames.Plugins
         public string PluginId => "SysPerfGauge";
         public string DisplayName => "System Performance Gauges";
 
-        public int DevelopmentState => 2; // Set to 1, 2, or 3 based on your testing phase
+        public int DevelopmentState => 1; // Set to 1, 2, or 3 based on your testing phase
 
         private DispatcherTimer _timer;
         private PerformanceCounter _cpuCounter;
 
-        private Viewbox _rootViewbox;
         private Grid _layoutGrid;
 
         private RotateTransform _cpuNeedleTransform;
@@ -36,6 +36,28 @@ namespace Desktop_Frames.Plugins
         private double _cpuCurrentAngle = -90;
         private double _ramCurrentAngle = -90;
 
+        private bool _countersReady = false;
+
+        // Bar Theme Settings & Variables
+        private string _visualTheme = "Gauges"; // Options: "Gauges" or "Bars"
+        private ColumnDefinition _cpuFillColumn, _cpuEmptyColumn, _ramFillColumn, _ramEmptyColumn;
+        private Border _cpuFillBorder, _ramFillBorder;
+        private TextBlock _cpuBarValueText, _ramBarValueText;
+
+        // Shared Diagnostic Theme Brushes
+        private bool _useDynamicColors = true;
+        private string _staticColor = "DeepSkyBlue";
+
+        private readonly SolidColorBrush _colorGreen = new SolidColorBrush(Color.FromRgb(50, 205, 50));
+        private readonly SolidColorBrush _colorYellow = new SolidColorBrush(Color.FromRgb(255, 215, 0));
+        private readonly SolidColorBrush _colorRed = new SolidColorBrush(Color.FromRgb(255, 69, 0));
+        private readonly SolidColorBrush _colorGray = new SolidColorBrush(Color.FromRgb(60, 60, 60));
+
+        private SolidColorBrush GetStaticBrush()
+        {
+            try { return new SolidColorBrush((Color)ColorConverter.ConvertFromString(_staticColor)); }
+            catch { return new SolidColorBrush(Color.FromRgb(66, 133, 244)); }
+        }
         // Native API for accurate Task Manager RAM Matching
         [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
         private class MEMORYSTATUSEX
@@ -58,47 +80,58 @@ namespace Desktop_Frames.Plugins
 
         public FrameworkElement CreateVisualElement()
         {
-            _rootViewbox = new Viewbox
+            _layoutGrid = new Grid
             {
-                Stretch = Stretch.Uniform,
-                HorizontalAlignment = HorizontalAlignment.Center,
-                VerticalAlignment = VerticalAlignment.Center,
-                Margin = new Thickness(5, 5, 25, 10) // Master UI Spacing Blueprint
+                Margin = new Thickness(5, 5, 25, 10), // Master UI Spacing Blueprint
+                MinWidth = 240 // Matches SystemQueueSaturation limits
             };
 
-            _layoutGrid = new Grid();
-            _rootViewbox.Child = _layoutGrid;
-
-            return _rootViewbox;
+            return _layoutGrid;
         }
 
         public void Initialize(FrameworkElement visual, Dictionary<string, object> settings)
         {
             ApplySettingsData(settings);
-
-            try
-            {
-                // Modern Windows uses Processor Utility for Task Manager parity
-                _cpuCounter = new PerformanceCounter("Processor Information", "% Processor Utility", "_Total");
-            }
-            catch
-            {
-                // Fallback for older systems
-                _cpuCounter = new PerformanceCounter("Processor", "% Processor Time", "_Total");
-            }
-
             BuildLayout();
+
+            if (_cpuValueText != null) _cpuValueText.Text = "..."; // Visual wait indicator for CPU
 
             _timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(_refreshRateMs) };
             _timer.Tick += Timer_Tick;
             _timer.Start();
+
+            // Offload WMI registry query to prevent UI freeze on load
+            System.Threading.Tasks.Task.Run(() =>
+            {
+                try
+                {
+                    // Modern Windows uses Processor Utility for Task Manager parity
+                    _cpuCounter = new PerformanceCounter("Processor Information", "% Processor Utility", "_Total");
+                    _cpuCounter.NextValue(); // Wake up the sensor
+                }
+                catch
+                {
+                    try
+                    {
+                        // Fallback for older systems
+                        _cpuCounter = new PerformanceCounter("Processor", "% Processor Time", "_Total");
+                        _cpuCounter.NextValue();
+                    }
+                    catch { }
+                }
+
+                _countersReady = true;
+            });
         }
 
         private void ApplySettingsData(Dictionary<string, object> settings)
         {
             if (settings != null)
             {
+                if (settings.ContainsKey("VisualTheme")) _visualTheme = settings["VisualTheme"].ToString();
                 if (settings.ContainsKey("LayoutMode")) _layoutMode = settings["LayoutMode"].ToString();
+                if (settings.ContainsKey("UseDynamicColors") && bool.TryParse(settings["UseDynamicColors"].ToString(), out bool udc)) _useDynamicColors = udc;
+                if (settings.ContainsKey("StaticColor") && settings["StaticColor"] != null) _staticColor = settings["StaticColor"].ToString();
                 if (settings.ContainsKey("RefreshRateMs") && int.TryParse(settings["RefreshRateMs"].ToString(), out int rate)) _refreshRateMs = rate;
             }
         }
@@ -107,6 +140,7 @@ namespace Desktop_Frames.Plugins
         {
             _layoutGrid.Children.Clear();
             _layoutGrid.ColumnDefinitions.Clear();
+            _layoutGrid.RowDefinitions.Clear();
 
             _cpuCurrentAngle = -90;
             _ramCurrentAngle = -90;
@@ -114,30 +148,77 @@ namespace Desktop_Frames.Plugins
             bool showCpu = _layoutMode == "CPU" || _layoutMode == "Both";
             bool showRam = _layoutMode == "RAM" || _layoutMode == "Both";
 
-            if (showCpu && showRam)
+            if (_visualTheme == "Bars")
             {
-                _layoutGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-                _layoutGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+                // Match the exact container structure of SystemQueueSaturationPlugin
+                Border mainCard = new Border
+                {
+                    Background = Brushes.Transparent,
+                    BorderThickness = new Thickness(0),
+                    Margin = new Thickness(10, 5, 10, 15),
+                    Padding = new Thickness(10, 5, 10, 5)
+                };
 
-                var cpuGauge = CreateGauge("CPU %", out _cpuNeedleTransform, out _cpuValueText);
-                var ramGauge = CreateGauge("RAM %", out _ramNeedleTransform, out _ramValueText);
+                StackPanel panel = new StackPanel();
 
-                Grid.SetColumn(cpuGauge, 0);
-                Grid.SetColumn(ramGauge, 1);
+                if (showCpu)
+                {
+                    panel.Children.Add(CreateDiagnosticRow("CPU UTILIZATION", out _cpuBarValueText, out _cpuFillColumn, out _cpuEmptyColumn, out _cpuFillBorder));
+                }
 
-                cpuGauge.Margin = new Thickness(0, 0, 10, 0);
-                ramGauge.Margin = new Thickness(10, 0, 0, 0);
+                if (showCpu && showRam)
+                {
+                    panel.Children.Add(new Border { Height = 1, Background = new SolidColorBrush(Color.FromArgb(30, 255, 255, 255)), Margin = new Thickness(0, 10, 0, 10) });
+                }
 
-                _layoutGrid.Children.Add(cpuGauge);
-                _layoutGrid.Children.Add(ramGauge);
+                if (showRam)
+                {
+                    panel.Children.Add(CreateDiagnosticRow("RAM UTILIZATION", out _ramBarValueText, out _ramFillColumn, out _ramEmptyColumn, out _ramFillBorder));
+                }
+
+                mainCard.Child = panel;
+                _layoutGrid.Children.Add(mainCard);
             }
-            else if (showCpu)
+            else // Default classic Gauges
             {
-                _layoutGrid.Children.Add(CreateGauge("CPU %", out _cpuNeedleTransform, out _cpuValueText));
-            }
-            else if (showRam)
-            {
-                _layoutGrid.Children.Add(CreateGauge("RAM %", out _ramNeedleTransform, out _ramValueText));
+                // Dynamically inject the Viewbox wrapper only for the Gauges theme
+                Viewbox gaugeViewbox = new Viewbox
+                {
+                    Stretch = Stretch.Uniform,
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    VerticalAlignment = VerticalAlignment.Center
+                };
+
+                Grid gaugeContainer = new Grid();
+
+                if (showCpu && showRam)
+                {
+                    gaugeContainer.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+                    gaugeContainer.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+
+                    var cpuGauge = CreateGauge("CPU %", out _cpuNeedleTransform, out _cpuValueText);
+                    var ramGauge = CreateGauge("RAM %", out _ramNeedleTransform, out _ramValueText);
+
+                    Grid.SetColumn(cpuGauge, 0);
+                    Grid.SetColumn(ramGauge, 1);
+
+                    cpuGauge.Margin = new Thickness(0, 0, 10, 0);
+                    ramGauge.Margin = new Thickness(10, 0, 0, 0);
+
+                    gaugeContainer.Children.Add(cpuGauge);
+                    gaugeContainer.Children.Add(ramGauge);
+                }
+                else if (showCpu)
+                {
+                    gaugeContainer.Children.Add(CreateGauge("CPU %", out _cpuNeedleTransform, out _cpuValueText));
+                }
+                else if (showRam)
+                {
+                    gaugeContainer.Children.Add(CreateGauge("RAM %", out _ramNeedleTransform, out _ramValueText));
+                }
+
+                gaugeViewbox.Child = gaugeContainer;
+                _layoutGrid.Children.Add(gaugeViewbox);
             }
         }
 
@@ -212,16 +293,104 @@ namespace Desktop_Frames.Plugins
             return tb;
         }
 
+
+        private Grid CreateDiagnosticRow(string label, out TextBlock valuesText, out ColumnDefinition fillCol, out ColumnDefinition emptyCol, out Border fillBorder)
+        {
+            Grid row = new Grid();
+            row.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            row.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+
+            Grid textGrid = new Grid { Margin = new Thickness(0, 0, 0, 6) };
+
+            textGrid.Children.Add(new TextBlock { Text = label, Foreground = Brushes.LightGray, FontSize = 12, FontWeight = FontWeights.SemiBold, HorizontalAlignment = HorizontalAlignment.Left });
+
+            valuesText = new TextBlock
+            {
+                Text = "0%",
+                Foreground = Brushes.White,
+                FontSize = 11,
+                FontFamily = new FontFamily("Lucida Console"),
+                HorizontalAlignment = HorizontalAlignment.Right
+            };
+            textGrid.Children.Add(valuesText);
+
+            Grid.SetRow(textGrid, 0);
+            row.Children.Add(textGrid);
+
+            // Custom Flat Progress Bar
+            Border barContainer = new Border
+            {
+                Background = _colorGray,
+                Height = 14,
+                CornerRadius = new CornerRadius(3)
+            };
+
+            Grid barGrid = new Grid();
+            fillCol = new ColumnDefinition { Width = new GridLength(0, GridUnitType.Star) };
+            emptyCol = new ColumnDefinition { Width = new GridLength(100, GridUnitType.Star) };
+            barGrid.ColumnDefinitions.Add(fillCol);
+            barGrid.ColumnDefinitions.Add(emptyCol);
+
+            fillBorder = new Border
+            {
+                Background = _colorGreen,
+                CornerRadius = new CornerRadius(3, 0, 0, 3)
+            };
+            Grid.SetColumn(fillBorder, 0);
+            barGrid.Children.Add(fillBorder);
+
+            barContainer.Child = barGrid;
+            Grid.SetRow(barContainer, 1);
+            row.Children.Add(barContainer);
+
+            return row;
+        }
+
+        private void UpdateDiagnosticBar(ColumnDefinition fill, ColumnDefinition empty, Border fillBorder, double percent)
+        {
+            if (fill == null || empty == null || fillBorder == null) return;
+
+            if (double.IsNaN(percent) || percent < 0) percent = 0;
+            if (percent > 100) percent = 100;
+
+            // Establish color severity thresholds for standard system loads
+            SolidColorBrush targetBrush = GetStaticBrush();
+            if (_useDynamicColors)
+            {
+                targetBrush = _colorGreen;
+                if (percent >= 85) targetBrush = _colorRed;
+                else if (percent >= 60) targetBrush = _colorYellow;
+            }
+
+            fill.Width = new GridLength(percent, GridUnitType.Star);
+            empty.Width = new GridLength(100 - percent, GridUnitType.Star);
+
+            // Ensures full rounding on the right side if the bar hits 100% capacity
+            fillBorder.CornerRadius = percent >= 99.9 ? new CornerRadius(3) : new CornerRadius(3, 0, 0, 3);
+            fillBorder.Background = targetBrush;
+        }
+
         private void Timer_Tick(object sender, EventArgs e)
         {
-            if (_layoutMode == "CPU" || _layoutMode == "Both")
+            if ((_layoutMode == "CPU" || _layoutMode == "Both") && _countersReady)
             {
                 float cpuVal = _cpuCounter?.NextValue() ?? 0f;
-                // Processor Utility can occasionally spike above 100 on turbo boost, cap it.
-                if (cpuVal > 100f) cpuVal = 100f;
+                if (cpuVal > 100f) cpuVal = 100f; // Processor Utility can occasionally spike above 100 on turbo boost, cap it.
 
-                AnimateNeedle(_cpuNeedleTransform, cpuVal, ref _cpuCurrentAngle);
-                if (_cpuValueText != null) _cpuValueText.Text = ((int)cpuVal).ToString();
+                if (_visualTheme == "Bars")
+                {
+                    UpdateDiagnosticBar(_cpuFillColumn, _cpuEmptyColumn, _cpuFillBorder, cpuVal);
+                    if (_cpuBarValueText != null)
+                    {
+                        _cpuBarValueText.Text = $"{cpuVal:0.0}%";
+                        _cpuBarValueText.Foreground = _cpuFillBorder.Background; // Syncs text color dynamically
+                    }
+                }
+                else
+                {
+                    AnimateNeedle(_cpuNeedleTransform, cpuVal, ref _cpuCurrentAngle);
+                    if (_cpuValueText != null) _cpuValueText.Text = ((int)cpuVal).ToString();
+                }
             }
 
             if (_layoutMode == "RAM" || _layoutMode == "Both")
@@ -230,11 +399,23 @@ namespace Desktop_Frames.Plugins
                 MEMORYSTATUSEX memStatus = new MEMORYSTATUSEX();
                 if (GlobalMemoryStatusEx(memStatus))
                 {
-                    ramVal = memStatus.dwMemoryLoad; // Fetch exact Physical RAM %
+                    ramVal = memStatus.dwMemoryLoad;
                 }
 
-                AnimateNeedle(_ramNeedleTransform, ramVal, ref _ramCurrentAngle);
-                if (_ramValueText != null) _ramValueText.Text = ((int)ramVal).ToString();
+                if (_visualTheme == "Bars")
+                {
+                    UpdateDiagnosticBar(_ramFillColumn, _ramEmptyColumn, _ramFillBorder, ramVal);
+                    if (_ramBarValueText != null)
+                    {
+                        _ramBarValueText.Text = $"{ramVal:0.0}%";
+                        _ramBarValueText.Foreground = _ramFillBorder.Background;
+                    }
+                }
+                else
+                {
+                    AnimateNeedle(_ramNeedleTransform, ramVal, ref _ramCurrentAngle);
+                    if (_ramValueText != null) _ramValueText.Text = ((int)ramVal).ToString();
+                }
             }
         }
 
@@ -342,9 +523,30 @@ namespace Desktop_Frames.Plugins
             };
 
             StackPanel groupSp = new StackPanel();
-            groupSp.Children.Add(new TextBlock { Text = "Display Options", FontWeight = FontWeights.Bold, Margin = new Thickness(0, 0, 0, 10) });
+            groupSp.Children.Add(new TextBlock { Text = "Visual Theme & Layout", FontWeight = FontWeights.Bold, Margin = new Thickness(0, 0, 0, 12) });
 
-            groupSp.Children.Add(new TextBlock { Text = "Layout Mode:", Margin = new Thickness(0, 0, 0, 5) });
+            // 1. Visual Theme (Determines gauge logic vs bar logic)
+            groupSp.Children.Add(new TextBlock { Text = "Visual Style:", FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 0, 0, 5) });
+            ComboBox cmbTheme = new ComboBox { Margin = new Thickness(0, 0, 0, 15) };
+            cmbTheme.Items.Add("Gauges");
+            cmbTheme.Items.Add("Bars");
+            cmbTheme.SelectedItem = _visualTheme;
+            groupSp.Children.Add(cmbTheme);
+
+            CheckBox chkDynamic = new CheckBox { Content = "Use Dynamic Colors for Bars", IsChecked = _useDynamicColors, Margin = new Thickness(0, 0, 0, 10), FontWeight = FontWeights.SemiBold };
+            groupSp.Children.Add(chkDynamic);
+
+            StackPanel colorSp = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 15) };
+            colorSp.Children.Add(new TextBlock { Text = "Static Bar Color:", Width = 150, FontWeight = FontWeights.SemiBold, VerticalAlignment = VerticalAlignment.Center });
+            ComboBox cmbStaticColor = new ComboBox { Width = 120 };
+            string[] presetColors = { "DeepSkyBlue", "Cyan", "LimeGreen", "Gold", "Orange", "Magenta", "White", "LightGray" };
+            foreach (var c in presetColors) cmbStaticColor.Items.Add(c);
+            cmbStaticColor.SelectedItem = presetColors.Contains(_staticColor) ? _staticColor : "DeepSkyBlue";
+            colorSp.Children.Add(cmbStaticColor);
+            groupSp.Children.Add(colorSp);
+
+            // 2. Hardware Toggles
+            groupSp.Children.Add(new TextBlock { Text = "Sensors to Display:", FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 0, 0, 5) });
             ComboBox cmbLayout = new ComboBox { Margin = new Thickness(0, 0, 0, 15) };
             cmbLayout.Items.Add("CPU");
             cmbLayout.Items.Add("RAM");
@@ -352,9 +554,16 @@ namespace Desktop_Frames.Plugins
             cmbLayout.SelectedItem = _layoutMode;
             groupSp.Children.Add(cmbLayout);
 
-            groupSp.Children.Add(new TextBlock { Text = "Refresh Rate (ms):", Margin = new Thickness(0, 0, 0, 5) });
-            TextBox txtRefresh = new TextBox { Text = _refreshRateMs.ToString() };
-            groupSp.Children.Add(txtRefresh);
+            // 3. Refresh Rate handling via predefined combo rather than loose textbox
+            groupSp.Children.Add(new TextBlock { Text = "Sensor Refresh Rate (ms):", FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 0, 0, 5) });
+            ComboBox cmbRate = new ComboBox { Margin = new Thickness(0, 0, 0, 5) };
+            cmbRate.Items.Add("500");
+            cmbRate.Items.Add("1000");
+            cmbRate.Items.Add("2000");
+            cmbRate.Items.Add("5000");
+            cmbRate.SelectedItem = _refreshRateMs.ToString();
+            if (cmbRate.SelectedItem == null) cmbRate.SelectedItem = "1000";
+            groupSp.Children.Add(cmbRate);
 
             groupBox.Child = groupSp;
             contentPanel.Children.Add(groupBox);
@@ -394,10 +603,16 @@ namespace Desktop_Frames.Plugins
             };
             btnSave.Click += (s, e) =>
             {
+                int newRate = 1000;
+                if (cmbRate.SelectedItem != null) int.TryParse(cmbRate.SelectedItem.ToString(), out newRate);
+
                 Dictionary<string, object> newSettings = new Dictionary<string, object>
                 {
+                    { "VisualTheme", cmbTheme.SelectedItem.ToString() },
+                    { "UseDynamicColors", chkDynamic.IsChecked == true },
+                    { "StaticColor", cmbStaticColor.SelectedItem?.ToString() ?? "DeepSkyBlue" },
                     { "LayoutMode", cmbLayout.SelectedItem.ToString() },
-                    { "RefreshRateMs", txtRefresh.Text }
+                    { "RefreshRateMs", newRate }
                 };
 
                 if (frameData is Newtonsoft.Json.Linq.JObject jFrame)
