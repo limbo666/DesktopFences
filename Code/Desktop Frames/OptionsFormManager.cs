@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Desktop_Frames.Localization;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -35,7 +36,7 @@ namespace Desktop_Frames
 
                 _optionsWindow = new Window
                 {
-                    Title = "Desktop Frames + Options",
+                    Title = Strings.OptionsTitle,
                     Width = 800,
                     Height = 850,
                     WindowStartupLocation = WindowStartupLocation.CenterScreen,
@@ -77,7 +78,7 @@ namespace Desktop_Frames
 
                 TextBlock titleBlock = new TextBlock
                 {
-                    Text = "Options",
+                    Text = Strings.OptionsHeading,
                     FontFamily = new FontFamily("Segoe UI"),
                     FontSize = 16,
                     FontWeight = FontWeights.Bold,
@@ -225,7 +226,7 @@ namespace Desktop_Frames
             portalViewGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(140) });
             portalViewGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(150) });
 
-            TextBlock lblPortalView = new TextBlock { Text = "Default Portal View:", FontFamily = new FontFamily("Segoe UI"), FontSize = 13, VerticalAlignment = VerticalAlignment.Center };
+            TextBlock lblPortalView = new TextBlock { Text = Strings.LblDefaultPortalView, FontFamily = new FontFamily("Segoe UI"), FontSize = 13, VerticalAlignment = VerticalAlignment.Center };
             Grid.SetColumn(lblPortalView, 0);
 
             ComboBox cbPortalView = new ComboBox { Name = "DefaultPortalViewComboBox", Height = 25, FontFamily = new FontFamily("Segoe UI"), FontSize = 13, VerticalAlignment = VerticalAlignment.Center };
@@ -253,7 +254,7 @@ namespace Desktop_Frames
             soundGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(140) });
             soundGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(200) });
 
-            TextBlock lblSound = new TextBlock { Text = "Notification Sound:", FontFamily = new FontFamily("Segoe UI"), FontSize = 13, VerticalAlignment = VerticalAlignment.Center };
+            TextBlock lblSound = new TextBlock { Text = Strings.LblNotificationSound, FontFamily = new FontFamily("Segoe UI"), FontSize = 13, VerticalAlignment = VerticalAlignment.Center };
             Grid.SetColumn(lblSound, 0);
 
             ComboBox cbSoundType = new ComboBox { Name = "NotificationSoundComboBox", Height = 25, FontFamily = new FontFamily("Segoe UI"), FontSize = 13, VerticalAlignment = VerticalAlignment.Center };
@@ -298,7 +299,7 @@ namespace Desktop_Frames
 
             // --- CHAMELEON TOGGLE ---
             var chamCb = CreateCheckBoxReturn(c, "Enable Chameleon Mode (Auto-match Wallpaper Color)", "EnableChameleon", SettingsManager.EnableChameleonMode);
-            chamCb.ToolTip = "Frames will automatically change color to blend perfectly with your desktop background.";
+            chamCb.ToolTip = Strings.TooltipChameleon;
 
             CreateSliderControl(c, "Frame Tint", "TintSlider", SettingsManager.TintValue);
             CreateSliderControl(c, "Menu Tint", "MenuTintSlider", SettingsManager.MenuTintValue);
@@ -325,7 +326,7 @@ namespace Desktop_Frames
             // --- NEW: Contextual Help Text ---
             c.Children.Add(new TextBlock
             {
-                Text = "Note: Enable auto-roll individually per frame via the frame's right-click menu.",
+                Text = Strings.NoteAutoRoll,
                 FontStyle = FontStyles.Italic,
                 Foreground = Brushes.Gray,
                 FontSize = 12,
@@ -350,11 +351,11 @@ namespace Desktop_Frames
             iconGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 
             StackPanel menuIconPanel = new StackPanel();
-            menuIconPanel.Children.Add(new TextBlock { Text = "Menu Icon", FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 0, 0, 0) });
+            menuIconPanel.Children.Add(new TextBlock { Text = Strings.LblMenuIcon, FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 0, 0, 0) });
             CreateIconRadioButtonGroup(menuIconPanel, "MenuIconGroup", new Dictionary<string, int> { { "♥", 0 }, { "☰", 1 }, { "≣", 2 }, { "𓃑", 3 } }, SettingsManager.MenuIcon);
 
             StackPanel lockIconPanel = new StackPanel();
-            lockIconPanel.Children.Add(new TextBlock { Text = "Lock Icon", FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 0, 0, 0) });
+            lockIconPanel.Children.Add(new TextBlock { Text = Strings.LblLockIcon, FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 0, 0, 0) });
             CreateIconRadioButtonGroup(lockIconPanel, "LockIconGroup", new Dictionary<string, int> { { "🛡️", 0 }, { "🔑", 1 }, { "🔐", 2 }, { "🔒", 3 } }, SettingsManager.LockIcon);
 
             Grid.SetColumn(menuIconPanel, 0);
@@ -420,7 +421,7 @@ namespace Desktop_Frames
             else
             {
                 btnBound.Opacity = 0.90;
-                btnBound.ToolTip = "Auto-reposition is active (Hidden Setting). Frames are already managed automatically.";
+                btnBound.ToolTip = Strings.TooltipAutoReposition;
             }
 
             c.Children.Add(btnBound);
@@ -474,7 +475,7 @@ namespace Desktop_Frames
             CheckBox autoCb = new CheckBox
             {
                 Name = "EnableProfileAutomation",
-                Content = "Enable Profile Automation",
+                Content = Strings.LblEnableProfileAutomation,
                 IsChecked = SettingsManager.EnableProfileAutomation,
                 FontFamily = new FontFamily("Segoe UI"),
                 FontSize = 13,
@@ -531,7 +532,7 @@ namespace Desktop_Frames
 
             TextBlock infoText = new TextBlock
             {
-                Text = "Note: Changes to Global Hotkeys require an application restart to take effect.",
+                Text = Strings.NoteHotkeysRestart,
                 FontStyle = FontStyles.Italic,
                 Foreground = Brushes.Gray,
                 Margin = new Thickness(15, 20, 0, 0)
@@ -641,7 +642,7 @@ namespace Desktop_Frames
 
             TextBlock infoText = new TextBlock
             {
-                Text = "Note: Auto-Organize continuously monitors your Desktop for new files. When a file matches an enabled rule's conditions, it is automatically and physically moved to your target Portal Frame or Folder. Use this to keep your Desktop permanently clean and automatically route downloads to their proper locations.",
+                Text = Strings.NoteAutoOrganize,
                 FontStyle = FontStyles.Italic,
                 Foreground = Brushes.Gray,
                 Margin = new Thickness(15, 20, 0, 0),
@@ -735,7 +736,7 @@ namespace Desktop_Frames
             g.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
             g.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(140) });
 
-            TextBlock lblColor = new TextBlock { Text = "Color", FontSize = 13, VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 0, 10, 0) };
+            TextBlock lblColor = new TextBlock { Text = Strings.LblColor, FontSize = 13, VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 0, 10, 0) };
             // Constrain Width to 140 and Left-align so it doesn't stretch to fill the 160px column, creating the gap automatically
             ComboBox cbColor = new ComboBox { Name = "ColorComboBox", Width = 140, HorizontalAlignment = HorizontalAlignment.Left, Height = 25, FontSize = 13, VerticalAlignment = VerticalAlignment.Center };
             foreach (string c in new[] { "Gray", "Black", "White", "Beige", "Green", "Purple", "Fuchsia", "Yellow", "Orange", "Red", "Blue", "Bismark" }) cbColor.Items.Add(c);
@@ -747,7 +748,7 @@ namespace Desktop_Frames
             // ---------------------------------------------------------------
 
             // UI FIX: Starts perfectly flush at the new 205px mark
-            TextBlock lblEffect = new TextBlock { Text = "Effect", FontSize = 13, VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Left, Margin = new Thickness(0, 0, 10, 0) };
+            TextBlock lblEffect = new TextBlock { Text = Strings.LblEffect, FontSize = 13, VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Left, Margin = new Thickness(0, 0, 10, 0) };
             ComboBox cbEffect = new ComboBox { Name = "LaunchEffectComboBox", Width = 140, HorizontalAlignment = HorizontalAlignment.Left, Height = 25, FontSize = 13, VerticalAlignment = VerticalAlignment.Center };
             foreach (string e in new[] { "Zoom", "Bounce", "FadeOut", "SlideUp", "Rotate", "Agitate", "GrowAndFly", "Pulse", "Elastic", "Flip3D", "Spiral", "Shockwave", "Matrix", "Supernova", "Teleport" }) cbEffect.Items.Add(e);
             cbEffect.SelectedIndex = (int)SettingsManager.LaunchEffect;
@@ -767,7 +768,7 @@ namespace Desktop_Frames
             Grid g = new Grid { Margin = new Thickness(0, 10, 0, 10) };
             g.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(120) });
             g.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(120) });
-            g.Children.Add(new TextBlock { Text = "Minimum Log Level", FontSize = 13, VerticalAlignment = VerticalAlignment.Center });
+            g.Children.Add(new TextBlock { Text = Strings.LblMinimumLogLevel, FontSize = 13, VerticalAlignment = VerticalAlignment.Center });
             ComboBox cb = new ComboBox { Name = "LogLevelComboBox", Height = 25, FontSize = 13, VerticalAlignment = VerticalAlignment.Center };
             foreach (var l in new[] { "Debug", "Info", "Warn", "Error" }) cb.Items.Add(l);
             cb.SelectedItem = SettingsManager.MinLogLevel.ToString();
@@ -1096,10 +1097,10 @@ namespace Desktop_Frames
             Grid.SetRow(f, 2);
             StackPanel sp = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
 
-            Button c = new Button { Content = "Cancel", Width = 100, Height = 34, FontWeight = FontWeights.Bold, Background = Brushes.White, BorderBrush = new SolidColorBrush(Color.FromRgb(218, 220, 224)), BorderThickness = new Thickness(1), Margin = new Thickness(0, 0, 10, 0), Cursor = Cursors.Hand };
+            Button c = new Button { Content = Strings.BtnCancel, Width = 100, Height = 34, FontWeight = FontWeights.Bold, Background = Brushes.White, BorderBrush = new SolidColorBrush(Color.FromRgb(218, 220, 224)), BorderThickness = new Thickness(1), Margin = new Thickness(0, 0, 10, 0), Cursor = Cursors.Hand };
             c.Click += (s, e) => _optionsWindow.Close();
 
-            Button sv = new Button { Content = "Save", Width = 100, Height = 34, FontWeight = FontWeights.Bold, Background = new SolidColorBrush(_userAccentColor), Foreground = Brushes.White, BorderThickness = new Thickness(0), Cursor = Cursors.Hand };
+            Button sv = new Button { Content = Strings.BtnSave, Width = 100, Height = 34, FontWeight = FontWeights.Bold, Background = new SolidColorBrush(_userAccentColor), Foreground = Brushes.White, BorderThickness = new Thickness(0), Cursor = Cursors.Hand };
             sv.Click += (s, e) => SaveOptions();
 
             sp.Children.Add(c); sp.Children.Add(sv); f.Child = sp; mainGrid.Children.Add(f);
@@ -1110,8 +1111,8 @@ namespace Desktop_Frames
             Border d = new Border { Background = new SolidColorBrush(Color.FromRgb(255, 248, 225)), BorderBrush = new SolidColorBrush(Color.FromRgb(255, 193, 7)), BorderThickness = new Thickness(0, 1, 0, 0), Padding = new Thickness(20) };
             Grid.SetRow(d, 3);
             StackPanel sp = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
-            sp.Children.Add(new TextBlock { Text = "Support the Maintenance and Enhancement of This Project by Donating", FontSize = 13, Foreground = new SolidColorBrush(Color.FromRgb(102, 77, 3)), VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 15, 0) });
-            Button b = new Button { Content = "♥ Donate via PayPal", FontSize = 14, Background = new SolidColorBrush(Color.FromRgb(255, 193, 7)), Foreground = Brushes.White, BorderThickness = new Thickness(0), Padding = new Thickness(15, 6, 15, 6), Cursor = Cursors.Hand };
+            sp.Children.Add(new TextBlock { Text = Strings.LblDonate, FontSize = 13, Foreground = new SolidColorBrush(Color.FromRgb(102, 77, 3)), VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 15, 0) });
+            Button b = new Button { Content = Strings.BtnDonate, FontSize = 14, Background = new SolidColorBrush(Color.FromRgb(255, 193, 7)), Foreground = Brushes.White, BorderThickness = new Thickness(0), Padding = new Thickness(15, 6, 15, 6), Cursor = Cursors.Hand };
             b.Click += (s, e) => { try { Process.Start(new ProcessStartInfo { FileName = "https://www.paypal.com/donate/?hosted_button_id=PPLWC66UC8Q42", UseShellExecute = true }); } catch { } };
             sp.Children.Add(b); d.Child = sp; mainGrid.Children.Add(d);
         }

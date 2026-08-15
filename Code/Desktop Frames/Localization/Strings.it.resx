@@ -232,4 +232,124 @@
   <data name="MenuNameAfterPath" xml:space="preserve">
     <value>Rinomina la frame come il percorso</value>
   </data>
+  <data name="BtnApply" xml:space="preserve">
+    <value>Applica</value>
+  </data>
+  <data name="BtnSave" xml:space="preserve">
+    <value>Salva</value>
+  </data>
+  <data name="BtnCancel" xml:space="preserve">
+    <value>Annulla</value>
+  </data>
+  <data name="BtnDefault" xml:space="preserve">
+    <value>Predefiniti</value>
+  </data>
+  <data name="CustomizeTitle" xml:space="preserve">
+    <value>Personalizza frame</value>
+  </data>
+  <data name="BtnApplyToAll" xml:space="preserve">
+    <value>Applica a tutte</value>
+  </data>
+  <data name="BtnSaveToAll" xml:space="preserve">
+    <value>Salva su tutte</value>
+  </data>
+  <data name="TabFrame" xml:space="preserve">
+    <value>Frame</value>
+  </data>
+  <data name="TabTitle" xml:space="preserve">
+    <value>Titolo</value>
+  </data>
+  <data name="TabIcons" xml:space="preserve">
+    <value>Icone</value>
+  </data>
+  <data name="LblCustomColor" xml:space="preserve">
+    <value>Colore personalizzato:</value>
+  </data>
+  <data name="LblCustomLaunchEffect" xml:space="preserve">
+    <value>Effetto di avvio personalizzato:</value>
+  </data>
+  <data name="LblFrameBorderColor" xml:space="preserve">
+    <value>Colore del bordo:</value>
+  </data>
+  <data name="LblFrameBorderThickness" xml:space="preserve">
+    <value>Spessore del bordo:</value>
+  </data>
+  <data name="LblTitleTextColor" xml:space="preserve">
+    <value>Colore del titolo:</value>
+  </data>
+  <data name="LblTitleTextSize" xml:space="preserve">
+    <value>Dimensione del titolo:</value>
+  </data>
+  <data name="LblBoldTitleText" xml:space="preserve">
+    <value>Titolo in grassetto</value>
+  </data>
+  <data name="LblPortalView" xml:space="preserve">
+    <value>Vista Portal:</value>
+  </data>
+  <data name="LblIconSize" xml:space="preserve">
+    <value>Dimensione icone:</value>
+  </data>
+  <data name="LblIconSpacing" xml:space="preserve">
+    <value>Spaziatura icone:</value>
+  </data>
+  <data name="LblTextColor" xml:space="preserve">
+    <value>Colore del testo:</value>
+  </data>
+  <data name="LblDisableTextShadow" xml:space="preserve">
+    <value>Disattiva l'ombra del testo</value>
+  </data>
+  <data name="LblGrayscaleIcons" xml:space="preserve">
+    <value>Icone in scala di grigi</value>
+  </data>
+  <data name="OptionsTitle" xml:space="preserve">
+    <value>Desktop Frames + - Opzioni</value>
+  </data>
+  <data name="OptionsHeading" xml:space="preserve">
+    <value>Opzioni</value>
+  </data>
+  <data name="LblDefaultPortalView" xml:space="preserve">
+    <value>Vista Portal predefinita:</value>
+  </data>
+  <data name="LblNotificationSound" xml:space="preserve">
+    <value>Suono di notifica:</value>
+  </data>
+  <data name="TooltipChameleon" xml:space="preserve">
+    <value>Le frame cambiano colore da sole per fondersi con lo sfondo del desktop.</value>
+  </data>
+  <data name="NoteAutoRoll" xml:space="preserve">
+    <value>Nota: la riduzione automatica si attiva su ogni singola frame dal menu che compare con il tasto destro.</value>
+  </data>
+  <data name="LblMenuIcon" xml:space="preserve">
+    <value>Icona del menu</value>
+  </data>
+  <data name="LblLockIcon" xml:space="preserve">
+    <value>Icona del lucchetto</value>
+  </data>
+  <data name="TooltipAutoReposition" xml:space="preserve">
+    <value>Il riposizionamento automatico e' attivo (impostazione nascosta): le frame sono gia' gestite da sole.</value>
+  </data>
+  <data name="LblEnableProfileAutomation" xml:space="preserve">
+    <value>Abilita l'automazione dei profili</value>
+  </data>
+  <data name="NoteHotkeysRestart" xml:space="preserve">
+    <value>Nota: le modifiche alle scorciatoie globali hanno effetto dopo il riavvio del programma.</value>
+  </data>
+  <data name="NoteAutoOrganize" xml:space="preserve">
+    <value>Nota: l'organizzazione automatica sorveglia il desktop in cerca di file nuovi. Quando un file soddisfa le condizioni di una regola attiva, viene spostato davvero nella frame Portal o nella cartella indicata. Serve a tenere il desktop sempre pulito e a smistare i download da soli.</value>
+  </data>
+  <data name="LblColor" xml:space="preserve">
+    <value>Colore</value>
+  </data>
+  <data name="LblEffect" xml:space="preserve">
+    <value>Effetto</value>
+  </data>
+  <data name="LblMinimumLogLevel" xml:space="preserve">
+    <value>Livello minimo di log</value>
+  </data>
+  <data name="LblDonate" xml:space="preserve">
+    <value>Sostieni la manutenzione e lo sviluppo di questo progetto con una donazione</value>
+  </data>
+  <data name="BtnDonate" xml:space="preserve">
+    <value>♥ Dona con PayPal</value>
+  </data>
 </root>

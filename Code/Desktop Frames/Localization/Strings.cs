@@ -124,5 +124,47 @@ namespace Desktop_Frames.Localization
         public static string MenuSpacerBlank => Get("MenuSpacerBlank");
         public static string MenuSpacerDot => Get("MenuSpacerDot");
         public static string MenuNameAfterPath => Get("MenuNameAfterPath");
+
+        // ── Settings windows ────────────────────────────────────
+        public static string BtnApply => Get("BtnApply");
+        public static string BtnSave => Get("BtnSave");
+        public static string BtnCancel => Get("BtnCancel");
+        public static string BtnDefault => Get("BtnDefault");
+        public static string CustomizeTitle => Get("CustomizeTitle");
+        public static string BtnApplyToAll => Get("BtnApplyToAll");
+        public static string BtnSaveToAll => Get("BtnSaveToAll");
+        public static string TabFrame => Get("TabFrame");
+        public static string TabTitle => Get("TabTitle");
+        public static string TabIcons => Get("TabIcons");
+        public static string LblCustomColor => Get("LblCustomColor");
+        public static string LblCustomLaunchEffect => Get("LblCustomLaunchEffect");
+        public static string LblFrameBorderColor => Get("LblFrameBorderColor");
+        public static string LblFrameBorderThickness => Get("LblFrameBorderThickness");
+        public static string LblTitleTextColor => Get("LblTitleTextColor");
+        public static string LblTitleTextSize => Get("LblTitleTextSize");
+        public static string LblBoldTitleText => Get("LblBoldTitleText");
+        public static string LblPortalView => Get("LblPortalView");
+        public static string LblIconSize => Get("LblIconSize");
+        public static string LblIconSpacing => Get("LblIconSpacing");
+        public static string LblTextColor => Get("LblTextColor");
+        public static string LblDisableTextShadow => Get("LblDisableTextShadow");
+        public static string LblGrayscaleIcons => Get("LblGrayscaleIcons");
+        public static string OptionsTitle => Get("OptionsTitle");
+        public static string OptionsHeading => Get("OptionsHeading");
+        public static string LblDefaultPortalView => Get("LblDefaultPortalView");
+        public static string LblNotificationSound => Get("LblNotificationSound");
+        public static string TooltipChameleon => Get("TooltipChameleon");
+        public static string NoteAutoRoll => Get("NoteAutoRoll");
+        public static string LblMenuIcon => Get("LblMenuIcon");
+        public static string LblLockIcon => Get("LblLockIcon");
+        public static string TooltipAutoReposition => Get("TooltipAutoReposition");
+        public static string LblEnableProfileAutomation => Get("LblEnableProfileAutomation");
+        public static string NoteHotkeysRestart => Get("NoteHotkeysRestart");
+        public static string NoteAutoOrganize => Get("NoteAutoOrganize");
+        public static string LblColor => Get("LblColor");
+        public static string LblEffect => Get("LblEffect");
+        public static string LblMinimumLogLevel => Get("LblMinimumLogLevel");
+        public static string LblDonate => Get("LblDonate");
+        public static string BtnDonate => Get("BtnDonate");
     }
 }

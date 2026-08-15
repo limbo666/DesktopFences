@@ -232,4 +232,124 @@
   <data name="MenuNameAfterPath" xml:space="preserve">
     <value>Name Frame After Target Path</value>
   </data>
+  <data name="BtnApply" xml:space="preserve">
+    <value>Apply</value>
+  </data>
+  <data name="BtnSave" xml:space="preserve">
+    <value>Save</value>
+  </data>
+  <data name="BtnCancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="BtnDefault" xml:space="preserve">
+    <value>Default</value>
+  </data>
+  <data name="CustomizeTitle" xml:space="preserve">
+    <value>Customize Frame</value>
+  </data>
+  <data name="BtnApplyToAll" xml:space="preserve">
+    <value>Apply to all</value>
+  </data>
+  <data name="BtnSaveToAll" xml:space="preserve">
+    <value>Save to all</value>
+  </data>
+  <data name="TabFrame" xml:space="preserve">
+    <value>Frame</value>
+  </data>
+  <data name="TabTitle" xml:space="preserve">
+    <value>Title</value>
+  </data>
+  <data name="TabIcons" xml:space="preserve">
+    <value>Icons</value>
+  </data>
+  <data name="LblCustomColor" xml:space="preserve">
+    <value>Custom Color:</value>
+  </data>
+  <data name="LblCustomLaunchEffect" xml:space="preserve">
+    <value>Custom Launch Effect:</value>
+  </data>
+  <data name="LblFrameBorderColor" xml:space="preserve">
+    <value>Frame Border Color:</value>
+  </data>
+  <data name="LblFrameBorderThickness" xml:space="preserve">
+    <value>Frame Border Thickness:</value>
+  </data>
+  <data name="LblTitleTextColor" xml:space="preserve">
+    <value>Title Text Color:</value>
+  </data>
+  <data name="LblTitleTextSize" xml:space="preserve">
+    <value>Title Text Size:</value>
+  </data>
+  <data name="LblBoldTitleText" xml:space="preserve">
+    <value>Bold Title Text</value>
+  </data>
+  <data name="LblPortalView" xml:space="preserve">
+    <value>Portal View:</value>
+  </data>
+  <data name="LblIconSize" xml:space="preserve">
+    <value>Icon Size:</value>
+  </data>
+  <data name="LblIconSpacing" xml:space="preserve">
+    <value>Icon Spacing:</value>
+  </data>
+  <data name="LblTextColor" xml:space="preserve">
+    <value>Text Color:</value>
+  </data>
+  <data name="LblDisableTextShadow" xml:space="preserve">
+    <value>Disable Text Shadow</value>
+  </data>
+  <data name="LblGrayscaleIcons" xml:space="preserve">
+    <value>Grayscale Icons</value>
+  </data>
+  <data name="OptionsTitle" xml:space="preserve">
+    <value>Desktop Frames + Options</value>
+  </data>
+  <data name="OptionsHeading" xml:space="preserve">
+    <value>Options</value>
+  </data>
+  <data name="LblDefaultPortalView" xml:space="preserve">
+    <value>Default Portal View:</value>
+  </data>
+  <data name="LblNotificationSound" xml:space="preserve">
+    <value>Notification Sound:</value>
+  </data>
+  <data name="TooltipChameleon" xml:space="preserve">
+    <value>Frames will automatically change color to blend perfectly with your desktop background.</value>
+  </data>
+  <data name="NoteAutoRoll" xml:space="preserve">
+    <value>Note: Enable auto-roll individually per frame via the frame's right-click menu.</value>
+  </data>
+  <data name="LblMenuIcon" xml:space="preserve">
+    <value>Menu Icon</value>
+  </data>
+  <data name="LblLockIcon" xml:space="preserve">
+    <value>Lock Icon</value>
+  </data>
+  <data name="TooltipAutoReposition" xml:space="preserve">
+    <value>Auto-reposition is active (Hidden Setting). Frames are already managed automatically.</value>
+  </data>
+  <data name="LblEnableProfileAutomation" xml:space="preserve">
+    <value>Enable Profile Automation</value>
+  </data>
+  <data name="NoteHotkeysRestart" xml:space="preserve">
+    <value>Note: Changes to Global Hotkeys require an application restart to take effect.</value>
+  </data>
+  <data name="NoteAutoOrganize" xml:space="preserve">
+    <value>Note: Auto-Organize continuously monitors your Desktop for new files. When a file matches an enabled rule's conditions, it is automatically and physically moved to your target Portal Frame or Folder. Use this to keep your Desktop permanently clean and automatically route downloads to their proper locations.</value>
+  </data>
+  <data name="LblColor" xml:space="preserve">
+    <value>Color</value>
+  </data>
+  <data name="LblEffect" xml:space="preserve">
+    <value>Effect</value>
+  </data>
+  <data name="LblMinimumLogLevel" xml:space="preserve">
+    <value>Minimum Log Level</value>
+  </data>
+  <data name="LblDonate" xml:space="preserve">
+    <value>Support the Maintenance and Enhancement of This Project by Donating</value>
+  </data>
+  <data name="BtnDonate" xml:space="preserve">
+    <value>♥ Donate via PayPal</value>
+  </data>
 </root>
