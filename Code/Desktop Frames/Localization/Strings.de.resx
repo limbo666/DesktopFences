@@ -1,0 +1,1402 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- Seed translation produced with AI assistance and not yet reviewed by a native speaker. Keys left out fall back to English at runtime. -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="AboutAnd" xml:space="preserve">
+    <value> und </value>
+  </data>
+  <data name="AboutBody" xml:space="preserve">
+    <value>Desktop Frames + legt virtuelle Rahmen auf dem Desktop an, in denen sich Symbole sauber und bequem gruppieren und ordnen lassen.</value>
+  </data>
+  <data name="AboutCreditsBody" xml:space="preserve">
+    <value>Desktop Frames + ist ein quelloffenes Windows-Werkzeug, entstanden aus der Arbeit von HakanKokcu unter dem Namen BirdyFences.
+
+Heute wird es von Nikos Georgousis gepflegt, der es erweitert und stabiler sowie angenehmer gemacht hat.</value>
+  </data>
+  <data name="AboutDonateBig" xml:space="preserve">
+    <value>999,00 € spenden</value>
+  </data>
+  <data name="AboutDontFeedDragons" xml:space="preserve">
+    <value>Bitte die Drachen nicht füttern</value>
+  </data>
+  <data name="AboutGreatToHaveYou" xml:space="preserve">
+    <value>Schön, dass du da bist</value>
+  </data>
+  <data name="AboutLicense" xml:space="preserve">
+    <value>⚖ MIT-Lizenz</value>
+  </data>
+  <data name="AboutPleaseDonate" xml:space="preserve">
+    <value>Bitte spenden</value>
+  </data>
+  <data name="AboutSectionAbout" xml:space="preserve">
+    <value>Über</value>
+  </data>
+  <data name="AboutSectionCredits" xml:space="preserve">
+    <value>Danksagungen</value>
+  </data>
+  <data name="AboutSoundCredits" xml:space="preserve">
+    <value>Kostenlose Klänge von </value>
+  </data>
+  <data name="AboutSupportDevelopment" xml:space="preserve">
+    <value>Entwicklung unterstützen</value>
+  </data>
+  <data name="AboutTagline" xml:space="preserve">
+    <value>Räume deinen Desktop auf wie von Zauberhand.</value>
+  </data>
+  <data name="AboutThinkAgain" xml:space="preserve">
+    <value>Sicher? Denk noch mal nach!</value>
+  </data>
+  <data name="AboutVersion" xml:space="preserve">
+    <value>Version {0}</value>
+  </data>
+  <data name="AboutVisitGitHub" xml:space="preserve">
+    <value>⚡ Zum GitHub-Repository</value>
+  </data>
+  <data name="AboutWhat" xml:space="preserve">
+    <value>Wie bitte!?</value>
+  </data>
+  <data name="AutomationDeleteSelected" xml:space="preserve">
+    <value>Ausgewählte löschen</value>
+  </data>
+  <data name="AutomationDoubleClickEdit" xml:space="preserve">
+    <value>Doppelklick zum Bearbeiten der Regel</value>
+  </data>
+  <data name="AutomationExisting" xml:space="preserve">
+    <value>Vorhandene Regeln</value>
+  </data>
+  <data name="AutomationManage" xml:space="preserve">
+    <value>Automatisierungsregeln verwalten</value>
+  </data>
+  <data name="AutomationPersistedMode" xml:space="preserve">
+    <value>Dauerhafter Modus (nach dem Schließen im Profil bleiben)</value>
+  </data>
+  <data name="AutomationPickWindow" xml:space="preserve">
+    <value>🎯 Fenster wählen</value>
+  </data>
+  <data name="AutomationRuleDefinition" xml:space="preserve">
+    <value>Regeldefinition</value>
+  </data>
+  <data name="AutomationTitle" xml:space="preserve">
+    <value>Automatisierungsregeln</value>
+  </data>
+  <data name="AutoOrgAddRule" xml:space="preserve">
+    <value>+ Regel hinzufügen</value>
+  </data>
+  <data name="AutoOrgBrowseFolder" xml:space="preserve">
+    <value>Ordner wählen…</value>
+  </data>
+  <data name="AutoOrgCustomExtensions" xml:space="preserve">
+    <value>Eigene Endungen (z. B. *.zip; *.rar):</value>
+  </data>
+  <data name="AutoOrgEnableRule" xml:space="preserve">
+    <value>Diese Regel aktivieren</value>
+  </data>
+  <data name="AutoOrgFilenameContains" xml:space="preserve">
+    <value>Und der Name enthält (optional, leer = beliebig):</value>
+  </data>
+  <data name="AutoOrgGeneratePortal" xml:space="preserve">
+    <value>Portal-Rahmen für diesen Ordner anlegen</value>
+  </data>
+  <data name="AutoOrgIfExists" xml:space="preserve">
+    <value>Wenn die Datei schon existiert:</value>
+  </data>
+  <data name="AutoOrgIfExtension" xml:space="preserve">
+    <value>Wenn die Dateiendung ist:</value>
+  </data>
+  <data name="AutoOrgMoveTo" xml:space="preserve">
+    <value>Verschieben nach:</value>
+  </data>
+  <data name="AutoOrgRemove" xml:space="preserve">
+    <value>− Entfernen</value>
+  </data>
+  <data name="AutoOrgRuleName" xml:space="preserve">
+    <value>Regelname:</value>
+  </data>
+  <data name="AutoOrgSaveRules" xml:space="preserve">
+    <value>Regeln speichern</value>
+  </data>
+  <data name="AutoOrgTitle" xml:space="preserve">
+    <value>Intelligente Desktop-Regeln</value>
+  </data>
+  <data name="BackupSelectExportFile" xml:space="preserve">
+    <value>Exportdatei des Rahmens wählen</value>
+  </data>
+  <data name="BtnApply" xml:space="preserve">
+    <value>Übernehmen</value>
+  </data>
+  <data name="BtnApplyToAll" xml:space="preserve">
+    <value>Auf alle übernehmen</value>
+  </data>
+  <data name="BtnBackup" xml:space="preserve">
+    <value>Sicherung</value>
+  </data>
+  <data name="BtnBrowse" xml:space="preserve">
+    <value>Durchsuchen…</value>
+  </data>
+  <data name="BtnCancel" xml:space="preserve">
+    <value>Abbrechen</value>
+  </data>
+  <data name="BtnClearAllData" xml:space="preserve">
+    <value>Alle Daten löschen</value>
+  </data>
+  <data name="BtnClose" xml:space="preserve">
+    <value>Schließen</value>
+  </data>
+  <data name="BtnCreate" xml:space="preserve">
+    <value>Erstellen</value>
+  </data>
+  <data name="BtnDefault" xml:space="preserve">
+    <value>Standard</value>
+  </data>
+  <data name="BtnDonate" xml:space="preserve">
+    <value>♥ Per PayPal spenden</value>
+  </data>
+  <data name="BtnManageAutomation" xml:space="preserve">
+    <value>Automatisierung verwalten</value>
+  </data>
+  <data name="BtnManageProfiles" xml:space="preserve">
+    <value>Profile verwalten</value>
+  </data>
+  <data name="BtnMoveDown" xml:space="preserve">
+    <value>▼ Nach unten</value>
+  </data>
+  <data name="BtnMoveUp" xml:space="preserve">
+    <value>▲ Nach oben</value>
+  </data>
+  <data name="BtnOpenBackupsFolder" xml:space="preserve">
+    <value>Sicherungsordner öffnen</value>
+  </data>
+  <data name="BtnOpenLog" xml:space="preserve">
+    <value>Protokoll öffnen</value>
+  </data>
+  <data name="BtnOrganizeNow" xml:space="preserve">
+    <value>Jetzt aufräumen</value>
+  </data>
+  <data name="BtnResetStyles" xml:space="preserve">
+    <value>Stile zurücksetzen</value>
+  </data>
+  <data name="BtnRestore" xml:space="preserve">
+    <value>Wiederherstellen…</value>
+  </data>
+  <data name="BtnSave" xml:space="preserve">
+    <value>Speichern</value>
+  </data>
+  <data name="BtnSaveToAll" xml:space="preserve">
+    <value>Für alle speichern</value>
+  </data>
+  <data name="BtnScreenBoundFrames" xml:space="preserve">
+    <value>Rahmen zurück auf den Bildschirm holen</value>
+  </data>
+  <data name="BtnSmartDesktopRules" xml:space="preserve">
+    <value>Regeln für den intelligenten Desktop…</value>
+  </data>
+  <data name="ButtonNo" xml:space="preserve">
+    <value>Nein</value>
+  </data>
+  <data name="ButtonOk" xml:space="preserve">
+    <value>OK</value>
+  </data>
+  <data name="ButtonYes" xml:space="preserve">
+    <value>Ja</value>
+  </data>
+  <data name="CalcBadgeFade" xml:space="preserve">
+    <value>Dauer des Ausblendens (ms):</value>
+  </data>
+  <data name="CalcClear" xml:space="preserve">
+    <value>Löschen</value>
+  </data>
+  <data name="CalcCleared" xml:space="preserve">
+    <value>Gelöscht</value>
+  </data>
+  <data name="CalcClearedAll" xml:space="preserve">
+    <value>Alles gelöscht</value>
+  </data>
+  <data name="CalcClearHistory" xml:space="preserve">
+    <value>Verlauf löschen</value>
+  </data>
+  <data name="CalcClearMemory" xml:space="preserve">
+    <value>Speicher und Verlauf löschen</value>
+  </data>
+  <data name="CalcClearOnNewInput" xml:space="preserve">
+    <value>Anzeige bei neuer Eingabe löschen (nach „=“)</value>
+  </data>
+  <data name="CalcCopy" xml:space="preserve">
+    <value>Kopieren</value>
+  </data>
+  <data name="CalcDisplayColor" xml:space="preserve">
+    <value>Farbe der Anzeige:</value>
+  </data>
+  <data name="CalcEntryCleared" xml:space="preserve">
+    <value>Eingabe gelöscht</value>
+  </data>
+  <data name="CalcErrorDisplay" xml:space="preserve">
+    <value>Fehler</value>
+  </data>
+  <data name="CalcHistoryColor" xml:space="preserve">
+    <value>Farbe des Verlaufs:</value>
+  </data>
+  <data name="CalcPaste" xml:space="preserve">
+    <value>Einfügen</value>
+  </data>
+  <data name="CalcPercentage" xml:space="preserve">
+    <value>Prozent</value>
+  </data>
+  <data name="CalcSettings" xml:space="preserve">
+    <value>Einstellungen des Taschenrechners</value>
+  </data>
+  <data name="CalcShowKeypad" xml:space="preserve">
+    <value>Ziffernblock anzeigen</value>
+  </data>
+  <data name="CalcShowOperationNames" xml:space="preserve">
+    <value>Namen der Rechenarten anzeigen (z. B. Addition)</value>
+  </data>
+  <data name="CalcShowTape" xml:space="preserve">
+    <value>Rechenstreifen anzeigen</value>
+  </data>
+  <data name="ColDateModified" xml:space="preserve">
+    <value>Änderungsdatum</value>
+  </data>
+  <data name="ColName" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="ColorBeige" xml:space="preserve">
+    <value>Beige</value>
+  </data>
+  <data name="ColorBismark" xml:space="preserve">
+    <value>Bismark</value>
+  </data>
+  <data name="ColorBlack" xml:space="preserve">
+    <value>Schwarz</value>
+  </data>
+  <data name="ColorBlue" xml:space="preserve">
+    <value>Blau</value>
+  </data>
+  <data name="ColorFuchsia" xml:space="preserve">
+    <value>Fuchsia</value>
+  </data>
+  <data name="ColorGray" xml:space="preserve">
+    <value>Grau</value>
+  </data>
+  <data name="ColorGreen" xml:space="preserve">
+    <value>Grün</value>
+  </data>
+  <data name="ColorOrange" xml:space="preserve">
+    <value>Orange</value>
+  </data>
+  <data name="ColorPurple" xml:space="preserve">
+    <value>Violett</value>
+  </data>
+  <data name="ColorRed" xml:space="preserve">
+    <value>Rot</value>
+  </data>
+  <data name="ColorWhite" xml:space="preserve">
+    <value>Weiß</value>
+  </data>
+  <data name="ColorYellow" xml:space="preserve">
+    <value>Gelb</value>
+  </data>
+  <data name="ColSize" xml:space="preserve">
+    <value>Größe</value>
+  </data>
+  <data name="ColType" xml:space="preserve">
+    <value>Typ</value>
+  </data>
+  <data name="ConfirmDeleteTitle" xml:space="preserve">
+    <value>Löschen bestätigen</value>
+  </data>
+  <data name="CustomizeTitle" xml:space="preserve">
+    <value>Rahmen anpassen</value>
+  </data>
+  <data name="DeleteFrameHeading" xml:space="preserve">
+    <value>Rahmen löschen</value>
+  </data>
+  <data name="DeleteFrameQuestion" xml:space="preserve">
+    <value>Diesen Rahmen wirklich löschen?</value>
+  </data>
+  <data name="DeleteTabTitle" xml:space="preserve">
+    <value>Registerkarte löschen</value>
+  </data>
+  <data name="DiagCpuQueue" xml:space="preserve">
+    <value>CPU-WARTESCHLANGE</value>
+  </data>
+  <data name="DiagCpuUtilization" xml:space="preserve">
+    <value>CPU-AUSLASTUNG</value>
+  </data>
+  <data name="DiagDiskIo" xml:space="preserve">
+    <value>DATENTRÄGER-E/A</value>
+  </data>
+  <data name="DiagRamUtilization" xml:space="preserve">
+    <value>RAM-AUSLASTUNG</value>
+  </data>
+  <data name="EditSelectIcon" xml:space="preserve">
+    <value>Symbol wählen</value>
+  </data>
+  <data name="EditSelectTarget" xml:space="preserve">
+    <value>Zieldatei wählen</value>
+  </data>
+  <data name="EditShortcutTitle" xml:space="preserve">
+    <value>Verknüpfung bearbeiten</value>
+  </data>
+  <data name="FocusFrameTitle" xml:space="preserve">
+    <value>Zum Rahmen springen</value>
+  </data>
+  <data name="FocusSearchActive" xml:space="preserve">
+    <value>Unter den aktiven Rahmen suchen:</value>
+  </data>
+  <data name="FxAgitate" xml:space="preserve">
+    <value>Rütteln</value>
+  </data>
+  <data name="FxBounce" xml:space="preserve">
+    <value>Sprung</value>
+  </data>
+  <data name="FxElastic" xml:space="preserve">
+    <value>Elastisch</value>
+  </data>
+  <data name="FxFadeOut" xml:space="preserve">
+    <value>Ausblenden</value>
+  </data>
+  <data name="FxFlip3D" xml:space="preserve">
+    <value>3D-Drehung</value>
+  </data>
+  <data name="FxGrowAndFly" xml:space="preserve">
+    <value>Wachsen und fliegen</value>
+  </data>
+  <data name="FxMatrix" xml:space="preserve">
+    <value>Matrix</value>
+  </data>
+  <data name="FxPulse" xml:space="preserve">
+    <value>Pulsieren</value>
+  </data>
+  <data name="FxRotate" xml:space="preserve">
+    <value>Drehung</value>
+  </data>
+  <data name="FxShockwave" xml:space="preserve">
+    <value>Schockwelle</value>
+  </data>
+  <data name="FxSlideUp" xml:space="preserve">
+    <value>Nach oben gleiten</value>
+  </data>
+  <data name="FxSpiral" xml:space="preserve">
+    <value>Spirale</value>
+  </data>
+  <data name="FxSupernova" xml:space="preserve">
+    <value>Supernova</value>
+  </data>
+  <data name="FxTeleport" xml:space="preserve">
+    <value>Teleport</value>
+  </data>
+  <data name="FxZoom" xml:space="preserve">
+    <value>Zoom</value>
+  </data>
+  <data name="GaugeLeftL" xml:space="preserve">
+    <value>LINKS (L)</value>
+  </data>
+  <data name="GaugeLeftVu" xml:space="preserve">
+    <value>VU LINKS</value>
+  </data>
+  <data name="GaugeMasterVu" xml:space="preserve">
+    <value>HAUPT-VU</value>
+  </data>
+  <data name="GaugeRightR" xml:space="preserve">
+    <value>RECHTS (R)</value>
+  </data>
+  <data name="GaugeRightVu" xml:space="preserve">
+    <value>VU RECHTS</value>
+  </data>
+  <data name="HkDirectProfile" xml:space="preserve">
+    <value>Direktes Profil [0-9]</value>
+  </data>
+  <data name="HkFocusFrame" xml:space="preserve">
+    <value>Zum Rahmen springen</value>
+  </data>
+  <data name="HkNextProfile" xml:space="preserve">
+    <value>Nächstes Profil</value>
+  </data>
+  <data name="HkPreviousProfile" xml:space="preserve">
+    <value>Vorheriges Profil</value>
+  </data>
+  <data name="HkSpotSearch" xml:space="preserve">
+    <value>Schnellsuche</value>
+  </data>
+  <data name="IconPickerHint" xml:space="preserve">
+    <value>Wähle ein Symbol aus den verfügbaren und klicke auf OK</value>
+  </data>
+  <data name="IconPickerTitle" xml:space="preserve">
+    <value>Symbol wählen</value>
+  </data>
+  <data name="ImportTabNoFrames" xml:space="preserve">
+    <value>Keine weiteren Daten-Rahmen zum Importieren gefunden.</value>
+  </data>
+  <data name="ImportTabPrompt" xml:space="preserve">
+    <value>Wähle den Rahmen oder die Registerkarte zum Importieren:</value>
+  </data>
+  <data name="ImportTabTitle" xml:space="preserve">
+    <value>Registerkarte importieren</value>
+  </data>
+  <data name="ItemAgitate" xml:space="preserve">
+    <value>Rütteln</value>
+  </data>
+  <data name="ItemBeige" xml:space="preserve">
+    <value>Beige</value>
+  </data>
+  <data name="ItemBismark" xml:space="preserve">
+    <value>Bismark</value>
+  </data>
+  <data name="ItemBlack" xml:space="preserve">
+    <value>Schwarz</value>
+  </data>
+  <data name="ItemBlue" xml:space="preserve">
+    <value>Blau</value>
+  </data>
+  <data name="ItemBounce" xml:space="preserve">
+    <value>Sprung</value>
+  </data>
+  <data name="ItemDefault" xml:space="preserve">
+    <value>Standard</value>
+  </data>
+  <data name="ItemDetails" xml:space="preserve">
+    <value>Liste</value>
+  </data>
+  <data name="ItemElastic" xml:space="preserve">
+    <value>Elastisch</value>
+  </data>
+  <data name="ItemFadeOut" xml:space="preserve">
+    <value>Ausblenden</value>
+  </data>
+  <data name="ItemFlip3D" xml:space="preserve">
+    <value>3D-Drehung</value>
+  </data>
+  <data name="ItemFuchsia" xml:space="preserve">
+    <value>Fuchsia</value>
+  </data>
+  <data name="ItemGray" xml:space="preserve">
+    <value>Grau</value>
+  </data>
+  <data name="ItemGreen" xml:space="preserve">
+    <value>Grün</value>
+  </data>
+  <data name="ItemGrowAndFly" xml:space="preserve">
+    <value>Wachsen und fliegen</value>
+  </data>
+  <data name="ItemHuge" xml:space="preserve">
+    <value>Riesig</value>
+  </data>
+  <data name="ItemIcons" xml:space="preserve">
+    <value>Symbole</value>
+  </data>
+  <data name="ItemLarge" xml:space="preserve">
+    <value>Groß</value>
+  </data>
+  <data name="ItemMatrix" xml:space="preserve">
+    <value>Matrix</value>
+  </data>
+  <data name="ItemMedium" xml:space="preserve">
+    <value>Mittel</value>
+  </data>
+  <data name="ItemOrange" xml:space="preserve">
+    <value>Orange</value>
+  </data>
+  <data name="ItemPulse" xml:space="preserve">
+    <value>Pulsieren</value>
+  </data>
+  <data name="ItemPurple" xml:space="preserve">
+    <value>Violett</value>
+  </data>
+  <data name="ItemRed" xml:space="preserve">
+    <value>Rot</value>
+  </data>
+  <data name="ItemRotate" xml:space="preserve">
+    <value>Drehung</value>
+  </data>
+  <data name="ItemShockwave" xml:space="preserve">
+    <value>Schockwelle</value>
+  </data>
+  <data name="ItemSlideUp" xml:space="preserve">
+    <value>Nach oben gleiten</value>
+  </data>
+  <data name="ItemSmall" xml:space="preserve">
+    <value>Klein</value>
+  </data>
+  <data name="ItemSpiral" xml:space="preserve">
+    <value>Spirale</value>
+  </data>
+  <data name="ItemSupernova" xml:space="preserve">
+    <value>Supernova</value>
+  </data>
+  <data name="ItemTeal" xml:space="preserve">
+    <value>Blaugrün</value>
+  </data>
+  <data name="ItemTeleport" xml:space="preserve">
+    <value>Teleport</value>
+  </data>
+  <data name="ItemTiny" xml:space="preserve">
+    <value>Winzig</value>
+  </data>
+  <data name="ItemWhite" xml:space="preserve">
+    <value>Weiß</value>
+  </data>
+  <data name="ItemYellow" xml:space="preserve">
+    <value>Gelb</value>
+  </data>
+  <data name="ItemZoom" xml:space="preserve">
+    <value>Zoom</value>
+  </data>
+  <data name="KeyComma" xml:space="preserve">
+    <value>Komma (,)</value>
+  </data>
+  <data name="KeyEnter" xml:space="preserve">
+    <value>Eingabe</value>
+  </data>
+  <data name="KeyEscape" xml:space="preserve">
+    <value>Esc</value>
+  </data>
+  <data name="KeyPeriod" xml:space="preserve">
+    <value>Punkt (.)</value>
+  </data>
+  <data name="KeySpace" xml:space="preserve">
+    <value>Leertaste</value>
+  </data>
+  <data name="KeyTab" xml:space="preserve">
+    <value>Tab</value>
+  </data>
+  <data name="KeyTilde" xml:space="preserve">
+    <value>Tilde (~)</value>
+  </data>
+  <data name="LblActivationDelay" xml:space="preserve">
+    <value>Verzögerung bis zur Aktivierung:</value>
+  </data>
+  <data name="LblArguments" xml:space="preserve">
+    <value>Argumente:</value>
+  </data>
+  <data name="LblBoldTitleText" xml:space="preserve">
+    <value>Titel fett</value>
+  </data>
+  <data name="LblColor" xml:space="preserve">
+    <value>Farbe</value>
+  </data>
+  <data name="LblCustomColor" xml:space="preserve">
+    <value>Eigene Farbe:</value>
+  </data>
+  <data name="LblCustomLaunchEffect" xml:space="preserve">
+    <value>Eigener Starteffekt:</value>
+  </data>
+  <data name="LblDefaultPortalView" xml:space="preserve">
+    <value>Standardansicht für Portale:</value>
+  </data>
+  <data name="LblDisableTextShadow" xml:space="preserve">
+    <value>Textschatten abschalten</value>
+  </data>
+  <data name="LblDisplayName" xml:space="preserve">
+    <value>Anzeigename:</value>
+  </data>
+  <data name="LblDonate" xml:space="preserve">
+    <value>Unterstütze die Pflege und Weiterentwicklung dieses Projekts mit einer Spende</value>
+  </data>
+  <data name="LblEffect" xml:space="preserve">
+    <value>Effekt</value>
+  </data>
+  <data name="LblEnabledRules" xml:space="preserve">
+    <value>Aktiv: {0}</value>
+  </data>
+  <data name="LblEnableProfileAutomation" xml:space="preserve">
+    <value>Profilautomatisierung aktivieren</value>
+  </data>
+  <data name="LblFontFamily" xml:space="preserve">
+    <value>Schriftart:</value>
+  </data>
+  <data name="LblFontSize" xml:space="preserve">
+    <value>Schriftgröße:</value>
+  </data>
+  <data name="LblFrameBorderColor" xml:space="preserve">
+    <value>Rahmenfarbe:</value>
+  </data>
+  <data name="LblFrameBorderThickness" xml:space="preserve">
+    <value>Rahmenstärke:</value>
+  </data>
+  <data name="LblGrayscaleIcons" xml:space="preserve">
+    <value>Symbole in Graustufen</value>
+  </data>
+  <data name="LblIcon" xml:space="preserve">
+    <value>Symbol:</value>
+  </data>
+  <data name="LblIconSize" xml:space="preserve">
+    <value>Symbolgröße:</value>
+  </data>
+  <data name="LblIconSpacing" xml:space="preserve">
+    <value>Symbolabstand:</value>
+  </data>
+  <data name="LblLockIcon" xml:space="preserve">
+    <value>Schlosssymbol</value>
+  </data>
+  <data name="LblMenuIcon" xml:space="preserve">
+    <value>Menüsymbol</value>
+  </data>
+  <data name="LblMinimumLogLevel" xml:space="preserve">
+    <value>Mindest-Protokollstufe</value>
+  </data>
+  <data name="LblNotificationSound" xml:space="preserve">
+    <value>Benachrichtigungston:</value>
+  </data>
+  <data name="LblPortalView" xml:space="preserve">
+    <value>Portal-Ansicht:</value>
+  </data>
+  <data name="LblProcessName" xml:space="preserve">
+    <value>Prozessname (wählen oder eingeben):</value>
+  </data>
+  <data name="LblSpellCheck" xml:space="preserve">
+    <value>Rechtschreibprüfung</value>
+  </data>
+  <data name="LblTargetPath" xml:space="preserve">
+    <value>Zielpfad:</value>
+  </data>
+  <data name="LblTargetProfile" xml:space="preserve">
+    <value>Zu aktivierendes Profil:</value>
+  </data>
+  <data name="LblTextColor" xml:space="preserve">
+    <value>Textfarbe:</value>
+  </data>
+  <data name="LblTitleTextColor" xml:space="preserve">
+    <value>Titelfarbe:</value>
+  </data>
+  <data name="LblTitleTextSize" xml:space="preserve">
+    <value>Titelgröße:</value>
+  </data>
+  <data name="LblTotalRules" xml:space="preserve">
+    <value>Regeln insgesamt: {0}</value>
+  </data>
+  <data name="LblWordWrap" xml:space="preserve">
+    <value>Zeilenumbruch</value>
+  </data>
+  <data name="MenuAbout" xml:space="preserve">
+    <value>Über…</value>
+  </data>
+  <data name="MenuAddPlugin" xml:space="preserve">
+    <value>Widget | Plugin hinzufügen</value>
+  </data>
+  <data name="MenuAddSpacer" xml:space="preserve">
+    <value>Abstandhalter hinzufügen</value>
+  </data>
+  <data name="MenuAlwaysOnTop" xml:space="preserve">
+    <value>Immer im Vordergrund</value>
+  </data>
+  <data name="MenuAlwaysRunAsAdmin" xml:space="preserve">
+    <value>Immer als Administrator ausführen</value>
+  </data>
+  <data name="MenuAlwaysRunAsDifferentUser" xml:space="preserve">
+    <value>Immer als anderer Benutzer ausführen</value>
+  </data>
+  <data name="MenuAutoRoll" xml:space="preserve">
+    <value>Automatisch einrollen</value>
+  </data>
+  <data name="MenuClearDeadShortcuts" xml:space="preserve">
+    <value>Tote Verknüpfungen entfernen</value>
+  </data>
+  <data name="MenuCopyFolderPath" xml:space="preserve">
+    <value>Ordnerpfad kopieren</value>
+  </data>
+  <data name="MenuCopyItem" xml:space="preserve">
+    <value>Element kopieren</value>
+  </data>
+  <data name="MenuCopyItemPath" xml:space="preserve">
+    <value>Pfad des Elements kopieren</value>
+  </data>
+  <data name="MenuCopyPath" xml:space="preserve">
+    <value>Pfad kopieren</value>
+  </data>
+  <data name="MenuCustomize" xml:space="preserve">
+    <value>Anpassen…</value>
+  </data>
+  <data name="MenuCutItem" xml:space="preserve">
+    <value>Element ausschneiden</value>
+  </data>
+  <data name="MenuDeleteItem" xml:space="preserve">
+    <value>Element löschen</value>
+  </data>
+  <data name="MenuDeleteThisFrame" xml:space="preserve">
+    <value>Diesen Rahmen löschen</value>
+  </data>
+  <data name="MenuEdit" xml:space="preserve">
+    <value>Bearbeiten…</value>
+  </data>
+  <data name="MenuEnableTabs" xml:space="preserve">
+    <value>Registerkarten in diesem Rahmen aktivieren</value>
+  </data>
+  <data name="MenuExit" xml:space="preserve">
+    <value>Beenden</value>
+  </data>
+  <data name="MenuExportAllIcons" xml:space="preserve">
+    <value>Alle Symbole auf den Desktop exportieren</value>
+  </data>
+  <data name="MenuExportThisFrame" xml:space="preserve">
+    <value>Diesen Rahmen exportieren</value>
+  </data>
+  <data name="MenuFolderPath" xml:space="preserve">
+    <value>Ordnerpfad</value>
+  </data>
+  <data name="MenuFullPath" xml:space="preserve">
+    <value>Vollständiger Pfad</value>
+  </data>
+  <data name="MenuHideFrame" xml:space="preserve">
+    <value>Rahmen ausblenden</value>
+  </data>
+  <data name="MenuImportFrame" xml:space="preserve">
+    <value>Rahmen importieren…</value>
+  </data>
+  <data name="MenuMove" xml:space="preserve">
+    <value>Verschieben…</value>
+  </data>
+  <data name="MenuNameAfterPath" xml:space="preserve">
+    <value>Rahmen nach Zielpfad benennen</value>
+  </data>
+  <data name="MenuNewFrame" xml:space="preserve">
+    <value>Neuer Rahmen</value>
+  </data>
+  <data name="MenuNewNoteFrame" xml:space="preserve">
+    <value>Neuer Notiz-Rahmen</value>
+  </data>
+  <data name="MenuNewPortalFrame" xml:space="preserve">
+    <value>Neuer Portal-Rahmen</value>
+  </data>
+  <data name="MenuNoPluginsAvailable" xml:space="preserve">
+    <value>(Auf dieser Stufe sind keine Plugins verfügbar)</value>
+  </data>
+  <data name="MenuOpenFrameFolder" xml:space="preserve">
+    <value>Rahmenordner öffnen</value>
+  </data>
+  <data name="MenuOpenTargetFolder" xml:space="preserve">
+    <value>Zielordner öffnen…</value>
+  </data>
+  <data name="MenuOpenWith" xml:space="preserve">
+    <value>Öffnen mit…</value>
+  </data>
+  <data name="MenuOptions" xml:space="preserve">
+    <value>Optionen…</value>
+  </data>
+  <data name="MenuPasteItem" xml:space="preserve">
+    <value>Element einfügen</value>
+  </data>
+  <data name="MenuPeekBehind" xml:space="preserve">
+    <value>Dahinter schauen</value>
+  </data>
+  <data name="MenuPluginSettings" xml:space="preserve">
+    <value>Plugin-Einstellungen…</value>
+  </data>
+  <data name="MenuRemove" xml:space="preserve">
+    <value>Entfernen</value>
+  </data>
+  <data name="MenuRenameItem" xml:space="preserve">
+    <value>Element umbenennen</value>
+  </data>
+  <data name="MenuResetColumns" xml:space="preserve">
+    <value>Spalten zurücksetzen</value>
+  </data>
+  <data name="MenuResetSorting" xml:space="preserve">
+    <value>Sortierung zurücksetzen</value>
+  </data>
+  <data name="MenuRestoreLastDeleted" xml:space="preserve">
+    <value>Zuletzt gelöschten Rahmen wiederherstellen</value>
+  </data>
+  <data name="MenuRunAsAdmin" xml:space="preserve">
+    <value>Als Administrator ausführen</value>
+  </data>
+  <data name="MenuRunAsDifferentUser" xml:space="preserve">
+    <value>Als anderer Benutzer ausführen…</value>
+  </data>
+  <data name="MenuSendToDesktop" xml:space="preserve">
+    <value>An Desktop senden</value>
+  </data>
+  <data name="MenuSpacerBlank" xml:space="preserve">
+    <value>Leer</value>
+  </data>
+  <data name="MenuSpacerDot" xml:space="preserve">
+    <value>Punkt</value>
+  </data>
+  <data name="MenuViewAsDetails" xml:space="preserve">
+    <value>Als Liste anzeigen</value>
+  </data>
+  <data name="MoveItemPrompt" xml:space="preserve">
+    <value>Wähle den Ziel-Rahmen oder die Ziel-Registerkarte:</value>
+  </data>
+  <data name="MoveItemTitle" xml:space="preserve">
+    <value>Element verschieben nach…</value>
+  </data>
+  <data name="MoveMainItems" xml:space="preserve">
+    <value>📋 Hauptelemente</value>
+  </data>
+  <data name="NetChecking" xml:space="preserve">
+    <value>Prüfung…</value>
+  </data>
+  <data name="NetExternal" xml:space="preserve">
+    <value>Externes Netzwerk</value>
+  </data>
+  <data name="NetIpLabel" xml:space="preserve">
+    <value>IP:</value>
+  </data>
+  <data name="NetLocalAdapters" xml:space="preserve">
+    <value>Lokale Adapter</value>
+  </data>
+  <data name="NetNoInterfaces" xml:space="preserve">
+    <value>Keine aktiven Schnittstellen.</value>
+  </data>
+  <data name="NetOffline" xml:space="preserve">
+    <value>Offline</value>
+  </data>
+  <data name="NetPublicWan" xml:space="preserve">
+    <value>Öffentliche WAN-Adresse</value>
+  </data>
+  <data name="NetSelectInterfaces" xml:space="preserve">
+    <value>Anzuzeigende Schnittstellen wählen:</value>
+  </data>
+  <data name="NetSettings" xml:space="preserve">
+    <value>Einstellungen der Netzwerkanzeige</value>
+  </data>
+  <data name="NetShowDisconnected" xml:space="preserve">
+    <value>Getrennte Schnittstellen anzeigen</value>
+  </data>
+  <data name="NetShowPublicWan" xml:space="preserve">
+    <value>Öffentliche WAN-IP anzeigen</value>
+  </data>
+  <data name="NetStatusDown" xml:space="preserve">
+    <value>inaktiv</value>
+  </data>
+  <data name="NetStatusUp" xml:space="preserve">
+    <value>aktiv</value>
+  </data>
+  <data name="NetUnreachable" xml:space="preserve">
+    <value>Nicht erreichbar</value>
+  </data>
+  <data name="NoteAutoOrganize" xml:space="preserve">
+    <value>Hinweis: Das automatische Aufräumen beobachtet den Desktop auf neue Dateien. Erfüllt eine Datei die Bedingungen einer aktiven Regel, wird sie tatsächlich in den angegebenen Portal-Rahmen oder Ordner verschoben. So bleibt der Desktop dauerhaft aufgeräumt und Downloads landen von selbst am richtigen Ort.</value>
+  </data>
+  <data name="NoteAutoRoll" xml:space="preserve">
+    <value>Hinweis: Das automatische Einrollen wird je Rahmen über das Kontextmenü aktiviert.</value>
+  </data>
+  <data name="NoteClearAll" xml:space="preserve">
+    <value>Gesamten Text löschen</value>
+  </data>
+  <data name="NoteClickEdit" xml:space="preserve">
+    <value>Klicken, um die Notiz zu bearbeiten</value>
+  </data>
+  <data name="NoteClickFinish" xml:space="preserve">
+    <value>Klicken, um die Bearbeitung zu beenden</value>
+  </data>
+  <data name="NoteCopyAll" xml:space="preserve">
+    <value>Gesamten Text kopieren</value>
+  </data>
+  <data name="NoteHotkeysRestart" xml:space="preserve">
+    <value>Hinweis: Änderungen an globalen Tastenkürzeln wirken erst nach einem Neustart des Programms.</value>
+  </data>
+  <data name="NoteTextFormat" xml:space="preserve">
+    <value>Textformat…</value>
+  </data>
+  <data name="NotificationDontShowAgain" xml:space="preserve">
+    <value>Diese Meldung nicht mehr anzeigen</value>
+  </data>
+  <data name="NotificationTitle" xml:space="preserve">
+    <value>Desktop Frames + - Benachrichtigung</value>
+  </data>
+  <data name="OptAutoHideFrames" xml:space="preserve">
+    <value>Rahmen automatisch ausblenden</value>
+  </data>
+  <data name="OptAutomaticBackup" xml:space="preserve">
+    <value>Automatische Sicherung (täglich)</value>
+  </data>
+  <data name="OptAutoOrganize" xml:space="preserve">
+    <value>Automatisches Aufräumen aktivieren</value>
+  </data>
+  <data name="OptChameleon" xml:space="preserve">
+    <value>Chamäleon-Modus (übernimmt die Farbe des Hintergrunds)</value>
+  </data>
+  <data name="OptDimensionSnap" xml:space="preserve">
+    <value>Auch Größen einrasten</value>
+  </data>
+  <data name="OptDisableScrollbars" xml:space="preserve">
+    <value>Bildlaufleisten ausblenden</value>
+  </data>
+  <data name="OptEnableLogging" xml:space="preserve">
+    <value>Protokoll aufzeichnen</value>
+  </data>
+  <data name="OptEnableSounds" xml:space="preserve">
+    <value>Töne aktivieren</value>
+  </data>
+  <data name="OptExecutionToasts" xml:space="preserve">
+    <value>Ausführungsbenachrichtigungen anzeigen</value>
+  </data>
+  <data name="OptFocusFrameHotkey" xml:space="preserve">
+    <value>Tastenkürzel zum Anspringen eines Rahmens</value>
+  </data>
+  <data name="OptFrameTint" xml:space="preserve">
+    <value>Rahmenfärbung auch auf Symbole und Text anwenden</value>
+  </data>
+  <data name="OptHideIconsRunning" xml:space="preserve">
+    <value>Windows-Symbole ausblenden, solange das Programm läuft</value>
+  </data>
+  <data name="OptHideIconsWhenHidden" xml:space="preserve">
+    <value>Windows-Symbole ausblenden, wenn die Rahmen ausgeblendet sind</value>
+  </data>
+  <data name="OptIdleFadeOut" xml:space="preserve">
+    <value>Untätige Rahmen ausblenden</value>
+  </data>
+  <data name="OptionsHeading" xml:space="preserve">
+    <value>Optionen</value>
+  </data>
+  <data name="OptionsTitle" xml:space="preserve">
+    <value>Desktop Frames + - Optionen</value>
+  </data>
+  <data name="OptNewFrameContextMenu" xml:space="preserve">
+    <value>„Neuer Rahmen“ im Desktop-Kontextmenü anzeigen</value>
+  </data>
+  <data name="OptNoteWatermark" xml:space="preserve">
+    <value>Wasserzeichen auf Notiz-Rahmen (in Kürze)</value>
+  </data>
+  <data name="OptPortalWatermark" xml:space="preserve">
+    <value>Wasserzeichen auf Portal-Rahmen</value>
+  </data>
+  <data name="OptProfileHotkeys" xml:space="preserve">
+    <value>Tastenkürzel zum Profilwechsel</value>
+  </data>
+  <data name="OptRecycleBin" xml:space="preserve">
+    <value>Papierkorb bei „Element löschen“ in Portal-Rahmen verwenden</value>
+  </data>
+  <data name="OptSingleClick" xml:space="preserve">
+    <value>Mit einem Klick öffnen</value>
+  </data>
+  <data name="OptSnapNearFrames" xml:space="preserve">
+    <value>An benachbarten Rahmen einrasten</value>
+  </data>
+  <data name="OptSpotSearchHotkey" xml:space="preserve">
+    <value>Tastenkürzel für die Schnellsuche</value>
+  </data>
+  <data name="OptStartWithWindows" xml:space="preserve">
+    <value>Mit Windows starten</value>
+  </data>
+  <data name="OptTrayIcon" xml:space="preserve">
+    <value>Symbol im Infobereich anzeigen</value>
+  </data>
+  <data name="PerfDynamicColors" xml:space="preserve">
+    <value>Balken nach Wert einfärben</value>
+  </data>
+  <data name="PerfRefreshRate" xml:space="preserve">
+    <value>Aktualisierungsrate (ms):</value>
+  </data>
+  <data name="PerfSensors" xml:space="preserve">
+    <value>Anzuzeigende Sensoren:</value>
+  </data>
+  <data name="PerfSettings" xml:space="preserve">
+    <value>Leistungseinstellungen</value>
+  </data>
+  <data name="PerfStaticBarColor" xml:space="preserve">
+    <value>Feste Balkenfarbe:</value>
+  </data>
+  <data name="PerfThemeLayout" xml:space="preserve">
+    <value>Thema und Anordnung</value>
+  </data>
+  <data name="PerfVisualStyle" xml:space="preserve">
+    <value>Darstellung:</value>
+  </data>
+  <data name="PhotoBlurCrossfade" xml:space="preserve">
+    <value>Weiche Überblendung</value>
+  </data>
+  <data name="PhotoCropToFill" xml:space="preserve">
+    <value>Zuschneiden und füllen</value>
+  </data>
+  <data name="PhotoCrossfade" xml:space="preserve">
+    <value>Klassische Überblendung</value>
+  </data>
+  <data name="PhotoFitInside" xml:space="preserve">
+    <value>Einpassen (alles zeigen)</value>
+  </data>
+  <data name="PhotoFitMode" xml:space="preserve">
+    <value>Bildanpassung:</value>
+  </data>
+  <data name="PhotoLiveRescan" xml:space="preserve">
+    <value>Ordner laufend neu einlesen (erkennt neue und gelöschte Bilder)</value>
+  </data>
+  <data name="PhotoNoTransition" xml:space="preserve">
+    <value>Keiner (sofortiger Wechsel)</value>
+  </data>
+  <data name="PhotoOriginalSize" xml:space="preserve">
+    <value>Originalgröße (ohne Skalierung)</value>
+  </data>
+  <data name="PhotoSettings" xml:space="preserve">
+    <value>Einstellungen des Bilderrahmens</value>
+  </data>
+  <data name="PhotoStretch" xml:space="preserve">
+    <value>Dehnen und füllen (verzerrt)</value>
+  </data>
+  <data name="PhotoSubtleTwist" xml:space="preserve">
+    <value>Leichte Drehung</value>
+  </data>
+  <data name="PhotoTransition" xml:space="preserve">
+    <value>Übergangseffekt:</value>
+  </data>
+  <data name="PhotoVerticalWipe" xml:space="preserve">
+    <value>Sanfter vertikaler Wisch</value>
+  </data>
+  <data name="PluginCalculator" xml:space="preserve">
+    <value>Taschenrechner</value>
+  </data>
+  <data name="PluginIpInfo" xml:space="preserve">
+    <value>IP-Informationen</value>
+  </data>
+  <data name="PluginPerformance" xml:space="preserve">
+    <value>Leistungsanzeigen</value>
+  </data>
+  <data name="PluginPhotoFrame" xml:space="preserve">
+    <value>Bilderrahmen</value>
+  </data>
+  <data name="PluginQueueSaturation" xml:space="preserve">
+    <value>Warteschlangen-Auslastung</value>
+  </data>
+  <data name="PluginTerminal" xml:space="preserve">
+    <value>Terminal</value>
+  </data>
+  <data name="PluginVuMeter" xml:space="preserve">
+    <value>VU-Meter</value>
+  </data>
+  <data name="ProfileActive" xml:space="preserve">
+    <value>Aktiv</value>
+  </data>
+  <data name="ProfileManagerTitle" xml:space="preserve">
+    <value>Profilverwaltung</value>
+  </data>
+  <data name="QueueConfig" xml:space="preserve">
+    <value>Konfiguration der System-Warteschlangen</value>
+  </data>
+  <data name="QueueDiagnosticSettings" xml:space="preserve">
+    <value>Einstellungen des Diagnosefensters</value>
+  </data>
+  <data name="QueueDynamicColors" xml:space="preserve">
+    <value>Dynamische Farben (grün/gelb/rot)</value>
+  </data>
+  <data name="QueueInitializing" xml:space="preserve">
+    <value>[Wird gestartet…]</value>
+  </data>
+  <data name="QueueRefreshRate" xml:space="preserve">
+    <value>Aktualisierungsrate:</value>
+  </data>
+  <data name="QueueShowCores" xml:space="preserve">
+    <value>Erkannte logische Kerne anzeigen</value>
+  </data>
+  <data name="QueueShowTitle" xml:space="preserve">
+    <value>Titel anzeigen (AUSLASTUNG DER SYSTEM-WARTESCHLANGEN)</value>
+  </data>
+  <data name="QueueShowValues" xml:space="preserve">
+    <value>Zahlenwerte anzeigen (Threads pro Kern und ausstehende E/A)</value>
+  </data>
+  <data name="QueueTitle" xml:space="preserve">
+    <value>AUSLASTUNG DER SYSTEM-WARTESCHLANGEN</value>
+  </data>
+  <data name="QueueWmiError" xml:space="preserve">
+    <value>[WMI-Fehler]</value>
+  </data>
+  <data name="RandomNameAdjectives" xml:space="preserve">
+    <value>Hoch,Tief,Klein,Weit,Breit,Schmal,Flach,Kühn,Kalt,Warm,Sanft,Hart,Dunkel,Blass,Schnell,Langsam,Tief,Schlank,Kurz,Krumm,Fein,Hell,Licht,Scharf,Stumpf,Laut,Stumm,Grimm,Mild,Nett,Rau,Glatt,Tapfer,Wild,Schlicht,Alt,Trocken,Feucht,Stark,Schwach</value>
+  </data>
+  <data name="RandomNameFormat" xml:space="preserve">
+    <value>{0}{1}</value>
+  </data>
+  <data name="RandomNamePlaces" xml:space="preserve">
+    <value>bucht,hügel,see,bucht,gipfel,riff,düne,tal,moor,grund,fels,ufer,hang,furt,kap,klippe,marsch,teich,wand,wald,senke,pass,höhle,grat,fall,hain,bach,sporn,pfad,spitze</value>
+  </data>
+  <data name="SearchPlaceholder" xml:space="preserve">
+    <value>Tippen zum Suchen…</value>
+  </data>
+  <data name="SearchTitle" xml:space="preserve">
+    <value>Desktop Frames Suche</value>
+  </data>
+  <data name="SecAppearance" xml:space="preserve">
+    <value>Aussehen</value>
+  </data>
+  <data name="SecAutoHideFrames" xml:space="preserve">
+    <value>Rahmen automatisch ausblenden</value>
+  </data>
+  <data name="SecDesktopIconVisibility" xml:space="preserve">
+    <value>Sichtbarkeit der Desktopsymbole</value>
+  </data>
+  <data name="SecIcons" xml:space="preserve">
+    <value>Symbole</value>
+  </data>
+  <data name="SecIdleAutoRoll" xml:space="preserve">
+    <value>Automatisches Einrollen bei Untätigkeit</value>
+  </data>
+  <data name="SecIdleFadeOut" xml:space="preserve">
+    <value>Ausblenden bei Untätigkeit</value>
+  </data>
+  <data name="SecLog" xml:space="preserve">
+    <value>Protokoll</value>
+  </data>
+  <data name="SecLogCategories" xml:space="preserve">
+    <value>Protokollkategorien</value>
+  </data>
+  <data name="SecLogConfiguration" xml:space="preserve">
+    <value>Protokolleinstellungen</value>
+  </data>
+  <data name="SecMaintenance" xml:space="preserve">
+    <value>Wartung</value>
+  </data>
+  <data name="SecProfileManagement" xml:space="preserve">
+    <value>Profilverwaltung</value>
+  </data>
+  <data name="SecProfileSwitching" xml:space="preserve">
+    <value>Profilwechsel</value>
+  </data>
+  <data name="SecSelections" xml:space="preserve">
+    <value>Optionen</value>
+  </data>
+  <data name="SecSmartDesktopAuto" xml:space="preserve">
+    <value>Intelligenter Desktop (automatisches Aufräumen)</value>
+  </data>
+  <data name="SecStartup" xml:space="preserve">
+    <value>Start</value>
+  </data>
+  <data name="SecUtilities" xml:space="preserve">
+    <value>Hilfsmittel</value>
+  </data>
+  <data name="SldAutoHideTime" xml:space="preserve">
+    <value>Zeit bis zum Ausblenden (s)</value>
+  </data>
+  <data name="SldFadeTargetOpacity" xml:space="preserve">
+    <value>Deckkraft beim Ausblenden (%)</value>
+  </data>
+  <data name="SldFrameTint" xml:space="preserve">
+    <value>Rahmenfärbung</value>
+  </data>
+  <data name="SldIdleTime" xml:space="preserve">
+    <value>Untätigkeitsdauer (s)</value>
+  </data>
+  <data name="SldMenuTint" xml:space="preserve">
+    <value>Menüfärbung</value>
+  </data>
+  <data name="SndDefault" xml:space="preserve">
+    <value>Standardton</value>
+  </data>
+  <data name="SndDoubleDing" xml:space="preserve">
+    <value>Doppel-Ding</value>
+  </data>
+  <data name="SndGentleDing" xml:space="preserve">
+    <value>Zartes Ding</value>
+  </data>
+  <data name="SndMessageDing" xml:space="preserve">
+    <value>Nachrichten-Ding</value>
+  </data>
+  <data name="SndSmoothTickle" xml:space="preserve">
+    <value>Sanfter Anstoß</value>
+  </data>
+  <data name="SndSoftDing" xml:space="preserve">
+    <value>Weiches Ding</value>
+  </data>
+  <data name="TabFrame" xml:space="preserve">
+    <value>Rahmen</value>
+  </data>
+  <data name="TabGeneral" xml:space="preserve">
+    <value>Allgemein</value>
+  </data>
+  <data name="TabHotkeys" xml:space="preserve">
+    <value>Tastenkürzel</value>
+  </data>
+  <data name="TabIcons" xml:space="preserve">
+    <value>Symbole</value>
+  </data>
+  <data name="TabLookDeeper" xml:space="preserve">
+    <value>Details</value>
+  </data>
+  <data name="TabProfiles" xml:space="preserve">
+    <value>Profile</value>
+  </data>
+  <data name="TabSmartDesktop" xml:space="preserve">
+    <value>Intelligenter Desktop</value>
+  </data>
+  <data name="TabStyleFx" xml:space="preserve">
+    <value>Stil und Effekte</value>
+  </data>
+  <data name="TabTitle" xml:space="preserve">
+    <value>Titel</value>
+  </data>
+  <data name="TabTools" xml:space="preserve">
+    <value>Werkzeuge</value>
+  </data>
+  <data name="TermClearHistory" xml:space="preserve">
+    <value>Befehlsverlauf löschen</value>
+  </data>
+  <data name="TermConsoleOptions" xml:space="preserve">
+    <value>Konsolenoptionen</value>
+  </data>
+  <data name="TermHistoryCleared" xml:space="preserve">
+    <value>Verlauf gelöscht.</value>
+  </data>
+  <data name="TermProcessExited" xml:space="preserve">
+    <value>[Prozess beendet. Neustart…]</value>
+  </data>
+  <data name="TermRestarting" xml:space="preserve">
+    <value>[Sitzung wird neu gestartet…]</value>
+  </data>
+  <data name="TermSelectStartupDir" xml:space="preserve">
+    <value>Startordner des Terminals wählen</value>
+  </data>
+  <data name="TermSettings" xml:space="preserve">
+    <value>Terminal-Einstellungen</value>
+  </data>
+  <data name="TermStartupDirectory" xml:space="preserve">
+    <value>Startordner:</value>
+  </data>
+  <data name="TermTargetShell" xml:space="preserve">
+    <value>Befehlsinterpreter:</value>
+  </data>
+  <data name="TextAppearance" xml:space="preserve">
+    <value>Textaussehen</value>
+  </data>
+  <data name="TextBehavior" xml:space="preserve">
+    <value>Textverhalten</value>
+  </data>
+  <data name="TextFormatTitle" xml:space="preserve">
+    <value>Textformat</value>
+  </data>
+  <data name="TooltipAutoReposition" xml:space="preserve">
+    <value>Automatische Neuanordnung ist aktiv (verborgene Einstellung): die Rahmen werden bereits selbst verwaltet.</value>
+  </data>
+  <data name="TooltipBlankSpacer" xml:space="preserve">
+    <value>Leerer Abstandhalter (STRG halten zum Verschieben)</value>
+  </data>
+  <data name="TooltipChameleon" xml:space="preserve">
+    <value>Die Rahmen passen ihre Farbe selbst an den Hintergrund an.</value>
+  </data>
+  <data name="TooltipClearFilter" xml:space="preserve">
+    <value>Filter löschen und schließen</value>
+  </data>
+  <data name="TooltipFilterFiles" xml:space="preserve">
+    <value>Dateien filtern (z. B. „*.jpg“, oder „&gt;*.tmp“ zum Ausschließen)</value>
+  </data>
+  <data name="TooltipGoUp" xml:space="preserve">
+    <value>Übergeordneter Ordner</value>
+  </data>
+  <data name="TooltipSetHome" xml:space="preserve">
+    <value>Aktuelle Ansicht als Startordner dieses Rahmens festlegen</value>
+  </data>
+  <data name="TrayCreateNewProfile" xml:space="preserve">
+    <value>Neues Profil erstellen…</value>
+  </data>
+  <data name="TrayExportDoneText" xml:space="preserve">
+    <value>Registrierungswerte in den Programmordner exportiert.</value>
+  </data>
+  <data name="TrayExportDoneTitle" xml:space="preserve">
+    <value>Desktop Frames Plus</value>
+  </data>
+  <data name="TrayExportFailedText" xml:space="preserve">
+    <value>Export der Registrierungswerte fehlgeschlagen. Siehe Protokoll.</value>
+  </data>
+  <data name="TrayExportFailedTitle" xml:space="preserve">
+    <value>Desktop Frames Plus - Fehler</value>
+  </data>
+  <data name="TrayManageProfiles" xml:space="preserve">
+    <value>Profile verwalten…</value>
+  </data>
+  <data name="TrayProfiles" xml:space="preserve">
+    <value>Profile</value>
+  </data>
+  <data name="TrayReloadAllFrames" xml:space="preserve">
+    <value>Alle Rahmen neu laden</value>
+  </data>
+  <data name="TrayReloadingFrames" xml:space="preserve">
+    <value>Rahmen werden neu geladen…</value>
+  </data>
+  <data name="TrayShowHiddenFrames" xml:space="preserve">
+    <value>Ausgeblendete Rahmen anzeigen</value>
+  </data>
+  <data name="UpdateAvailable" xml:space="preserve">
+    <value>Aktualisierung verfügbar</value>
+  </data>
+  <data name="ViewDetails" xml:space="preserve">
+    <value>Liste</value>
+  </data>
+  <data name="ViewIcons" xml:space="preserve">
+    <value>Symbole</value>
+  </data>
+  <data name="VuAttack" xml:space="preserve">
+    <value>Ansprechzeit (Attack in ms):</value>
+  </data>
+  <data name="VuAttackHint" xml:space="preserve">
+    <value>Standard: 25 | niedriger = schnellerer Ausschlag | Grenzen: 1 - 1000</value>
+  </data>
+  <data name="VuBallistics" xml:space="preserve">
+    <value>Ansprechverhalten und Abstimmung</value>
+  </data>
+  <data name="VuDecay" xml:space="preserve">
+    <value>Weichheit (Decay in ms):</value>
+  </data>
+  <data name="VuDecayHint" xml:space="preserve">
+    <value>Standard: 200 | höher = sanfteres Abfallen | Grenzen: 10 - 3000</value>
+  </data>
+  <data name="VuDisplayOptions" xml:space="preserve">
+    <value>Anzeigeoptionen</value>
+  </data>
+  <data name="VuGainHint" xml:space="preserve">
+    <value>Standard: 1,2 | höher = empfindlicher | Grenzen: 0,1 - 10,0</value>
+  </data>
+  <data name="VuLayoutMode" xml:space="preserve">
+    <value>Anordnung:</value>
+  </data>
+  <data name="VuSettings" xml:space="preserve">
+    <value>VU-Meter-Einstellungen</value>
+  </data>
+  <data name="VuSignalGain" xml:space="preserve">
+    <value>Signalverstärkung (Faktor):</value>
+  </data>
+</root>

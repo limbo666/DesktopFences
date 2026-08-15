@@ -1,0 +1,1402 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- Seed translation produced with AI assistance and not yet reviewed by a native speaker. Keys left out fall back to English at runtime. -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="AboutAnd" xml:space="preserve">
+    <value> и </value>
+  </data>
+  <data name="AboutBody" xml:space="preserve">
+    <value>Desktop Frames + создаёт на рабочем столе виртуальные рамки, в которых значки удобно и опрятно группируются.</value>
+  </data>
+  <data name="AboutCreditsBody" xml:space="preserve">
+    <value>Desktop Frames + — открытая утилита для Windows, выросшая из работы HakanKokcu под названием BirdyFences.
+
+Сегодня её сопровождает Nikos Georgousis, который её расширил и сделал стабильнее и приятнее в работе.</value>
+  </data>
+  <data name="AboutDonateBig" xml:space="preserve">
+    <value>Пожертвовать 999,00 €</value>
+  </data>
+  <data name="AboutDontFeedDragons" xml:space="preserve">
+    <value>Не кормите драконов</value>
+  </data>
+  <data name="AboutGreatToHaveYou" xml:space="preserve">
+    <value>Рады видеть вас здесь</value>
+  </data>
+  <data name="AboutLicense" xml:space="preserve">
+    <value>⚖ Лицензия MIT</value>
+  </data>
+  <data name="AboutPleaseDonate" xml:space="preserve">
+    <value>Пожалуйста, поддержите</value>
+  </data>
+  <data name="AboutSectionAbout" xml:space="preserve">
+    <value>О программе</value>
+  </data>
+  <data name="AboutSectionCredits" xml:space="preserve">
+    <value>Благодарности</value>
+  </data>
+  <data name="AboutSoundCredits" xml:space="preserve">
+    <value>Бесплатные звуки с </value>
+  </data>
+  <data name="AboutSupportDevelopment" xml:space="preserve">
+    <value>Поддержать разработку</value>
+  </data>
+  <data name="AboutTagline" xml:space="preserve">
+    <value>Наведите порядок на рабочем столе как по волшебству.</value>
+  </data>
+  <data name="AboutThinkAgain" xml:space="preserve">
+    <value>Уверены? Подумайте ещё раз!</value>
+  </data>
+  <data name="AboutVersion" xml:space="preserve">
+    <value>Версия {0}</value>
+  </data>
+  <data name="AboutVisitGitHub" xml:space="preserve">
+    <value>⚡ Открыть репозиторий GitHub</value>
+  </data>
+  <data name="AboutWhat" xml:space="preserve">
+    <value>Что!?</value>
+  </data>
+  <data name="AutomationDeleteSelected" xml:space="preserve">
+    <value>Удалить выбранное</value>
+  </data>
+  <data name="AutomationDoubleClickEdit" xml:space="preserve">
+    <value>Двойной щелчок для изменения правила</value>
+  </data>
+  <data name="AutomationExisting" xml:space="preserve">
+    <value>Существующие правила</value>
+  </data>
+  <data name="AutomationManage" xml:space="preserve">
+    <value>Управление правилами автоматизации</value>
+  </data>
+  <data name="AutomationPersistedMode" xml:space="preserve">
+    <value>Постоянный режим (оставаться в профиле после закрытия)</value>
+  </data>
+  <data name="AutomationPickWindow" xml:space="preserve">
+    <value>🎯 Выбрать окно</value>
+  </data>
+  <data name="AutomationRuleDefinition" xml:space="preserve">
+    <value>Описание правила</value>
+  </data>
+  <data name="AutomationTitle" xml:space="preserve">
+    <value>Правила автоматизации</value>
+  </data>
+  <data name="AutoOrgAddRule" xml:space="preserve">
+    <value>+ Добавить правило</value>
+  </data>
+  <data name="AutoOrgBrowseFolder" xml:space="preserve">
+    <value>Выбрать папку…</value>
+  </data>
+  <data name="AutoOrgCustomExtensions" xml:space="preserve">
+    <value>Свои расширения (например *.zip; *.rar):</value>
+  </data>
+  <data name="AutoOrgEnableRule" xml:space="preserve">
+    <value>Включить это правило</value>
+  </data>
+  <data name="AutoOrgFilenameContains" xml:space="preserve">
+    <value>И имя содержит (необязательно, пусто = любое):</value>
+  </data>
+  <data name="AutoOrgGeneratePortal" xml:space="preserve">
+    <value>Создать рамку-портал для этой папки</value>
+  </data>
+  <data name="AutoOrgIfExists" xml:space="preserve">
+    <value>Если файл уже существует:</value>
+  </data>
+  <data name="AutoOrgIfExtension" xml:space="preserve">
+    <value>Если расширение файла:</value>
+  </data>
+  <data name="AutoOrgMoveTo" xml:space="preserve">
+    <value>Переместить в:</value>
+  </data>
+  <data name="AutoOrgRemove" xml:space="preserve">
+    <value>− Убрать</value>
+  </data>
+  <data name="AutoOrgRuleName" xml:space="preserve">
+    <value>Название правила:</value>
+  </data>
+  <data name="AutoOrgSaveRules" xml:space="preserve">
+    <value>Сохранить правила</value>
+  </data>
+  <data name="AutoOrgTitle" xml:space="preserve">
+    <value>Умные правила рабочего стола</value>
+  </data>
+  <data name="BackupSelectExportFile" xml:space="preserve">
+    <value>Выберите файл экспорта рамки</value>
+  </data>
+  <data name="BtnApply" xml:space="preserve">
+    <value>Применить</value>
+  </data>
+  <data name="BtnApplyToAll" xml:space="preserve">
+    <value>Применить ко всем</value>
+  </data>
+  <data name="BtnBackup" xml:space="preserve">
+    <value>Резервная копия</value>
+  </data>
+  <data name="BtnBrowse" xml:space="preserve">
+    <value>Обзор…</value>
+  </data>
+  <data name="BtnCancel" xml:space="preserve">
+    <value>Отмена</value>
+  </data>
+  <data name="BtnClearAllData" xml:space="preserve">
+    <value>Удалить все данные</value>
+  </data>
+  <data name="BtnClose" xml:space="preserve">
+    <value>Закрыть</value>
+  </data>
+  <data name="BtnCreate" xml:space="preserve">
+    <value>Создать</value>
+  </data>
+  <data name="BtnDefault" xml:space="preserve">
+    <value>По умолчанию</value>
+  </data>
+  <data name="BtnDonate" xml:space="preserve">
+    <value>♥ Поддержать через PayPal</value>
+  </data>
+  <data name="BtnManageAutomation" xml:space="preserve">
+    <value>Управление автоматизацией</value>
+  </data>
+  <data name="BtnManageProfiles" xml:space="preserve">
+    <value>Управление профилями</value>
+  </data>
+  <data name="BtnMoveDown" xml:space="preserve">
+    <value>▼ Вниз</value>
+  </data>
+  <data name="BtnMoveUp" xml:space="preserve">
+    <value>▲ Вверх</value>
+  </data>
+  <data name="BtnOpenBackupsFolder" xml:space="preserve">
+    <value>Открыть папку резервных копий</value>
+  </data>
+  <data name="BtnOpenLog" xml:space="preserve">
+    <value>Открыть журнал</value>
+  </data>
+  <data name="BtnOrganizeNow" xml:space="preserve">
+    <value>Разобрать сейчас</value>
+  </data>
+  <data name="BtnResetStyles" xml:space="preserve">
+    <value>Сбросить стили</value>
+  </data>
+  <data name="BtnRestore" xml:space="preserve">
+    <value>Восстановить…</value>
+  </data>
+  <data name="BtnSave" xml:space="preserve">
+    <value>Сохранить</value>
+  </data>
+  <data name="BtnSaveToAll" xml:space="preserve">
+    <value>Сохранить для всех</value>
+  </data>
+  <data name="BtnScreenBoundFrames" xml:space="preserve">
+    <value>Вернуть рамки на экран</value>
+  </data>
+  <data name="BtnSmartDesktopRules" xml:space="preserve">
+    <value>Правила умного рабочего стола…</value>
+  </data>
+  <data name="ButtonNo" xml:space="preserve">
+    <value>Нет</value>
+  </data>
+  <data name="ButtonOk" xml:space="preserve">
+    <value>ОК</value>
+  </data>
+  <data name="ButtonYes" xml:space="preserve">
+    <value>Да</value>
+  </data>
+  <data name="CalcBadgeFade" xml:space="preserve">
+    <value>Длительность затухания (мс):</value>
+  </data>
+  <data name="CalcClear" xml:space="preserve">
+    <value>Сброс</value>
+  </data>
+  <data name="CalcCleared" xml:space="preserve">
+    <value>Очищено</value>
+  </data>
+  <data name="CalcClearedAll" xml:space="preserve">
+    <value>Всё очищено</value>
+  </data>
+  <data name="CalcClearHistory" xml:space="preserve">
+    <value>Очистить историю</value>
+  </data>
+  <data name="CalcClearMemory" xml:space="preserve">
+    <value>Очистить память и историю</value>
+  </data>
+  <data name="CalcClearOnNewInput" xml:space="preserve">
+    <value>Очищать экран при новом вводе (после «=»)</value>
+  </data>
+  <data name="CalcCopy" xml:space="preserve">
+    <value>Копировать</value>
+  </data>
+  <data name="CalcDisplayColor" xml:space="preserve">
+    <value>Цвет экрана:</value>
+  </data>
+  <data name="CalcEntryCleared" xml:space="preserve">
+    <value>Ввод очищен</value>
+  </data>
+  <data name="CalcErrorDisplay" xml:space="preserve">
+    <value>Ошибка</value>
+  </data>
+  <data name="CalcHistoryColor" xml:space="preserve">
+    <value>Цвет истории:</value>
+  </data>
+  <data name="CalcPaste" xml:space="preserve">
+    <value>Вставить</value>
+  </data>
+  <data name="CalcPercentage" xml:space="preserve">
+    <value>Процент</value>
+  </data>
+  <data name="CalcSettings" xml:space="preserve">
+    <value>Настройки калькулятора</value>
+  </data>
+  <data name="CalcShowKeypad" xml:space="preserve">
+    <value>Показывать клавиатуру</value>
+  </data>
+  <data name="CalcShowOperationNames" xml:space="preserve">
+    <value>Показывать названия операций (например Сложение)</value>
+  </data>
+  <data name="CalcShowTape" xml:space="preserve">
+    <value>Показывать ленту вычислений</value>
+  </data>
+  <data name="ColDateModified" xml:space="preserve">
+    <value>Дата изменения</value>
+  </data>
+  <data name="ColName" xml:space="preserve">
+    <value>Имя</value>
+  </data>
+  <data name="ColorBeige" xml:space="preserve">
+    <value>Бежевый</value>
+  </data>
+  <data name="ColorBismark" xml:space="preserve">
+    <value>Bismark</value>
+  </data>
+  <data name="ColorBlack" xml:space="preserve">
+    <value>Чёрный</value>
+  </data>
+  <data name="ColorBlue" xml:space="preserve">
+    <value>Синий</value>
+  </data>
+  <data name="ColorFuchsia" xml:space="preserve">
+    <value>Фуксия</value>
+  </data>
+  <data name="ColorGray" xml:space="preserve">
+    <value>Серый</value>
+  </data>
+  <data name="ColorGreen" xml:space="preserve">
+    <value>Зелёный</value>
+  </data>
+  <data name="ColorOrange" xml:space="preserve">
+    <value>Оранжевый</value>
+  </data>
+  <data name="ColorPurple" xml:space="preserve">
+    <value>Фиолетовый</value>
+  </data>
+  <data name="ColorRed" xml:space="preserve">
+    <value>Красный</value>
+  </data>
+  <data name="ColorWhite" xml:space="preserve">
+    <value>Белый</value>
+  </data>
+  <data name="ColorYellow" xml:space="preserve">
+    <value>Жёлтый</value>
+  </data>
+  <data name="ColSize" xml:space="preserve">
+    <value>Размер</value>
+  </data>
+  <data name="ColType" xml:space="preserve">
+    <value>Тип</value>
+  </data>
+  <data name="ConfirmDeleteTitle" xml:space="preserve">
+    <value>Подтвердите удаление</value>
+  </data>
+  <data name="CustomizeTitle" xml:space="preserve">
+    <value>Настройка рамки</value>
+  </data>
+  <data name="DeleteFrameHeading" xml:space="preserve">
+    <value>Удалить рамку</value>
+  </data>
+  <data name="DeleteFrameQuestion" xml:space="preserve">
+    <value>Действительно удалить эту рамку?</value>
+  </data>
+  <data name="DeleteTabTitle" xml:space="preserve">
+    <value>Удалить вкладку</value>
+  </data>
+  <data name="DiagCpuQueue" xml:space="preserve">
+    <value>ОЧЕРЕДЬ ЦП</value>
+  </data>
+  <data name="DiagCpuUtilization" xml:space="preserve">
+    <value>ЗАГРУЗКА ЦП</value>
+  </data>
+  <data name="DiagDiskIo" xml:space="preserve">
+    <value>ВВОД-ВЫВОД ДИСКА</value>
+  </data>
+  <data name="DiagRamUtilization" xml:space="preserve">
+    <value>ЗАГРУЗКА ОЗУ</value>
+  </data>
+  <data name="EditSelectIcon" xml:space="preserve">
+    <value>Выберите значок</value>
+  </data>
+  <data name="EditSelectTarget" xml:space="preserve">
+    <value>Выберите целевой файл</value>
+  </data>
+  <data name="EditShortcutTitle" xml:space="preserve">
+    <value>Изменить ярлык</value>
+  </data>
+  <data name="FocusFrameTitle" xml:space="preserve">
+    <value>Перейти к рамке</value>
+  </data>
+  <data name="FocusSearchActive" xml:space="preserve">
+    <value>Искать среди активных рамок:</value>
+  </data>
+  <data name="FxAgitate" xml:space="preserve">
+    <value>Встряска</value>
+  </data>
+  <data name="FxBounce" xml:space="preserve">
+    <value>Отскок</value>
+  </data>
+  <data name="FxElastic" xml:space="preserve">
+    <value>Упругость</value>
+  </data>
+  <data name="FxFadeOut" xml:space="preserve">
+    <value>Затухание</value>
+  </data>
+  <data name="FxFlip3D" xml:space="preserve">
+    <value>Переворот 3D</value>
+  </data>
+  <data name="FxGrowAndFly" xml:space="preserve">
+    <value>Рост и взлёт</value>
+  </data>
+  <data name="FxMatrix" xml:space="preserve">
+    <value>Матрица</value>
+  </data>
+  <data name="FxPulse" xml:space="preserve">
+    <value>Пульсация</value>
+  </data>
+  <data name="FxRotate" xml:space="preserve">
+    <value>Поворот</value>
+  </data>
+  <data name="FxShockwave" xml:space="preserve">
+    <value>Ударная волна</value>
+  </data>
+  <data name="FxSlideUp" xml:space="preserve">
+    <value>Сдвиг вверх</value>
+  </data>
+  <data name="FxSpiral" xml:space="preserve">
+    <value>Спираль</value>
+  </data>
+  <data name="FxSupernova" xml:space="preserve">
+    <value>Сверхновая</value>
+  </data>
+  <data name="FxTeleport" xml:space="preserve">
+    <value>Телепорт</value>
+  </data>
+  <data name="FxZoom" xml:space="preserve">
+    <value>Наплыв</value>
+  </data>
+  <data name="GaugeLeftL" xml:space="preserve">
+    <value>ЛЕВЫЙ (L)</value>
+  </data>
+  <data name="GaugeLeftVu" xml:space="preserve">
+    <value>ЛЕВЫЙ VU</value>
+  </data>
+  <data name="GaugeMasterVu" xml:space="preserve">
+    <value>ОБЩИЙ VU</value>
+  </data>
+  <data name="GaugeRightR" xml:space="preserve">
+    <value>ПРАВЫЙ (R)</value>
+  </data>
+  <data name="GaugeRightVu" xml:space="preserve">
+    <value>ПРАВЫЙ VU</value>
+  </data>
+  <data name="HkDirectProfile" xml:space="preserve">
+    <value>Прямой профиль [0-9]</value>
+  </data>
+  <data name="HkFocusFrame" xml:space="preserve">
+    <value>Перейти к рамке</value>
+  </data>
+  <data name="HkNextProfile" xml:space="preserve">
+    <value>Следующий профиль</value>
+  </data>
+  <data name="HkPreviousProfile" xml:space="preserve">
+    <value>Предыдущий профиль</value>
+  </data>
+  <data name="HkSpotSearch" xml:space="preserve">
+    <value>Быстрый поиск</value>
+  </data>
+  <data name="IconPickerHint" xml:space="preserve">
+    <value>Выберите значок из доступных и нажмите ОК</value>
+  </data>
+  <data name="IconPickerTitle" xml:space="preserve">
+    <value>Выбор значка</value>
+  </data>
+  <data name="ImportTabNoFrames" xml:space="preserve">
+    <value>Других рамок с данными для импорта нет.</value>
+  </data>
+  <data name="ImportTabPrompt" xml:space="preserve">
+    <value>Выберите рамку или вкладку для импорта:</value>
+  </data>
+  <data name="ImportTabTitle" xml:space="preserve">
+    <value>Импорт вкладки</value>
+  </data>
+  <data name="ItemAgitate" xml:space="preserve">
+    <value>Встряска</value>
+  </data>
+  <data name="ItemBeige" xml:space="preserve">
+    <value>Бежевый</value>
+  </data>
+  <data name="ItemBismark" xml:space="preserve">
+    <value>Bismark</value>
+  </data>
+  <data name="ItemBlack" xml:space="preserve">
+    <value>Чёрный</value>
+  </data>
+  <data name="ItemBlue" xml:space="preserve">
+    <value>Синий</value>
+  </data>
+  <data name="ItemBounce" xml:space="preserve">
+    <value>Отскок</value>
+  </data>
+  <data name="ItemDefault" xml:space="preserve">
+    <value>По умолчанию</value>
+  </data>
+  <data name="ItemDetails" xml:space="preserve">
+    <value>Список</value>
+  </data>
+  <data name="ItemElastic" xml:space="preserve">
+    <value>Упругость</value>
+  </data>
+  <data name="ItemFadeOut" xml:space="preserve">
+    <value>Затухание</value>
+  </data>
+  <data name="ItemFlip3D" xml:space="preserve">
+    <value>Переворот 3D</value>
+  </data>
+  <data name="ItemFuchsia" xml:space="preserve">
+    <value>Фуксия</value>
+  </data>
+  <data name="ItemGray" xml:space="preserve">
+    <value>Серый</value>
+  </data>
+  <data name="ItemGreen" xml:space="preserve">
+    <value>Зелёный</value>
+  </data>
+  <data name="ItemGrowAndFly" xml:space="preserve">
+    <value>Рост и взлёт</value>
+  </data>
+  <data name="ItemHuge" xml:space="preserve">
+    <value>Огромный</value>
+  </data>
+  <data name="ItemIcons" xml:space="preserve">
+    <value>Значки</value>
+  </data>
+  <data name="ItemLarge" xml:space="preserve">
+    <value>Большой</value>
+  </data>
+  <data name="ItemMatrix" xml:space="preserve">
+    <value>Матрица</value>
+  </data>
+  <data name="ItemMedium" xml:space="preserve">
+    <value>Средний</value>
+  </data>
+  <data name="ItemOrange" xml:space="preserve">
+    <value>Оранжевый</value>
+  </data>
+  <data name="ItemPulse" xml:space="preserve">
+    <value>Пульсация</value>
+  </data>
+  <data name="ItemPurple" xml:space="preserve">
+    <value>Фиолетовый</value>
+  </data>
+  <data name="ItemRed" xml:space="preserve">
+    <value>Красный</value>
+  </data>
+  <data name="ItemRotate" xml:space="preserve">
+    <value>Поворот</value>
+  </data>
+  <data name="ItemShockwave" xml:space="preserve">
+    <value>Ударная волна</value>
+  </data>
+  <data name="ItemSlideUp" xml:space="preserve">
+    <value>Сдвиг вверх</value>
+  </data>
+  <data name="ItemSmall" xml:space="preserve">
+    <value>Маленький</value>
+  </data>
+  <data name="ItemSpiral" xml:space="preserve">
+    <value>Спираль</value>
+  </data>
+  <data name="ItemSupernova" xml:space="preserve">
+    <value>Сверхновая</value>
+  </data>
+  <data name="ItemTeal" xml:space="preserve">
+    <value>Бирюзовый</value>
+  </data>
+  <data name="ItemTeleport" xml:space="preserve">
+    <value>Телепорт</value>
+  </data>
+  <data name="ItemTiny" xml:space="preserve">
+    <value>Крошечный</value>
+  </data>
+  <data name="ItemWhite" xml:space="preserve">
+    <value>Белый</value>
+  </data>
+  <data name="ItemYellow" xml:space="preserve">
+    <value>Жёлтый</value>
+  </data>
+  <data name="ItemZoom" xml:space="preserve">
+    <value>Наплыв</value>
+  </data>
+  <data name="KeyComma" xml:space="preserve">
+    <value>Запятая (,)</value>
+  </data>
+  <data name="KeyEnter" xml:space="preserve">
+    <value>Ввод</value>
+  </data>
+  <data name="KeyEscape" xml:space="preserve">
+    <value>Esc</value>
+  </data>
+  <data name="KeyPeriod" xml:space="preserve">
+    <value>Точка (.)</value>
+  </data>
+  <data name="KeySpace" xml:space="preserve">
+    <value>Пробел</value>
+  </data>
+  <data name="KeyTab" xml:space="preserve">
+    <value>Tab</value>
+  </data>
+  <data name="KeyTilde" xml:space="preserve">
+    <value>Тильда (~)</value>
+  </data>
+  <data name="LblActivationDelay" xml:space="preserve">
+    <value>Задержка активации:</value>
+  </data>
+  <data name="LblArguments" xml:space="preserve">
+    <value>Аргументы:</value>
+  </data>
+  <data name="LblBoldTitleText" xml:space="preserve">
+    <value>Полужирный заголовок</value>
+  </data>
+  <data name="LblColor" xml:space="preserve">
+    <value>Цвет</value>
+  </data>
+  <data name="LblCustomColor" xml:space="preserve">
+    <value>Свой цвет:</value>
+  </data>
+  <data name="LblCustomLaunchEffect" xml:space="preserve">
+    <value>Свой эффект запуска:</value>
+  </data>
+  <data name="LblDefaultPortalView" xml:space="preserve">
+    <value>Вид портала по умолчанию:</value>
+  </data>
+  <data name="LblDisableTextShadow" xml:space="preserve">
+    <value>Отключить тень текста</value>
+  </data>
+  <data name="LblDisplayName" xml:space="preserve">
+    <value>Отображаемое имя:</value>
+  </data>
+  <data name="LblDonate" xml:space="preserve">
+    <value>Поддержите сопровождение и развитие проекта пожертвованием</value>
+  </data>
+  <data name="LblEffect" xml:space="preserve">
+    <value>Эффект</value>
+  </data>
+  <data name="LblEnabledRules" xml:space="preserve">
+    <value>Включено: {0}</value>
+  </data>
+  <data name="LblEnableProfileAutomation" xml:space="preserve">
+    <value>Включить автоматизацию профилей</value>
+  </data>
+  <data name="LblFontFamily" xml:space="preserve">
+    <value>Шрифт:</value>
+  </data>
+  <data name="LblFontSize" xml:space="preserve">
+    <value>Размер шрифта:</value>
+  </data>
+  <data name="LblFrameBorderColor" xml:space="preserve">
+    <value>Цвет рамки:</value>
+  </data>
+  <data name="LblFrameBorderThickness" xml:space="preserve">
+    <value>Толщина рамки:</value>
+  </data>
+  <data name="LblGrayscaleIcons" xml:space="preserve">
+    <value>Значки в оттенках серого</value>
+  </data>
+  <data name="LblIcon" xml:space="preserve">
+    <value>Значок:</value>
+  </data>
+  <data name="LblIconSize" xml:space="preserve">
+    <value>Размер значков:</value>
+  </data>
+  <data name="LblIconSpacing" xml:space="preserve">
+    <value>Расстояние между значками:</value>
+  </data>
+  <data name="LblLockIcon" xml:space="preserve">
+    <value>Значок замка</value>
+  </data>
+  <data name="LblMenuIcon" xml:space="preserve">
+    <value>Значок меню</value>
+  </data>
+  <data name="LblMinimumLogLevel" xml:space="preserve">
+    <value>Минимальный уровень журнала</value>
+  </data>
+  <data name="LblNotificationSound" xml:space="preserve">
+    <value>Звук уведомления:</value>
+  </data>
+  <data name="LblPortalView" xml:space="preserve">
+    <value>Вид портала:</value>
+  </data>
+  <data name="LblProcessName" xml:space="preserve">
+    <value>Имя процесса (выбрать или ввести):</value>
+  </data>
+  <data name="LblSpellCheck" xml:space="preserve">
+    <value>Проверка орфографии</value>
+  </data>
+  <data name="LblTargetPath" xml:space="preserve">
+    <value>Путь назначения:</value>
+  </data>
+  <data name="LblTargetProfile" xml:space="preserve">
+    <value>Профиль для активации:</value>
+  </data>
+  <data name="LblTextColor" xml:space="preserve">
+    <value>Цвет текста:</value>
+  </data>
+  <data name="LblTitleTextColor" xml:space="preserve">
+    <value>Цвет заголовка:</value>
+  </data>
+  <data name="LblTitleTextSize" xml:space="preserve">
+    <value>Размер заголовка:</value>
+  </data>
+  <data name="LblTotalRules" xml:space="preserve">
+    <value>Всего правил: {0}</value>
+  </data>
+  <data name="LblWordWrap" xml:space="preserve">
+    <value>Перенос строк</value>
+  </data>
+  <data name="MenuAbout" xml:space="preserve">
+    <value>О программе…</value>
+  </data>
+  <data name="MenuAddPlugin" xml:space="preserve">
+    <value>Добавить виджет | плагин</value>
+  </data>
+  <data name="MenuAddSpacer" xml:space="preserve">
+    <value>Добавить разделитель</value>
+  </data>
+  <data name="MenuAlwaysOnTop" xml:space="preserve">
+    <value>Поверх всех окон</value>
+  </data>
+  <data name="MenuAlwaysRunAsAdmin" xml:space="preserve">
+    <value>Всегда запускать от имени администратора</value>
+  </data>
+  <data name="MenuAlwaysRunAsDifferentUser" xml:space="preserve">
+    <value>Всегда запускать от имени другого пользователя</value>
+  </data>
+  <data name="MenuAutoRoll" xml:space="preserve">
+    <value>Автосворачивание</value>
+  </data>
+  <data name="MenuClearDeadShortcuts" xml:space="preserve">
+    <value>Убрать битые ярлыки</value>
+  </data>
+  <data name="MenuCopyFolderPath" xml:space="preserve">
+    <value>Копировать путь папки</value>
+  </data>
+  <data name="MenuCopyItem" xml:space="preserve">
+    <value>Копировать элемент</value>
+  </data>
+  <data name="MenuCopyItemPath" xml:space="preserve">
+    <value>Копировать путь элемента</value>
+  </data>
+  <data name="MenuCopyPath" xml:space="preserve">
+    <value>Копировать путь</value>
+  </data>
+  <data name="MenuCustomize" xml:space="preserve">
+    <value>Настроить…</value>
+  </data>
+  <data name="MenuCutItem" xml:space="preserve">
+    <value>Вырезать элемент</value>
+  </data>
+  <data name="MenuDeleteItem" xml:space="preserve">
+    <value>Удалить элемент</value>
+  </data>
+  <data name="MenuDeleteThisFrame" xml:space="preserve">
+    <value>Удалить эту рамку</value>
+  </data>
+  <data name="MenuEdit" xml:space="preserve">
+    <value>Изменить…</value>
+  </data>
+  <data name="MenuEnableTabs" xml:space="preserve">
+    <value>Включить вкладки в этой рамке</value>
+  </data>
+  <data name="MenuExit" xml:space="preserve">
+    <value>Выход</value>
+  </data>
+  <data name="MenuExportAllIcons" xml:space="preserve">
+    <value>Экспортировать все значки на рабочий стол</value>
+  </data>
+  <data name="MenuExportThisFrame" xml:space="preserve">
+    <value>Экспортировать эту рамку</value>
+  </data>
+  <data name="MenuFolderPath" xml:space="preserve">
+    <value>Путь к папке</value>
+  </data>
+  <data name="MenuFullPath" xml:space="preserve">
+    <value>Полный путь</value>
+  </data>
+  <data name="MenuHideFrame" xml:space="preserve">
+    <value>Скрыть рамку</value>
+  </data>
+  <data name="MenuImportFrame" xml:space="preserve">
+    <value>Импортировать рамку…</value>
+  </data>
+  <data name="MenuMove" xml:space="preserve">
+    <value>Переместить…</value>
+  </data>
+  <data name="MenuNameAfterPath" xml:space="preserve">
+    <value>Назвать рамку по пути</value>
+  </data>
+  <data name="MenuNewFrame" xml:space="preserve">
+    <value>Новая рамка</value>
+  </data>
+  <data name="MenuNewNoteFrame" xml:space="preserve">
+    <value>Новая рамка-заметка</value>
+  </data>
+  <data name="MenuNewPortalFrame" xml:space="preserve">
+    <value>Новая рамка-портал</value>
+  </data>
+  <data name="MenuNoPluginsAvailable" xml:space="preserve">
+    <value>(На вашем уровне плагинов нет)</value>
+  </data>
+  <data name="MenuOpenFrameFolder" xml:space="preserve">
+    <value>Открыть папку рамки</value>
+  </data>
+  <data name="MenuOpenTargetFolder" xml:space="preserve">
+    <value>Открыть целевую папку…</value>
+  </data>
+  <data name="MenuOpenWith" xml:space="preserve">
+    <value>Открыть с помощью…</value>
+  </data>
+  <data name="MenuOptions" xml:space="preserve">
+    <value>Параметры…</value>
+  </data>
+  <data name="MenuPasteItem" xml:space="preserve">
+    <value>Вставить элемент</value>
+  </data>
+  <data name="MenuPeekBehind" xml:space="preserve">
+    <value>Заглянуть за рамку</value>
+  </data>
+  <data name="MenuPluginSettings" xml:space="preserve">
+    <value>Настройки плагина…</value>
+  </data>
+  <data name="MenuRemove" xml:space="preserve">
+    <value>Убрать</value>
+  </data>
+  <data name="MenuRenameItem" xml:space="preserve">
+    <value>Переименовать элемент</value>
+  </data>
+  <data name="MenuResetColumns" xml:space="preserve">
+    <value>Сбросить столбцы</value>
+  </data>
+  <data name="MenuResetSorting" xml:space="preserve">
+    <value>Сбросить сортировку</value>
+  </data>
+  <data name="MenuRestoreLastDeleted" xml:space="preserve">
+    <value>Восстановить последнюю удалённую рамку</value>
+  </data>
+  <data name="MenuRunAsAdmin" xml:space="preserve">
+    <value>Запуск от имени администратора</value>
+  </data>
+  <data name="MenuRunAsDifferentUser" xml:space="preserve">
+    <value>Запуск от имени другого пользователя…</value>
+  </data>
+  <data name="MenuSendToDesktop" xml:space="preserve">
+    <value>Отправить на рабочий стол</value>
+  </data>
+  <data name="MenuSpacerBlank" xml:space="preserve">
+    <value>Пустой</value>
+  </data>
+  <data name="MenuSpacerDot" xml:space="preserve">
+    <value>Точка</value>
+  </data>
+  <data name="MenuViewAsDetails" xml:space="preserve">
+    <value>Показать списком</value>
+  </data>
+  <data name="MoveItemPrompt" xml:space="preserve">
+    <value>Выберите рамку или вкладку назначения:</value>
+  </data>
+  <data name="MoveItemTitle" xml:space="preserve">
+    <value>Переместить элемент в…</value>
+  </data>
+  <data name="MoveMainItems" xml:space="preserve">
+    <value>📋 Основные элементы</value>
+  </data>
+  <data name="NetChecking" xml:space="preserve">
+    <value>Проверка…</value>
+  </data>
+  <data name="NetExternal" xml:space="preserve">
+    <value>Внешняя сеть</value>
+  </data>
+  <data name="NetIpLabel" xml:space="preserve">
+    <value>IP:</value>
+  </data>
+  <data name="NetLocalAdapters" xml:space="preserve">
+    <value>Локальные адаптеры</value>
+  </data>
+  <data name="NetNoInterfaces" xml:space="preserve">
+    <value>Активных интерфейсов нет.</value>
+  </data>
+  <data name="NetOffline" xml:space="preserve">
+    <value>Не в сети</value>
+  </data>
+  <data name="NetPublicWan" xml:space="preserve">
+    <value>Публичный адрес WAN</value>
+  </data>
+  <data name="NetSelectInterfaces" xml:space="preserve">
+    <value>Выберите интерфейсы для показа:</value>
+  </data>
+  <data name="NetSettings" xml:space="preserve">
+    <value>Настройки монитора сети</value>
+  </data>
+  <data name="NetShowDisconnected" xml:space="preserve">
+    <value>Показывать отключённые интерфейсы</value>
+  </data>
+  <data name="NetShowPublicWan" xml:space="preserve">
+    <value>Показывать публичный IP WAN</value>
+  </data>
+  <data name="NetStatusDown" xml:space="preserve">
+    <value>неактивен</value>
+  </data>
+  <data name="NetStatusUp" xml:space="preserve">
+    <value>активен</value>
+  </data>
+  <data name="NetUnreachable" xml:space="preserve">
+    <value>Недоступно</value>
+  </data>
+  <data name="NoteAutoOrganize" xml:space="preserve">
+    <value>Примечание: автоматическая разборка следит за появлением новых файлов на рабочем столе. Когда файл подходит под условия включённого правила, он действительно переносится в указанную рамку-портал или папку. Так рабочий стол остаётся чистым, а загрузки сами попадают куда нужно.</value>
+  </data>
+  <data name="NoteAutoRoll" xml:space="preserve">
+    <value>Примечание: автосворачивание включается для каждой рамки отдельно, через контекстное меню.</value>
+  </data>
+  <data name="NoteClearAll" xml:space="preserve">
+    <value>Очистить весь текст</value>
+  </data>
+  <data name="NoteClickEdit" xml:space="preserve">
+    <value>Щёлкните, чтобы изменить заметку</value>
+  </data>
+  <data name="NoteClickFinish" xml:space="preserve">
+    <value>Щёлкните, чтобы закончить правку</value>
+  </data>
+  <data name="NoteCopyAll" xml:space="preserve">
+    <value>Копировать весь текст</value>
+  </data>
+  <data name="NoteHotkeysRestart" xml:space="preserve">
+    <value>Примечание: изменения глобальных горячих клавиш вступают в силу после перезапуска программы.</value>
+  </data>
+  <data name="NoteTextFormat" xml:space="preserve">
+    <value>Формат текста…</value>
+  </data>
+  <data name="NotificationDontShowAgain" xml:space="preserve">
+    <value>Больше не показывать это сообщение</value>
+  </data>
+  <data name="NotificationTitle" xml:space="preserve">
+    <value>Desktop Frames + - Уведомление</value>
+  </data>
+  <data name="OptAutoHideFrames" xml:space="preserve">
+    <value>Автоматически скрывать рамки</value>
+  </data>
+  <data name="OptAutomaticBackup" xml:space="preserve">
+    <value>Автоматическая резервная копия (ежедневно)</value>
+  </data>
+  <data name="OptAutoOrganize" xml:space="preserve">
+    <value>Включить автоматическую разборку</value>
+  </data>
+  <data name="OptChameleon" xml:space="preserve">
+    <value>Режим хамелеона (берёт цвет обоев)</value>
+  </data>
+  <data name="OptDimensionSnap" xml:space="preserve">
+    <value>Прилипание и по размеру</value>
+  </data>
+  <data name="OptDisableScrollbars" xml:space="preserve">
+    <value>Убрать полосы прокрутки</value>
+  </data>
+  <data name="OptEnableLogging" xml:space="preserve">
+    <value>Вести журнал</value>
+  </data>
+  <data name="OptEnableSounds" xml:space="preserve">
+    <value>Включить звуки</value>
+  </data>
+  <data name="OptExecutionToasts" xml:space="preserve">
+    <value>Показывать уведомления о выполнении</value>
+  </data>
+  <data name="OptFocusFrameHotkey" xml:space="preserve">
+    <value>Горячая клавиша перехода к рамке</value>
+  </data>
+  <data name="OptFrameTint" xml:space="preserve">
+    <value>Применять оттенок рамки к значкам и тексту</value>
+  </data>
+  <data name="OptHideIconsRunning" xml:space="preserve">
+    <value>Скрывать значки Windows, пока программа работает</value>
+  </data>
+  <data name="OptHideIconsWhenHidden" xml:space="preserve">
+    <value>Скрывать значки Windows, когда рамки скрыты</value>
+  </data>
+  <data name="OptIdleFadeOut" xml:space="preserve">
+    <value>Затемнять неактивные рамки</value>
+  </data>
+  <data name="OptionsHeading" xml:space="preserve">
+    <value>Параметры</value>
+  </data>
+  <data name="OptionsTitle" xml:space="preserve">
+    <value>Desktop Frames + - Параметры</value>
+  </data>
+  <data name="OptNewFrameContextMenu" xml:space="preserve">
+    <value>Показывать «Новая рамка» в меню рабочего стола</value>
+  </data>
+  <data name="OptNoteWatermark" xml:space="preserve">
+    <value>Водяной знак на рамках-заметках (скоро)</value>
+  </data>
+  <data name="OptPortalWatermark" xml:space="preserve">
+    <value>Водяной знак на рамках-порталах</value>
+  </data>
+  <data name="OptProfileHotkeys" xml:space="preserve">
+    <value>Горячие клавиши смены профиля</value>
+  </data>
+  <data name="OptRecycleBin" xml:space="preserve">
+    <value>Использовать корзину при «Удалить элемент» в рамках-порталах</value>
+  </data>
+  <data name="OptSingleClick" xml:space="preserve">
+    <value>Открывать одним щелчком</value>
+  </data>
+  <data name="OptSnapNearFrames" xml:space="preserve">
+    <value>Прилипание к соседним рамкам</value>
+  </data>
+  <data name="OptSpotSearchHotkey" xml:space="preserve">
+    <value>Горячая клавиша быстрого поиска</value>
+  </data>
+  <data name="OptStartWithWindows" xml:space="preserve">
+    <value>Запускать вместе с Windows</value>
+  </data>
+  <data name="OptTrayIcon" xml:space="preserve">
+    <value>Показывать значок в области уведомлений</value>
+  </data>
+  <data name="PerfDynamicColors" xml:space="preserve">
+    <value>Окрашивать полосы по значению</value>
+  </data>
+  <data name="PerfRefreshRate" xml:space="preserve">
+    <value>Частота обновления (мс):</value>
+  </data>
+  <data name="PerfSensors" xml:space="preserve">
+    <value>Показывать датчики:</value>
+  </data>
+  <data name="PerfSettings" xml:space="preserve">
+    <value>Настройки производительности</value>
+  </data>
+  <data name="PerfStaticBarColor" xml:space="preserve">
+    <value>Постоянный цвет полос:</value>
+  </data>
+  <data name="PerfThemeLayout" xml:space="preserve">
+    <value>Тема и расположение</value>
+  </data>
+  <data name="PerfVisualStyle" xml:space="preserve">
+    <value>Стиль:</value>
+  </data>
+  <data name="PhotoBlurCrossfade" xml:space="preserve">
+    <value>Размытое перекрытие</value>
+  </data>
+  <data name="PhotoCropToFill" xml:space="preserve">
+    <value>Обрезать по размеру</value>
+  </data>
+  <data name="PhotoCrossfade" xml:space="preserve">
+    <value>Классическое перекрытие</value>
+  </data>
+  <data name="PhotoFitInside" xml:space="preserve">
+    <value>Вписать целиком</value>
+  </data>
+  <data name="PhotoFitMode" xml:space="preserve">
+    <value>Вписывание изображения:</value>
+  </data>
+  <data name="PhotoLiveRescan" xml:space="preserve">
+    <value>Постоянно перечитывать папку (замечает добавленные и удалённые снимки)</value>
+  </data>
+  <data name="PhotoNoTransition" xml:space="preserve">
+    <value>Нет (мгновенно)</value>
+  </data>
+  <data name="PhotoOriginalSize" xml:space="preserve">
+    <value>Исходный размер (без масштаба)</value>
+  </data>
+  <data name="PhotoSettings" xml:space="preserve">
+    <value>Настройки фоторамки</value>
+  </data>
+  <data name="PhotoStretch" xml:space="preserve">
+    <value>Растянуть (исказит)</value>
+  </data>
+  <data name="PhotoSubtleTwist" xml:space="preserve">
+    <value>Лёгкий поворот</value>
+  </data>
+  <data name="PhotoTransition" xml:space="preserve">
+    <value>Эффект перехода:</value>
+  </data>
+  <data name="PhotoVerticalWipe" xml:space="preserve">
+    <value>Мягкая вертикальная шторка</value>
+  </data>
+  <data name="PluginCalculator" xml:space="preserve">
+    <value>Калькулятор</value>
+  </data>
+  <data name="PluginIpInfo" xml:space="preserve">
+    <value>Сведения об IP</value>
+  </data>
+  <data name="PluginPerformance" xml:space="preserve">
+    <value>Датчики производительности</value>
+  </data>
+  <data name="PluginPhotoFrame" xml:space="preserve">
+    <value>Фоторамка</value>
+  </data>
+  <data name="PluginQueueSaturation" xml:space="preserve">
+    <value>Загрузка очередей</value>
+  </data>
+  <data name="PluginTerminal" xml:space="preserve">
+    <value>Терминал</value>
+  </data>
+  <data name="PluginVuMeter" xml:space="preserve">
+    <value>Индикатор уровня</value>
+  </data>
+  <data name="ProfileActive" xml:space="preserve">
+    <value>Активен</value>
+  </data>
+  <data name="ProfileManagerTitle" xml:space="preserve">
+    <value>Управление профилями</value>
+  </data>
+  <data name="QueueConfig" xml:space="preserve">
+    <value>Настройка системных очередей</value>
+  </data>
+  <data name="QueueDiagnosticSettings" xml:space="preserve">
+    <value>Настройки панели диагностики</value>
+  </data>
+  <data name="QueueDynamicColors" xml:space="preserve">
+    <value>Динамические цвета (зелёный/жёлтый/красный)</value>
+  </data>
+  <data name="QueueInitializing" xml:space="preserve">
+    <value>[Запуск…]</value>
+  </data>
+  <data name="QueueRefreshRate" xml:space="preserve">
+    <value>Частота обновления:</value>
+  </data>
+  <data name="QueueShowCores" xml:space="preserve">
+    <value>Показывать число логических ядер</value>
+  </data>
+  <data name="QueueShowTitle" xml:space="preserve">
+    <value>Показывать заголовок (ЗАГРУЗКА СИСТЕМНЫХ ОЧЕРЕДЕЙ)</value>
+  </data>
+  <data name="QueueShowValues" xml:space="preserve">
+    <value>Показывать числа (потоков на ядро и ожидающий ввод-вывод)</value>
+  </data>
+  <data name="QueueTitle" xml:space="preserve">
+    <value>ЗАГРУЗКА СИСТЕМНЫХ ОЧЕРЕДЕЙ</value>
+  </data>
+  <data name="QueueWmiError" xml:space="preserve">
+    <value>[Ошибка WMI]</value>
+  </data>
+  <data name="RandomNameAdjectives" xml:space="preserve">
+    <value>Высокий,Низкий,Малый,Обширный,Широкий,Узкий,Плоский,Смелый,Холодный,Тёплый,Мягкий,Твёрдый,Тёмный,Бледный,Быстрый,Медленный,Глубокий,Стройный,Короткий,Кривой,Тонкий,Светлый,Ясный,Острый,Тусклый,Громкий,Немой,Хмурый,Добрый,Опрятный,Грубый,Гладкий,Храбрый,Свирепый,Простой,Ветхий,Сухой,Влажный,Сильный,Слабый</value>
+  </data>
+  <data name="RandomNameFormat" xml:space="preserve">
+    <value>{0} {1}</value>
+  </data>
+  <data name="RandomNamePlaces" xml:space="preserve">
+    <value>Залив,Холм,Озеро,Бухта,Пик,Риф,Дюна,Дол,Пустошь,Лог,Утёс,Берег,Склон,Брод,Мыс,Скала,Топь,Пруд,Обрыв,Лес,Лощина,Перевал,Грот,Гребень,Водопад,Роща,Ручей,Отрог,Тропа,Мыс</value>
+  </data>
+  <data name="SearchPlaceholder" xml:space="preserve">
+    <value>Введите для поиска…</value>
+  </data>
+  <data name="SearchTitle" xml:space="preserve">
+    <value>Поиск Desktop Frames</value>
+  </data>
+  <data name="SecAppearance" xml:space="preserve">
+    <value>Внешний вид</value>
+  </data>
+  <data name="SecAutoHideFrames" xml:space="preserve">
+    <value>Автоскрытие рамок</value>
+  </data>
+  <data name="SecDesktopIconVisibility" xml:space="preserve">
+    <value>Видимость значков рабочего стола</value>
+  </data>
+  <data name="SecIcons" xml:space="preserve">
+    <value>Значки</value>
+  </data>
+  <data name="SecIdleAutoRoll" xml:space="preserve">
+    <value>Автосворачивание при простое</value>
+  </data>
+  <data name="SecIdleFadeOut" xml:space="preserve">
+    <value>Затухание при простое</value>
+  </data>
+  <data name="SecLog" xml:space="preserve">
+    <value>Журнал</value>
+  </data>
+  <data name="SecLogCategories" xml:space="preserve">
+    <value>Категории журнала</value>
+  </data>
+  <data name="SecLogConfiguration" xml:space="preserve">
+    <value>Настройка журнала</value>
+  </data>
+  <data name="SecMaintenance" xml:space="preserve">
+    <value>Обслуживание</value>
+  </data>
+  <data name="SecProfileManagement" xml:space="preserve">
+    <value>Управление профилями</value>
+  </data>
+  <data name="SecProfileSwitching" xml:space="preserve">
+    <value>Смена профиля</value>
+  </data>
+  <data name="SecSelections" xml:space="preserve">
+    <value>Параметры</value>
+  </data>
+  <data name="SecSmartDesktopAuto" xml:space="preserve">
+    <value>Умный рабочий стол (автоматическая разборка)</value>
+  </data>
+  <data name="SecStartup" xml:space="preserve">
+    <value>Запуск</value>
+  </data>
+  <data name="SecUtilities" xml:space="preserve">
+    <value>Служебные</value>
+  </data>
+  <data name="SldAutoHideTime" xml:space="preserve">
+    <value>Время до скрытия (с)</value>
+  </data>
+  <data name="SldFadeTargetOpacity" xml:space="preserve">
+    <value>Непрозрачность затухания (%)</value>
+  </data>
+  <data name="SldFrameTint" xml:space="preserve">
+    <value>Оттенок рамки</value>
+  </data>
+  <data name="SldIdleTime" xml:space="preserve">
+    <value>Время простоя (с)</value>
+  </data>
+  <data name="SldMenuTint" xml:space="preserve">
+    <value>Оттенок меню</value>
+  </data>
+  <data name="SndDefault" xml:space="preserve">
+    <value>Звук по умолчанию</value>
+  </data>
+  <data name="SndDoubleDing" xml:space="preserve">
+    <value>Двойной динь</value>
+  </data>
+  <data name="SndGentleDing" xml:space="preserve">
+    <value>Мягкий динь</value>
+  </data>
+  <data name="SndMessageDing" xml:space="preserve">
+    <value>Динь сообщения</value>
+  </data>
+  <data name="SndSmoothTickle" xml:space="preserve">
+    <value>Лёгкое касание</value>
+  </data>
+  <data name="SndSoftDing" xml:space="preserve">
+    <value>Тихий динь</value>
+  </data>
+  <data name="TabFrame" xml:space="preserve">
+    <value>Рамка</value>
+  </data>
+  <data name="TabGeneral" xml:space="preserve">
+    <value>Общие</value>
+  </data>
+  <data name="TabHotkeys" xml:space="preserve">
+    <value>Горячие клавиши</value>
+  </data>
+  <data name="TabIcons" xml:space="preserve">
+    <value>Значки</value>
+  </data>
+  <data name="TabLookDeeper" xml:space="preserve">
+    <value>Подробнее</value>
+  </data>
+  <data name="TabProfiles" xml:space="preserve">
+    <value>Профили</value>
+  </data>
+  <data name="TabSmartDesktop" xml:space="preserve">
+    <value>Умный рабочий стол</value>
+  </data>
+  <data name="TabStyleFx" xml:space="preserve">
+    <value>Стиль и эффекты</value>
+  </data>
+  <data name="TabTitle" xml:space="preserve">
+    <value>Заголовок</value>
+  </data>
+  <data name="TabTools" xml:space="preserve">
+    <value>Инструменты</value>
+  </data>
+  <data name="TermClearHistory" xml:space="preserve">
+    <value>Очистить историю команд</value>
+  </data>
+  <data name="TermConsoleOptions" xml:space="preserve">
+    <value>Параметры консоли</value>
+  </data>
+  <data name="TermHistoryCleared" xml:space="preserve">
+    <value>История очищена.</value>
+  </data>
+  <data name="TermProcessExited" xml:space="preserve">
+    <value>[Процесс завершён. Перезапуск…]</value>
+  </data>
+  <data name="TermRestarting" xml:space="preserve">
+    <value>[Перезапуск сеанса…]</value>
+  </data>
+  <data name="TermSelectStartupDir" xml:space="preserve">
+    <value>Выберите стартовую папку терминала</value>
+  </data>
+  <data name="TermSettings" xml:space="preserve">
+    <value>Настройки терминала</value>
+  </data>
+  <data name="TermStartupDirectory" xml:space="preserve">
+    <value>Стартовая папка:</value>
+  </data>
+  <data name="TermTargetShell" xml:space="preserve">
+    <value>Интерпретатор:</value>
+  </data>
+  <data name="TextAppearance" xml:space="preserve">
+    <value>Вид текста</value>
+  </data>
+  <data name="TextBehavior" xml:space="preserve">
+    <value>Поведение текста</value>
+  </data>
+  <data name="TextFormatTitle" xml:space="preserve">
+    <value>Формат текста</value>
+  </data>
+  <data name="TooltipAutoReposition" xml:space="preserve">
+    <value>Автоматическое перемещение включено (скрытая настройка): рамки уже управляются сами.</value>
+  </data>
+  <data name="TooltipBlankSpacer" xml:space="preserve">
+    <value>Пустой разделитель (удерживайте CTRL для перемещения)</value>
+  </data>
+  <data name="TooltipChameleon" xml:space="preserve">
+    <value>Рамки сами меняют цвет, подстраиваясь под обои.</value>
+  </data>
+  <data name="TooltipClearFilter" xml:space="preserve">
+    <value>Очистить фильтр и закрыть</value>
+  </data>
+  <data name="TooltipFilterFiles" xml:space="preserve">
+    <value>Фильтр файлов (например «*.jpg», или «&gt;*.tmp» для исключения)</value>
+  </data>
+  <data name="TooltipGoUp" xml:space="preserve">
+    <value>Папка выше</value>
+  </data>
+  <data name="TooltipSetHome" xml:space="preserve">
+    <value>Сделать текущий вид домашним для этой рамки</value>
+  </data>
+  <data name="TrayCreateNewProfile" xml:space="preserve">
+    <value>Создать профиль…</value>
+  </data>
+  <data name="TrayExportDoneText" xml:space="preserve">
+    <value>Значения реестра экспортированы в папку программы.</value>
+  </data>
+  <data name="TrayExportDoneTitle" xml:space="preserve">
+    <value>Desktop Frames Plus</value>
+  </data>
+  <data name="TrayExportFailedText" xml:space="preserve">
+    <value>Не удалось экспортировать значения реестра. Смотрите журнал.</value>
+  </data>
+  <data name="TrayExportFailedTitle" xml:space="preserve">
+    <value>Desktop Frames Plus - Ошибка</value>
+  </data>
+  <data name="TrayManageProfiles" xml:space="preserve">
+    <value>Управление профилями…</value>
+  </data>
+  <data name="TrayProfiles" xml:space="preserve">
+    <value>Профили</value>
+  </data>
+  <data name="TrayReloadAllFrames" xml:space="preserve">
+    <value>Перезагрузить все рамки</value>
+  </data>
+  <data name="TrayReloadingFrames" xml:space="preserve">
+    <value>Перезагрузка рамок…</value>
+  </data>
+  <data name="TrayShowHiddenFrames" xml:space="preserve">
+    <value>Показать скрытые рамки</value>
+  </data>
+  <data name="UpdateAvailable" xml:space="preserve">
+    <value>Доступно обновление</value>
+  </data>
+  <data name="ViewDetails" xml:space="preserve">
+    <value>Список</value>
+  </data>
+  <data name="ViewIcons" xml:space="preserve">
+    <value>Значки</value>
+  </data>
+  <data name="VuAttack" xml:space="preserve">
+    <value>Быстрота (атака, мс):</value>
+  </data>
+  <data name="VuAttackHint" xml:space="preserve">
+    <value>По умолчанию: 25 | ниже = быстрее скачок | пределы: 1 - 1000</value>
+  </data>
+  <data name="VuBallistics" xml:space="preserve">
+    <value>Отклик и настройка</value>
+  </data>
+  <data name="VuDecay" xml:space="preserve">
+    <value>Плавность (спад, мс):</value>
+  </data>
+  <data name="VuDecayHint" xml:space="preserve">
+    <value>По умолчанию: 200 | выше = мягче спад | пределы: 10 - 3000</value>
+  </data>
+  <data name="VuDisplayOptions" xml:space="preserve">
+    <value>Параметры отображения</value>
+  </data>
+  <data name="VuGainHint" xml:space="preserve">
+    <value>По умолчанию: 1,2 | выше = чувствительнее | пределы: 0,1 - 10,0</value>
+  </data>
+  <data name="VuLayoutMode" xml:space="preserve">
+    <value>Расположение:</value>
+  </data>
+  <data name="VuSettings" xml:space="preserve">
+    <value>Настройки индикатора</value>
+  </data>
+  <data name="VuSignalGain" xml:space="preserve">
+    <value>Усиление сигнала (множитель):</value>
+  </data>
+</root>
