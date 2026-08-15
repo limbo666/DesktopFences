@@ -303,8 +303,8 @@ namespace Desktop_Frames
             var chamCb = CreateCheckBoxReturn(c, Strings.OptChameleon, "EnableChameleon", SettingsManager.EnableChameleonMode);
             chamCb.ToolTip = Strings.TooltipChameleon;
 
-            CreateSliderControl(c, "Frame Tint", "TintSlider", SettingsManager.TintValue);
-            CreateSliderControl(c, "Menu Tint", "MenuTintSlider", SettingsManager.MenuTintValue);
+            CreateSliderControl(c, Strings.SldFrameTint, "TintSlider", SettingsManager.TintValue);
+            CreateSliderControl(c, Strings.SldMenuTint, "MenuTintSlider", SettingsManager.MenuTintValue);
 
             // Pass the chamCb reference so we can wire up the toggle event
             CreateColorAndEffectComboBoxes(c, chamCb);
@@ -314,13 +314,13 @@ namespace Desktop_Frames
             // --- Moved from General Tab (Auto-Hide Options) ---
             CreateSectionHeader(c, Strings.SecAutoHideFrames, ColorStyle);
             CreateCheckBox(c, Strings.OptAutoHideFrames, "AutoHideFrames", SettingsManager.AutoHideFrames);
-            CreateSliderControl(c, "Auto hide time (sec)", "AutoHideTimeSlider", SettingsManager.AutoHideTime, 300);
+            CreateSliderControl(c, Strings.SldAutoHideTime, "AutoHideTimeSlider", SettingsManager.AutoHideTime, 300);
 
             // --- Moved from General Tab (Idle Fade-Out Options) ---
             CreateSectionHeader(c, Strings.SecIdleFadeOut, ColorStyle);
             CreateCheckBox(c, Strings.OptIdleFadeOut, "FramesFadeOutFx", SettingsManager.FramesFadeOutFx);
-            CreateSliderControl(c, "Idle Time (sec)", "FadeOutTimeSlider", SettingsManager.FadeOutTime, 300);
-            CreateSliderControl(c, "Fade Target Opacity (%)", "FadeOutAlphaSlider", (int)(SettingsManager.FadeOutFxTargetAlpha * 100), 100);
+            CreateSliderControl(c, Strings.SldIdleTime, "FadeOutTimeSlider", SettingsManager.FadeOutTime, 300);
+            CreateSliderControl(c, Strings.SldFadeTargetOpacity, "FadeOutAlphaSlider", (int)(SettingsManager.FadeOutFxTargetAlpha * 100), 100);
 
             // --- Moved from General Tab (Idle Auto-Roll Options) ---
             CreateSectionHeader(c, Strings.SecIdleAutoRoll, ColorStyle);
@@ -336,7 +336,7 @@ namespace Desktop_Frames
                 TextWrapping = TextWrapping.Wrap
             });
 
-            CreateSliderControl(c, "Idle Time (sec)", "AutoRollTimeSlider", SettingsManager.AutoRollTime, 300);
+            CreateSliderControl(c, Strings.SldIdleTime, "AutoRollTimeSlider", SettingsManager.AutoRollTime, 300);
 
 
             // --- NEW: Desktop Icon Visibility ---
@@ -384,9 +384,9 @@ namespace Desktop_Frames
             g.RowDefinitions.Add(new RowDefinition { Height = new GridLength(15) });
             g.RowDefinitions.Add(new RowDefinition { Height = new GridLength(45) });
 
-            Button b1 = CreateStyledButton("Backup", ColorTools); b1.Click += (s, e) => BackupManager.BackupData();
-            Button b2 = CreateStyledButton("Restore...", Color.FromRgb(255, 152, 0)); b2.Click += (s, e) => RestoreBackup();
-            Button b3 = CreateStyledButton("Open Backups Folder", Color.FromRgb(0, 123, 191)); b3.Click += (s, e) => OpenBackupsFolder();
+            Button b1 = CreateStyledButton(Strings.BtnBackup, ColorTools); b1.Click += (s, e) => BackupManager.BackupData();
+            Button b2 = CreateStyledButton(Strings.BtnRestore, Color.FromRgb(255, 152, 0)); b2.Click += (s, e) => RestoreBackup();
+            Button b3 = CreateStyledButton(Strings.BtnOpenBackupsFolder, Color.FromRgb(0, 123, 191)); b3.Click += (s, e) => OpenBackupsFolder();
             Grid.SetRow(b1, 0); Grid.SetColumn(b1, 0);
             Grid.SetRow(b2, 0); Grid.SetColumn(b2, 2);
             Grid.SetRow(b3, 2); Grid.SetColumn(b3, 0); Grid.SetColumnSpan(b3, 3);
@@ -401,7 +401,7 @@ namespace Desktop_Frames
             Color darkPink = Color.FromRgb(199, 21, 133); // MediumVioletRed
             CreateSectionHeader(c, Strings.SecMaintenance, darkPink);
 
-            Button btnBound = CreateStyledButton("Screen Bound Frames", darkPink);
+            Button btnBound = CreateStyledButton(Strings.BtnScreenBoundFrames, darkPink);
             btnBound.Width = 255;
             btnBound.Height = 45;
             btnBound.Margin = new Thickness(0, 0, 0, 15);
@@ -431,11 +431,11 @@ namespace Desktop_Frames
 
 
             CreateSectionHeader(c, Strings.BtnReset, Colors.Red);
-            Button r1 = CreateStyledButton("Reset Styles", Color.FromRgb(108, 117, 125));
+            Button r1 = CreateStyledButton(Strings.BtnResetStyles, Color.FromRgb(108, 117, 125));
             r1.Width = 255; r1.Height = 45; r1.Margin = new Thickness(0, 0, 0, 15);
             r1.Click += (s, e) => { if (MessageBoxesManager.ShowCustomYesNoMessageBox("Reset all visual customizations?", Strings.BtnReset)) { Framemanager.ResetAllCustomizations(); _optionsWindow.Close(); } };
 
-            Button r2 = CreateStyledButton("Clear All Data", Color.FromRgb(220, 53, 69));
+            Button r2 = CreateStyledButton(Strings.BtnClearAllData, Color.FromRgb(220, 53, 69));
             r2.Width = 255; r2.Height = 45;
             r2.Click += (s, e) => PerformFullFactoryReset();
 
@@ -458,13 +458,13 @@ namespace Desktop_Frames
             CreateSectionHeader(c, Strings.SecProfileManagement, ColorProfiles);
 
             // Button 1: Manage Profiles (Green)
-            Button btnManageProfiles = CreateStyledButton("Manage Profiles", Color.FromRgb(34, 139, 34)); // Tools Green
+            Button btnManageProfiles = CreateStyledButton(Strings.BtnManageProfiles, Color.FromRgb(34, 139, 34)); // Tools Green
             btnManageProfiles.Width = 255; btnManageProfiles.Height = 45; btnManageProfiles.Margin = new Thickness(15, 0, 0, 15);
             btnManageProfiles.HorizontalAlignment = HorizontalAlignment.Left;
             btnManageProfiles.Click += (s, e) => { new ProfileManagerForm().ShowDialog(); };
 
             // Button 2: Manage Automation (Blue)
-            Button btnManageAutomation = CreateStyledButton("Manage Automation", Color.FromRgb(0, 123, 191)); // Tools Blue
+            Button btnManageAutomation = CreateStyledButton(Strings.BtnManageAutomation, Color.FromRgb(0, 123, 191)); // Tools Blue
             btnManageAutomation.Width = 255; btnManageAutomation.Height = 45; btnManageAutomation.Margin = new Thickness(15, 0, 0, 15);
             btnManageAutomation.HorizontalAlignment = HorizontalAlignment.Left;
             btnManageAutomation.Click += (s, e) => { new AutomationRulesForm().ShowDialog(); };
@@ -512,9 +512,9 @@ namespace Desktop_Frames
 
             CreateSectionHeader(c, Strings.SecProfileSwitching, ColorHotkeys);
             CheckBox cbProf = CreateCheckBoxReturn(c, Strings.OptProfileHotkeys, "EnableProfileHotkeys", SettingsManager.EnableProfileHotkeys);
-            Grid gProf1 = CreateHotkeyEditor(c, "Direct Profile [0-9]", "ProfSwitch", SettingsManager.ProfileSwitchModifier, 0, false);
-            Grid gProf2 = CreateHotkeyEditor(c, "Previous Profile", "ProfPrev", SettingsManager.ProfilePrevModifier, SettingsManager.ProfilePrevKey, true);
-            Grid gProf3 = CreateHotkeyEditor(c, "Next Profile", "ProfNext", SettingsManager.ProfileNextModifier, SettingsManager.ProfileNextKey, true);
+            Grid gProf1 = CreateHotkeyEditor(c, Strings.HkDirectProfile, "ProfSwitch", SettingsManager.ProfileSwitchModifier, 0, false);
+            Grid gProf2 = CreateHotkeyEditor(c, Strings.HkPreviousProfile, "ProfPrev", SettingsManager.ProfilePrevModifier, SettingsManager.ProfilePrevKey, true);
+            Grid gProf3 = CreateHotkeyEditor(c, Strings.HkNextProfile, "ProfNext", SettingsManager.ProfileNextModifier, SettingsManager.ProfileNextKey, true);
 
             // Bind initial state and live toggling
             gProf1.IsEnabled = gProf2.IsEnabled = gProf3.IsEnabled = cbProf.IsChecked == true;
@@ -523,12 +523,12 @@ namespace Desktop_Frames
             CreateSectionHeader(c, Strings.SecUtilities, ColorHotkeys);
 
             CheckBox cbFocus = CreateCheckBoxReturn(c, Strings.OptFocusFrameHotkey, "EnableFocusFrameHotkey", SettingsManager.EnableFocusFrameHotkey);
-            Grid gFocus = CreateHotkeyEditor(c, "Focus Frame", "FocusFrame", SettingsManager.FocusFrameModifier, SettingsManager.FocusFrameKey, true);
+            Grid gFocus = CreateHotkeyEditor(c, Strings.HkFocusFrame, "FocusFrame", SettingsManager.FocusFrameModifier, SettingsManager.FocusFrameKey, true);
             gFocus.IsEnabled = cbFocus.IsChecked == true;
             cbFocus.Click += (s, e) => gFocus.IsEnabled = cbFocus.IsChecked == true;
 
             CheckBox cbSpot = CreateCheckBoxReturn(c, Strings.OptSpotSearchHotkey, "EnableSpotSearchHotkey", SettingsManager.EnableSpotSearchHotkey);
-            Grid gSpot = CreateHotkeyEditor(c, "Spot Search", "SpotSearch", SettingsManager.SpotSearchModifier, SettingsManager.SpotSearchKey, true);
+            Grid gSpot = CreateHotkeyEditor(c, Strings.HkSpotSearch, "SpotSearch", SettingsManager.SpotSearchModifier, SettingsManager.SpotSearchKey, true);
             gSpot.IsEnabled = cbSpot.IsChecked == true;
             cbSpot.Click += (s, e) => gSpot.IsEnabled = cbSpot.IsChecked == true;
 
@@ -604,16 +604,16 @@ namespace Desktop_Frames
 
             // NEW: Live Rule Statistics (Horizontal Layout)
             StackPanel statsPanel = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(15, 15, 0, 15) };
-            TextBlock txtTotalRules = new TextBlock { Text = $"Total number of rules: {AutoOrganizeManager.Rules.Count}", FontFamily = new FontFamily("Segoe UI"), FontSize = 13, FontWeight = FontWeights.Medium };
+            TextBlock txtTotalRules = new TextBlock { Text = Strings.Get("LblTotalRules", AutoOrganizeManager.Rules.Count), FontFamily = new FontFamily("Segoe UI"), FontSize = 13, FontWeight = FontWeights.Medium };
             TextBlock txtSeparator = new TextBlock { Text = "   -   ", FontFamily = new FontFamily("Segoe UI"), FontSize = 13, FontWeight = FontWeights.Medium, Foreground = Brushes.Gray };
-            TextBlock txtEnabledRules = new TextBlock { Text = $"Enabled: {AutoOrganizeManager.Rules.Count(r => r.IsEnabled)}", FontFamily = new FontFamily("Segoe UI"), FontSize = 13, FontWeight = FontWeights.Bold, Foreground = new SolidColorBrush(Color.FromRgb(34, 139, 34)) };
+            TextBlock txtEnabledRules = new TextBlock { Text = Strings.Get("LblEnabledRules", AutoOrganizeManager.Rules.Count(r => r.IsEnabled)), FontFamily = new FontFamily("Segoe UI"), FontSize = 13, FontWeight = FontWeights.Bold, Foreground = new SolidColorBrush(Color.FromRgb(34, 139, 34)) };
             statsPanel.Children.Add(txtTotalRules);
             statsPanel.Children.Add(txtSeparator);
             statsPanel.Children.Add(txtEnabledRules);
             c.Children.Add(statsPanel);
 
             // Navy Blue - Manage Rules Button
-            Button btnManageRules = CreateStyledButton("Smart Desktop Rules...", Color.FromRgb(0, 0, 128));
+            Button btnManageRules = CreateStyledButton(Strings.BtnSmartDesktopRules, Color.FromRgb(0, 0, 128));
             btnManageRules.Width = 255;
             btnManageRules.Height = 45;
             btnManageRules.Margin = new Thickness(15, 0, 0, 15);
@@ -622,13 +622,13 @@ namespace Desktop_Frames
             {
                 new AutoOrganizeForm().ShowDialog();
                 // Refresh statistics when the editor closes
-                txtTotalRules.Text = $"Total number of rules: {AutoOrganizeManager.Rules.Count}";
-                txtEnabledRules.Text = $"Enabled: {AutoOrganizeManager.Rules.Count(r => r.IsEnabled)}";
+                txtTotalRules.Text = Strings.Get("LblTotalRules", AutoOrganizeManager.Rules.Count);
+                txtEnabledRules.Text = Strings.Get("LblEnabledRules", AutoOrganizeManager.Rules.Count(r => r.IsEnabled));
             };
             c.Children.Add(btnManageRules);
 
             // Dark Red - Organize Desktop Now Button
-            Button btnOrganizeNow = CreateStyledButton("Organize Now (Run)", Color.FromRgb(139, 0, 0));
+            Button btnOrganizeNow = CreateStyledButton(Strings.BtnOrganizeNow, Color.FromRgb(139, 0, 0));
             btnOrganizeNow.Width = 255;
             btnOrganizeNow.Height = 45;
             btnOrganizeNow.Margin = new Thickness(15, 0, 0, 15);
@@ -662,7 +662,7 @@ namespace Desktop_Frames
             StackPanel c = new StackPanel();
             CreateSectionHeader(c, Strings.SecLog, ColorLookDeeper);
             CreateCheckBox(c, Strings.OptEnableLogging, "EnableLogging", SettingsManager.IsLogEnabled);
-            Button b = CreateStyledButton("Open Log", ColorLookDeeper); b.Width = 100; b.Height = 25; b.HorizontalAlignment = HorizontalAlignment.Left;
+            Button b = CreateStyledButton(Strings.BtnOpenLog, ColorLookDeeper); b.Width = 100; b.Height = 25; b.HorizontalAlignment = HorizontalAlignment.Left;
             b.Click += (s, e) => OpenLogFile();
             c.Children.Add(b);
 

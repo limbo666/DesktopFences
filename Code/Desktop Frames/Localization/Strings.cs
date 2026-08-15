@@ -374,5 +374,30 @@ namespace Desktop_Frames.Localization
         public static string OptAutoOrganize => Get("OptAutoOrganize");
         public static string OptExecutionToasts => Get("OptExecutionToasts");
         public static string BtnReset => Get("BtnReset");
+
+        // ── Options: buttons, sliders and hotkey rows ─────────────────
+        public static string BtnBackup => Get("BtnBackup");
+        public static string BtnRestore => Get("BtnRestore");
+        public static string BtnOpenBackupsFolder => Get("BtnOpenBackupsFolder");
+        public static string BtnScreenBoundFrames => Get("BtnScreenBoundFrames");
+        public static string BtnResetStyles => Get("BtnResetStyles");
+        public static string BtnClearAllData => Get("BtnClearAllData");
+        public static string BtnManageProfiles => Get("BtnManageProfiles");
+        public static string BtnManageAutomation => Get("BtnManageAutomation");
+        public static string BtnSmartDesktopRules => Get("BtnSmartDesktopRules");
+        public static string BtnOrganizeNow => Get("BtnOrganizeNow");
+        public static string BtnOpenLog => Get("BtnOpenLog");
+        public static string SldFrameTint => Get("SldFrameTint");
+        public static string SldMenuTint => Get("SldMenuTint");
+        public static string SldAutoHideTime => Get("SldAutoHideTime");
+        public static string SldIdleTime => Get("SldIdleTime");
+        public static string SldFadeTargetOpacity => Get("SldFadeTargetOpacity");
+        public static string HkDirectProfile => Get("HkDirectProfile");
+        public static string HkPreviousProfile => Get("HkPreviousProfile");
+        public static string HkNextProfile => Get("HkNextProfile");
+        public static string HkFocusFrame => Get("HkFocusFrame");
+        public static string HkSpotSearch => Get("HkSpotSearch");
+        public static string LblTotalRules => Get("LblTotalRules");
+        public static string LblEnabledRules => Get("LblEnabledRules");
     }
 }

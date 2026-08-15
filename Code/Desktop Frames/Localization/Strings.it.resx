@@ -952,4 +952,73 @@
   <data name="BtnReset" xml:space="preserve">
     <value>Reimposta</value>
   </data>
+  <data name="BtnBackup" xml:space="preserve">
+    <value>Backup</value>
+  </data>
+  <data name="BtnRestore" xml:space="preserve">
+    <value>Ripristina...</value>
+  </data>
+  <data name="BtnOpenBackupsFolder" xml:space="preserve">
+    <value>Apri la cartella dei backup</value>
+  </data>
+  <data name="BtnScreenBoundFrames" xml:space="preserve">
+    <value>Riporta le frame dentro lo schermo</value>
+  </data>
+  <data name="BtnResetStyles" xml:space="preserve">
+    <value>Reimposta gli stili</value>
+  </data>
+  <data name="BtnClearAllData" xml:space="preserve">
+    <value>Cancella tutti i dati</value>
+  </data>
+  <data name="BtnManageProfiles" xml:space="preserve">
+    <value>Gestisci i profili</value>
+  </data>
+  <data name="BtnManageAutomation" xml:space="preserve">
+    <value>Gestisci le automazioni</value>
+  </data>
+  <data name="BtnSmartDesktopRules" xml:space="preserve">
+    <value>Regole del desktop intelligente...</value>
+  </data>
+  <data name="BtnOrganizeNow" xml:space="preserve">
+    <value>Organizza adesso</value>
+  </data>
+  <data name="BtnOpenLog" xml:space="preserve">
+    <value>Apri il log</value>
+  </data>
+  <data name="SldFrameTint" xml:space="preserve">
+    <value>Tinta della frame</value>
+  </data>
+  <data name="SldMenuTint" xml:space="preserve">
+    <value>Tinta dei menu</value>
+  </data>
+  <data name="SldAutoHideTime" xml:space="preserve">
+    <value>Tempo prima di nascondere (sec)</value>
+  </data>
+  <data name="SldIdleTime" xml:space="preserve">
+    <value>Tempo di inattività (sec)</value>
+  </data>
+  <data name="SldFadeTargetOpacity" xml:space="preserve">
+    <value>Opacità della dissolvenza (%)</value>
+  </data>
+  <data name="HkDirectProfile" xml:space="preserve">
+    <value>Profilo diretto [0-9]</value>
+  </data>
+  <data name="HkPreviousProfile" xml:space="preserve">
+    <value>Profilo precedente</value>
+  </data>
+  <data name="HkNextProfile" xml:space="preserve">
+    <value>Profilo successivo</value>
+  </data>
+  <data name="HkFocusFrame" xml:space="preserve">
+    <value>Vai alla frame</value>
+  </data>
+  <data name="HkSpotSearch" xml:space="preserve">
+    <value>Ricerca rapida</value>
+  </data>
+  <data name="LblTotalRules" xml:space="preserve">
+    <value>Regole in tutto: {0}</value>
+  </data>
+  <data name="LblEnabledRules" xml:space="preserve">
+    <value>Attive: {0}</value>
+  </data>
 </root>

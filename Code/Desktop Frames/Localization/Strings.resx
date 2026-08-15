@@ -952,4 +952,73 @@
   <data name="BtnReset" xml:space="preserve">
     <value>Reset</value>
   </data>
+  <data name="BtnBackup" xml:space="preserve">
+    <value>Backup</value>
+  </data>
+  <data name="BtnRestore" xml:space="preserve">
+    <value>Restore...</value>
+  </data>
+  <data name="BtnOpenBackupsFolder" xml:space="preserve">
+    <value>Open Backups Folder</value>
+  </data>
+  <data name="BtnScreenBoundFrames" xml:space="preserve">
+    <value>Screen Bound Frames</value>
+  </data>
+  <data name="BtnResetStyles" xml:space="preserve">
+    <value>Reset Styles</value>
+  </data>
+  <data name="BtnClearAllData" xml:space="preserve">
+    <value>Clear All Data</value>
+  </data>
+  <data name="BtnManageProfiles" xml:space="preserve">
+    <value>Manage Profiles</value>
+  </data>
+  <data name="BtnManageAutomation" xml:space="preserve">
+    <value>Manage Automation</value>
+  </data>
+  <data name="BtnSmartDesktopRules" xml:space="preserve">
+    <value>Smart Desktop Rules...</value>
+  </data>
+  <data name="BtnOrganizeNow" xml:space="preserve">
+    <value>Organize Now (Run)</value>
+  </data>
+  <data name="BtnOpenLog" xml:space="preserve">
+    <value>Open Log</value>
+  </data>
+  <data name="SldFrameTint" xml:space="preserve">
+    <value>Frame Tint</value>
+  </data>
+  <data name="SldMenuTint" xml:space="preserve">
+    <value>Menu Tint</value>
+  </data>
+  <data name="SldAutoHideTime" xml:space="preserve">
+    <value>Auto hide time (sec)</value>
+  </data>
+  <data name="SldIdleTime" xml:space="preserve">
+    <value>Idle Time (sec)</value>
+  </data>
+  <data name="SldFadeTargetOpacity" xml:space="preserve">
+    <value>Fade Target Opacity (%)</value>
+  </data>
+  <data name="HkDirectProfile" xml:space="preserve">
+    <value>Direct Profile [0-9]</value>
+  </data>
+  <data name="HkPreviousProfile" xml:space="preserve">
+    <value>Previous Profile</value>
+  </data>
+  <data name="HkNextProfile" xml:space="preserve">
+    <value>Next Profile</value>
+  </data>
+  <data name="HkFocusFrame" xml:space="preserve">
+    <value>Focus Frame</value>
+  </data>
+  <data name="HkSpotSearch" xml:space="preserve">
+    <value>Spot Search</value>
+  </data>
+  <data name="LblTotalRules" xml:space="preserve">
+    <value>Total number of rules: {0}</value>
+  </data>
+  <data name="LblEnabledRules" xml:space="preserve">
+    <value>Enabled: {0}</value>
+  </data>
 </root>
