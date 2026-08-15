@@ -58,6 +58,27 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="ButtonYes" xml:space="preserve">
+    <value>Sì</value>
+  </data>
+  <data name="ButtonNo" xml:space="preserve">
+    <value>No</value>
+  </data>
+  <data name="ButtonOk" xml:space="preserve">
+    <value>OK</value>
+  </data>
+  <data name="DeleteTabTitle" xml:space="preserve">
+    <value>Elimina scheda</value>
+  </data>
+  <data name="ConfirmDeleteTitle" xml:space="preserve">
+    <value>Conferma eliminazione</value>
+  </data>
+  <data name="DeleteFrameHeading" xml:space="preserve">
+    <value>Elimina frame</value>
+  </data>
+  <data name="DeleteFrameQuestion" xml:space="preserve">
+    <value>Vuoi davvero eliminare questa frame?</value>
+  </data>
   <data name="TrayExportDoneTitle" xml:space="preserve">
     <value>Desktop Frames Plus</value>
   </data>

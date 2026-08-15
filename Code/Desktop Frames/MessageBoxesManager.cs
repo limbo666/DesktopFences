@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Desktop_Frames.Localization;
+using System;
 using System.IO;
 using System.Media;
 using System.Reflection;
@@ -257,7 +258,7 @@ namespace Desktop_Frames
                 // No Button
                 Button btnNo = new Button
                 {
-                    Content = "No",
+                    Content = Strings.ButtonNo,
                     Width = 80,
                     Height = 32,
                     FontFamily = new FontFamily("Segoe UI"),
@@ -276,7 +277,7 @@ namespace Desktop_Frames
                 // Yes Button (Red for Reset/Danger actions)
                 Button btnYes = new Button
                 {
-                    Content = "Yes",
+                    Content = Strings.ButtonYes,
                     Width = 80,
                     Height = 32,
                     FontFamily = new FontFamily("Segoe UI"),
@@ -965,7 +966,7 @@ namespace Desktop_Frames
                 // OK button with user's accent color
                 Button btnOK = new Button
                 {
-                    Content = "OK",
+                    Content = Strings.ButtonOk,
                     Width = 90,
                     Height = 36,
                     FontFamily = new FontFamily("Segoe UI"),
@@ -1055,7 +1056,7 @@ namespace Desktop_Frames
                 _userAccentColor = mediaColor;
 
                 // Modern WPF window setup
-                this.Title = "Delete Tab";
+                this.Title = Strings.DeleteTabTitle;
                 this.Width = 420;
                 this.Height = 220;
                 this.WindowStartupLocation = WindowStartupLocation.Manual;
@@ -1151,7 +1152,7 @@ namespace Desktop_Frames
 
                 TextBlock titleLabel = new TextBlock
                 {
-                    Text = "Delete Tab",
+                    Text = Strings.DeleteTabTitle,
                     FontFamily = new FontFamily("Segoe UI"),
                     FontSize = 18,
                     FontWeight = FontWeights.Bold,
@@ -1187,7 +1188,7 @@ namespace Desktop_Frames
                 // No button (safe action)
                 Button btnNo = new Button
                 {
-                    Content = "No",
+                    Content = Strings.ButtonNo,
                     Width = 80,
                     Height = 32,
                     FontFamily = new FontFamily("Segoe UI"),
@@ -1213,7 +1214,7 @@ namespace Desktop_Frames
                 // Yes button (danger action)
                 Button btnYes = new Button
                 {
-                    Content = "Yes",
+                    Content = Strings.ButtonYes,
                     Width = 80,
                     Height = 32,
                     FontFamily = new FontFamily("Segoe UI"),
@@ -1436,7 +1437,7 @@ namespace Desktop_Frames
                 _userAccentColor = mediaColor;
 
                 // Modern WPF window setup
-                this.Title = "Confirm delete";
+                this.Title = Strings.ConfirmDeleteTitle;
                 this.Width = 420;
                 this.Height = 200;
                 this.WindowStartupLocation = WindowStartupLocation.Manual;
@@ -1537,7 +1538,7 @@ namespace Desktop_Frames
 
                 TextBlock titleLabel = new TextBlock
                 {
-                    Text = "Delete frame",
+                    Text = Strings.DeleteFrameHeading,
                     FontFamily = new FontFamily("Segoe UI"),
                     FontSize = 18,
                     FontWeight = FontWeights.Bold,
@@ -1547,7 +1548,7 @@ namespace Desktop_Frames
 
                 TextBlock messageLabel = new TextBlock
                 {
-                    Text = "Are you sure you want to delete this frame?",
+                    Text = Strings.DeleteFrameQuestion,
                     FontFamily = new FontFamily("Segoe UI"),
                     FontSize = 14,
                     Foreground = new SolidColorBrush(Color.FromRgb(95, 99, 104)),
@@ -1572,7 +1573,7 @@ namespace Desktop_Frames
                 // No button with user's accent color (safe action)
                 Button btnNo = new Button
                 {
-                    Content = "No",
+                    Content = Strings.ButtonNo,
                     Width = 80,
                     Height = 32,
                     FontFamily = new FontFamily("Segoe UI"),
@@ -1599,7 +1600,7 @@ namespace Desktop_Frames
                 // Yes button with danger styling
                 Button btnYes = new Button
                 {
-                    Content = "Yes",
+                    Content = Strings.ButtonYes,
                     Width = 80,
                     Height = 32,
                     FontFamily = new FontFamily("Segoe UI"),

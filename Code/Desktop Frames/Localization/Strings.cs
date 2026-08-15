@@ -59,6 +59,17 @@ namespace Desktop_Frames.Localization
             }
         }
 
+        // ── Buttons, shared by every dialog ─────────────────────────────────
+        public static string ButtonYes => Get("ButtonYes");
+        public static string ButtonNo => Get("ButtonNo");
+        public static string ButtonOk => Get("ButtonOk");
+
+        // ── Confirmation dialogs ────────────────────────────────────────────
+        public static string DeleteTabTitle => Get("DeleteTabTitle");
+        public static string ConfirmDeleteTitle => Get("ConfirmDeleteTitle");
+        public static string DeleteFrameHeading => Get("DeleteFrameHeading");
+        public static string DeleteFrameQuestion => Get("DeleteFrameQuestion");
+
         // ── Tray ────────────────────────────────────────────────────────────
         public static string TrayExportDoneTitle => Get("TrayExportDoneTitle");
         public static string TrayExportDoneText => Get("TrayExportDoneText");
