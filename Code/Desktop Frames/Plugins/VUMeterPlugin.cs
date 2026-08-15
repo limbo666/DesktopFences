@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Desktop_Frames.Localization;
+using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Windows;
@@ -368,7 +369,7 @@ namespace Desktop_Frames.Plugins
             Grid headerGrid = new Grid();
             headerGrid.Children.Add(new TextBlock
             {
-                Text = "VU Meter Settings",
+                Text = Strings.VuSettings,
                 Foreground = Brushes.White,
                 FontWeight = FontWeights.Bold,
                 VerticalAlignment = VerticalAlignment.Center,
@@ -406,9 +407,9 @@ namespace Desktop_Frames.Plugins
                 Padding = new Thickness(12)
             };
             StackPanel groupSp1 = new StackPanel();
-            groupSp1.Children.Add(new TextBlock { Text = "Display Options", FontWeight = FontWeights.Bold, Margin = new Thickness(0, 0, 0, 10) });
+            groupSp1.Children.Add(new TextBlock { Text = Strings.VuDisplayOptions, FontWeight = FontWeights.Bold, Margin = new Thickness(0, 0, 0, 10) });
 
-            groupSp1.Children.Add(new TextBlock { Text = "Layout Mode:", Margin = new Thickness(0, 0, 0, 5) });
+            groupSp1.Children.Add(new TextBlock { Text = Strings.VuLayoutMode, Margin = new Thickness(0, 0, 0, 5) });
             ComboBox cmbLayout = new ComboBox { Margin = new Thickness(0, 0, 0, 15) };
             cmbLayout.Items.Add("Stereo");
             cmbLayout.Items.Add("Combined");
@@ -430,20 +431,20 @@ namespace Desktop_Frames.Plugins
                 Padding = new Thickness(12)
             };
             StackPanel groupSp2 = new StackPanel();
-            groupSp2.Children.Add(new TextBlock { Text = "Meter Ballistics & Tuning", FontWeight = FontWeights.Bold, Margin = new Thickness(0, 0, 0, 10) });
+            groupSp2.Children.Add(new TextBlock { Text = Strings.VuBallistics, FontWeight = FontWeights.Bold, Margin = new Thickness(0, 0, 0, 10) });
 
-            groupSp2.Children.Add(new TextBlock { Text = "Signal Gain (Multiplier):", Margin = new Thickness(0, 0, 0, 2) });
-            groupSp2.Children.Add(new TextBlock { Text = "Default: 1.2 | Higher = More sensitive | Limit: 0.1 - 10.0", Foreground = Brushes.Gray, FontSize = 10, Margin = new Thickness(0, 0, 0, 5) });
+            groupSp2.Children.Add(new TextBlock { Text = Strings.VuSignalGain, Margin = new Thickness(0, 0, 0, 2) });
+            groupSp2.Children.Add(new TextBlock { Text = Strings.VuGainHint, Foreground = Brushes.Gray, FontSize = 10, Margin = new Thickness(0, 0, 0, 5) });
             TextBox txtGain = new TextBox { Text = _gain.ToString(), Margin = new Thickness(0, 0, 0, 15) };
             groupSp2.Children.Add(txtGain);
 
-            groupSp2.Children.Add(new TextBlock { Text = "Responsiveness (Attack ms):", Margin = new Thickness(0, 0, 0, 2) });
-            groupSp2.Children.Add(new TextBlock { Text = "Default: 25 | Lower = Faster jump | Limit: 1 - 1000", Foreground = Brushes.Gray, FontSize = 10, Margin = new Thickness(0, 0, 0, 5) });
+            groupSp2.Children.Add(new TextBlock { Text = Strings.VuAttack, Margin = new Thickness(0, 0, 0, 2) });
+            groupSp2.Children.Add(new TextBlock { Text = Strings.VuAttackHint, Foreground = Brushes.Gray, FontSize = 10, Margin = new Thickness(0, 0, 0, 5) });
             TextBox txtAttack = new TextBox { Text = _attackMs.ToString(), Margin = new Thickness(0, 0, 0, 15) };
             groupSp2.Children.Add(txtAttack);
 
-            groupSp2.Children.Add(new TextBlock { Text = "Smoothness (Decay ms):", Margin = new Thickness(0, 0, 0, 2) });
-            groupSp2.Children.Add(new TextBlock { Text = "Default: 200 | Higher = Smoother fall | Limit: 10 - 3000", Foreground = Brushes.Gray, FontSize = 10, Margin = new Thickness(0, 0, 0, 5) });
+            groupSp2.Children.Add(new TextBlock { Text = Strings.VuDecay, Margin = new Thickness(0, 0, 0, 2) });
+            groupSp2.Children.Add(new TextBlock { Text = Strings.VuDecayHint, Foreground = Brushes.Gray, FontSize = 10, Margin = new Thickness(0, 0, 0, 5) });
             TextBox txtDecay = new TextBox { Text = _decayMs.ToString(), Margin = new Thickness(0, 0, 0, 10) };
             groupSp2.Children.Add(txtDecay);
 

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Desktop_Frames.Localization;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
@@ -232,10 +233,10 @@ namespace Desktop_Frames.Plugins
 
             // Context Menu: Display Card
             ContextMenu displayMenu = new ContextMenu();
-            MenuItem copyItem = new MenuItem { Header = "Copy" };
+            MenuItem copyItem = new MenuItem { Header = Strings.CalcCopy };
             copyItem.Click += (s, e) => { Clipboard.SetText(_mainDisplay.Text); TriggerTextFlash(Color.FromRgb(0, 255, 200)); };
 
-            MenuItem pasteItem = new MenuItem { Header = "Paste" };
+            MenuItem pasteItem = new MenuItem { Header = Strings.CalcPaste };
             pasteItem.Click += (s, e) =>
             {
                 if (Clipboard.ContainsText())
@@ -249,7 +250,7 @@ namespace Desktop_Frames.Plugins
                 }
             };
 
-            MenuItem clearItem = new MenuItem { Header = "Clear" };
+            MenuItem clearItem = new MenuItem { Header = Strings.CalcClear };
             clearItem.Click += (s, e) => { ProcessInput("C"); }; // Routes through standard math engine for full reset + flash
 
             displayMenu.Items.Add(copyItem);
@@ -292,7 +293,7 @@ namespace Desktop_Frames.Plugins
 
             // Context Menu: History Tape
             ContextMenu historyMenu = new ContextMenu();
-            MenuItem clearHistoryItem = new MenuItem { Header = "Clear History" };
+            MenuItem clearHistoryItem = new MenuItem { Header = Strings.CalcClearHistory };
             clearHistoryItem.Click += (s, e) =>
             {
                 _historyTape.Clear();
@@ -934,7 +935,7 @@ namespace Desktop_Frames.Plugins
             Border headerBorder = new Border { Height = 50, Background = accentBrush };
             headerBorder.MouseLeftButtonDown += (s, e) => { if (e.ButtonState == MouseButtonState.Pressed) win.DragMove(); };
             Grid headerGrid = new Grid();
-            headerGrid.Children.Add(new TextBlock { Text = "Calculator Settings", Foreground = Brushes.White, FontWeight = FontWeights.Bold, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(15, 0, 0, 0) });
+            headerGrid.Children.Add(new TextBlock { Text = Strings.CalcSettings, Foreground = Brushes.White, FontWeight = FontWeights.Bold, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(15, 0, 0, 0) });
             Button btnClose = new Button { Content = "X", Foreground = Brushes.White, Background = Brushes.Transparent, BorderThickness = new Thickness(0), Width = 40, HorizontalAlignment = HorizontalAlignment.Right };
             btnClose.Click += (s, e) => win.Close();
             headerGrid.Children.Add(btnClose);
@@ -943,22 +944,22 @@ namespace Desktop_Frames.Plugins
             Border contentBorder = new Border { Background = Brushes.White, Padding = new Thickness(20) };
             StackPanel contentPanel = new StackPanel();
 
-            CheckBox chkHistory = new CheckBox { Content = "Show Calculation History Tape", IsChecked = _showHistoryTape, Margin = new Thickness(0, 0, 0, 10), FontWeight = FontWeights.SemiBold };
+            CheckBox chkHistory = new CheckBox { Content = Strings.CalcShowTape, IsChecked = _showHistoryTape, Margin = new Thickness(0, 0, 0, 10), FontWeight = FontWeights.SemiBold };
             contentPanel.Children.Add(chkHistory);
 
-            CheckBox chkKeypad = new CheckBox { Content = "Show Virtual Keypad", IsChecked = _showVirtualKeypad, Margin = new Thickness(0, 0, 0, 10), FontWeight = FontWeights.SemiBold };
+            CheckBox chkKeypad = new CheckBox { Content = Strings.CalcShowKeypad, IsChecked = _showVirtualKeypad, Margin = new Thickness(0, 0, 0, 10), FontWeight = FontWeights.SemiBold };
             contentPanel.Children.Add(chkKeypad);
 
-            CheckBox chkClear = new CheckBox { Content = "Clear Display on New Input (After '=')", IsChecked = _clearAfterEquals, Margin = new Thickness(0, 0, 0, 10), FontWeight = FontWeights.SemiBold };
+            CheckBox chkClear = new CheckBox { Content = Strings.CalcClearOnNewInput, IsChecked = _clearAfterEquals, Margin = new Thickness(0, 0, 0, 10), FontWeight = FontWeights.SemiBold };
             contentPanel.Children.Add(chkClear);
 
-            CheckBox chkOpLabel = new CheckBox { Content = "Show Operation Names (e.g. Addition)", IsChecked = _showOperationLabel, Margin = new Thickness(0, 0, 0, 15), FontWeight = FontWeights.SemiBold };
+            CheckBox chkOpLabel = new CheckBox { Content = Strings.CalcShowOperationNames, IsChecked = _showOperationLabel, Margin = new Thickness(0, 0, 0, 15), FontWeight = FontWeights.SemiBold };
             contentPanel.Children.Add(chkOpLabel);
 
             string[] availableColors = { "White", "Black", "LightGray", "DarkGray", "Gray", "Cyan", "LimeGreen", "Gold", "Orange", "DeepSkyBlue" };
             // Display Color
             StackPanel displayColorSp = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 10) };
-            displayColorSp.Children.Add(new TextBlock { Text = "Display Color:", Width = 150, VerticalAlignment = VerticalAlignment.Center });
+            displayColorSp.Children.Add(new TextBlock { Text = Strings.CalcDisplayColor, Width = 150, VerticalAlignment = VerticalAlignment.Center });
             ComboBox cmbDisplayColor = new ComboBox { Width = 120 };
             foreach (var c in availableColors) cmbDisplayColor.Items.Add(c);
             cmbDisplayColor.SelectedItem = availableColors.Contains(_displayColor) ? _displayColor : "White";
@@ -967,7 +968,7 @@ namespace Desktop_Frames.Plugins
 
             // History Color
             StackPanel historyColorSp = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 10) };
-            historyColorSp.Children.Add(new TextBlock { Text = "History Color:", Width = 150, VerticalAlignment = VerticalAlignment.Center });
+            historyColorSp.Children.Add(new TextBlock { Text = Strings.CalcHistoryColor, Width = 150, VerticalAlignment = VerticalAlignment.Center });
             ComboBox cmbHistoryColor = new ComboBox { Width = 120 };
             foreach (var c in availableColors) cmbHistoryColor.Items.Add(c);
             cmbHistoryColor.SelectedItem = availableColors.Contains(_historyColor) ? _historyColor : "Gray";
@@ -976,14 +977,14 @@ namespace Desktop_Frames.Plugins
 
             // Operator Badge Fade Time
             StackPanel fadeSp = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 15) };
-            fadeSp.Children.Add(new TextBlock { Text = "Badge Fade Time (ms):", Width = 150, VerticalAlignment = VerticalAlignment.Center });
+            fadeSp.Children.Add(new TextBlock { Text = Strings.CalcBadgeFade, Width = 150, VerticalAlignment = VerticalAlignment.Center });
             ComboBox cmbFade = new ComboBox { Width = 120 };
             cmbFade.Items.Add("500"); cmbFade.Items.Add("1000"); cmbFade.Items.Add("1500"); cmbFade.Items.Add("2500"); cmbFade.Items.Add("0 (Never Fade)");
             cmbFade.SelectedItem = _symbolFadeMs == 0 ? "0 (Never Fade)" : _symbolFadeMs.ToString();
             fadeSp.Children.Add(cmbFade);
             contentPanel.Children.Add(fadeSp);
 
-            Button btnClearMem = new Button { Content = "Clear Memory & History", Padding = new Thickness(5), Margin = new Thickness(0, 10, 0, 0) };
+            Button btnClearMem = new Button { Content = Strings.CalcClearMemory, Padding = new Thickness(5), Margin = new Thickness(0, 10, 0, 0) };
             btnClearMem.Click += (s, e) => { _memoryValue = 0; _historyTape.Clear(); SaveState(); UpdateDisplay(); MessageBox.Show("Cleared.", "Calculator", MessageBoxButton.OK, MessageBoxImage.Information); };
             contentPanel.Children.Add(btnClearMem);
 

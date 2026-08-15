@@ -565,4 +565,211 @@
   <data name="TextBehavior" xml:space="preserve">
     <value>Comportamento del testo</value>
   </data>
+  <data name="CalcCopy" xml:space="preserve">
+    <value>Copia</value>
+  </data>
+  <data name="CalcPaste" xml:space="preserve">
+    <value>Incolla</value>
+  </data>
+  <data name="CalcClear" xml:space="preserve">
+    <value>Azzera</value>
+  </data>
+  <data name="CalcClearHistory" xml:space="preserve">
+    <value>Cancella la cronologia</value>
+  </data>
+  <data name="CalcSettings" xml:space="preserve">
+    <value>Impostazioni della calcolatrice</value>
+  </data>
+  <data name="CalcShowTape" xml:space="preserve">
+    <value>Mostra lo scontrino dei calcoli</value>
+  </data>
+  <data name="CalcShowKeypad" xml:space="preserve">
+    <value>Mostra il tastierino</value>
+  </data>
+  <data name="CalcClearOnNewInput" xml:space="preserve">
+    <value>Azzera il display al nuovo inserimento (dopo '=')</value>
+  </data>
+  <data name="CalcShowOperationNames" xml:space="preserve">
+    <value>Mostra il nome delle operazioni (es. Addizione)</value>
+  </data>
+  <data name="CalcDisplayColor" xml:space="preserve">
+    <value>Colore del display:</value>
+  </data>
+  <data name="CalcHistoryColor" xml:space="preserve">
+    <value>Colore della cronologia:</value>
+  </data>
+  <data name="CalcBadgeFade" xml:space="preserve">
+    <value>Durata della dissolvenza (ms):</value>
+  </data>
+  <data name="CalcClearMemory" xml:space="preserve">
+    <value>Cancella memoria e cronologia</value>
+  </data>
+  <data name="TermSettings" xml:space="preserve">
+    <value>Impostazioni del terminale</value>
+  </data>
+  <data name="TermConsoleOptions" xml:space="preserve">
+    <value>Opzioni della console</value>
+  </data>
+  <data name="TermTargetShell" xml:space="preserve">
+    <value>Interprete dei comandi:</value>
+  </data>
+  <data name="TermStartupDirectory" xml:space="preserve">
+    <value>Cartella di avvio:</value>
+  </data>
+  <data name="TermSelectStartupDir" xml:space="preserve">
+    <value>Scegli la cartella di avvio del terminale</value>
+  </data>
+  <data name="TermClearHistory" xml:space="preserve">
+    <value>Cancella la cronologia dei comandi</value>
+  </data>
+  <data name="TermHistoryCleared" xml:space="preserve">
+    <value>Cronologia cancellata.</value>
+  </data>
+  <data name="PhotoSettings" xml:space="preserve">
+    <value>Impostazioni della cornice</value>
+  </data>
+  <data name="PhotoFitMode" xml:space="preserve">
+    <value>Adattamento dell'immagine:</value>
+  </data>
+  <data name="PhotoCropToFill" xml:space="preserve">
+    <value>Ritaglia per riempire</value>
+  </data>
+  <data name="PhotoFitInside" xml:space="preserve">
+    <value>Adatta dentro (mostra tutto)</value>
+  </data>
+  <data name="PhotoStretch" xml:space="preserve">
+    <value>Allunga per riempire (deforma)</value>
+  </data>
+  <data name="PhotoOriginalSize" xml:space="preserve">
+    <value>Dimensione originale (nessuna scala)</value>
+  </data>
+  <data name="PhotoTransition" xml:space="preserve">
+    <value>Effetto di transizione:</value>
+  </data>
+  <data name="PhotoCrossfade" xml:space="preserve">
+    <value>Dissolvenza classica</value>
+  </data>
+  <data name="PhotoBlurCrossfade" xml:space="preserve">
+    <value>Dissolvenza sfocata</value>
+  </data>
+  <data name="PhotoVerticalWipe" xml:space="preserve">
+    <value>Tendina verticale morbida</value>
+  </data>
+  <data name="PhotoSubtleTwist" xml:space="preserve">
+    <value>Torsione leggera</value>
+  </data>
+  <data name="PhotoNoTransition" xml:space="preserve">
+    <value>Nessuno (cambio immediato)</value>
+  </data>
+  <data name="PhotoLiveRescan" xml:space="preserve">
+    <value>Rilettura continua della cartella (rileva foto aggiunte o rimosse)</value>
+  </data>
+  <data name="NetNoInterfaces" xml:space="preserve">
+    <value>Nessuna interfaccia attiva.</value>
+  </data>
+  <data name="NetPublicWan" xml:space="preserve">
+    <value>Indirizzo pubblico WAN</value>
+  </data>
+  <data name="NetIpLabel" xml:space="preserve">
+    <value>IP:</value>
+  </data>
+  <data name="NetSettings" xml:space="preserve">
+    <value>Impostazioni del monitor di rete</value>
+  </data>
+  <data name="NetExternal" xml:space="preserve">
+    <value>Rete esterna</value>
+  </data>
+  <data name="NetShowPublicWan" xml:space="preserve">
+    <value>Mostra l'IP pubblico WAN</value>
+  </data>
+  <data name="NetLocalAdapters" xml:space="preserve">
+    <value>Schede locali</value>
+  </data>
+  <data name="NetShowDisconnected" xml:space="preserve">
+    <value>Mostra le interfacce scollegate</value>
+  </data>
+  <data name="NetSelectInterfaces" xml:space="preserve">
+    <value>Scegli le interfacce da mostrare:</value>
+  </data>
+  <data name="PerfSettings" xml:space="preserve">
+    <value>Impostazioni delle prestazioni</value>
+  </data>
+  <data name="PerfThemeLayout" xml:space="preserve">
+    <value>Tema e disposizione</value>
+  </data>
+  <data name="PerfVisualStyle" xml:space="preserve">
+    <value>Stile visivo:</value>
+  </data>
+  <data name="PerfDynamicColors" xml:space="preserve">
+    <value>Colora le barre in base al valore</value>
+  </data>
+  <data name="PerfStaticBarColor" xml:space="preserve">
+    <value>Colore fisso delle barre:</value>
+  </data>
+  <data name="PerfSensors" xml:space="preserve">
+    <value>Sensori da mostrare:</value>
+  </data>
+  <data name="PerfRefreshRate" xml:space="preserve">
+    <value>Frequenza di aggiornamento (ms):</value>
+  </data>
+  <data name="QueueTitle" xml:space="preserve">
+    <value>SATURAZIONE DELLE CODE DI SISTEMA</value>
+  </data>
+  <data name="QueueInitializing" xml:space="preserve">
+    <value>[Avvio in corso...]</value>
+  </data>
+  <data name="QueueWmiError" xml:space="preserve">
+    <value>[Errore WMI]</value>
+  </data>
+  <data name="QueueConfig" xml:space="preserve">
+    <value>Configurazione delle code di sistema</value>
+  </data>
+  <data name="QueueDiagnosticSettings" xml:space="preserve">
+    <value>Impostazioni del pannello diagnostico</value>
+  </data>
+  <data name="QueueShowTitle" xml:space="preserve">
+    <value>Mostra il titolo (SATURAZIONE DELLE CODE DI SISTEMA)</value>
+  </data>
+  <data name="QueueShowValues" xml:space="preserve">
+    <value>Mostra i valori numerici (thread per core e I/O in attesa)</value>
+  </data>
+  <data name="QueueShowCores" xml:space="preserve">
+    <value>Mostra il numero di core logici rilevati</value>
+  </data>
+  <data name="QueueDynamicColors" xml:space="preserve">
+    <value>Colori dinamici (verde/giallo/rosso)</value>
+  </data>
+  <data name="QueueRefreshRate" xml:space="preserve">
+    <value>Frequenza di aggiornamento:</value>
+  </data>
+  <data name="VuSettings" xml:space="preserve">
+    <value>Impostazioni del VU meter</value>
+  </data>
+  <data name="VuDisplayOptions" xml:space="preserve">
+    <value>Opzioni di visualizzazione</value>
+  </data>
+  <data name="VuLayoutMode" xml:space="preserve">
+    <value>Disposizione:</value>
+  </data>
+  <data name="VuBallistics" xml:space="preserve">
+    <value>Risposta e taratura</value>
+  </data>
+  <data name="VuSignalGain" xml:space="preserve">
+    <value>Guadagno del segnale (moltiplicatore):</value>
+  </data>
+  <data name="VuGainHint" xml:space="preserve">
+    <value>Predefinito: 1,2 | più alto = più sensibile | limiti: 0,1 - 10,0</value>
+  </data>
+  <data name="VuAttack" xml:space="preserve">
+    <value>Prontezza (attacco in ms):</value>
+  </data>
+  <data name="VuAttackHint" xml:space="preserve">
+    <value>Predefinito: 25 | più basso = scatto più rapido | limiti: 1 - 1000</value>
+  </data>
+  <data name="VuDecay" xml:space="preserve">
+    <value>Morbidezza (rilascio in ms):</value>
+  </data>
+  <data name="VuDecayHint" xml:space="preserve">
+    <value>Predefinito: 200 | più alto = discesa più morbida | limiti: 10 - 3000</value>
+  </data>
 </root>

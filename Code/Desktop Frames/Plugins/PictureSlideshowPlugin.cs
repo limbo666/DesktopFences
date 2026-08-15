@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json.Linq;
+﻿using Desktop_Frames.Localization;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -151,7 +152,7 @@ namespace Desktop_Frames.Plugins
             // --- 2. Build Modern Window Shell ---
             Window win = new Window
             {
-                Title = "Photo Frame Settings",
+                Title = Strings.PhotoSettings,
                 Width = 540,
                 SizeToContent = SizeToContent.Height,
                 WindowStartupLocation = WindowStartupLocation.CenterOwner,
@@ -179,7 +180,7 @@ namespace Desktop_Frames.Plugins
             headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
-            headerGrid.Children.Add(new TextBlock { Text = "Photo Frame Settings", FontSize = 14, FontWeight = FontWeights.Bold, Foreground = Brushes.White, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(16, 0, 0, 0) });
+            headerGrid.Children.Add(new TextBlock { Text = Strings.PhotoSettings, FontSize = 14, FontWeight = FontWeights.Bold, Foreground = Brushes.White, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(16, 0, 0, 0) });
 
             Button closeBtn = new Button { Content = "✕", Width = 32, Height = 32, FontSize = 12, FontWeight = FontWeights.Bold, Foreground = Brushes.White, Background = Brushes.Transparent, BorderBrush = Brushes.Transparent, Cursor = Cursors.Hand, Margin = new Thickness(0, 0, 9, 0), VerticalAlignment = VerticalAlignment.Center };
             closeBtn.MouseEnter += (s, e) => closeBtn.Background = new SolidColorBrush(Color.FromArgb(50, 255, 255, 255));
@@ -229,24 +230,24 @@ namespace Desktop_Frames.Plugins
             comboGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 
             StackPanel stretchPanel = new StackPanel();
-            stretchPanel.Children.Add(new TextBlock { Text = "Image Fit Mode:", FontSize = 12, FontWeight = FontWeights.Medium, Foreground = new SolidColorBrush(Color.FromRgb(95, 99, 104)), Margin = new Thickness(0, 0, 0, 8) });
+            stretchPanel.Children.Add(new TextBlock { Text = Strings.PhotoFitMode, FontSize = 12, FontWeight = FontWeights.Medium, Foreground = new SolidColorBrush(Color.FromRgb(95, 99, 104)), Margin = new Thickness(0, 0, 0, 8) });
             ComboBox cmbStretch = new ComboBox { FontSize = 13, Height = 30, Padding = new Thickness(8, 4, 8, 4) };
-            cmbStretch.Items.Add(new ComboBoxItem { Content = "Crop to Fill Frame", Tag = "UniformToFill" });
-            cmbStretch.Items.Add(new ComboBoxItem { Content = "Fit Inside (Show All)", Tag = "Uniform" });
-            cmbStretch.Items.Add(new ComboBoxItem { Content = "Stretch to Fill (Distort)", Tag = "Fill" });
-            cmbStretch.Items.Add(new ComboBoxItem { Content = "Original Size (No Scale)", Tag = "None" });
+            cmbStretch.Items.Add(new ComboBoxItem { Content = Strings.PhotoCropToFill, Tag = "UniformToFill" });
+            cmbStretch.Items.Add(new ComboBoxItem { Content = Strings.PhotoFitInside, Tag = "Uniform" });
+            cmbStretch.Items.Add(new ComboBoxItem { Content = Strings.PhotoStretch, Tag = "Fill" });
+            cmbStretch.Items.Add(new ComboBoxItem { Content = Strings.PhotoOriginalSize, Tag = "None" });
             foreach (ComboBoxItem item in cmbStretch.Items) { if (item.Tag.ToString() == currentStretch) item.IsSelected = true; }
             stretchPanel.Children.Add(cmbStretch);
             Grid.SetColumn(stretchPanel, 0);
 
             StackPanel transPanel = new StackPanel();
-            transPanel.Children.Add(new TextBlock { Text = "Transition Effect:", FontSize = 12, FontWeight = FontWeights.Medium, Foreground = new SolidColorBrush(Color.FromRgb(95, 99, 104)), Margin = new Thickness(0, 0, 0, 8) });
+            transPanel.Children.Add(new TextBlock { Text = Strings.PhotoTransition, FontSize = 12, FontWeight = FontWeights.Medium, Foreground = new SolidColorBrush(Color.FromRgb(95, 99, 104)), Margin = new Thickness(0, 0, 0, 8) });
             ComboBox cmbTransition = new ComboBox { FontSize = 13, Height = 30, Padding = new Thickness(8, 4, 8, 4) };
-            cmbTransition.Items.Add(new ComboBoxItem { Content = "Classic Crossfade", Tag = "Fade" });
-            cmbTransition.Items.Add(new ComboBoxItem { Content = "Blur Crossfade", Tag = "Blur" });
-            cmbTransition.Items.Add(new ComboBoxItem { Content = "Soft Vertical Wipe", Tag = "Wipe" });
-            cmbTransition.Items.Add(new ComboBoxItem { Content = "Subtle Twist", Tag = "Twist" });
-            cmbTransition.Items.Add(new ComboBoxItem { Content = "None (Instant Snap)", Tag = "None" });
+            cmbTransition.Items.Add(new ComboBoxItem { Content = Strings.PhotoCrossfade, Tag = "Fade" });
+            cmbTransition.Items.Add(new ComboBoxItem { Content = Strings.PhotoBlurCrossfade, Tag = "Blur" });
+            cmbTransition.Items.Add(new ComboBoxItem { Content = Strings.PhotoVerticalWipe, Tag = "Wipe" });
+            cmbTransition.Items.Add(new ComboBoxItem { Content = Strings.PhotoSubtleTwist, Tag = "Twist" });
+            cmbTransition.Items.Add(new ComboBoxItem { Content = Strings.PhotoNoTransition, Tag = "None" });
             foreach (ComboBoxItem item in cmbTransition.Items) { if (item.Tag.ToString() == currentTransition) item.IsSelected = true; }
             transPanel.Children.Add(cmbTransition);
             Grid.SetColumn(transPanel, 2);
@@ -259,7 +260,7 @@ namespace Desktop_Frames.Plugins
             contentPanel.Children.Add(displayBorder);
 
             // Rescan Checkbox
-            CheckBox chkRescan = new CheckBox { Content = "Live folder rescan (Detect new/deleted pictures)", IsChecked = currentRescan, FontSize = 13, Foreground = new SolidColorBrush(Color.FromRgb(32, 33, 36)), Margin = new Thickness(2, 5, 0, 5) };
+            CheckBox chkRescan = new CheckBox { Content = Strings.PhotoLiveRescan, IsChecked = currentRescan, FontSize = 13, Foreground = new SolidColorBrush(Color.FromRgb(32, 33, 36)), Margin = new Thickness(2, 5, 0, 5) };
             contentPanel.Children.Add(chkRescan);
 
             contentBorder.Child = contentPanel;

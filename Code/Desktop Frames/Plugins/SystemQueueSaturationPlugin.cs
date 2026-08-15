@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Desktop_Frames.Localization;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -90,7 +91,7 @@ namespace Desktop_Frames.Plugins
             // Header Section
             _titleText = new TextBlock
             {
-                Text = "SYSTEM QUEUE SATURATION",
+                Text = Strings.QueueTitle,
                 Foreground = Brushes.White,
                 FontSize = 11,
                 FontWeight = FontWeights.Bold,
@@ -111,8 +112,8 @@ namespace Desktop_Frames.Plugins
             _rootGrid.Children.Add(_mainCard);
 
             // Set initial wait indicator while the background thread loads
-            if (_cpuValuesText != null) _cpuValuesText.Text = "[Initializing...]";
-            if (_diskValuesText != null) _diskValuesText.Text = "[Initializing...]";
+            if (_cpuValuesText != null) _cpuValuesText.Text = Strings.QueueInitializing;
+            if (_diskValuesText != null) _diskValuesText.Text = Strings.QueueInitializing;
 
             _timer = new DispatcherTimer();
             _timer.Tick += Timer_Tick;
@@ -209,8 +210,8 @@ namespace Desktop_Frames.Plugins
                 {
                     Application.Current.Dispatcher.Invoke(() =>
                     {
-                        if (_cpuValuesText != null) _cpuValuesText.Text = "[WMI Error]";
-                        if (_diskValuesText != null) _diskValuesText.Text = "[WMI Error]";
+                        if (_cpuValuesText != null) _cpuValuesText.Text = Strings.QueueWmiError;
+                        if (_diskValuesText != null) _diskValuesText.Text = Strings.QueueWmiError;
                     });
                 }
             });
@@ -321,7 +322,7 @@ namespace Desktop_Frames.Plugins
 
             Window win = new Window
             {
-                Title = "System Queue Configuration",
+                Title = Strings.QueueConfig,
                 Owner = ownerWindow,
                 WindowStartupLocation = WindowStartupLocation.CenterOwner,
                 WindowStyle = WindowStyle.None,
@@ -333,7 +334,7 @@ namespace Desktop_Frames.Plugins
             Border headerBorder = new Border { Height = 50, Background = accentBrush };
             headerBorder.MouseLeftButtonDown += (s, e) => { if (e.ButtonState == MouseButtonState.Pressed) win.DragMove(); };
             Grid headerGrid = new Grid();
-            headerGrid.Children.Add(new TextBlock { Text = "Diagnostic Panel Settings", Foreground = Brushes.White, FontWeight = FontWeights.Bold, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(15, 0, 0, 0) });
+            headerGrid.Children.Add(new TextBlock { Text = Strings.QueueDiagnosticSettings, Foreground = Brushes.White, FontWeight = FontWeights.Bold, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(15, 0, 0, 0) });
             Button btnClose = new Button { Content = "X", Foreground = Brushes.White, Background = Brushes.Transparent, BorderThickness = new Thickness(0), Width = 40, HorizontalAlignment = HorizontalAlignment.Right };
             btnClose.Click += (s, e) => win.Close();
             headerGrid.Children.Add(btnClose);
@@ -342,20 +343,20 @@ namespace Desktop_Frames.Plugins
             Border contentBorder = new Border { Background = Brushes.White, Padding = new Thickness(20) };
             StackPanel contentPanel = new StackPanel();
 
-            CheckBox chkTitle = new CheckBox { Content = "Show Title Label (SYSTEM QUEUE SATURATION)", IsChecked = _showTitle, Margin = new Thickness(0, 0, 0, 12), FontWeight = FontWeights.SemiBold };
+            CheckBox chkTitle = new CheckBox { Content = Strings.QueueShowTitle, IsChecked = _showTitle, Margin = new Thickness(0, 0, 0, 12), FontWeight = FontWeights.SemiBold };
             contentPanel.Children.Add(chkTitle);
 
-            CheckBox chkNumerics = new CheckBox { Content = "Show Numerical Values (Threads/Core & Pending I/O)", IsChecked = _showNumerics, Margin = new Thickness(0, 0, 0, 12), FontWeight = FontWeights.SemiBold };
+            CheckBox chkNumerics = new CheckBox { Content = Strings.QueueShowValues, IsChecked = _showNumerics, Margin = new Thickness(0, 0, 0, 12), FontWeight = FontWeights.SemiBold };
             contentPanel.Children.Add(chkNumerics);
 
-            CheckBox chkCores = new CheckBox { Content = "Show Logical Cores Detection Text", IsChecked = _showCores, Margin = new Thickness(0, 0, 0, 12), FontWeight = FontWeights.SemiBold };
+            CheckBox chkCores = new CheckBox { Content = Strings.QueueShowCores, IsChecked = _showCores, Margin = new Thickness(0, 0, 0, 12), FontWeight = FontWeights.SemiBold };
             contentPanel.Children.Add(chkCores);
 
-            CheckBox chkDynamic = new CheckBox { Content = "Use Dynamic Colors (Green/Yellow/Red)", IsChecked = _useDynamicColors, Margin = new Thickness(0, 0, 0, 10), FontWeight = FontWeights.SemiBold };
+            CheckBox chkDynamic = new CheckBox { Content = Strings.QueueDynamicColors, IsChecked = _useDynamicColors, Margin = new Thickness(0, 0, 0, 10), FontWeight = FontWeights.SemiBold };
             contentPanel.Children.Add(chkDynamic);
 
             StackPanel colorSp = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 15) };
-            colorSp.Children.Add(new TextBlock { Text = "Static Bar Color:", Width = 150, VerticalAlignment = VerticalAlignment.Center, FontWeight = FontWeights.SemiBold });
+            colorSp.Children.Add(new TextBlock { Text = Strings.PerfStaticBarColor, Width = 150, VerticalAlignment = VerticalAlignment.Center, FontWeight = FontWeights.SemiBold });
             ComboBox cmbStaticColor = new ComboBox { Width = 120 };
             string[] presetColors = { "DeepSkyBlue", "Cyan", "LimeGreen", "Gold", "Orange", "Magenta", "White", "LightGray" };
             foreach (var c in presetColors) cmbStaticColor.Items.Add(c);
@@ -364,7 +365,7 @@ namespace Desktop_Frames.Plugins
             contentPanel.Children.Add(colorSp);
 
             StackPanel rateSp = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 5, 0, 10) };
-            rateSp.Children.Add(new TextBlock { Text = "Sensor Refresh Rate:", Width = 150, VerticalAlignment = VerticalAlignment.Center, FontWeight = FontWeights.SemiBold });
+            rateSp.Children.Add(new TextBlock { Text = Strings.QueueRefreshRate, Width = 150, VerticalAlignment = VerticalAlignment.Center, FontWeight = FontWeights.SemiBold });
             ComboBox cmbRate = new ComboBox { Width = 120 };
             cmbRate.Items.Add("500 ms");
             cmbRate.Items.Add("1000 ms");
