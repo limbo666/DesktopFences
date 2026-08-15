@@ -152,13 +152,13 @@ namespace Desktop_Frames
             CreateLookDeeperTab();
 
             _tabControl.SelectedIndex = _lastSelectedTabIndex;
-            CreateTabButton(tabPanel, "General", 0, _lastSelectedTabIndex == 0);
-            CreateTabButton(tabPanel, "Style & FX", 1, _lastSelectedTabIndex == 1);
-            CreateTabButton(tabPanel, "Tools", 2, _lastSelectedTabIndex == 2);
-            CreateTabButton(tabPanel, "Profiles", 3, _lastSelectedTabIndex == 3);
-            CreateTabButton(tabPanel, "Hotkeys", 4, _lastSelectedTabIndex == 4);
-            CreateTabButton(tabPanel, "Smart Desktop", 5, _lastSelectedTabIndex == 5);
-            CreateTabButton(tabPanel, "Look Deeper", 6, _lastSelectedTabIndex == 6);
+            CreateTabButton(tabPanel, Strings.TabGeneral, 0, _lastSelectedTabIndex == 0);
+            CreateTabButton(tabPanel, Strings.TabStyleFx, 1, _lastSelectedTabIndex == 1);
+            CreateTabButton(tabPanel, Strings.TabTools, 2, _lastSelectedTabIndex == 2);
+            CreateTabButton(tabPanel, Strings.TabProfiles, 3, _lastSelectedTabIndex == 3);
+            CreateTabButton(tabPanel, Strings.TabHotkeys, 4, _lastSelectedTabIndex == 4);
+            CreateTabButton(tabPanel, Strings.TabSmartDesktop, 5, _lastSelectedTabIndex == 5);
+            CreateTabButton(tabPanel, Strings.TabLookDeeper, 6, _lastSelectedTabIndex == 6);
 
             contentBorder.Child = _tabControl;
             Grid.SetColumn(tabPanel, 0); contentGrid.Children.Add(tabPanel);
@@ -181,16 +181,18 @@ namespace Desktop_Frames
                 Padding = new Thickness(20, 0, 0, 0),
                 Margin = new Thickness(0, 0, 0, 2)
             };
-            SetTabButtonColors(tabButton, title, isSelected);
+            SetTabButtonColors(tabButton, tabIndex, isSelected);
             tabButton.Click += (s, e) => SelectTab(tabIndex, tabButton);
-            tabButton.MouseEnter += (s, e) => { if (_tabControl.SelectedIndex != tabIndex) SetTabButtonColors(tabButton, title, false, true); };
-            tabButton.MouseLeave += (s, e) => { if (_tabControl.SelectedIndex != tabIndex) SetTabButtonColors(tabButton, title, false, false); };
+            tabButton.MouseEnter += (s, e) => { if (_tabControl.SelectedIndex != tabIndex) SetTabButtonColors(tabButton, tabIndex, false, true); };
+            tabButton.MouseLeave += (s, e) => { if (_tabControl.SelectedIndex != tabIndex) SetTabButtonColors(tabButton, tabIndex, false, false); };
             parent.Children.Add(tabButton);
         }
 
-        private static void SetTabButtonColors(Button button, string title, bool isSelected, bool isHover = false)
+        private static void SetTabButtonColors(Button button, int tabIndex, bool isSelected, bool isHover = false)
         {
-            Color activeColor = title switch { "Style & FX" => ColorStyle, "Tools" => ColorTools, "Profiles" => ColorProfiles, "Hotkeys" => ColorHotkeys, "Smart Desktop" => ColorSmartDesktop, "Look Deeper" => ColorLookDeeper, _ => _userAccentColor };
+            // Keyed on the tab index, not on its label. The labels are translated
+            // now, and a switch needs compile-time constants anyway.
+            Color activeColor = tabIndex switch { 1 => ColorStyle, 2 => ColorTools, 3 => ColorProfiles, 4 => ColorHotkeys, 5 => ColorSmartDesktop, 6 => ColorLookDeeper, _ => _userAccentColor };
             if (isSelected) { button.Background = new SolidColorBrush(activeColor); button.Foreground = Brushes.White; }
             else if (isHover) { button.Background = new SolidColorBrush(Color.FromRgb((byte)(activeColor.R + 40), (byte)(activeColor.G + 40), (byte)(activeColor.B + 40))); button.Foreground = Brushes.White; }
             else { button.Background = new SolidColorBrush(Color.FromRgb(200, 200, 200)); button.Foreground = new SolidColorBrush(Color.FromRgb(60, 60, 60)); }
@@ -201,7 +203,7 @@ namespace Desktop_Frames
             _lastSelectedTabIndex = tabIndex;
             _tabControl.SelectedIndex = tabIndex;
             StackPanel tabPanel = (StackPanel)selectedButton.Parent;
-            for (int i = 0; i < tabPanel.Children.Count; i++) if (tabPanel.Children[i] is Button btn) SetTabButtonColors(btn, btn.Content.ToString(), i == tabIndex);
+            for (int i = 0; i < tabPanel.Children.Count; i++) if (tabPanel.Children[i] is Button btn) SetTabButtonColors(btn, i, i == tabIndex);
         }
 
         // --- Tabs ---
@@ -209,17 +211,17 @@ namespace Desktop_Frames
         {
             TabItem t = new TabItem();
             StackPanel c = new StackPanel();
-            CreateSectionHeader(c, "Startup", _userAccentColor);
-            CreateCheckBox(c, "Start with Windows", "StartWithWindows", TrayManager.IsStartWithWindows);
-            CreateSectionHeader(c, "Selections", _userAccentColor);
-            CreateCheckBox(c, "Single Click to Launch", "SingleClickToLaunch", SettingsManager.SingleClickToLaunch);
-            CreateCheckBox(c, "Enable Snap Near Frames", "EnableSnapNearFrames", SettingsManager.IsSnapEnabled);
-            CreateCheckBox(c, "Enable Dimension Snap", "EnableDimensionSnap", SettingsManager.EnableDimensionSnap);
-            CreateCheckBox(c, "Enable Tray Icon", "EnableTrayIcon", SettingsManager.ShowInTray);
-            CreateCheckBox(c, "Use Recycle Bin on Portal Frames 'Delete item' command", "UseRecycleBin", SettingsManager.UseRecycleBin);
+            CreateSectionHeader(c, Strings.SecStartup, _userAccentColor);
+            CreateCheckBox(c, Strings.OptStartWithWindows, "StartWithWindows", TrayManager.IsStartWithWindows);
+            CreateSectionHeader(c, Strings.SecSelections, _userAccentColor);
+            CreateCheckBox(c, Strings.OptSingleClick, "SingleClickToLaunch", SettingsManager.SingleClickToLaunch);
+            CreateCheckBox(c, Strings.OptSnapNearFrames, "EnableSnapNearFrames", SettingsManager.IsSnapEnabled);
+            CreateCheckBox(c, Strings.OptDimensionSnap, "EnableDimensionSnap", SettingsManager.EnableDimensionSnap);
+            CreateCheckBox(c, Strings.OptTrayIcon, "EnableTrayIcon", SettingsManager.ShowInTray);
+            CreateCheckBox(c, Strings.OptRecycleBin, "UseRecycleBin", SettingsManager.UseRecycleBin);
 
             // NEW: Context Menu Option
-            CreateCheckBox(c, "Show 'New Frame' in Desktop Context Menu", "EnableContextMenu", SettingsManager.EnableContextMenu);
+            CreateCheckBox(c, Strings.OptNewFrameContextMenu, "EnableContextMenu", SettingsManager.EnableContextMenu);
 
             // --- NEW: Default Portal View Dropdown ---
             Grid portalViewGrid = new Grid { Margin = new Thickness(15, 8, 0, 8) };
@@ -241,14 +243,14 @@ namespace Desktop_Frames
             // -----------------------------------------
 
             // Moved from Style Tab (Choices)
-            CreateCheckBox(c, "Enable Portal Frames Watermark", "EnablePortalWatermark", SettingsManager.ShowBackgroundImageOnPortalFrames);
-            var n = CreateCheckBoxReturn(c, "Enable Note Frames Watermark (Coming Soon)", "EnableNoteWatermark", false);
+            CreateCheckBox(c, Strings.OptPortalWatermark, "EnablePortalWatermark", SettingsManager.ShowBackgroundImageOnPortalFrames);
+            var n = CreateCheckBoxReturn(c, Strings.OptNoteWatermark, "EnableNoteWatermark", false);
             n.IsEnabled = false; n.Foreground = Brushes.Gray;
-            CreateCheckBox(c, "Disable Frame Scrollbars", "DisableFrameScrollbars", SettingsManager.DisableFrameScrollbars);
+            CreateCheckBox(c, Strings.OptDisableScrollbars, "DisableFrameScrollbars", SettingsManager.DisableFrameScrollbars);
 
 
             // --- NEW: Notification Sound Dropdown ---
-            CheckBox cbSounds = CreateCheckBoxReturn(c, "Enable Sounds", "EnableSounds", SettingsManager.EnableSounds);
+            CheckBox cbSounds = CreateCheckBoxReturn(c, Strings.OptEnableSounds, "EnableSounds", SettingsManager.EnableSounds);
 
             Grid soundGrid = new Grid { Margin = new Thickness(35, 0, 0, 8) }; // Indented to show parent/child relationship
             soundGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(140) });
@@ -295,10 +297,10 @@ namespace Desktop_Frames
             TabItem t = new TabItem();
             StackPanel c = new StackPanel();
 
-            CreateSectionHeader(c, "Appearance", ColorStyle);
+            CreateSectionHeader(c, Strings.SecAppearance, ColorStyle);
 
             // --- CHAMELEON TOGGLE ---
-            var chamCb = CreateCheckBoxReturn(c, "Enable Chameleon Mode (Auto-match Wallpaper Color)", "EnableChameleon", SettingsManager.EnableChameleonMode);
+            var chamCb = CreateCheckBoxReturn(c, Strings.OptChameleon, "EnableChameleon", SettingsManager.EnableChameleonMode);
             chamCb.ToolTip = Strings.TooltipChameleon;
 
             CreateSliderControl(c, "Frame Tint", "TintSlider", SettingsManager.TintValue);
@@ -307,21 +309,21 @@ namespace Desktop_Frames
             // Pass the chamCb reference so we can wire up the toggle event
             CreateColorAndEffectComboBoxes(c, chamCb);
 
-            CreateCheckBox(c, "Apply Frame Tint (Opacity) to Icons and Text", "ApplyTintToIcons", SettingsManager.ApplyTintToIcons);
+            CreateCheckBox(c, Strings.OptFrameTint, "ApplyTintToIcons", SettingsManager.ApplyTintToIcons);
 
             // --- Moved from General Tab (Auto-Hide Options) ---
-            CreateSectionHeader(c, "Auto-Hide Frames", ColorStyle);
-            CreateCheckBox(c, "Auto hide frames", "AutoHideFrames", SettingsManager.AutoHideFrames);
+            CreateSectionHeader(c, Strings.SecAutoHideFrames, ColorStyle);
+            CreateCheckBox(c, Strings.OptAutoHideFrames, "AutoHideFrames", SettingsManager.AutoHideFrames);
             CreateSliderControl(c, "Auto hide time (sec)", "AutoHideTimeSlider", SettingsManager.AutoHideTime, 300);
 
             // --- Moved from General Tab (Idle Fade-Out Options) ---
-            CreateSectionHeader(c, "Idle Fade-Out", ColorStyle);
-            CreateCheckBox(c, "Enable Idle Fade-Out", "FramesFadeOutFx", SettingsManager.FramesFadeOutFx);
+            CreateSectionHeader(c, Strings.SecIdleFadeOut, ColorStyle);
+            CreateCheckBox(c, Strings.OptIdleFadeOut, "FramesFadeOutFx", SettingsManager.FramesFadeOutFx);
             CreateSliderControl(c, "Idle Time (sec)", "FadeOutTimeSlider", SettingsManager.FadeOutTime, 300);
             CreateSliderControl(c, "Fade Target Opacity (%)", "FadeOutAlphaSlider", (int)(SettingsManager.FadeOutFxTargetAlpha * 100), 100);
 
             // --- Moved from General Tab (Idle Auto-Roll Options) ---
-            CreateSectionHeader(c, "Idle Auto-Roll", ColorStyle);
+            CreateSectionHeader(c, Strings.SecIdleAutoRoll, ColorStyle);
 
             // --- NEW: Contextual Help Text ---
             c.Children.Add(new TextBlock
@@ -338,14 +340,14 @@ namespace Desktop_Frames
 
 
             // --- NEW: Desktop Icon Visibility ---
-            CreateSectionHeader(c, "Desktop Icon Visibility", ColorStyle);
-            CreateCheckBox(c, "Hide native desktop icons while program is running", "HideDesktopElementsOnStart", SettingsManager.HideDesktopElementsOnStart);
-            CreateCheckBox(c, "Hide native desktop icons when Frames are hidden", "HideDesktopElementsOnAllFramesHide", SettingsManager.HideDesktopElementsOnAllFramesHide);
+            CreateSectionHeader(c, Strings.SecDesktopIconVisibility, ColorStyle);
+            CreateCheckBox(c, Strings.OptHideIconsRunning, "HideDesktopElementsOnStart", SettingsManager.HideDesktopElementsOnStart);
+            CreateCheckBox(c, Strings.OptHideIconsWhenHidden, "HideDesktopElementsOnAllFramesHide", SettingsManager.HideDesktopElementsOnAllFramesHide);
 
 
 
             // --- Icons Section ---
-            CreateSectionHeader(c, "Icons", ColorStyle);
+            CreateSectionHeader(c, Strings.SecIcons, ColorStyle);
             Grid iconGrid = new Grid { Margin = new Thickness(15, 5, 0, 15) };
             iconGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             iconGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
@@ -372,7 +374,7 @@ namespace Desktop_Frames
         {
             TabItem t = new TabItem();
             StackPanel c = new StackPanel();
-            CreateSectionHeader(c, "Tools", ColorTools);
+            CreateSectionHeader(c, Strings.TabTools, ColorTools);
 
             Grid g = new Grid { Margin = new Thickness(0, 10, 0, 0) };
             g.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(120) });
@@ -391,13 +393,13 @@ namespace Desktop_Frames
             g.Children.Add(b1); g.Children.Add(b2); g.Children.Add(b3);
             c.Children.Add(g);
 
-            CreateCheckBox(c, "Automatic Backup (Daily)", "EnableAutoBackup", SettingsManager.EnableAutoBackup);
+            CreateCheckBox(c, Strings.OptAutomaticBackup, "EnableAutoBackup", SettingsManager.EnableAutoBackup);
 
 
 
             // --- Maintenance Section ---
             Color darkPink = Color.FromRgb(199, 21, 133); // MediumVioletRed
-            CreateSectionHeader(c, "Maintenance", darkPink);
+            CreateSectionHeader(c, Strings.SecMaintenance, darkPink);
 
             Button btnBound = CreateStyledButton("Screen Bound Frames", darkPink);
             btnBound.Width = 255;
@@ -428,10 +430,10 @@ namespace Desktop_Frames
 
 
 
-            CreateSectionHeader(c, "Reset", Colors.Red);
+            CreateSectionHeader(c, Strings.BtnReset, Colors.Red);
             Button r1 = CreateStyledButton("Reset Styles", Color.FromRgb(108, 117, 125));
             r1.Width = 255; r1.Height = 45; r1.Margin = new Thickness(0, 0, 0, 15);
-            r1.Click += (s, e) => { if (MessageBoxesManager.ShowCustomYesNoMessageBox("Reset all visual customizations?", "Reset")) { Framemanager.ResetAllCustomizations(); _optionsWindow.Close(); } };
+            r1.Click += (s, e) => { if (MessageBoxesManager.ShowCustomYesNoMessageBox("Reset all visual customizations?", Strings.BtnReset)) { Framemanager.ResetAllCustomizations(); _optionsWindow.Close(); } };
 
             Button r2 = CreateStyledButton("Clear All Data", Color.FromRgb(220, 53, 69));
             r2.Width = 255; r2.Height = 45;
@@ -453,7 +455,7 @@ namespace Desktop_Frames
         {
             TabItem t = new TabItem();
             StackPanel c = new StackPanel();
-            CreateSectionHeader(c, "Profile Management", ColorProfiles);
+            CreateSectionHeader(c, Strings.SecProfileManagement, ColorProfiles);
 
             // Button 1: Manage Profiles (Green)
             Button btnManageProfiles = CreateStyledButton("Manage Profiles", Color.FromRgb(34, 139, 34)); // Tools Green
@@ -508,8 +510,8 @@ namespace Desktop_Frames
             TabItem t = new TabItem();
             StackPanel c = new StackPanel();
 
-            CreateSectionHeader(c, "Profile Switching", ColorHotkeys);
-            CheckBox cbProf = CreateCheckBoxReturn(c, "Enable Profile Switching Hotkeys", "EnableProfileHotkeys", SettingsManager.EnableProfileHotkeys);
+            CreateSectionHeader(c, Strings.SecProfileSwitching, ColorHotkeys);
+            CheckBox cbProf = CreateCheckBoxReturn(c, Strings.OptProfileHotkeys, "EnableProfileHotkeys", SettingsManager.EnableProfileHotkeys);
             Grid gProf1 = CreateHotkeyEditor(c, "Direct Profile [0-9]", "ProfSwitch", SettingsManager.ProfileSwitchModifier, 0, false);
             Grid gProf2 = CreateHotkeyEditor(c, "Previous Profile", "ProfPrev", SettingsManager.ProfilePrevModifier, SettingsManager.ProfilePrevKey, true);
             Grid gProf3 = CreateHotkeyEditor(c, "Next Profile", "ProfNext", SettingsManager.ProfileNextModifier, SettingsManager.ProfileNextKey, true);
@@ -518,14 +520,14 @@ namespace Desktop_Frames
             gProf1.IsEnabled = gProf2.IsEnabled = gProf3.IsEnabled = cbProf.IsChecked == true;
             cbProf.Click += (s, e) => gProf1.IsEnabled = gProf2.IsEnabled = gProf3.IsEnabled = cbProf.IsChecked == true;
 
-            CreateSectionHeader(c, "Utilities", ColorHotkeys);
+            CreateSectionHeader(c, Strings.SecUtilities, ColorHotkeys);
 
-            CheckBox cbFocus = CreateCheckBoxReturn(c, "Enable Focus Frame Hotkey", "EnableFocusFrameHotkey", SettingsManager.EnableFocusFrameHotkey);
+            CheckBox cbFocus = CreateCheckBoxReturn(c, Strings.OptFocusFrameHotkey, "EnableFocusFrameHotkey", SettingsManager.EnableFocusFrameHotkey);
             Grid gFocus = CreateHotkeyEditor(c, "Focus Frame", "FocusFrame", SettingsManager.FocusFrameModifier, SettingsManager.FocusFrameKey, true);
             gFocus.IsEnabled = cbFocus.IsChecked == true;
             cbFocus.Click += (s, e) => gFocus.IsEnabled = cbFocus.IsChecked == true;
 
-            CheckBox cbSpot = CreateCheckBoxReturn(c, "Enable Spot Search Hotkey", "EnableSpotSearchHotkey", SettingsManager.EnableSpotSearchHotkey);
+            CheckBox cbSpot = CreateCheckBoxReturn(c, Strings.OptSpotSearchHotkey, "EnableSpotSearchHotkey", SettingsManager.EnableSpotSearchHotkey);
             Grid gSpot = CreateHotkeyEditor(c, "Spot Search", "SpotSearch", SettingsManager.SpotSearchModifier, SettingsManager.SpotSearchKey, true);
             gSpot.IsEnabled = cbSpot.IsChecked == true;
             cbSpot.Click += (s, e) => gSpot.IsEnabled = cbSpot.IsChecked == true;
@@ -592,11 +594,11 @@ namespace Desktop_Frames
             TabItem t = new TabItem();
             StackPanel c = new StackPanel();
 
-            CreateSectionHeader(c, "Smart Desktop (Auto-Organize)", ColorSmartDesktop);
+            CreateSectionHeader(c, Strings.SecSmartDesktopAuto, ColorSmartDesktop);
 
-            CheckBox cbMain = CreateCheckBoxReturn(c, "Enable Auto-Organize", "EnableAutoOrganize", SettingsManager.EnableAutoOrganize);
+            CheckBox cbMain = CreateCheckBoxReturn(c, Strings.OptAutoOrganize, "EnableAutoOrganize", SettingsManager.EnableAutoOrganize);
 
-            CheckBox cbNotif = CreateCheckBoxReturn(c, "Show execution toast notifications", "EnableAutoOrganizeNotifications", SettingsManager.EnableAutoOrganizeNotifications);
+            CheckBox cbNotif = CreateCheckBoxReturn(c, Strings.OptExecutionToasts, "EnableAutoOrganizeNotifications", SettingsManager.EnableAutoOrganizeNotifications);
             cbNotif.Margin = new Thickness(35, 0, 0, 8); // Indent it!
             cbNotif.IsEnabled = cbMain.IsChecked == true;
 
@@ -658,15 +660,15 @@ namespace Desktop_Frames
         {
             TabItem t = new TabItem();
             StackPanel c = new StackPanel();
-            CreateSectionHeader(c, "Log", ColorLookDeeper);
-            CreateCheckBox(c, "Enable logging", "EnableLogging", SettingsManager.IsLogEnabled);
+            CreateSectionHeader(c, Strings.SecLog, ColorLookDeeper);
+            CreateCheckBox(c, Strings.OptEnableLogging, "EnableLogging", SettingsManager.IsLogEnabled);
             Button b = CreateStyledButton("Open Log", ColorLookDeeper); b.Width = 100; b.Height = 25; b.HorizontalAlignment = HorizontalAlignment.Left;
             b.Click += (s, e) => OpenLogFile();
             c.Children.Add(b);
 
-            CreateSectionHeader(c, "Log configuration", ColorLookDeeper);
+            CreateSectionHeader(c, Strings.SecLogConfiguration, ColorLookDeeper);
             CreateLogLevelComboBox(c);
-            CreateSectionHeader(c, "Log Categories", ColorLookDeeper);
+            CreateSectionHeader(c, Strings.SecLogCategories, ColorLookDeeper);
 
             // This method creates checkboxes for all Enums (except Error now)
             CreateLogCategoryCheckBoxes(c);

@@ -808,4 +808,148 @@
   <data name="CalcErrorDisplay" xml:space="preserve">
     <value>Error</value>
   </data>
+  <data name="TabGeneral" xml:space="preserve">
+    <value>General</value>
+  </data>
+  <data name="TabStyleFx" xml:space="preserve">
+    <value>Style &amp; FX</value>
+  </data>
+  <data name="TabTools" xml:space="preserve">
+    <value>Tools</value>
+  </data>
+  <data name="TabProfiles" xml:space="preserve">
+    <value>Profiles</value>
+  </data>
+  <data name="TabHotkeys" xml:space="preserve">
+    <value>Hotkeys</value>
+  </data>
+  <data name="TabSmartDesktop" xml:space="preserve">
+    <value>Smart Desktop</value>
+  </data>
+  <data name="TabLookDeeper" xml:space="preserve">
+    <value>Look Deeper</value>
+  </data>
+  <data name="SecStartup" xml:space="preserve">
+    <value>Startup</value>
+  </data>
+  <data name="SecSelections" xml:space="preserve">
+    <value>Selections</value>
+  </data>
+  <data name="SecAppearance" xml:space="preserve">
+    <value>Appearance</value>
+  </data>
+  <data name="SecIcons" xml:space="preserve">
+    <value>Icons</value>
+  </data>
+  <data name="SecUtilities" xml:space="preserve">
+    <value>Utilities</value>
+  </data>
+  <data name="SecMaintenance" xml:space="preserve">
+    <value>Maintenance</value>
+  </data>
+  <data name="SecLog" xml:space="preserve">
+    <value>Log</value>
+  </data>
+  <data name="SecLogCategories" xml:space="preserve">
+    <value>Log Categories</value>
+  </data>
+  <data name="SecLogConfiguration" xml:space="preserve">
+    <value>Log configuration</value>
+  </data>
+  <data name="SecProfileManagement" xml:space="preserve">
+    <value>Profile Management</value>
+  </data>
+  <data name="SecProfileSwitching" xml:space="preserve">
+    <value>Profile Switching</value>
+  </data>
+  <data name="SecSmartDesktopAuto" xml:space="preserve">
+    <value>Smart Desktop (Auto-Organize)</value>
+  </data>
+  <data name="SecDesktopIconVisibility" xml:space="preserve">
+    <value>Desktop Icon Visibility</value>
+  </data>
+  <data name="SecIdleFadeOut" xml:space="preserve">
+    <value>Idle Fade-Out</value>
+  </data>
+  <data name="SecIdleAutoRoll" xml:space="preserve">
+    <value>Idle Auto-Roll</value>
+  </data>
+  <data name="SecAutoHideFrames" xml:space="preserve">
+    <value>Auto-Hide Frames</value>
+  </data>
+  <data name="OptStartWithWindows" xml:space="preserve">
+    <value>Start with Windows</value>
+  </data>
+  <data name="OptSingleClick" xml:space="preserve">
+    <value>Single Click to Launch</value>
+  </data>
+  <data name="OptSnapNearFrames" xml:space="preserve">
+    <value>Enable Snap Near Frames</value>
+  </data>
+  <data name="OptDimensionSnap" xml:space="preserve">
+    <value>Enable Dimension Snap</value>
+  </data>
+  <data name="OptTrayIcon" xml:space="preserve">
+    <value>Enable Tray Icon</value>
+  </data>
+  <data name="OptRecycleBin" xml:space="preserve">
+    <value>Use Recycle Bin on Portal Frames 'Delete item' command</value>
+  </data>
+  <data name="OptNewFrameContextMenu" xml:space="preserve">
+    <value>Show 'New Frame' in Desktop Context Menu</value>
+  </data>
+  <data name="OptPortalWatermark" xml:space="preserve">
+    <value>Enable Portal Frames Watermark</value>
+  </data>
+  <data name="OptNoteWatermark" xml:space="preserve">
+    <value>Enable Note Frames Watermark (Coming Soon)</value>
+  </data>
+  <data name="OptDisableScrollbars" xml:space="preserve">
+    <value>Disable Frame Scrollbars</value>
+  </data>
+  <data name="OptEnableSounds" xml:space="preserve">
+    <value>Enable Sounds</value>
+  </data>
+  <data name="OptChameleon" xml:space="preserve">
+    <value>Enable Chameleon Mode (Auto-match Wallpaper Color)</value>
+  </data>
+  <data name="OptFrameTint" xml:space="preserve">
+    <value>Apply Frame Tint (Opacity) to Icons and Text</value>
+  </data>
+  <data name="OptIdleFadeOut" xml:space="preserve">
+    <value>Enable Idle Fade-Out</value>
+  </data>
+  <data name="OptAutoHideFrames" xml:space="preserve">
+    <value>Auto hide frames</value>
+  </data>
+  <data name="OptHideIconsRunning" xml:space="preserve">
+    <value>Hide native desktop icons while program is running</value>
+  </data>
+  <data name="OptHideIconsWhenHidden" xml:space="preserve">
+    <value>Hide native desktop icons when Frames are hidden</value>
+  </data>
+  <data name="OptAutomaticBackup" xml:space="preserve">
+    <value>Automatic Backup (Daily)</value>
+  </data>
+  <data name="OptEnableLogging" xml:space="preserve">
+    <value>Enable logging</value>
+  </data>
+  <data name="OptProfileHotkeys" xml:space="preserve">
+    <value>Enable Profile Switching Hotkeys</value>
+  </data>
+  <data name="OptSpotSearchHotkey" xml:space="preserve">
+    <value>Enable Spot Search Hotkey</value>
+  </data>
+  <data name="OptFocusFrameHotkey" xml:space="preserve">
+    <value>Enable Focus Frame Hotkey</value>
+  </data>
+  <data name="OptAutoOrganize" xml:space="preserve">
+    <value>Enable Auto-Organize</value>
+  </data>
+  <data name="OptExecutionToasts" xml:space="preserve">
+    <value>Show execution toast notifications</value>
+  </data>
+  <data name="BtnReset" xml:space="preserve">
+    <value>Reset</value>
+  </data>
 </root>

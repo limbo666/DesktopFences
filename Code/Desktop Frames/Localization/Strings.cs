@@ -324,5 +324,55 @@ namespace Desktop_Frames.Localization
         public static string ProfileActive => Get("ProfileActive");
         public static string LblFontSize => Get("LblFontSize");
         public static string CalcErrorDisplay => Get("CalcErrorDisplay");
+
+        // ── Options window: tabs, sections and checkboxes ────────────
+        public static string TabGeneral => Get("TabGeneral");
+        public static string TabStyleFx => Get("TabStyleFx");
+        public static string TabTools => Get("TabTools");
+        public static string TabProfiles => Get("TabProfiles");
+        public static string TabHotkeys => Get("TabHotkeys");
+        public static string TabSmartDesktop => Get("TabSmartDesktop");
+        public static string TabLookDeeper => Get("TabLookDeeper");
+        public static string SecStartup => Get("SecStartup");
+        public static string SecSelections => Get("SecSelections");
+        public static string SecAppearance => Get("SecAppearance");
+        public static string SecIcons => Get("SecIcons");
+        public static string SecUtilities => Get("SecUtilities");
+        public static string SecMaintenance => Get("SecMaintenance");
+        public static string SecLog => Get("SecLog");
+        public static string SecLogCategories => Get("SecLogCategories");
+        public static string SecLogConfiguration => Get("SecLogConfiguration");
+        public static string SecProfileManagement => Get("SecProfileManagement");
+        public static string SecProfileSwitching => Get("SecProfileSwitching");
+        public static string SecSmartDesktopAuto => Get("SecSmartDesktopAuto");
+        public static string SecDesktopIconVisibility => Get("SecDesktopIconVisibility");
+        public static string SecIdleFadeOut => Get("SecIdleFadeOut");
+        public static string SecIdleAutoRoll => Get("SecIdleAutoRoll");
+        public static string SecAutoHideFrames => Get("SecAutoHideFrames");
+        public static string OptStartWithWindows => Get("OptStartWithWindows");
+        public static string OptSingleClick => Get("OptSingleClick");
+        public static string OptSnapNearFrames => Get("OptSnapNearFrames");
+        public static string OptDimensionSnap => Get("OptDimensionSnap");
+        public static string OptTrayIcon => Get("OptTrayIcon");
+        public static string OptRecycleBin => Get("OptRecycleBin");
+        public static string OptNewFrameContextMenu => Get("OptNewFrameContextMenu");
+        public static string OptPortalWatermark => Get("OptPortalWatermark");
+        public static string OptNoteWatermark => Get("OptNoteWatermark");
+        public static string OptDisableScrollbars => Get("OptDisableScrollbars");
+        public static string OptEnableSounds => Get("OptEnableSounds");
+        public static string OptChameleon => Get("OptChameleon");
+        public static string OptFrameTint => Get("OptFrameTint");
+        public static string OptIdleFadeOut => Get("OptIdleFadeOut");
+        public static string OptAutoHideFrames => Get("OptAutoHideFrames");
+        public static string OptHideIconsRunning => Get("OptHideIconsRunning");
+        public static string OptHideIconsWhenHidden => Get("OptHideIconsWhenHidden");
+        public static string OptAutomaticBackup => Get("OptAutomaticBackup");
+        public static string OptEnableLogging => Get("OptEnableLogging");
+        public static string OptProfileHotkeys => Get("OptProfileHotkeys");
+        public static string OptSpotSearchHotkey => Get("OptSpotSearchHotkey");
+        public static string OptFocusFrameHotkey => Get("OptFocusFrameHotkey");
+        public static string OptAutoOrganize => Get("OptAutoOrganize");
+        public static string OptExecutionToasts => Get("OptExecutionToasts");
+        public static string BtnReset => Get("BtnReset");
     }
 }
