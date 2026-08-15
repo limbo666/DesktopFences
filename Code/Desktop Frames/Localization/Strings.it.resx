@@ -1084,4 +1084,175 @@
   <data name="FxTeleport" xml:space="preserve">
     <value>Teletrasporto</value>
   </data>
+  <data name="ViewIcons" xml:space="preserve">
+    <value>Icone</value>
+  </data>
+  <data name="ViewDetails" xml:space="preserve">
+    <value>Elenco</value>
+  </data>
+  <data name="ColorGray" xml:space="preserve">
+    <value>Grigio</value>
+  </data>
+  <data name="ColorBlack" xml:space="preserve">
+    <value>Nero</value>
+  </data>
+  <data name="ColorWhite" xml:space="preserve">
+    <value>Bianco</value>
+  </data>
+  <data name="ColorBeige" xml:space="preserve">
+    <value>Beige</value>
+  </data>
+  <data name="ColorGreen" xml:space="preserve">
+    <value>Verde</value>
+  </data>
+  <data name="ColorPurple" xml:space="preserve">
+    <value>Viola</value>
+  </data>
+  <data name="ColorFuchsia" xml:space="preserve">
+    <value>Fucsia</value>
+  </data>
+  <data name="ColorYellow" xml:space="preserve">
+    <value>Giallo</value>
+  </data>
+  <data name="ColorOrange" xml:space="preserve">
+    <value>Arancione</value>
+  </data>
+  <data name="ColorRed" xml:space="preserve">
+    <value>Rosso</value>
+  </data>
+  <data name="ColorBlue" xml:space="preserve">
+    <value>Blu</value>
+  </data>
+  <data name="ColorBismark" xml:space="preserve">
+    <value>Bismark</value>
+  </data>
+  <data name="ItemDefault" xml:space="preserve">
+    <value>Predefinito</value>
+  </data>
+  <data name="ItemRed" xml:space="preserve">
+    <value>Rosso</value>
+  </data>
+  <data name="ItemGreen" xml:space="preserve">
+    <value>Verde</value>
+  </data>
+  <data name="ItemTeal" xml:space="preserve">
+    <value>Foglia di tè</value>
+  </data>
+  <data name="ItemBlue" xml:space="preserve">
+    <value>Blu</value>
+  </data>
+  <data name="ItemBismark" xml:space="preserve">
+    <value>Bismark</value>
+  </data>
+  <data name="ItemWhite" xml:space="preserve">
+    <value>Bianco</value>
+  </data>
+  <data name="ItemBeige" xml:space="preserve">
+    <value>Beige</value>
+  </data>
+  <data name="ItemGray" xml:space="preserve">
+    <value>Grigio</value>
+  </data>
+  <data name="ItemBlack" xml:space="preserve">
+    <value>Nero</value>
+  </data>
+  <data name="ItemPurple" xml:space="preserve">
+    <value>Viola</value>
+  </data>
+  <data name="ItemFuchsia" xml:space="preserve">
+    <value>Fucsia</value>
+  </data>
+  <data name="ItemYellow" xml:space="preserve">
+    <value>Giallo</value>
+  </data>
+  <data name="ItemOrange" xml:space="preserve">
+    <value>Arancione</value>
+  </data>
+  <data name="ItemZoom" xml:space="preserve">
+    <value>Zoom</value>
+  </data>
+  <data name="ItemBounce" xml:space="preserve">
+    <value>Rimbalzo</value>
+  </data>
+  <data name="ItemFadeOut" xml:space="preserve">
+    <value>Dissolvenza</value>
+  </data>
+  <data name="ItemSlideUp" xml:space="preserve">
+    <value>Scorri in alto</value>
+  </data>
+  <data name="ItemRotate" xml:space="preserve">
+    <value>Rotazione</value>
+  </data>
+  <data name="ItemAgitate" xml:space="preserve">
+    <value>Scuotimento</value>
+  </data>
+  <data name="ItemGrowAndFly" xml:space="preserve">
+    <value>Cresci e vola</value>
+  </data>
+  <data name="ItemPulse" xml:space="preserve">
+    <value>Pulsazione</value>
+  </data>
+  <data name="ItemElastic" xml:space="preserve">
+    <value>Elastico</value>
+  </data>
+  <data name="ItemFlip3D" xml:space="preserve">
+    <value>Ribaltamento 3D</value>
+  </data>
+  <data name="ItemSpiral" xml:space="preserve">
+    <value>Spirale</value>
+  </data>
+  <data name="ItemShockwave" xml:space="preserve">
+    <value>Onda d'urto</value>
+  </data>
+  <data name="ItemMatrix" xml:space="preserve">
+    <value>Matrix</value>
+  </data>
+  <data name="ItemSupernova" xml:space="preserve">
+    <value>Supernova</value>
+  </data>
+  <data name="ItemTeleport" xml:space="preserve">
+    <value>Teletrasporto</value>
+  </data>
+  <data name="ItemTiny" xml:space="preserve">
+    <value>Minuscola</value>
+  </data>
+  <data name="ItemSmall" xml:space="preserve">
+    <value>Piccola</value>
+  </data>
+  <data name="ItemMedium" xml:space="preserve">
+    <value>Media</value>
+  </data>
+  <data name="ItemLarge" xml:space="preserve">
+    <value>Grande</value>
+  </data>
+  <data name="ItemHuge" xml:space="preserve">
+    <value>Enorme</value>
+  </data>
+  <data name="ItemIcons" xml:space="preserve">
+    <value>Icone</value>
+  </data>
+  <data name="ItemDetails" xml:space="preserve">
+    <value>Elenco</value>
+  </data>
+  <data name="KeyComma" xml:space="preserve">
+    <value>Virgola (,)</value>
+  </data>
+  <data name="KeyPeriod" xml:space="preserve">
+    <value>Punto (.)</value>
+  </data>
+  <data name="KeyTilde" xml:space="preserve">
+    <value>Tilde (~)</value>
+  </data>
+  <data name="KeySpace" xml:space="preserve">
+    <value>Spazio</value>
+  </data>
+  <data name="KeyTab" xml:space="preserve">
+    <value>Tab</value>
+  </data>
+  <data name="KeyEnter" xml:space="preserve">
+    <value>Invio</value>
+  </data>
+  <data name="KeyEscape" xml:space="preserve">
+    <value>Esc</value>
+  </data>
 </root>

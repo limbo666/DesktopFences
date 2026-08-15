@@ -531,10 +531,11 @@ namespace Desktop_Frames
                 VerticalAlignment = VerticalAlignment.Center
             };
 
-            comboBox.Items.Add("Default");
+            // Content is read by the user, Tag is written to frames.json.
+            comboBox.Items.Add(new ComboBoxItem { Content = Strings.Item("Default"), Tag = "Default" });
             foreach (var item in items)
             {
-                comboBox.Items.Add(item);
+                comboBox.Items.Add(new ComboBoxItem { Content = Strings.Item(item), Tag = item });
             }
             comboBox.SelectedIndex = 0;
 
@@ -1097,7 +1098,7 @@ namespace Desktop_Frames
                 {
                     for (int i = 0; i < comboBox.Items.Count; i++)
                     {
-                        if (comboBox.Items[i].ToString().Equals(currentValue, StringComparison.OrdinalIgnoreCase))
+                        if (string.Equals((comboBox.Items[i] as ComboBoxItem)?.Tag as string, currentValue, StringComparison.OrdinalIgnoreCase))
                         {
                             comboBox.SelectedIndex = i;
                             LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI, $"Set {propertyName} to '{currentValue}'");
@@ -1679,11 +1680,12 @@ namespace Desktop_Frames
         {
             try
             {
-                if (comboBox.SelectedIndex <= 0 || comboBox.SelectedItem?.ToString() == "Default")
+                string tag = (comboBox.SelectedItem as ComboBoxItem)?.Tag as string;
+                if (comboBox.SelectedIndex <= 0 || tag == null || tag == "Default")
                 {
                     return null; // Return null for "Default" to match existing JSON structure
                 }
-                return comboBox.SelectedItem?.ToString();
+                return tag;
             }
             catch (Exception ex)
             {

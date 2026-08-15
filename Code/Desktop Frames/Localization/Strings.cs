@@ -59,6 +59,33 @@ namespace Desktop_Frames.Localization
             }
         }
 
+
+        /// <summary>
+        /// Label for a value that is stored in the configuration ("Medium",
+        /// "Details", "Gray"…). Only the label is translated: the value itself
+        /// travels untouched, so saved settings stay readable in any language.
+        /// </summary>
+        public static string Item(string storedValue) =>
+            string.IsNullOrEmpty(storedValue) ? storedValue : Get("Item" + storedValue.Replace(" ", ""));
+
+
+        /// <summary>
+        /// Label for a hotkey. Letters, digits and function keys read the same
+        /// everywhere and stay as they are; only the named keys get translated.
+        /// The key code itself is untouched — it lives in the item's Tag.
+        /// </summary>
+        public static string KeyLabel(string name) => name switch
+        {
+            "Comma (,)" => Get("KeyComma"),
+            "Period (.)" => Get("KeyPeriod"),
+            "Tilde (~)" => Get("KeyTilde"),
+            "Space" => Get("KeySpace"),
+            "Tab" => Get("KeyTab"),
+            "Enter" => Get("KeyEnter"),
+            "Escape" => Get("KeyEscape"),
+            _ => name
+        };
+
         // ── Buttons, shared by every dialog ─────────────────────────────────
         public static string ButtonYes => Get("ButtonYes");
         public static string ButtonNo => Get("ButtonNo");
@@ -422,5 +449,21 @@ namespace Desktop_Frames.Localization
         public static string FxMatrix => Get("FxMatrix");
         public static string FxSupernova => Get("FxSupernova");
         public static string FxTeleport => Get("FxTeleport");
+
+        // ── Dropdown entries shown translated, stored in English ───────
+        public static string ViewIcons => Get("ViewIcons");
+        public static string ViewDetails => Get("ViewDetails");
+        public static string ColorGray => Get("ColorGray");
+        public static string ColorBlack => Get("ColorBlack");
+        public static string ColorWhite => Get("ColorWhite");
+        public static string ColorBeige => Get("ColorBeige");
+        public static string ColorGreen => Get("ColorGreen");
+        public static string ColorPurple => Get("ColorPurple");
+        public static string ColorFuchsia => Get("ColorFuchsia");
+        public static string ColorYellow => Get("ColorYellow");
+        public static string ColorOrange => Get("ColorOrange");
+        public static string ColorRed => Get("ColorRed");
+        public static string ColorBlue => Get("ColorBlue");
+        public static string ColorBismark => Get("ColorBismark");
     }
 }

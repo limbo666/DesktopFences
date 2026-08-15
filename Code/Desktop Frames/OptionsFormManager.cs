@@ -232,9 +232,11 @@ namespace Desktop_Frames
             Grid.SetColumn(lblPortalView, 0);
 
             ComboBox cbPortalView = new ComboBox { Name = "DefaultPortalViewComboBox", Height = 25, FontFamily = new FontFamily("Segoe UI"), FontSize = 13, VerticalAlignment = VerticalAlignment.Center };
-            cbPortalView.Items.Add("Icons");
-            cbPortalView.Items.Add("Details");
-            cbPortalView.SelectedItem = string.Equals(SettingsManager.DefaultPortalView, "Details", StringComparison.OrdinalIgnoreCase) ? "Details" : "Icons";
+            // Content is what the user reads, Tag is what gets written to the
+            // settings file. Never save the label: it changes with the language.
+            cbPortalView.Items.Add(new ComboBoxItem { Content = Strings.ViewIcons, Tag = "Icons" });
+            cbPortalView.Items.Add(new ComboBoxItem { Content = Strings.ViewDetails, Tag = "Details" });
+            cbPortalView.SelectedIndex = string.Equals(SettingsManager.DefaultPortalView, "Details", StringComparison.OrdinalIgnoreCase) ? 1 : 0;
             Grid.SetColumn(cbPortalView, 1);
 
             portalViewGrid.Children.Add(lblPortalView);
@@ -574,7 +576,7 @@ namespace Desktop_Frames
                 ComboBox cmb = new ComboBox { Name = namePrefix + "Key", Width = 100, VerticalAlignment = VerticalAlignment.Center };
                 foreach (var kvp in AvailableKeys)
                 {
-                    ComboBoxItem item = new ComboBoxItem { Content = kvp.Key, Tag = kvp.Value };
+                    ComboBoxItem item = new ComboBoxItem { Content = Strings.KeyLabel(kvp.Key), Tag = kvp.Value };
                     cmb.Items.Add(item);
                     if (kvp.Value == currentKey) cmb.SelectedItem = item;
                 }
@@ -741,8 +743,11 @@ namespace Desktop_Frames
             TextBlock lblColor = new TextBlock { Text = Strings.LblColor, FontSize = 13, VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 0, 10, 0) };
             // Constrain Width to 140 and Left-align so it doesn't stretch to fill the 160px column, creating the gap automatically
             ComboBox cbColor = new ComboBox { Name = "ColorComboBox", Width = 140, HorizontalAlignment = HorizontalAlignment.Left, Height = 25, FontSize = 13, VerticalAlignment = VerticalAlignment.Center };
-            foreach (string c in new[] { "Gray", "Black", "White", "Beige", "Green", "Purple", "Fuchsia", "Yellow", "Orange", "Red", "Blue", "Bismark" }) cbColor.Items.Add(c);
-            cbColor.SelectedItem = SettingsManager.SelectedColor;
+            foreach (string c in new[] { "Gray", "Black", "White", "Beige", "Green", "Purple", "Fuchsia", "Yellow", "Orange", "Red", "Blue", "Bismark" })
+                cbColor.Items.Add(new ComboBoxItem { Content = Strings.Get("Color" + c), Tag = c });
+            cbColor.SelectedItem = cbColor.Items.OfType<ComboBoxItem>()
+                .FirstOrDefault(i => string.Equals(i.Tag as string, SettingsManager.SelectedColor, StringComparison.OrdinalIgnoreCase))
+                ?? cbColor.Items.OfType<ComboBoxItem>().FirstOrDefault();
 
             // --- BUG FIX: Disable Color dropdown if Chameleon mode is ON ---
             cbColor.IsEnabled = chamCb.IsChecked != true;
@@ -869,7 +874,7 @@ namespace Desktop_Frames
                         var pvCombo = genGrid.Children.OfType<ComboBox>().FirstOrDefault(c => c.Name == "DefaultPortalViewComboBox");
                         if (pvCombo?.SelectedItem != null)
                         {
-                            SettingsManager.DefaultPortalView = pvCombo.SelectedItem.ToString();
+                            SettingsManager.DefaultPortalView = (pvCombo.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? SettingsManager.DefaultPortalView;
                         }
                     }
 
@@ -910,7 +915,7 @@ namespace Desktop_Frames
                     else if (child is Grid g)
                     {
                         var tint = g.Children.OfType<Slider>().FirstOrDefault(s => s.Name == "TintSlider"); if (tint != null) SettingsManager.TintValue = (int)tint.Value; var mtint = g.Children.OfType<Slider>().FirstOrDefault(s => s.Name == "MenuTintSlider"); if (mtint != null) SettingsManager.MenuTintValue = (int)mtint.Value;
-                        var col = g.Children.OfType<ComboBox>().FirstOrDefault(c => c.Name == "ColorComboBox"); if (col?.SelectedItem != null) SettingsManager.SelectedColor = col.SelectedItem.ToString();
+                        var col = g.Children.OfType<ComboBox>().FirstOrDefault(c => c.Name == "ColorComboBox"); if ((col?.SelectedItem as ComboBoxItem)?.Tag is string colTag) SettingsManager.SelectedColor = colTag;
                         var eff = g.Children.OfType<ComboBox>().FirstOrDefault(c => c.Name == "LaunchEffectComboBox"); if (eff != null) SettingsManager.LaunchEffect = (LaunchEffectsManager.LaunchEffect)eff.SelectedIndex;
 
                         // Parse Sliders (Moved from General)
