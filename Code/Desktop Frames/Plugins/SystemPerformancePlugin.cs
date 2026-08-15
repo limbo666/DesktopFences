@@ -582,7 +582,7 @@ namespace Desktop_Frames.Plugins
 
             Button btnCancel = new Button
             {
-                Content = "Cancel",
+                Content = Strings.BtnCancel,
                 Background = Brushes.White,
                 BorderBrush = Brushes.Gray,
                 Foreground = Brushes.Black,
@@ -594,7 +594,7 @@ namespace Desktop_Frames.Plugins
 
             Button btnSave = new Button
             {
-                Content = "Save",
+                Content = Strings.BtnSave,
                 Background = accentBrush,
                 Foreground = Brushes.White,
                 FontWeight = FontWeights.Bold,

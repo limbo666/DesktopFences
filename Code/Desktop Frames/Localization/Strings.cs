@@ -310,5 +310,19 @@ namespace Desktop_Frames.Localization
         public static string VuAttackHint => Get("VuAttackHint");
         public static string VuDecay => Get("VuDecay");
         public static string VuDecayHint => Get("VuDecayHint");
+
+        // ── Details view columns and shared buttons ─────────────────
+        public static string ColName => Get("ColName");
+        public static string ColDateModified => Get("ColDateModified");
+        public static string ColType => Get("ColType");
+        public static string ColSize => Get("ColSize");
+        public static string MenuResetColumns => Get("MenuResetColumns");
+        public static string FocusFrameTitle => Get("FocusFrameTitle");
+        public static string BtnClose => Get("BtnClose");
+        public static string BtnBrowse => Get("BtnBrowse");
+        public static string AutomationClickTarget => Get("AutomationClickTarget");
+        public static string ProfileActive => Get("ProfileActive");
+        public static string LblFontSize => Get("LblFontSize");
+        public static string CalcErrorDisplay => Get("CalcErrorDisplay");
     }
 }

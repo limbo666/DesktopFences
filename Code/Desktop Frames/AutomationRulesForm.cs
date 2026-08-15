@@ -241,7 +241,7 @@ namespace Desktop_Frames
             // Close
             Button btnCancel = new Button
             {
-                Content = "Close",
+                Content = Strings.BtnClose,
                 Width = 100,
                 Height = 34,
                 Background = new SolidColorBrush(Color.FromRgb(248, 249, 250)),
@@ -271,7 +271,7 @@ namespace Desktop_Frames
             // THEME Save
             Button btnSave = new Button
             {
-                Content = "Save",
+                Content = Strings.BtnSave,
                 Width = 100,
                 Height = 34,
                 Background = new SolidColorBrush(_userAccentColor),
@@ -464,7 +464,7 @@ namespace Desktop_Frames
         //    };
         //    TextBlock msg = new TextBlock
         //    {
-        //        Text = "CLICK ON THE TARGET WINDOW",
+        //        Text = Strings.AutomationClickTarget,
         //        Foreground = Brushes.White,
         //        FontSize = 24,
         //        FontWeight = FontWeights.Bold

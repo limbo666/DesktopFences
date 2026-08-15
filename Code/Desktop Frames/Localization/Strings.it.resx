@@ -772,4 +772,40 @@
   <data name="VuDecayHint" xml:space="preserve">
     <value>Predefinito: 200 | più alto = discesa più morbida | limiti: 10 - 3000</value>
   </data>
+  <data name="ColName" xml:space="preserve">
+    <value>Nome</value>
+  </data>
+  <data name="ColDateModified" xml:space="preserve">
+    <value>Data di modifica</value>
+  </data>
+  <data name="ColType" xml:space="preserve">
+    <value>Tipo</value>
+  </data>
+  <data name="ColSize" xml:space="preserve">
+    <value>Dimensione</value>
+  </data>
+  <data name="MenuResetColumns" xml:space="preserve">
+    <value>Reimposta le colonne</value>
+  </data>
+  <data name="FocusFrameTitle" xml:space="preserve">
+    <value>Vai alla frame</value>
+  </data>
+  <data name="BtnClose" xml:space="preserve">
+    <value>Chiudi</value>
+  </data>
+  <data name="BtnBrowse" xml:space="preserve">
+    <value>Sfoglia...</value>
+  </data>
+  <data name="AutomationClickTarget" xml:space="preserve">
+    <value>FAI CLIC SULLA FINESTRA DI DESTINAZIONE</value>
+  </data>
+  <data name="ProfileActive" xml:space="preserve">
+    <value>Attivo</value>
+  </data>
+  <data name="LblFontSize" xml:space="preserve">
+    <value>Dimensione del carattere:</value>
+  </data>
+  <data name="CalcErrorDisplay" xml:space="preserve">
+    <value>Errore</value>
+  </data>
 </root>

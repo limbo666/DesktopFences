@@ -392,7 +392,7 @@ public partial class EditShortcutWindow : Window
         // Green default button (same as CustomizeFrameForm)
         Button defaultButton = new Button
         {
-            Content = "Default",
+            Content = Strings.BtnDefault,
             Height = 36,
             MinWidth = 80,
             FontSize = 13,

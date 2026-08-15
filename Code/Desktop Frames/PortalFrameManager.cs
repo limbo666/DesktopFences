@@ -433,13 +433,12 @@ namespace Desktop_Frames
             headerClicked.Column.Header = cleanHeader + (_sortAscending ? " ▲" : " ▼");
 
             // Map column name to _sortMode
-            switch (cleanHeader)
-            {
-                case "Date modified": _sortMode = 1; break;
-                case "Type": _sortMode = 2; break;
-                case "Size": _sortMode = 3; break;
-                default: _sortMode = 0; break; // Name
-            }
+            // Not a switch: the column headers are translated, so the labels
+            // are not compile-time constants any more.
+            if (cleanHeader == Strings.ColDateModified) _sortMode = 1;
+            else if (cleanHeader == Strings.ColType) _sortMode = 2;
+            else if (cleanHeader == Strings.ColSize) _sortMode = 3;
+            else _sortMode = 0; // Name
 
             Framemanager.UpdateFrameProperty(_frame, "SortMode", _sortMode.ToString(), "Updated portal sort mode from header click");
             SortContents();
@@ -822,7 +821,7 @@ namespace Desktop_Frames
                 Style themedStyle = GetThemedContextMenuStyle();
                 if (themedStyle != null) contextMenu.Style = themedStyle;
 
-                MenuItem copyFileItem = new MenuItem { Header = "Copy Item" };
+                MenuItem copyFileItem = new MenuItem { Header = Strings.MenuCopyItem };
                 copyFileItem.Click += (s, e) =>
                 {
                     try
@@ -985,7 +984,7 @@ namespace Desktop_Frames
                 if (themedStyle != null) contextMenu.Style = themedStyle;
 
                 // 1. Copy Item (File Object)
-                MenuItem copyFileItem = new MenuItem { Header = "Copy Item" };
+                MenuItem copyFileItem = new MenuItem { Header = Strings.MenuCopyItem };
                 copyFileItem.Click += (s, e) =>
                 {
                     try
@@ -1510,10 +1509,10 @@ namespace Desktop_Frames
                 nameFactory.AppendChild(imgFactory);
                 nameFactory.AppendChild(txtFactory);
 
-                gridView.Columns.Add(new GridViewColumn { Header = "Name", CellTemplate = new DataTemplate { VisualTree = nameFactory }, Width = 160 });
-                gridView.Columns.Add(new GridViewColumn { Header = "Date modified", DisplayMemberBinding = new System.Windows.Data.Binding("DateModified"), Width = 110 });
-                gridView.Columns.Add(new GridViewColumn { Header = "Type", DisplayMemberBinding = new System.Windows.Data.Binding("Type"), Width = 90 });
-                gridView.Columns.Add(new GridViewColumn { Header = "Size", DisplayMemberBinding = new System.Windows.Data.Binding("Size"), Width = 70 });
+                gridView.Columns.Add(new GridViewColumn { Header = Strings.ColName, CellTemplate = new DataTemplate { VisualTree = nameFactory }, Width = 160 });
+                gridView.Columns.Add(new GridViewColumn { Header = Strings.ColDateModified, DisplayMemberBinding = new System.Windows.Data.Binding("DateModified"), Width = 110 });
+                gridView.Columns.Add(new GridViewColumn { Header = Strings.ColType, DisplayMemberBinding = new System.Windows.Data.Binding("Type"), Width = 90 });
+                gridView.Columns.Add(new GridViewColumn { Header = Strings.ColSize, DisplayMemberBinding = new System.Windows.Data.Binding("Size"), Width = 70 });
 
                 _detailsListView.View = gridView;
 
@@ -1732,7 +1731,7 @@ namespace Desktop_Frames
             resetSortItem.Click += (ms, me) => { _sortMode = 0; SortContents(); };
             headerMenu.Items.Add(resetSortItem);
 
-            MenuItem resetColsItem = new MenuItem { Header = "Reset column layout" };
+            MenuItem resetColsItem = new MenuItem { Header = Strings.MenuResetColumns };
             resetColsItem.Click += (ms, me) =>
             {
                 string defaultLayout = "#:30;Name:160;Date modified:110;Type:90;Size:70";

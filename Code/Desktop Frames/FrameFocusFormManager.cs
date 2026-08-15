@@ -43,7 +43,7 @@ namespace Desktop_Frames
 
         private void InitializeModernComponent()
         {
-            Title = "Focus Frame";
+            Title = Strings.FocusFrameTitle;
             Width = 450;
             Height = 550;
             WindowStartupLocation = WindowStartupLocation.CenterScreen;
@@ -119,7 +119,7 @@ namespace Desktop_Frames
 
             TextBlock titleText = new TextBlock
             {
-                Text = "Focus Frame",
+                Text = Strings.FocusFrameTitle,
                 FontSize = 14,
                 FontWeight = FontWeights.Bold,
                 Foreground = Brushes.White,
@@ -268,7 +268,7 @@ namespace Desktop_Frames
 
             Button focusButton = new Button
             {
-                Content = "Focus Frame",
+                Content = Strings.FocusFrameTitle,
                 Height = 36,
                 MinWidth = 80,
                 FontSize = 13,

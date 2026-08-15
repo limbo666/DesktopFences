@@ -139,7 +139,7 @@ namespace Desktop_Frames
             };
             Button btnClose = new Button
             {
-                Content = "Close",
+                Content = Strings.BtnClose,
                 Width = 100,
                 Height = 34,
                 HorizontalAlignment = HorizontalAlignment.Right,
@@ -218,7 +218,7 @@ namespace Desktop_Frames
                 if (isActive)
                 {
                     Border badge = new Border { Background = new SolidColorBrush(Color.FromRgb(220, 255, 220)), CornerRadius = new CornerRadius(0), Margin = new Thickness(10, 0, 0, 0), Padding = new Thickness(5, 1, 5, 1) };
-                    badge.Child = new TextBlock { Text = "Active", FontSize = 10, Foreground = Brushes.Green };
+                    badge.Child = new TextBlock { Text = Strings.ProfileActive, FontSize = 10, Foreground = Brushes.Green };
                     nameStack.Children.Add(badge);
                 }
                 Grid.SetColumn(nameStack, 1);

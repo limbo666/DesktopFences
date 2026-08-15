@@ -772,4 +772,40 @@
   <data name="VuDecayHint" xml:space="preserve">
     <value>Default: 200 | Higher = Smoother fall | Limit: 10 - 3000</value>
   </data>
+  <data name="ColName" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="ColDateModified" xml:space="preserve">
+    <value>Date modified</value>
+  </data>
+  <data name="ColType" xml:space="preserve">
+    <value>Type</value>
+  </data>
+  <data name="ColSize" xml:space="preserve">
+    <value>Size</value>
+  </data>
+  <data name="MenuResetColumns" xml:space="preserve">
+    <value>Reset column layout</value>
+  </data>
+  <data name="FocusFrameTitle" xml:space="preserve">
+    <value>Focus Frame</value>
+  </data>
+  <data name="BtnClose" xml:space="preserve">
+    <value>Close</value>
+  </data>
+  <data name="BtnBrowse" xml:space="preserve">
+    <value>Browse...</value>
+  </data>
+  <data name="AutomationClickTarget" xml:space="preserve">
+    <value>CLICK ON THE TARGET WINDOW</value>
+  </data>
+  <data name="ProfileActive" xml:space="preserve">
+    <value>Active</value>
+  </data>
+  <data name="LblFontSize" xml:space="preserve">
+    <value>Font Size:</value>
+  </data>
+  <data name="CalcErrorDisplay" xml:space="preserve">
+    <value>Error</value>
+  </data>
 </root>

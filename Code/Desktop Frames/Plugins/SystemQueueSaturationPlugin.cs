@@ -380,9 +380,9 @@ namespace Desktop_Frames.Plugins
 
             Border footerBorder = new Border { Background = new SolidColorBrush(Color.FromRgb(248, 249, 250)), BorderThickness = new Thickness(0, 1, 0, 0), BorderBrush = Brushes.LightGray, Padding = new Thickness(15) };
             StackPanel footerSp = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
-            Button btnCancel = new Button { Content = "Cancel", Background = Brushes.White, BorderBrush = Brushes.Gray, Width = 80, Height = 30, Margin = new Thickness(0, 0, 10, 0) };
+            Button btnCancel = new Button { Content = Strings.BtnCancel, Background = Brushes.White, BorderBrush = Brushes.Gray, Width = 80, Height = 30, Margin = new Thickness(0, 0, 10, 0) };
             btnCancel.Click += (s, e) => win.Close();
-            Button btnSave = new Button { Content = "Save", Background = accentBrush, Foreground = Brushes.White, FontWeight = FontWeights.Bold, BorderThickness = new Thickness(0), Width = 80, Height = 30 };
+            Button btnSave = new Button { Content = Strings.BtnSave, Background = accentBrush, Foreground = Brushes.White, FontWeight = FontWeights.Bold, BorderThickness = new Thickness(0), Width = 80, Height = 30 };
             btnSave.Click += (s, e) =>
             {
                 int newRate = 1000;

@@ -214,7 +214,7 @@ namespace Desktop_Frames
 
                     MenuItem miAddTab = new MenuItem { Header = Strings.TabAddNew };
                     MenuItem miRenameTab = new MenuItem { Header = Strings.TabRename };
-                    MenuItem miDeleteTab = new MenuItem { Header = "Delete Tab" };
+                    MenuItem miDeleteTab = new MenuItem { Header = Strings.DeleteTabTitle };
                     MenuItem miMoveLeft = new MenuItem { Header = Strings.TabMoveLeft };
                     MenuItem miMoveRight = new MenuItem { Header = Strings.TabMoveRight };
 

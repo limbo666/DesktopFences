@@ -213,7 +213,7 @@ namespace Desktop_Frames.Plugins
             pathGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             pathGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
             TextBox txtPath = new TextBox { Text = currentPath, FontSize = 13, Padding = new Thickness(8, 6, 8, 6), BorderBrush = new SolidColorBrush(Color.FromRgb(218, 220, 224)), BorderThickness = new Thickness(1), Margin = new Thickness(0, 0, 10, 0) };
-            Button btnBrowse = new Button { Content = "Browse...", Height = 32, MinWidth = 80, FontSize = 13, Background = Brushes.White, BorderBrush = new SolidColorBrush(Color.FromRgb(218, 220, 224)), BorderThickness = new Thickness(1), Cursor = Cursors.Hand };
+            Button btnBrowse = new Button { Content = Strings.BtnBrowse, Height = 32, MinWidth = 80, FontSize = 13, Background = Brushes.White, BorderBrush = new SolidColorBrush(Color.FromRgb(218, 220, 224)), BorderThickness = new Thickness(1), Cursor = Cursors.Hand };
             btnBrowse.Click += (s, e) => { using (var dialog = new System.Windows.Forms.FolderBrowserDialog()) { if (dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK) txtPath.Text = dialog.SelectedPath; } };
             Grid.SetColumn(txtPath, 0); Grid.SetColumn(btnBrowse, 1);
             pathGrid.Children.Add(txtPath); pathGrid.Children.Add(btnBrowse);
@@ -271,10 +271,10 @@ namespace Desktop_Frames.Plugins
             Border footerBorder = new Border { Background = new SolidColorBrush(Color.FromRgb(248, 249, 250)), BorderBrush = new SolidColorBrush(Color.FromRgb(218, 220, 224)), BorderThickness = new Thickness(0, 1, 0, 0), Padding = new Thickness(20, 16, 20, 16) };
             StackPanel buttonPanel = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
 
-            Button cancelBtn = new Button { Content = "Cancel", Height = 36, MinWidth = 80, FontSize = 13, FontWeight = FontWeights.Medium, Background = Brushes.White, BorderBrush = new SolidColorBrush(Color.FromRgb(218, 220, 224)), BorderThickness = new Thickness(1), Cursor = Cursors.Hand, Margin = new Thickness(0, 0, 10, 0) };
+            Button cancelBtn = new Button { Content = Strings.BtnCancel, Height = 36, MinWidth = 80, FontSize = 13, FontWeight = FontWeights.Medium, Background = Brushes.White, BorderBrush = new SolidColorBrush(Color.FromRgb(218, 220, 224)), BorderThickness = new Thickness(1), Cursor = Cursors.Hand, Margin = new Thickness(0, 0, 10, 0) };
             cancelBtn.Click += (s, e) => win.Close();
 
-            Button saveBtn = new Button { Content = "Save", Height = 36, MinWidth = 80, FontSize = 13, FontWeight = FontWeights.Bold, Background = accentBrush, Foreground = Brushes.White, BorderThickness = new Thickness(0), Cursor = Cursors.Hand, Padding = new Thickness(16, 0, 16, 0) };
+            Button saveBtn = new Button { Content = Strings.BtnSave, Height = 36, MinWidth = 80, FontSize = 13, FontWeight = FontWeights.Bold, Background = accentBrush, Foreground = Brushes.White, BorderThickness = new Thickness(0), Cursor = Cursors.Hand, Padding = new Thickness(16, 0, 16, 0) };
             saveBtn.Click += (s, e) =>
             {
                 settings["Path"] = txtPath.Text;

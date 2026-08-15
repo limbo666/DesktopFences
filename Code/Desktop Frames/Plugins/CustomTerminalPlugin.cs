@@ -674,7 +674,7 @@ namespace Desktop_Frames.Plugins
             cmbShell.SelectedItem = _shellType;
             groupSp.Children.Add(cmbShell);
 
-            groupSp.Children.Add(new TextBlock { Text = "Text Color:", Margin = new Thickness(0, 0, 0, 5) });
+            groupSp.Children.Add(new TextBlock { Text = Strings.LblTextColor, Margin = new Thickness(0, 0, 0, 5) });
             ComboBox cmbColor = new ComboBox { Margin = new Thickness(0, 0, 0, 15) };
             cmbColor.Items.Add("Green");
             cmbColor.Items.Add("White");
@@ -682,7 +682,7 @@ namespace Desktop_Frames.Plugins
             cmbColor.SelectedItem = _terminalColor;
             groupSp.Children.Add(cmbColor);
 
-            groupSp.Children.Add(new TextBlock { Text = "Font Size:", Margin = new Thickness(0, 0, 0, 5) });
+            groupSp.Children.Add(new TextBlock { Text = Strings.LblFontSize, Margin = new Thickness(0, 0, 0, 5) });
             TextBox txtFontSize = new TextBox { Text = _fontSize.ToString(), Margin = new Thickness(0, 0, 0, 15) };
             groupSp.Children.Add(txtFontSize);
 
@@ -749,7 +749,7 @@ namespace Desktop_Frames.Plugins
 
             Button btnCancel = new Button
             {
-                Content = "Cancel",
+                Content = Strings.BtnCancel,
                 Background = Brushes.White,
                 BorderBrush = Brushes.Gray,
                 Foreground = Brushes.Black,
@@ -761,7 +761,7 @@ namespace Desktop_Frames.Plugins
 
             Button btnSave = new Button
             {
-                Content = "Save",
+                Content = Strings.BtnSave,
                 Background = accentBrush,
                 Foreground = Brushes.White,
                 FontWeight = FontWeights.Bold,
