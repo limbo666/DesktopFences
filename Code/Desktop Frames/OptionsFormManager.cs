@@ -260,12 +260,12 @@ namespace Desktop_Frames
             Grid.SetColumn(lblSound, 0);
 
             ComboBox cbSoundType = new ComboBox { Name = "NotificationSoundComboBox", Height = 25, FontFamily = new FontFamily("Segoe UI"), FontSize = 13, VerticalAlignment = VerticalAlignment.Center };
-            cbSoundType.Items.Add("Default Sound");
-            cbSoundType.Items.Add("Double Ding");
-            cbSoundType.Items.Add("Smooth Tickle");
-            cbSoundType.Items.Add("Message Ding");
-            cbSoundType.Items.Add("Gentle Ding");
-            cbSoundType.Items.Add("Soft Ding");
+            cbSoundType.Items.Add(Strings.SndDefault);
+            cbSoundType.Items.Add(Strings.SndDoubleDing);
+            cbSoundType.Items.Add(Strings.SndSmoothTickle);
+            cbSoundType.Items.Add(Strings.SndMessageDing);
+            cbSoundType.Items.Add(Strings.SndGentleDing);
+            cbSoundType.Items.Add(Strings.SndSoftDing);
 
             // Map the current Enum back to the UI index
             cbSoundType.SelectedIndex = SettingsManager.NotificationSound switch
@@ -752,7 +752,8 @@ namespace Desktop_Frames
             // UI FIX: Starts perfectly flush at the new 205px mark
             TextBlock lblEffect = new TextBlock { Text = Strings.LblEffect, FontSize = 13, VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Left, Margin = new Thickness(0, 0, 10, 0) };
             ComboBox cbEffect = new ComboBox { Name = "LaunchEffectComboBox", Width = 140, HorizontalAlignment = HorizontalAlignment.Left, Height = 25, FontSize = 13, VerticalAlignment = VerticalAlignment.Center };
-            foreach (string e in new[] { "Zoom", "Bounce", "FadeOut", "SlideUp", "Rotate", "Agitate", "GrowAndFly", "Pulse", "Elastic", "Flip3D", "Spiral", "Shockwave", "Matrix", "Supernova", "Teleport" }) cbEffect.Items.Add(e);
+            // Same order as the LaunchEffect enum: the value is the index, not the label.
+            foreach (string e in new[] { Strings.FxZoom, Strings.FxBounce, Strings.FxFadeOut, Strings.FxSlideUp, Strings.FxRotate, Strings.FxAgitate, Strings.FxGrowAndFly, Strings.FxPulse, Strings.FxElastic, Strings.FxFlip3D, Strings.FxSpiral, Strings.FxShockwave, Strings.FxMatrix, Strings.FxSupernova, Strings.FxTeleport }) cbEffect.Items.Add(e);
             cbEffect.SelectedIndex = (int)SettingsManager.LaunchEffect;
 
             Grid.SetColumn(lblColor, 0); g.Children.Add(lblColor);

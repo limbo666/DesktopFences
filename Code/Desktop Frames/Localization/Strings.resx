@@ -1021,4 +1021,67 @@
   <data name="LblEnabledRules" xml:space="preserve">
     <value>Enabled: {0}</value>
   </data>
+  <data name="SndDefault" xml:space="preserve">
+    <value>Default Sound</value>
+  </data>
+  <data name="SndDoubleDing" xml:space="preserve">
+    <value>Double Ding</value>
+  </data>
+  <data name="SndSmoothTickle" xml:space="preserve">
+    <value>Smooth Tickle</value>
+  </data>
+  <data name="SndMessageDing" xml:space="preserve">
+    <value>Message Ding</value>
+  </data>
+  <data name="SndGentleDing" xml:space="preserve">
+    <value>Gentle Ding</value>
+  </data>
+  <data name="SndSoftDing" xml:space="preserve">
+    <value>Soft Ding</value>
+  </data>
+  <data name="FxZoom" xml:space="preserve">
+    <value>Zoom</value>
+  </data>
+  <data name="FxBounce" xml:space="preserve">
+    <value>Bounce</value>
+  </data>
+  <data name="FxFadeOut" xml:space="preserve">
+    <value>FadeOut</value>
+  </data>
+  <data name="FxSlideUp" xml:space="preserve">
+    <value>SlideUp</value>
+  </data>
+  <data name="FxRotate" xml:space="preserve">
+    <value>Rotate</value>
+  </data>
+  <data name="FxAgitate" xml:space="preserve">
+    <value>Agitate</value>
+  </data>
+  <data name="FxGrowAndFly" xml:space="preserve">
+    <value>GrowAndFly</value>
+  </data>
+  <data name="FxPulse" xml:space="preserve">
+    <value>Pulse</value>
+  </data>
+  <data name="FxElastic" xml:space="preserve">
+    <value>Elastic</value>
+  </data>
+  <data name="FxFlip3D" xml:space="preserve">
+    <value>Flip3D</value>
+  </data>
+  <data name="FxSpiral" xml:space="preserve">
+    <value>Spiral</value>
+  </data>
+  <data name="FxShockwave" xml:space="preserve">
+    <value>Shockwave</value>
+  </data>
+  <data name="FxMatrix" xml:space="preserve">
+    <value>Matrix</value>
+  </data>
+  <data name="FxSupernova" xml:space="preserve">
+    <value>Supernova</value>
+  </data>
+  <data name="FxTeleport" xml:space="preserve">
+    <value>Teleport</value>
+  </data>
 </root>

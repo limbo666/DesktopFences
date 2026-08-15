@@ -399,5 +399,28 @@ namespace Desktop_Frames.Localization
         public static string HkSpotSearch => Get("HkSpotSearch");
         public static string LblTotalRules => Get("LblTotalRules");
         public static string LblEnabledRules => Get("LblEnabledRules");
+
+        // ── Dropdown entries whose value travels by index, not by text ──
+        public static string SndDefault => Get("SndDefault");
+        public static string SndDoubleDing => Get("SndDoubleDing");
+        public static string SndSmoothTickle => Get("SndSmoothTickle");
+        public static string SndMessageDing => Get("SndMessageDing");
+        public static string SndGentleDing => Get("SndGentleDing");
+        public static string SndSoftDing => Get("SndSoftDing");
+        public static string FxZoom => Get("FxZoom");
+        public static string FxBounce => Get("FxBounce");
+        public static string FxFadeOut => Get("FxFadeOut");
+        public static string FxSlideUp => Get("FxSlideUp");
+        public static string FxRotate => Get("FxRotate");
+        public static string FxAgitate => Get("FxAgitate");
+        public static string FxGrowAndFly => Get("FxGrowAndFly");
+        public static string FxPulse => Get("FxPulse");
+        public static string FxElastic => Get("FxElastic");
+        public static string FxFlip3D => Get("FxFlip3D");
+        public static string FxSpiral => Get("FxSpiral");
+        public static string FxShockwave => Get("FxShockwave");
+        public static string FxMatrix => Get("FxMatrix");
+        public static string FxSupernova => Get("FxSupernova");
+        public static string FxTeleport => Get("FxTeleport");
     }
 }

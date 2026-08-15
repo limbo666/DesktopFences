@@ -1021,4 +1021,67 @@
   <data name="LblEnabledRules" xml:space="preserve">
     <value>Attive: {0}</value>
   </data>
+  <data name="SndDefault" xml:space="preserve">
+    <value>Suono predefinito</value>
+  </data>
+  <data name="SndDoubleDing" xml:space="preserve">
+    <value>Doppio ding</value>
+  </data>
+  <data name="SndSmoothTickle" xml:space="preserve">
+    <value>Tocco leggero</value>
+  </data>
+  <data name="SndMessageDing" xml:space="preserve">
+    <value>Ding messaggio</value>
+  </data>
+  <data name="SndGentleDing" xml:space="preserve">
+    <value>Ding delicato</value>
+  </data>
+  <data name="SndSoftDing" xml:space="preserve">
+    <value>Ding morbido</value>
+  </data>
+  <data name="FxZoom" xml:space="preserve">
+    <value>Zoom</value>
+  </data>
+  <data name="FxBounce" xml:space="preserve">
+    <value>Rimbalzo</value>
+  </data>
+  <data name="FxFadeOut" xml:space="preserve">
+    <value>Dissolvenza</value>
+  </data>
+  <data name="FxSlideUp" xml:space="preserve">
+    <value>Scorri in alto</value>
+  </data>
+  <data name="FxRotate" xml:space="preserve">
+    <value>Rotazione</value>
+  </data>
+  <data name="FxAgitate" xml:space="preserve">
+    <value>Scuotimento</value>
+  </data>
+  <data name="FxGrowAndFly" xml:space="preserve">
+    <value>Cresci e vola</value>
+  </data>
+  <data name="FxPulse" xml:space="preserve">
+    <value>Pulsazione</value>
+  </data>
+  <data name="FxElastic" xml:space="preserve">
+    <value>Elastico</value>
+  </data>
+  <data name="FxFlip3D" xml:space="preserve">
+    <value>Ribaltamento 3D</value>
+  </data>
+  <data name="FxSpiral" xml:space="preserve">
+    <value>Spirale</value>
+  </data>
+  <data name="FxShockwave" xml:space="preserve">
+    <value>Onda d'urto</value>
+  </data>
+  <data name="FxMatrix" xml:space="preserve">
+    <value>Matrix</value>
+  </data>
+  <data name="FxSupernova" xml:space="preserve">
+    <value>Supernova</value>
+  </data>
+  <data name="FxTeleport" xml:space="preserve">
+    <value>Teletrasporto</value>
+  </data>
 </root>
