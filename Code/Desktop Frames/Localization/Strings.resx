@@ -352,4 +352,217 @@
   <data name="BtnDonate" xml:space="preserve">
     <value>♥ Donate via PayPal</value>
   </data>
+  <data name="AboutTitle" xml:space="preserve">
+    <value>About Desktop Frames +</value>
+  </data>
+  <data name="AboutSupportDevelopment" xml:space="preserve">
+    <value>Support Development</value>
+  </data>
+  <data name="AboutVisitGitHub" xml:space="preserve">
+    <value>⚡ Visit GitHub repository</value>
+  </data>
+  <data name="AboutLicense" xml:space="preserve">
+    <value>⚖ MIT License</value>
+  </data>
+  <data name="AboutGreatToHaveYou" xml:space="preserve">
+    <value>It is great to have you here</value>
+  </data>
+  <data name="AboutDontFeedDragons" xml:space="preserve">
+    <value>Don't feed the dragons</value>
+  </data>
+  <data name="AboutDonateBig" xml:space="preserve">
+    <value>Donate 999,00 €</value>
+  </data>
+  <data name="AboutWhat" xml:space="preserve">
+    <value>What!?</value>
+  </data>
+  <data name="AboutThinkAgain" xml:space="preserve">
+    <value>Are you sure? Think again!</value>
+  </data>
+  <data name="AboutPleaseDonate" xml:space="preserve">
+    <value>Please donate</value>
+  </data>
+  <data name="AutoOrgTitle" xml:space="preserve">
+    <value>Smart Desktop Rules</value>
+  </data>
+  <data name="AutoOrgAddRule" xml:space="preserve">
+    <value>+ Add Rule</value>
+  </data>
+  <data name="AutoOrgRemove" xml:space="preserve">
+    <value>− Remove</value>
+  </data>
+  <data name="AutoOrgEnableRule" xml:space="preserve">
+    <value>Enable this rule</value>
+  </data>
+  <data name="AutoOrgRuleName" xml:space="preserve">
+    <value>Rule Name:</value>
+  </data>
+  <data name="AutoOrgIfExtension" xml:space="preserve">
+    <value>If File Extension Is:</value>
+  </data>
+  <data name="AutoOrgCustomExtensions" xml:space="preserve">
+    <value>Custom Extensions (e.g., *.zip; *.rar):</value>
+  </data>
+  <data name="AutoOrgFilenameContains" xml:space="preserve">
+    <value>And Filename Contains (Optional, leave blank for any):</value>
+  </data>
+  <data name="AutoOrgMoveTo" xml:space="preserve">
+    <value>Move To:</value>
+  </data>
+  <data name="AutoOrgGeneratePortal" xml:space="preserve">
+    <value>Generate new Portal Frame for this folder</value>
+  </data>
+  <data name="AutoOrgIfExists" xml:space="preserve">
+    <value>If File Already Exists:</value>
+  </data>
+  <data name="AutoOrgSaveRules" xml:space="preserve">
+    <value>Save Rules</value>
+  </data>
+  <data name="AutoOrgBrowseFolder" xml:space="preserve">
+    <value>Browse for Folder...</value>
+  </data>
+  <data name="AutomationTitle" xml:space="preserve">
+    <value>Automation Rules</value>
+  </data>
+  <data name="AutomationManage" xml:space="preserve">
+    <value>Manage Automation Rules</value>
+  </data>
+  <data name="AutomationExisting" xml:space="preserve">
+    <value>Existing Rules</value>
+  </data>
+  <data name="AutomationDeleteSelected" xml:space="preserve">
+    <value>Delete Selected</value>
+  </data>
+  <data name="AutomationDoubleClickEdit" xml:space="preserve">
+    <value>Double-click to edit rule</value>
+  </data>
+  <data name="AutomationRuleDefinition" xml:space="preserve">
+    <value>Rule Definition</value>
+  </data>
+  <data name="AutomationPickWindow" xml:space="preserve">
+    <value>🎯 Pick Window</value>
+  </data>
+  <data name="AutomationPersistedMode" xml:space="preserve">
+    <value>Persisted Mode (Stay on profile after close)</value>
+  </data>
+  <data name="BackupSelectExportFile" xml:space="preserve">
+    <value>Select Frame Export File</value>
+  </data>
+  <data name="EditShortcutTitle" xml:space="preserve">
+    <value>Edit Shortcut</value>
+  </data>
+  <data name="LblIcon" xml:space="preserve">
+    <value>Icon:</value>
+  </data>
+  <data name="EditSelectTarget" xml:space="preserve">
+    <value>Select Target File</value>
+  </data>
+  <data name="EditSelectIcon" xml:space="preserve">
+    <value>Select an Icon</value>
+  </data>
+  <data name="FocusSearchActive" xml:space="preserve">
+    <value>Search active frames:</value>
+  </data>
+  <data name="IconPickerTitle" xml:space="preserve">
+    <value>Select Icon</value>
+  </data>
+  <data name="IconPickerHint" xml:space="preserve">
+    <value>Select an Icon from the available and click OK</value>
+  </data>
+  <data name="ImportTabTitle" xml:space="preserve">
+    <value>Import Tab</value>
+  </data>
+  <data name="ImportTabPrompt" xml:space="preserve">
+    <value>Select a source frame or tab to import:</value>
+  </data>
+  <data name="ImportTabNoFrames" xml:space="preserve">
+    <value>No other Data frames found to import.</value>
+  </data>
+  <data name="MoveItemTitle" xml:space="preserve">
+    <value>Move Item To...</value>
+  </data>
+  <data name="MoveItemPrompt" xml:space="preserve">
+    <value>Select a destination frame or tab:</value>
+  </data>
+  <data name="NoteClickFinish" xml:space="preserve">
+    <value>Click to finish editing</value>
+  </data>
+  <data name="NoteClickEdit" xml:space="preserve">
+    <value>Click to edit note content</value>
+  </data>
+  <data name="NoteTextFormat" xml:space="preserve">
+    <value>Text Format...</value>
+  </data>
+  <data name="NoteCopyAll" xml:space="preserve">
+    <value>Copy All Text</value>
+  </data>
+  <data name="NoteClearAll" xml:space="preserve">
+    <value>Clear All Text</value>
+  </data>
+  <data name="NotificationTitle" xml:space="preserve">
+    <value>Desktop Frames + Notification</value>
+  </data>
+  <data name="NotificationDontShowAgain" xml:space="preserve">
+    <value>Don't show this again</value>
+  </data>
+  <data name="MenuCutItem" xml:space="preserve">
+    <value>Cut Item</value>
+  </data>
+  <data name="MenuRenameItem" xml:space="preserve">
+    <value>Rename item</value>
+  </data>
+  <data name="MenuDeleteItem" xml:space="preserve">
+    <value>Delete item</value>
+  </data>
+  <data name="MenuOpenWith" xml:space="preserve">
+    <value>Open with...</value>
+  </data>
+  <data name="MenuCopyItemPath" xml:space="preserve">
+    <value>Copy item path</value>
+  </data>
+  <data name="MenuCopyFolderPath" xml:space="preserve">
+    <value>Copy folder path</value>
+  </data>
+  <data name="MenuResetSorting" xml:space="preserve">
+    <value>Reset sorting</value>
+  </data>
+  <data name="ProfileManagerTitle" xml:space="preserve">
+    <value>Profile Manager</value>
+  </data>
+  <data name="BtnCreate" xml:space="preserve">
+    <value>Create</value>
+  </data>
+  <data name="UpdateAvailable" xml:space="preserve">
+    <value>Update Available</value>
+  </data>
+  <data name="SearchTitle" xml:space="preserve">
+    <value>Desktop Frames Search</value>
+  </data>
+  <data name="SearchPlaceholder" xml:space="preserve">
+    <value>Type to search...</value>
+  </data>
+  <data name="TabAddNew" xml:space="preserve">
+    <value>Add New Tab</value>
+  </data>
+  <data name="TabRename" xml:space="preserve">
+    <value>Rename Tab</value>
+  </data>
+  <data name="TabMoveLeft" xml:space="preserve">
+    <value>Move Left</value>
+  </data>
+  <data name="TabMoveRight" xml:space="preserve">
+    <value>Move Right</value>
+  </data>
+  <data name="TabAddNewHint" xml:space="preserve">
+    <value>Add new tab (Ctrl+Click to Import)</value>
+  </data>
+  <data name="TextFormatTitle" xml:space="preserve">
+    <value>Text Format</value>
+  </data>
+  <data name="TextAppearance" xml:space="preserve">
+    <value>Text Appearance</value>
+  </data>
+  <data name="TextBehavior" xml:space="preserve">
+    <value>Text Behavior</value>
+  </data>
 </root>

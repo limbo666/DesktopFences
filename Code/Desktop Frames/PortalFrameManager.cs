@@ -1,4 +1,5 @@
-﻿using IWshRuntimeLibrary;
+﻿using Strings = Desktop_Frames.Localization.Strings;
+using IWshRuntimeLibrary;
 using Microsoft.VisualBasic;
 using Newtonsoft.Json.Linq;
 using System;
@@ -834,7 +835,7 @@ namespace Desktop_Frames
                 };
                 contextMenu.Items.Add(copyFileItem);
 
-                MenuItem cutFileItem = new MenuItem { Header = "Cut Item" };
+                MenuItem cutFileItem = new MenuItem { Header = Strings.MenuCutItem };
                 cutFileItem.Click += (s, e) =>
                 {
                     try
@@ -851,11 +852,11 @@ namespace Desktop_Frames
                 };
                 contextMenu.Items.Add(cutFileItem);
 
-                MenuItem renameItem = new MenuItem { Header = "Rename item" };
+                MenuItem renameItem = new MenuItem { Header = Strings.MenuRenameItem };
                 renameItem.Click += (s, e) => RenameItem(path, null);
                 contextMenu.Items.Add(renameItem);
 
-                MenuItem deleteItem = new MenuItem { Header = "Delete item" };
+                MenuItem deleteItem = new MenuItem { Header = Strings.MenuDeleteItem };
                 deleteItem.Click += (s, e) =>
                 {
                     DeleteItem(path, null);
@@ -865,7 +866,7 @@ namespace Desktop_Frames
 
                 if (!isFolder)
                 {
-                    MenuItem openWithItem = new MenuItem { Header = "Open with..." };
+                    MenuItem openWithItem = new MenuItem { Header = Strings.MenuOpenWith };
                     openWithItem.Click += (s, e) =>
                     {
                         try
@@ -894,7 +895,7 @@ namespace Desktop_Frames
 
                 contextMenu.Items.Add(new Separator());
 
-                MenuItem copyItemPathItem = new MenuItem { Header = "Copy item path" };
+                MenuItem copyItemPathItem = new MenuItem { Header = Strings.MenuCopyItemPath };
                 copyItemPathItem.Click += (s, e) =>
                 {
                     try
@@ -905,7 +906,7 @@ namespace Desktop_Frames
                     catch (Exception ex) { LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI, $"Error copying item path: {ex.Message}"); }
                 };
                 contextMenu.Items.Add(copyItemPathItem);
-                MenuItem copyPathItem = new MenuItem { Header = "Copy folder path" };
+                MenuItem copyPathItem = new MenuItem { Header = Strings.MenuCopyFolderPath };
                 copyPathItem.Click += (s, e) => CopyPathOrTarget(path);
                 contextMenu.Items.Add(copyPathItem);
 
@@ -1003,7 +1004,7 @@ namespace Desktop_Frames
                 contextMenu.Items.Add(copyFileItem);
 
                 // 2. Cut Item (File Object with Move Effect)
-                MenuItem cutFileItem = new MenuItem { Header = "Cut Item" };
+                MenuItem cutFileItem = new MenuItem { Header = Strings.MenuCutItem };
                 cutFileItem.Click += (s, e) =>
                 {
                     try
@@ -1032,19 +1033,19 @@ namespace Desktop_Frames
                 contextMenu.Items.Add(cutFileItem);
 
                 // 3. Rename item (Existing)
-                MenuItem renameItem = new MenuItem { Header = "Rename item" };
+                MenuItem renameItem = new MenuItem { Header = Strings.MenuRenameItem };
                 renameItem.Click += (s, e) => RenameItem(path, sp);
                 contextMenu.Items.Add(renameItem);
 
                 // 4. Delete item (Existing)
-                MenuItem deleteItem = new MenuItem { Header = "Delete item" };
+                MenuItem deleteItem = new MenuItem { Header = Strings.MenuDeleteItem };
                 deleteItem.Click += (s, e) => DeleteItem(path, sp);
                 contextMenu.Items.Add(deleteItem);
 
                 // 4.5 Open with (Files only)
                 if (!isFolder)
                 {
-                    MenuItem openWithItem = new MenuItem { Header = "Open with..." };
+                    MenuItem openWithItem = new MenuItem { Header = Strings.MenuOpenWith };
                     openWithItem.Click += (s, e) =>
                     {
                         try
@@ -1075,7 +1076,7 @@ namespace Desktop_Frames
                 contextMenu.Items.Add(new Separator());
 
                 // 6. Copy item path
-                MenuItem copyItemPathItem = new MenuItem { Header = "Copy item path" };
+                MenuItem copyItemPathItem = new MenuItem { Header = Strings.MenuCopyItemPath };
                 copyItemPathItem.Click += (s, e) =>
                 {
                     try
@@ -1088,7 +1089,7 @@ namespace Desktop_Frames
                 contextMenu.Items.Add(copyItemPathItem);
 
                 // 7. Copy folder path
-                MenuItem copyPathItem = new MenuItem { Header = "Copy folder path" };
+                MenuItem copyPathItem = new MenuItem { Header = Strings.MenuCopyFolderPath };
                 copyPathItem.Click += (s, e) => CopyPathOrTarget(path);
                 contextMenu.Items.Add(copyPathItem);
 
@@ -1727,7 +1728,7 @@ namespace Desktop_Frames
 
             headerMenu.Items.Add(new Separator());
 
-            MenuItem resetSortItem = new MenuItem { Header = "Reset sorting" };
+            MenuItem resetSortItem = new MenuItem { Header = Strings.MenuResetSorting };
             resetSortItem.Click += (ms, me) => { _sortMode = 0; SortContents(); };
             headerMenu.Items.Add(resetSortItem);
 

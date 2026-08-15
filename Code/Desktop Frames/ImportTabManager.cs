@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Desktop_Frames.Localization;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
@@ -25,7 +26,7 @@ namespace Desktop_Frames
                 // 1. Window Setup (Matches ItemMoveDialog)
                 var importWindow = new Window
                 {
-                    Title = "Import Tab",
+                    Title = Strings.ImportTabTitle,
                     Width = 480,
                     Height = 600,
                     WindowStartupLocation = WindowStartupLocation.CenterScreen,
@@ -71,7 +72,7 @@ namespace Desktop_Frames
                 StackPanel titlePanel = new StackPanel();
                 TextBlock mainTitle = new TextBlock
                 {
-                    Text = "Import Tab",
+                    Text = Strings.ImportTabTitle,
                     FontSize = 16,
                     FontWeight = FontWeights.SemiBold,
                     Foreground = System.Windows.Media.Brushes.White,
@@ -118,7 +119,7 @@ namespace Desktop_Frames
                 StackPanel contentStack = new StackPanel();
                 contentStack.Children.Add(new TextBlock
                 {
-                    Text = "Select a source frame or tab to import:",
+                    Text = Strings.ImportTabPrompt,
                     FontSize = 13,
                     FontWeight = FontWeights.Medium,
                     Foreground = new SolidColorBrush(System.Windows.Media.Color.FromRgb(95, 99, 104)),
@@ -266,7 +267,7 @@ namespace Desktop_Frames
             {
                 targetsPanel.Children.Add(new TextBlock
                 {
-                    Text = "No other Data frames found to import.",
+                    Text = Strings.ImportTabNoFrames,
                     Foreground = Brushes.Gray,
                     FontStyle = FontStyles.Italic,
                     Margin = new Thickness(5)

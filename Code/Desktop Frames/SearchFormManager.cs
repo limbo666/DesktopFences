@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json.Linq;
+﻿using Desktop_Frames.Localization;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -71,7 +72,7 @@ namespace Desktop_Frames
         private void InitializeComponent()
         {
             // 1. Window Setup
-            this.Title = "Desktop Frames Search";
+            this.Title = Strings.SearchTitle;
             this.Width = WINDOW_WIDTH;
             this.Height = HEADER_HEIGHT + TITLE_HEIGHT; // Initial Compact Size
             this.WindowStartupLocation = WindowStartupLocation.CenterScreen;
@@ -103,7 +104,7 @@ namespace Desktop_Frames
 
             _watermark = new TextBlock
             {
-                Text = "Type to search...",
+                Text = Strings.SearchPlaceholder,
                 FontSize = 18,
                 Foreground = Brushes.Gray,
                 VerticalAlignment = VerticalAlignment.Center,

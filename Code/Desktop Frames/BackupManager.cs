@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using Desktop_Frames.Localization;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
@@ -287,7 +288,7 @@ namespace Desktop_Frames
                     Filter = "Frame Files|*.frame;*.fence", // SUPPORT BOTH EXTENSIONS
                     DefaultExt = ".frame", // DEFAULT TO NEW
                     InitialDirectory = Directory.Exists(exportsDir) ? exportsDir : exeDir,
-                    Title = "Select Frame Export File"
+                    Title = Strings.BackupSelectExportFile
                 };
 
                 if (openDialog.ShowDialog() != true) return;

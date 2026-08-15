@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Desktop_Frames.Localization;
+using System;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
@@ -26,7 +27,7 @@ namespace Desktop_Frames
             {
                 var aboutWindow = new Window
                 {
-                    Title = "About Desktop Frames +",
+                    Title = Strings.AboutTitle,
                     Width = 480,
                     Height = 670,
                     WindowStartupLocation = WindowStartupLocation.CenterScreen,
@@ -439,7 +440,7 @@ namespace Desktop_Frames
             // Title
             TextBlock titleBlock = new TextBlock
             {
-                Text = "Support Development",
+                Text = Strings.AboutSupportDevelopment,
                 FontFamily = new FontFamily("Segoe UI"),
                 FontSize = 18, // Your improved font size
                 FontWeight = FontWeights.Bold,
@@ -458,7 +459,7 @@ namespace Desktop_Frames
             // Donate Button
             Button donateButton = new Button
             {
-                Content = "♥ Donate via PayPal",
+                Content = Strings.BtnDonate,
                 Height = 36,
                 Padding = new Thickness(16, 0, 16, 0),
                 FontFamily = new FontFamily("Segoe UI"),
@@ -492,7 +493,7 @@ namespace Desktop_Frames
             // GitHub Button
             Button githubButton = new Button
             {
-                Content = "⚡ Visit GitHub repository",
+                Content = Strings.AboutVisitGitHub,
                 Height = 36,
                 Padding = new Thickness(16, 0, 16, 0),
                 FontFamily = new FontFamily("Segoe UI"),
@@ -542,7 +543,7 @@ namespace Desktop_Frames
             // MIT License
             TextBlock licenseBlock = new TextBlock
             {
-                Text = "⚖ MIT License",
+                Text = Strings.AboutLicense,
                 FontFamily = new FontFamily("Segoe UI"),
                 FontSize = 14, // Your improved font size
                 Foreground = new SolidColorBrush(Color.FromRgb(95, 99, 104)),
@@ -687,7 +688,7 @@ namespace Desktop_Frames
             {
                 var easterWindow = new Window
                 {
-                    Title = "It is great to have you here",
+                    Title = Strings.AboutGreatToHaveYou,
                     Width = 400,
                     Height = 520, // Taller to accommodate image
                     WindowStartupLocation = WindowStartupLocation.CenterScreen,
@@ -741,7 +742,7 @@ namespace Desktop_Frames
                 // Dynamic title text
                 TextBlock titleText = new TextBlock
                 {
-                    Text = "It is great to have you here",
+                    Text = Strings.AboutGreatToHaveYou,
                     FontFamily = new FontFamily("Segoe UI"),
                     FontSize = 16,
                     FontWeight = FontWeights.Bold,
@@ -809,7 +810,7 @@ namespace Desktop_Frames
                 
                 TextBlock messageText = new TextBlock
                 {
-                    Text = "Don't feed the dragons",
+                    Text = Strings.AboutDontFeedDragons,
                     FontFamily = new FontFamily("Segoe UI"),
                     FontSize = 18,
                     FontWeight = FontWeights.Bold,
@@ -827,7 +828,7 @@ namespace Desktop_Frames
 
                 Button donateButton = new Button
                 {
-                    Content = "Donate 999,00 €",
+                    Content = Strings.AboutDonateBig,
                     Height = 40, 
                     MinWidth = 160,
                     FontFamily = new FontFamily("Segoe UI"),
@@ -875,17 +876,17 @@ namespace Desktop_Frames
                         hasClickedCloseOnce = true;
 
               
-                        titleText.Text = "What!?";
+                        titleText.Text = Strings.AboutWhat;
                         headerBorder.Background = new LinearGradientBrush(
                             Color.FromRgb(180, 20, 60), // Dramatic red
                             Color.FromRgb(120, 10, 40),
                             0);
 
                      
-                        messageText.Text = "Are you sure? Think again!";
+                        messageText.Text = Strings.AboutThinkAgain;
 
                     
-                        donateButton.Content = "Please donate";
+                        donateButton.Content = Strings.AboutPleaseDonate;
                         donateButton.Background = new SolidColorBrush(Color.FromRgb(220, 20, 60)); // Crimson
 
                    

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Desktop_Frames.Localization;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -46,7 +47,7 @@ namespace Desktop_Frames
             {
                 _userAccentColor = Utility.GetColorFromName(SettingsManager.SelectedColor);
 
-                this.Title = "Automation Rules";
+                this.Title = Strings.AutomationTitle;
                 this.Width = 550;
                 this.Height = 750;
                 this.WindowStartupLocation = WindowStartupLocation.Manual;
@@ -96,7 +97,7 @@ namespace Desktop_Frames
             headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(40) });
 
             StackPanel titleStack = new StackPanel { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(16, 0, 0, 0) };
-            titleStack.Children.Add(new TextBlock { Text = "Manage Automation Rules", FontFamily = new FontFamily("Segoe UI"), FontSize = 18, FontWeight = FontWeights.Bold, Foreground = Brushes.White });
+            titleStack.Children.Add(new TextBlock { Text = Strings.AutomationManage, FontFamily = new FontFamily("Segoe UI"), FontSize = 18, FontWeight = FontWeights.Bold, Foreground = Brushes.White });
 
             Button closeButton = new Button { Content = "✕", Width = 32, Height = 32, FontSize = 16, Foreground = Brushes.White, Background = Brushes.Transparent, BorderThickness = new Thickness(0), Cursor = Cursors.Hand };
             closeButton.Click += (s, e) => Close();
@@ -119,7 +120,7 @@ namespace Desktop_Frames
             // --- 1. EXISTING RULES ---
             GroupBox listGroup = new GroupBox
             {
-                Header = "Existing Rules",
+                Header = Strings.AutomationExisting,
                 FontFamily = new FontFamily("Segoe UI"),
                 FontSize = 14,
                 FontWeight = FontWeights.Bold,
@@ -135,7 +136,7 @@ namespace Desktop_Frames
             // RED Delete Button (Width 120)
             Button btnDelete = new Button
             {
-                Content = "Delete Selected",
+                Content = Strings.AutomationDeleteSelected,
                 Width = 120,
                 Height = 34,
                 HorizontalAlignment = HorizontalAlignment.Right,
@@ -147,7 +148,7 @@ namespace Desktop_Frames
             };
             btnDelete.Click += (s, e) => DeleteRule();
 
-            listPanel.Children.Add(new TextBlock { Text = "Double-click to edit rule", FontSize = 11, Foreground = Brushes.Gray, Margin = new Thickness(0, 0, 0, 5) });
+            listPanel.Children.Add(new TextBlock { Text = Strings.AutomationDoubleClickEdit, FontSize = 11, Foreground = Brushes.Gray, Margin = new Thickness(0, 0, 0, 5) });
             listPanel.Children.Add(_rulesList);
             listPanel.Children.Add(btnDelete);
             listGroup.Content = listPanel;
@@ -156,7 +157,7 @@ namespace Desktop_Frames
             // --- 2. RULE DEFINITION ---
             GroupBox ruleGroup = new GroupBox
             {
-                Header = "Rule Definition",
+                Header = Strings.AutomationRuleDefinition,
                 FontFamily = new FontFamily("Segoe UI"),
                 FontSize = 14,
                 FontWeight = FontWeights.Bold,
@@ -177,7 +178,7 @@ namespace Desktop_Frames
             // PURPLE Pick Button (Width 120 to match Delete)
             Button btnPick = new Button
             {
-                Content = "🎯 Pick Window",
+                Content = Strings.AutomationPickWindow,
                 Width = 120,
                 Height = 34,
                 Margin = new Thickness(0, 0, 0, 10),
@@ -214,7 +215,7 @@ namespace Desktop_Frames
             ruleStack.Children.Add(delayGrid);
 
             // Persistence
-            _persistedChk = new CheckBox { Content = "Persisted Mode (Stay on profile after close)", Margin = new Thickness(0, 5, 0, 0) };
+            _persistedChk = new CheckBox { Content = Strings.AutomationPersistedMode, Margin = new Thickness(0, 5, 0, 0) };
             ruleStack.Children.Add(_persistedChk);
 
             ruleGroup.Content = ruleStack;
@@ -255,7 +256,7 @@ namespace Desktop_Frames
             // GREEN Apply
             Button btnApply = new Button
             {
-                Content = "Apply",
+                Content = Strings.BtnApply,
                 Width = 100,
                 Height = 34,
                 Background = new SolidColorBrush(_colorGreen),

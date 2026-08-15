@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Desktop_Frames.Localization;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
@@ -95,7 +96,7 @@ namespace Desktop_Frames
                 _userAccentColor = Utility.GetColorFromName(selectedColorName);
 
                 // Modern WPF window setup with DPI awareness (same as customize form)
-                this.Title = "Text Format";
+                this.Title = Strings.TextFormatTitle;
                 this.Width = 400;
                 this.Height = 400;
                 this.WindowStartupLocation = WindowStartupLocation.Manual;
@@ -199,7 +200,7 @@ namespace Desktop_Frames
             // Title label (same style as customize form)
             TextBlock titleBlock = new TextBlock
             {
-                Text = "Text Format",
+                Text = Strings.TextFormatTitle,
                 FontFamily = new FontFamily("Segoe UI"),
                 FontSize = 18,
                 FontWeight = FontWeights.Bold,
@@ -283,7 +284,7 @@ namespace Desktop_Frames
             // Apply button with green color (same as Default button in customize form)
             Button applyButton = new Button
             {
-                Content = "Apply",
+                Content = Strings.BtnApply,
                 Width = 100,
                 Height = 34,
                 FontFamily = new FontFamily("Segoe UI"),
@@ -344,7 +345,7 @@ namespace Desktop_Frames
             // GroupBox with same style as customize form
             GroupBox textAppearanceGroupBox = new GroupBox
             {
-                Header = "Text Appearance",
+                Header = Strings.TextAppearance,
                 FontFamily = new FontFamily("Segoe UI"),
                 FontSize = 14,
                 FontWeight = FontWeights.Bold,
@@ -368,7 +369,7 @@ namespace Desktop_Frames
             // GroupBox with same style as customize form
             GroupBox textBehaviorGroupBox = new GroupBox
             {
-                Header = "Text Behavior",
+                Header = Strings.TextBehavior,
                 FontFamily = new FontFamily("Segoe UI"),
                 FontSize = 14,
                 FontWeight = FontWeights.Bold,

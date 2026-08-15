@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Desktop_Frames.Localization;
+using System;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Windows;
@@ -37,7 +38,7 @@ public partial class EditShortcutWindow : Window
 
     private void InitializeModernComponent()
     {
-        Title = "Edit Shortcut";
+        Title = Strings.EditShortcutTitle;
         Width = 540;
         Height = 550;
         WindowStartupLocation = WindowStartupLocation.CenterScreen;
@@ -132,7 +133,7 @@ public partial class EditShortcutWindow : Window
         // Title label with white text (same as CustomizeFrameForm)
         TextBlock titleText = new TextBlock
         {
-            Text = "Edit Shortcut",
+            Text = Strings.EditShortcutTitle,
             FontSize = 14,
             FontWeight = FontWeights.Bold, // Bold like CustomizeFrameForm
             Foreground = Brushes.White, // White text on colored background
@@ -308,7 +309,7 @@ public partial class EditShortcutWindow : Window
 
         TextBlock iconLabel = new TextBlock
         {
-            Text = "Icon:",
+            Text = Strings.LblIcon,
             FontSize = 12,
             FontWeight = FontWeights.Medium,
             Foreground = new SolidColorBrush(Color.FromRgb(95, 99, 104)),
@@ -588,7 +589,7 @@ public partial class EditShortcutWindow : Window
             var fileDialog = new System.Windows.Forms.OpenFileDialog
             {
                 Filter = "Executable Files (*.exe)|*.exe|All Files (*.*)|*.*",
-                Title = "Select Target File",
+                Title = Strings.EditSelectTarget,
                 CheckFileExists = true,
                 CheckPathExists = true
             };
@@ -618,7 +619,7 @@ public partial class EditShortcutWindow : Window
         var dialog = new System.Windows.Forms.OpenFileDialog
         {
             Filter = "Icon Files (*.ico)|*.ico|Executable Files (*.exe)|*.exe|DLL Files (*.dll)|*.dll|All Files (*.*)|*.*",
-            Title = "Select an Icon"
+            Title = Strings.EditSelectIcon
         };
 
         if (dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)

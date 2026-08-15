@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Desktop_Frames.Localization;
+using System;
 using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
@@ -38,7 +39,7 @@ namespace Desktop_Frames
         private void InitializeComponent()
         {
             // Window Props
-            this.Title = "Desktop Frames + Notification"; // Taskbar/System title
+            this.Title = Strings.NotificationTitle; // Taskbar/System title
             this.Width = 360;
             this.Height = 200;
             this.SizeToContent = SizeToContent.Height;
@@ -159,7 +160,7 @@ namespace Desktop_Frames
             {
                 _chkDismiss = new CheckBox
                 {
-                    Content = "Don't show this again",
+                    Content = Strings.NotificationDontShowAgain,
                     FontSize = 11,
                     Foreground = Brushes.Gray,
                     Cursor = System.Windows.Input.Cursors.Hand

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Desktop_Frames.Localization;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
@@ -16,7 +17,7 @@ namespace Desktop_Frames
         public ProfileManagerForm()
         {
             // Window Setup
-            Title = "Profile Manager";
+            Title = Strings.ProfileManagerTitle;
             Width = 480;
             Height = 720; // Height increased to prevent footer cutoff
             WindowStartupLocation = WindowStartupLocation.CenterScreen;
@@ -66,7 +67,7 @@ namespace Desktop_Frames
             headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
             StackPanel titleStack = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
-            titleStack.Children.Add(new TextBlock { Text = "Profile Manager", FontSize = 18, FontWeight = FontWeights.Bold, Foreground = Brushes.White });
+            titleStack.Children.Add(new TextBlock { Text = Strings.ProfileManagerTitle, FontSize = 18, FontWeight = FontWeights.Bold, Foreground = Brushes.White });
             // Subtitle removed or kept small to fit clean header style
 
             Button closeBtn = new Button { Content = "✕", Background = Brushes.Transparent, BorderThickness = new Thickness(0), Foreground = Brushes.White, FontSize = 16, Cursor = System.Windows.Input.Cursors.Hand, VerticalAlignment = VerticalAlignment.Center };
@@ -98,7 +99,7 @@ namespace Desktop_Frames
 
             Button btnAdd = new Button
             {
-                Content = "Create",
+                Content = Strings.BtnCreate,
                 Height = 34,
                 Width = 100,
                 Margin = new Thickness(10, 0, 0, 0),
