@@ -1,4 +1,5 @@
-﻿using Microsoft.Win32;
+﻿using Desktop_Frames.Localization;
+using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -139,8 +140,8 @@ namespace Desktop_Frames
                     if (success)
                     {
                         // Show notification that export was successful
-                        _trayIcon.BalloonTipTitle = "Desktop Frames Plus";
-                        _trayIcon.BalloonTipText = "Registry values exported successfully to program folder.";
+                        _trayIcon.BalloonTipTitle = Strings.TrayExportDoneTitle;
+                        _trayIcon.BalloonTipText = Strings.TrayExportDoneText;
                         _trayIcon.BalloonTipIcon = ToolTipIcon.Info;
                         _trayIcon.ShowBalloonTip(3000); // Show for 3 seconds
 
@@ -150,8 +151,8 @@ namespace Desktop_Frames
                     else
                     {
                         // Show error notification
-                        _trayIcon.BalloonTipTitle = "Desktop Frames Plus - Error";
-                        _trayIcon.BalloonTipText = "Failed to export registry values. Check log for details.";
+                        _trayIcon.BalloonTipTitle = Strings.TrayExportFailedTitle;
+                        _trayIcon.BalloonTipText = Strings.TrayExportFailedText;
                         _trayIcon.BalloonTipIcon = ToolTipIcon.Error;
                         _trayIcon.ShowBalloonTip(3000);
 
@@ -413,7 +414,7 @@ namespace Desktop_Frames
 
             var waitText = new System.Windows.Controls.TextBlock
             {
-                Text = "Reloading all frames, please wait...",
+                Text = Strings.TrayReloadingFrames,
                 FontFamily = new System.Windows.Media.FontFamily("Segoe UI"),
                 FontSize = 12,
                 Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(95, 99, 104)),
