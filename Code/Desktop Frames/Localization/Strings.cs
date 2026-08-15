@@ -465,5 +465,13 @@ namespace Desktop_Frames.Localization
         public static string ColorRed => Get("ColorRed");
         public static string ColorBlue => Get("ColorBlue");
         public static string ColorBismark => Get("ColorBismark");
+
+        // ── Tray menu (WinForms) ──────────────────────────────────
+        public static string TrayProfiles => Get("TrayProfiles");
+        public static string TrayReloadAllFrames => Get("TrayReloadAllFrames");
+        public static string TrayShowHiddenFrames => Get("TrayShowHiddenFrames");
+        public static string TrayFocusFrame => Get("TrayFocusFrame");
+        public static string TrayCreateNewProfile => Get("TrayCreateNewProfile");
+        public static string TrayManageProfiles => Get("TrayManageProfiles");
     }
 }

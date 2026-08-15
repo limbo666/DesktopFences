@@ -1255,4 +1255,22 @@
   <data name="KeyEscape" xml:space="preserve">
     <value>Esc</value>
   </data>
+  <data name="TrayProfiles" xml:space="preserve">
+    <value>Profili</value>
+  </data>
+  <data name="TrayReloadAllFrames" xml:space="preserve">
+    <value>Ricarica tutte le frame</value>
+  </data>
+  <data name="TrayShowHiddenFrames" xml:space="preserve">
+    <value>Mostra le frame nascoste</value>
+  </data>
+  <data name="TrayFocusFrame" xml:space="preserve">
+    <value>Vai alla frame... ({0})</value>
+  </data>
+  <data name="TrayCreateNewProfile" xml:space="preserve">
+    <value>Crea un nuovo profilo...</value>
+  </data>
+  <data name="TrayManageProfiles" xml:space="preserve">
+    <value>Gestisci i profili...</value>
+  </data>
 </root>

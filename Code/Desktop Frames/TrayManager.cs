@@ -241,16 +241,16 @@ namespace Desktop_Frames
             }
 
             var trayMenu = new ContextMenuStrip();
-            trayMenu.Items.Add("About...", null, (s, e) => AboutFormManager.ShowAboutForm());
-            trayMenu.Items.Add("Options...", null, (s, e) => OptionsFormManager.ShowOptionsForm());
+            trayMenu.Items.Add(Strings.MenuAbout, null, (s, e) => AboutFormManager.ShowAboutForm());
+            trayMenu.Items.Add(Strings.MenuOptions, null, (s, e) => OptionsFormManager.ShowOptionsForm());
             trayMenu.Items.Add(new ToolStripSeparator());
 
             // Profiles Submenu
-            _profilesMenuItem = new ToolStripMenuItem("Profiles");
+            _profilesMenuItem = new ToolStripMenuItem(Strings.TrayProfiles);
             trayMenu.Items.Add(_profilesMenuItem);
 
             // Standalone Automation Toggle with explicit Save
-            _automationMenuItem = new ToolStripMenuItem("Enable Profile Automation") { CheckOnClick = true };
+            _automationMenuItem = new ToolStripMenuItem(Strings.LblEnableProfileAutomation) { CheckOnClick = true };
             _automationMenuItem.Checked = SettingsManager.EnableProfileAutomation;
             _automationMenuItem.Click += (s, e) => {
                 SettingsManager.EnableProfileAutomation = _automationMenuItem.Checked;
@@ -262,7 +262,7 @@ namespace Desktop_Frames
             trayMenu.Items.Add(new ToolStripSeparator());
 
             // --- SMART DESKTOP OPTIONS ---
-            trayMenu.Items.Add("Smart Desktop Rules...", null, (s, e) =>
+            trayMenu.Items.Add(Strings.BtnSmartDesktopRules, null, (s, e) =>
             {
                 System.Windows.Application.Current?.Dispatcher.BeginInvoke(new Action(() =>
                 {
@@ -270,7 +270,7 @@ namespace Desktop_Frames
                 }));
             });
 
-            _autoOrganizeMenuItem = new ToolStripMenuItem("Enable Auto-Organize") { CheckOnClick = true };
+            _autoOrganizeMenuItem = new ToolStripMenuItem(Strings.OptAutoOrganize) { CheckOnClick = true };
             _autoOrganizeMenuItem.Checked = SettingsManager.EnableAutoOrganize;
             _autoOrganizeMenuItem.Click += (s, e) =>
             {
@@ -287,15 +287,15 @@ namespace Desktop_Frames
             trayMenu.Items.Add(new ToolStripSeparator());
             // --- END SMART DESKTOP OPTIONS ---
 
-            trayMenu.Items.Add("Reload All Frames", null, async (s, e) => { await reloadallFrames(); });
+            trayMenu.Items.Add(Strings.TrayReloadAllFrames, null, async (s, e) => { await reloadallFrames(); });
 
             trayMenu.Items.Add(new ToolStripSeparator());
 
-            _showHiddenFramesItem = new ToolStripMenuItem("Show Hidden Frames") { Enabled = false };
+            _showHiddenFramesItem = new ToolStripMenuItem(Strings.TrayShowHiddenFrames) { Enabled = false };
             trayMenu.Items.Add(_showHiddenFramesItem);
 
             string focusHotkeyStr = GetFocusFrameHotkeyString();
-            trayMenu.Items.Add($"Focus Frame... ({focusHotkeyStr})", null, (s, e) =>
+            trayMenu.Items.Add(Strings.Get("TrayFocusFrame", focusHotkeyStr), null, (s, e) =>
             {
                 System.Windows.Application.Current?.Dispatcher.BeginInvoke(new Action(() =>
                 {
@@ -305,7 +305,7 @@ namespace Desktop_Frames
             });
 
             trayMenu.Items.Add(new ToolStripSeparator());
-            trayMenu.Items.Add("Exit", null, (s, e) => System.Windows.Application.Current.Shutdown());
+            trayMenu.Items.Add(Strings.MenuExit, null, (s, e) => System.Windows.Application.Current.Shutdown());
 
             _trayIcon.ContextMenuStrip = trayMenu;
 
@@ -571,7 +571,7 @@ namespace Desktop_Frames
             _profilesMenuItem.DropDownItems.Add(new ToolStripSeparator());
 
             // 2. Quick Action: Create New Profile (Keep this for speed)
-            var createItem = new ToolStripMenuItem("Create New Profile...");
+            var createItem = new ToolStripMenuItem(Strings.TrayCreateNewProfile);
             createItem.Click += (s, e) =>
             {
                 string newName = Microsoft.VisualBasic.Interaction.InputBox("Enter name for new profile:", "New Profile");
@@ -592,7 +592,7 @@ namespace Desktop_Frames
             _profilesMenuItem.DropDownItems.Add(createItem);
 
             // 3. Full UI: Manage Profiles (The new form)
-            var manageItem = new ToolStripMenuItem("Manage Profiles...");
+            var manageItem = new ToolStripMenuItem(Strings.TrayManageProfiles);
             manageItem.Click += (s, e) =>
             {
                 // Open the new Manager Window

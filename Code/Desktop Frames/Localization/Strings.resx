@@ -1255,4 +1255,22 @@
   <data name="KeyEscape" xml:space="preserve">
     <value>Escape</value>
   </data>
+  <data name="TrayProfiles" xml:space="preserve">
+    <value>Profiles</value>
+  </data>
+  <data name="TrayReloadAllFrames" xml:space="preserve">
+    <value>Reload All Frames</value>
+  </data>
+  <data name="TrayShowHiddenFrames" xml:space="preserve">
+    <value>Show Hidden Frames</value>
+  </data>
+  <data name="TrayFocusFrame" xml:space="preserve">
+    <value>Focus Frame... ({0})</value>
+  </data>
+  <data name="TrayCreateNewProfile" xml:space="preserve">
+    <value>Create New Profile...</value>
+  </data>
+  <data name="TrayManageProfiles" xml:space="preserve">
+    <value>Manage Profiles...</value>
+  </data>
 </root>
