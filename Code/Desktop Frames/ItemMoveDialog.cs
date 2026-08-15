@@ -220,7 +220,7 @@ namespace Desktop_Frames
 
             Button cancelButton = new Button
             {
-                Content = "Cancel",
+                Content = Strings.BtnCancel,
                 Width = 100,
                 Height = 36,
                 FontSize = 13,
