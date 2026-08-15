@@ -413,7 +413,7 @@ public partial class EditShortcutWindow : Window
         // Save button with accent color (same as CustomizeFrameForm)
         _saveButton = new Button
         {
-            Content = "Save",
+            Content = Strings.BtnSave,
             Height = 36,
             MinWidth = 80,
             FontSize = 13,

@@ -301,7 +301,7 @@ namespace Desktop_Frames
             // Cancel button (same style as customize form)
             Button cancelButton = new Button
             {
-                Content = "Cancel",
+                Content = Strings.BtnCancel,
                 Width = 100,
                 Height = 33,
                 FontFamily = new FontFamily("Segoe UI"),
@@ -319,7 +319,7 @@ namespace Desktop_Frames
             // Save button with accent color (same as customize form)
             Button saveButton = new Button
             {
-                Content = "Save",
+                Content = Strings.BtnSave,
                 Width = 100,
                 Height = 34,
                 FontFamily = new FontFamily("Segoe UI"),
