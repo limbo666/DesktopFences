@@ -27,6 +27,9 @@ namespace Desktop_Frames
                 ProfileManager.Initialize();
                 System.IO.Directory.SetCurrentDirectory(ProfileManager.CurrentProfileDir);
                 SettingsManager.LoadSettings();
+                // Before any window is built, or half the interface would be
+                // laid out in the language the setting is replacing.
+                Desktop_Frames.Localization.Strings.SetLanguage(SettingsManager.Language);
             }
             catch (Exception ex)
             {

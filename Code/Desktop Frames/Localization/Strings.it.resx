@@ -1431,4 +1431,31 @@ Oggi lo cura Nikos Georgousis, che lo ha ampliato e reso più stabile e piacevol
   <data name="VuSignalGain" xml:space="preserve">
     <value>Guadagno del segnale (moltiplicatore):</value>
   </data>
+  <data name="SecLanguage" xml:space="preserve">
+    <value>Lingua</value>
+  </data>
+  <data name="LblLanguage" xml:space="preserve">
+    <value>Lingua dell'interfaccia:</value>
+  </data>
+  <data name="LangAutomatic" xml:space="preserve">
+    <value>Automatica (segui Windows)</value>
+  </data>
+  <data name="BtnImportLanguagePack" xml:space="preserve">
+    <value>Importa un pacchetto lingua…</value>
+  </data>
+  <data name="BtnOpenLanguagesFolder" xml:space="preserve">
+    <value>Apri la cartella delle lingue</value>
+  </data>
+  <data name="LanguagePackFilter" xml:space="preserve">
+    <value>Pacchetti lingua (*.resx)|*.resx</value>
+  </data>
+  <data name="LanguagePackImported" xml:space="preserve">
+    <value>Pacchetto installato: {0}. Riavvia per vederlo nell'elenco.</value>
+  </data>
+  <data name="LanguagePackBadName" xml:space="preserve">
+    <value>Il nome del file deve essere un codice di lingua, per esempio it.resx o pt-BR.resx.</value>
+  </data>
+  <data name="NoteLanguageRestart" xml:space="preserve">
+    <value>Nota: la lingua cambia dopo il riavvio del programma. I pacchetti copiati nella cartella Languages vengono letti al prossimo avvio.</value>
+  </data>
 </root>

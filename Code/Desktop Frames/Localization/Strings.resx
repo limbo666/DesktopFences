@@ -1431,4 +1431,31 @@ Desktop Frames + is maintained by Nikos Georgousis, has been enhanced and optimi
   <data name="VuSignalGain" xml:space="preserve">
     <value>Signal Gain (Multiplier):</value>
   </data>
+  <data name="SecLanguage" xml:space="preserve">
+    <value>Language</value>
+  </data>
+  <data name="LblLanguage" xml:space="preserve">
+    <value>Interface language:</value>
+  </data>
+  <data name="LangAutomatic" xml:space="preserve">
+    <value>Automatic (follow Windows)</value>
+  </data>
+  <data name="BtnImportLanguagePack" xml:space="preserve">
+    <value>Import language pack…</value>
+  </data>
+  <data name="BtnOpenLanguagesFolder" xml:space="preserve">
+    <value>Open languages folder</value>
+  </data>
+  <data name="LanguagePackFilter" xml:space="preserve">
+    <value>Language packs (*.resx)|*.resx</value>
+  </data>
+  <data name="LanguagePackImported" xml:space="preserve">
+    <value>Language pack installed: {0}. Restart to see it in the list.</value>
+  </data>
+  <data name="LanguagePackBadName" xml:space="preserve">
+    <value>The file name must be a culture code, like it.resx or pt-BR.resx.</value>
+  </data>
+  <data name="NoteLanguageRestart" xml:space="preserve">
+    <value>Note: the language changes after restarting the program. Packs dropped into the Languages folder are picked up on the next start.</value>
+  </data>
 </root>

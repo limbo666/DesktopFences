@@ -1,6 +1,10 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
+using System.Linq;
 using System.Resources;
+using System.Xml.Linq;
 
 namespace Desktop_Frames.Localization
 {
@@ -28,13 +32,69 @@ namespace Desktop_Frames.Localization
 
         private static CultureInfo Culture => OverrideCulture ?? CultureInfo.CurrentUICulture;
 
+        // ── Language packs dropped in by hand ───────────────────────────────
+        //
+        // A .resx placed in the Languages folder next to the executable is read
+        // at run time and wins over the compiled resources. That is what lets
+        // someone add a language, or fix a wording they disagree with, without
+        // a compiler: edit the file, restart, done.
+
+        /// <summary>Folder scanned for hand-installed language packs.</summary>
+        public static string PacksFolder =>
+            Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Languages");
+
+        private static readonly Dictionary<string, Dictionary<string, string>> PackCache =
+            new Dictionary<string, Dictionary<string, string>>(StringComparer.OrdinalIgnoreCase);
+
+        /// <summary>Forget the loaded packs, so the next lookup re-reads them.</summary>
+        public static void ReloadPacks() => PackCache.Clear();
+
         /// <summary>
-        /// Text for a key. Falls back to the key itself if the resource is
-        /// missing, so a forgotten entry shows up as a visible label instead of
-        /// crashing a window that was about to open.
+        /// Entries of the pack for a culture, or null if there is no file.
+        /// A pack for "pt-BR" also picks up a "pt" file, the same way .NET
+        /// falls back from a specific culture to its neutral parent.
+        /// </summary>
+        private static Dictionary<string, string>? Pack(CultureInfo culture)
+        {
+            foreach (string name in new[] { culture.Name, culture.TwoLetterISOLanguageName })
+            {
+                if (string.IsNullOrEmpty(name)) continue;
+                if (PackCache.TryGetValue(name, out var cached)) return cached;
+
+                string file = Path.Combine(PacksFolder, name + ".resx");
+                if (!File.Exists(file)) continue;
+                try
+                {
+                    var entries = XDocument.Load(file).Root?.Elements("data")
+                        .Where(d => d.Attribute("name") != null && d.Element("value") != null)
+                        .ToDictionary(d => d.Attribute("name")!.Value,
+                                      d => d.Element("value")!.Value,
+                                      StringComparer.Ordinal)
+                        ?? new Dictionary<string, string>(StringComparer.Ordinal);
+                    PackCache[name] = entries;
+                    return entries;
+                }
+                catch (Exception)
+                {
+                    // A malformed pack must not take the program down with it:
+                    // remember the failure as empty and carry on in English.
+                    PackCache[name] = new Dictionary<string, string>(StringComparer.Ordinal);
+                }
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Text for a key. A hand-installed pack wins, then the compiled
+        /// resources. Falls back to the key itself if nothing has it, so a
+        /// forgotten entry shows up as a visible label instead of crashing a
+        /// window that was about to open.
         /// </summary>
         public static string Get(string key)
         {
+            var pack = Pack(Culture);
+            if (pack != null && pack.TryGetValue(key, out string? fromPack) && !string.IsNullOrEmpty(fromPack))
+                return fromPack;
             try
             {
                 return Manager.GetString(key, Culture) ?? key;
@@ -85,6 +145,62 @@ namespace Desktop_Frames.Localization
             "Escape" => Get("KeyEscape"),
             _ => name
         };
+
+        /// <summary>
+        /// Languages the program can actually show: the English it is written
+        /// in, the ones compiled into satellite assemblies, and any pack found
+        /// in the Languages folder. Sorted by the name each language calls
+        /// itself, because that is what its own speakers will look for.
+        /// </summary>
+        public static IReadOnlyList<CultureInfo> AvailableLanguages()
+        {
+            var found = new Dictionary<string, CultureInfo>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["en"] = new CultureInfo("en")
+            };
+
+            void Add(string name)
+            {
+                if (string.IsNullOrWhiteSpace(name) || found.ContainsKey(name)) return;
+                try { found[name] = new CultureInfo(name); }
+                catch (CultureNotFoundException) { /* a folder that is not a language */ }
+            }
+
+            try
+            {
+                string baseDir = AppDomain.CurrentDomain.BaseDirectory;
+                foreach (string dir in Directory.GetDirectories(baseDir))
+                    if (File.Exists(Path.Combine(dir, "Desktop Frames.resources.dll")))
+                        Add(Path.GetFileName(dir));
+            }
+            catch (Exception) { }
+
+            try
+            {
+                if (Directory.Exists(PacksFolder))
+                    foreach (string f in Directory.GetFiles(PacksFolder, "*.resx"))
+                        Add(Path.GetFileNameWithoutExtension(f));
+            }
+            catch (Exception) { }
+
+            return found.Values.OrderBy(c => c.NativeName, StringComparer.CurrentCulture).ToList();
+        }
+
+        /// <summary>
+        /// Applies a saved language setting. An empty value means "follow
+        /// Windows", which is what a fresh installation does.
+        /// </summary>
+        public static void SetLanguage(string? cultureName)
+        {
+            ReloadPacks();
+            if (string.IsNullOrWhiteSpace(cultureName))
+            {
+                OverrideCulture = null;
+                return;
+            }
+            try { OverrideCulture = new CultureInfo(cultureName); }
+            catch (CultureNotFoundException) { OverrideCulture = null; }
+        }
 
         // ── Shared buttons ─────────────────────────────────────────────────
         public static string BtnApply => Get("BtnApply");
@@ -186,6 +302,16 @@ namespace Desktop_Frames.Localization
         public static string TrayReloadAllFrames => Get("TrayReloadAllFrames");
         public static string TrayReloadingFrames => Get("TrayReloadingFrames");
         public static string TrayShowHiddenFrames => Get("TrayShowHiddenFrames");
+
+        public static string SecLanguage => Get("SecLanguage");
+        public static string LblLanguage => Get("LblLanguage");
+        public static string LangAutomatic => Get("LangAutomatic");
+        public static string BtnImportLanguagePack => Get("BtnImportLanguagePack");
+        public static string BtnOpenLanguagesFolder => Get("BtnOpenLanguagesFolder");
+        public static string LanguagePackFilter => Get("LanguagePackFilter");
+        public static string LanguagePackImported => Get("LanguagePackImported");
+        public static string LanguagePackBadName => Get("LanguagePackBadName");
+        public static string NoteLanguageRestart => Get("NoteLanguageRestart");
 
         // ── Options window ─────────────────────────────────────────────────
         public static string HkDirectProfile => Get("HkDirectProfile");

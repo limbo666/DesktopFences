@@ -207,10 +207,156 @@ namespace Desktop_Frames
         }
 
         // --- Tabs ---
+
+        /// <summary>
+        /// Language picker plus the two buttons that make hand-installed packs
+        /// usable: one to import a .resx, one to open the folder they live in.
+        /// The combo stores the culture name in the item's Tag — the label is
+        /// what the language calls itself, and that must never be saved.
+        /// </summary>
+        private static void CreateLanguageRow(StackPanel parent)
+        {
+            Grid g = new Grid { Margin = new Thickness(15, 8, 15, 8) };
+            g.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(150) });
+            g.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+
+            g.Children.Add(new TextBlock
+            {
+                Text = Strings.LblLanguage,
+                FontFamily = new FontFamily("Segoe UI"),
+                FontSize = 13,
+                VerticalAlignment = VerticalAlignment.Center
+            });
+
+            StackPanel right = new StackPanel { Orientation = Orientation.Horizontal };
+            Grid.SetColumn(right, 1);
+
+            ComboBox cb = new ComboBox
+            {
+                Name = "LanguageComboBox",
+                Width = 220,
+                Height = 25,
+                FontFamily = new FontFamily("Segoe UI"),
+                FontSize = 13,
+                VerticalAlignment = VerticalAlignment.Center
+            };
+            cb.Items.Add(new ComboBoxItem { Content = Strings.LangAutomatic, Tag = "" });
+            foreach (var ci in Desktop_Frames.Localization.Strings.AvailableLanguages())
+            {
+                cb.Items.Add(new ComboBoxItem
+                {
+                    Content = ci.NativeName + "  (" + ci.Name + ")",
+                    Tag = ci.Name
+                });
+            }
+            cb.SelectedItem = cb.Items.OfType<ComboBoxItem>()
+                .FirstOrDefault(i => string.Equals(i.Tag as string, SettingsManager.Language,
+                                                   StringComparison.OrdinalIgnoreCase))
+                ?? cb.Items.OfType<ComboBoxItem>().FirstOrDefault();
+            right.Children.Add(cb);
+
+            Button importa = new Button
+            {
+                Content = Strings.BtnImportLanguagePack,
+                MinWidth = 150,
+                Height = 25,
+                Padding = new Thickness(10, 0, 10, 0),
+                Margin = new Thickness(10, 0, 0, 0),
+                Cursor = Cursors.Hand,
+                FontFamily = new FontFamily("Segoe UI"),
+                FontSize = 12
+            };
+            importa.Click += (s, e) => ImportLanguagePack();
+            right.Children.Add(importa);
+
+            Button apri = new Button
+            {
+                Content = Strings.BtnOpenLanguagesFolder,
+                MinWidth = 150,
+                Height = 25,
+                Padding = new Thickness(10, 0, 10, 0),
+                Margin = new Thickness(8, 0, 0, 0),
+                Cursor = Cursors.Hand,
+                FontFamily = new FontFamily("Segoe UI"),
+                FontSize = 12
+            };
+            apri.Click += (s, e) =>
+            {
+                try
+                {
+                    System.IO.Directory.CreateDirectory(Desktop_Frames.Localization.Strings.PacksFolder);
+                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                    {
+                        FileName = Desktop_Frames.Localization.Strings.PacksFolder,
+                        UseShellExecute = true
+                    });
+                }
+                catch (Exception ex)
+                {
+                    LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI,
+                        $"Cannot open languages folder: {ex.Message}");
+                }
+            };
+            right.Children.Add(apri);
+
+            g.Children.Add(right);
+            parent.Children.Add(g);
+        }
+
+        /// <summary>
+        /// Copies a .resx into the Languages folder. The file name is the
+        /// culture code, so it is checked before copying: a pack called
+        /// "italiano.resx" would sit there forever without ever being read.
+        /// </summary>
+        private static void ImportLanguagePack()
+        {
+            try
+            {
+                var dlg = new Microsoft.Win32.OpenFileDialog
+                {
+                    Filter = Strings.LanguagePackFilter,
+                    CheckFileExists = true
+                };
+                if (dlg.ShowDialog() != true) return;
+
+                string name = System.IO.Path.GetFileNameWithoutExtension(dlg.FileName);
+                try { _ = new System.Globalization.CultureInfo(name); }
+                catch (System.Globalization.CultureNotFoundException)
+                {
+                    MessageBoxesManager.ShowOKOnlyMessageBoxFormStatic(Strings.LanguagePackBadName, Strings.SecLanguage);
+                    return;
+                }
+
+                System.IO.Directory.CreateDirectory(Desktop_Frames.Localization.Strings.PacksFolder);
+                System.IO.File.Copy(dlg.FileName,
+                    System.IO.Path.Combine(Desktop_Frames.Localization.Strings.PacksFolder, name + ".resx"), true);
+                Desktop_Frames.Localization.Strings.ReloadPacks();
+                MessageBoxesManager.ShowOKOnlyMessageBoxFormStatic(Strings.Get("LanguagePackImported", name), Strings.SecLanguage);
+            }
+            catch (Exception ex)
+            {
+                LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI,
+                    $"Cannot import language pack: {ex.Message}");
+            }
+        }
+
         private static void CreateGeneralTab()
         {
             TabItem t = new TabItem();
             StackPanel c = new StackPanel();
+            CreateSectionHeader(c, Strings.SecLanguage, _userAccentColor);
+            CreateLanguageRow(c);
+            c.Children.Add(new TextBlock
+            {
+                Text = Strings.NoteLanguageRestart,
+                FontFamily = new FontFamily("Segoe UI"),
+                FontSize = 11,
+                FontStyle = FontStyles.Italic,
+                Foreground = new SolidColorBrush(Color.FromRgb(120, 120, 120)),
+                TextWrapping = TextWrapping.Wrap,
+                Margin = new Thickness(15, 0, 15, 10)
+            });
+
             CreateSectionHeader(c, Strings.SecStartup, _userAccentColor);
             CreateCheckBox(c, Strings.OptStartWithWindows, "StartWithWindows", TrayManager.IsStartWithWindows);
             CreateSectionHeader(c, Strings.SecSelections, _userAccentColor);
@@ -869,6 +1015,12 @@ namespace Desktop_Frames
                                 5 => NotificationSound.SoftDing,
                                 _ => NotificationSound.DefaultSound
                             };
+                        }
+
+                        var langCombo = genGrid.Children.OfType<ComboBox>().FirstOrDefault(c => c.Name == "LanguageComboBox");
+                        if ((langCombo?.SelectedItem as ComboBoxItem)?.Tag is string langTag)
+                        {
+                            SettingsManager.Language = langTag;
                         }
 
                         var pvCombo = genGrid.Children.OfType<ComboBox>().FirstOrDefault(c => c.Name == "DefaultPortalViewComboBox");
