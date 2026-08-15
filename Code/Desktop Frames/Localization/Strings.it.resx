@@ -1299,4 +1299,16 @@ Oggi lo cura Nikos Georgousis, che lo ha ampliato e reso più stabile e piacevol
   <data name="AboutAnd" xml:space="preserve">
     <value> e </value>
   </data>
+  <data name="BtnMoveUp" xml:space="preserve">
+    <value>▲ Su</value>
+  </data>
+  <data name="BtnMoveDown" xml:space="preserve">
+    <value>▼ Giù</value>
+  </data>
+  <data name="NetStatusUp" xml:space="preserve">
+    <value>attiva</value>
+  </data>
+  <data name="NetStatusDown" xml:space="preserve">
+    <value>non attiva</value>
+  </data>
 </root>

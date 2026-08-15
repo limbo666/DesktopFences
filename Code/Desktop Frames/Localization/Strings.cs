@@ -483,5 +483,9 @@ namespace Desktop_Frames.Localization
         public static string AboutCreditsBody => Get("AboutCreditsBody");
         public static string AboutSoundCredits => Get("AboutSoundCredits");
         public static string AboutAnd => Get("AboutAnd");
+        public static string BtnMoveUp => Get("BtnMoveUp");
+        public static string BtnMoveDown => Get("BtnMoveDown");
+        public static string NetStatusUp => Get("NetStatusUp");
+        public static string NetStatusDown => Get("NetStatusDown");
     }
 }

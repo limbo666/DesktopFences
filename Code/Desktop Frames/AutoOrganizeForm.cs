@@ -248,8 +248,8 @@ namespace Desktop_Frames
             topButtons.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(8) });
             topButtons.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 
-            Button btnUp = CreateModernSecondaryButton("▲ Up"); btnUp.Click += (s, e) => MoveRule(-1);
-            Button btnDown = CreateModernSecondaryButton("▼ Down"); btnDown.Click += (s, e) => MoveRule(1);
+            Button btnUp = CreateModernSecondaryButton(Strings.BtnMoveUp); btnUp.Click += (s, e) => MoveRule(-1);
+            Button btnDown = CreateModernSecondaryButton(Strings.BtnMoveDown); btnDown.Click += (s, e) => MoveRule(1);
             Grid.SetColumn(btnUp, 0); Grid.SetColumn(btnDown, 2);
             topButtons.Children.Add(btnUp); topButtons.Children.Add(btnDown);
 
@@ -387,7 +387,7 @@ namespace Desktop_Frames
                 HorizontalAlignment = HorizontalAlignment.Right
             };
 
-            Button closeButton = CreateModernSecondaryButton("Close");
+            Button closeButton = CreateModernSecondaryButton(Strings.BtnClose);
             closeButton.MinWidth = 80;
             closeButton.Margin = new Thickness(0, 0, 10, 0);
             closeButton.Click += (s, e) => { AutoOrganizeManager.Resume(); DialogResult = false; Close(); };

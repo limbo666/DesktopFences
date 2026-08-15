@@ -609,7 +609,7 @@ var interfaces = NetworkInterface.GetAllNetworkInterfaces()
 
                 CheckBox chk = new CheckBox
                 {
-                    Content = $"{ni.Name} ({(ni.OperationalStatus == OperationalStatus.Up ? "Up" : "Down")})",
+                    Content = $"{ni.Name} ({(ni.OperationalStatus == OperationalStatus.Up ? Strings.NetStatusUp : Strings.NetStatusDown)})",
                     Tag = ni.Name,
                     IsChecked = shouldCheck,
                     Margin = new Thickness(0, 5, 0, 5)

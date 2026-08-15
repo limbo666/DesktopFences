@@ -1299,4 +1299,16 @@ Desktop Frames + is maintained by Nikos Georgousis, has been enhanced and optimi
   <data name="AboutAnd" xml:space="preserve">
     <value> and </value>
   </data>
+  <data name="BtnMoveUp" xml:space="preserve">
+    <value>▲ Up</value>
+  </data>
+  <data name="BtnMoveDown" xml:space="preserve">
+    <value>▼ Down</value>
+  </data>
+  <data name="NetStatusUp" xml:space="preserve">
+    <value>Up</value>
+  </data>
+  <data name="NetStatusDown" xml:space="preserve">
+    <value>Down</value>
+  </data>
 </root>
