@@ -526,5 +526,8 @@ namespace Desktop_Frames.Localization
         public static string CalcPercentage => Get("CalcPercentage");
         public static string CalcCleared => Get("CalcCleared");
         public static string CalcClearedAll => Get("CalcClearedAll");
+        public static string RandomNameAdjectives => Get("RandomNameAdjectives");
+        public static string RandomNamePlaces => Get("RandomNamePlaces");
+        public static string RandomNameFormat => Get("RandomNameFormat");
     }
 }

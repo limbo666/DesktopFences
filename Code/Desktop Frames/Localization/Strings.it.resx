@@ -1422,4 +1422,13 @@ Oggi lo cura Nikos Georgousis, che lo ha ampliato e reso più stabile e piacevol
   <data name="CalcClearedAll" xml:space="preserve">
     <value>Azzerato tutto</value>
   </data>
+  <data name="RandomNameAdjectives" xml:space="preserve">
+    <value>Alto,Basso,Piccolo,Vasto,Ampio,Sottile,Piatto,Deciso,Freddo,Caldo,Morbido,Duro,Scuro,Pallido,Rapido,Lento,Profondo,Slanciato,Corto,Curvo,Fine,Chiaro,Lucente,Acuto,Opaco,Sonoro,Muto,Cupo,Mite,Ordinato,Ruvido,Liscio,Ardito,Fiero,Semplice,Consunto,Asciutto,Umido,Forte,Debole</value>
+  </data>
+  <data name="RandomNamePlaces" xml:space="preserve">
+    <value>Golfo,Colle,Lago,Seno,Picco,Scoglio,Dosso,Vallone,Brughiera,Vallo,Masso,Litorale,Argine,Guado,Capo,Roccione,Acquitrino,Stagno,Dirupo,Bosco,Avvallamento,Passo,Antro,Crinale,Salto,Boschetto,Torrente,Costone,Sentiero,Poggio</value>
+  </data>
+  <data name="RandomNameFormat" xml:space="preserve">
+    <value>{1} {0}</value>
+  </data>
 </root>

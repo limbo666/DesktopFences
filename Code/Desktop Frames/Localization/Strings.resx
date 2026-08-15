@@ -1422,4 +1422,13 @@ Desktop Frames + is maintained by Nikos Georgousis, has been enhanced and optimi
   <data name="CalcClearedAll" xml:space="preserve">
     <value>Cleared All</value>
   </data>
+  <data name="RandomNameAdjectives" xml:space="preserve">
+    <value>High,Low,Tiny,Vast,Wide,Slim,Flat,Bold,Cold,Warm,Soft,Hard,Dark,Pale,Fast,Slow,Deep,Tall,Short,Bent,Thin,Bright,Light,Sharp,Dull,Loud,Mute,Grim,Kind,Neat,Rough,Smooth,Brave,Fierce,Plain,Worn,Dry,Damp,Strong,Weak</value>
+  </data>
+  <data name="RandomNamePlaces" xml:space="preserve">
+    <value>Bay,Hill,Lake,Cove,Peak,Reef,Dune,Glen,Moor,Vale,Rock,Shore,Bank,Ford,Cape,Crag,Marsh,Pond,Cliff,Wood,Dell,Pass,Cave,Ridge,Falls,Grove,Creek,Bluff,Trail,Point</value>
+  </data>
+  <data name="RandomNameFormat" xml:space="preserve">
+    <value>{0} {1}</value>
+  </data>
 </root>
