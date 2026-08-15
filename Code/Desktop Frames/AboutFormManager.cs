@@ -311,7 +311,7 @@ namespace Desktop_Frames
 
             TextBlock versionText = new TextBlock
             {
-                Text = $"Version {Assembly.GetExecutingAssembly().GetName().Version}",
+                Text = Strings.Get("AboutVersion", Assembly.GetExecutingAssembly().GetName().Version),
                 FontFamily = new FontFamily("Segoe UI"),
                 FontSize = 14, // Your improved font size
                 Foreground = new SolidColorBrush(Color.FromRgb(95, 99, 104))
@@ -363,12 +363,12 @@ namespace Desktop_Frames
             StackPanel contentStack = new StackPanel();
 
             // About Section
-            CreateSection(contentStack, "About", "Organize your desktop like magic!",
-                "Desktop Frames + creates virtual frames on your desktop, allowing you to group and organize icons in a clean and convenient way.", 20);
+            CreateSection(contentStack, Strings.AboutSectionAbout, Strings.AboutTagline,
+                Strings.AboutBody, 20);
 
             // Credits Section
-            CreateSection(contentStack, "Credits", null,
-                "Desktop Frames + is an open-source utility for Windows, originally created by HakanKokcu under the name BirdyFences.\n\nDesktop Frames + is maintained by Nikos Georgousis, has been enhanced and optimized for stability and better user experience.", 20);
+            CreateSection(contentStack, Strings.AboutSectionCredits, null,
+                Strings.AboutCreditsBody, 20);
 
             // Support Development Section
             CreateSupportSection(contentStack);
@@ -572,9 +572,9 @@ namespace Desktop_Frames
             };
 
             // Using fully qualified 'Run' to avoid needing to add System.Windows.Documents to the using directives
-            soundCreditsBlock.Inlines.Add(new System.Windows.Documents.Run("Using free sound files from "));
+            soundCreditsBlock.Inlines.Add(new System.Windows.Documents.Run(Strings.AboutSoundCredits));
             soundCreditsBlock.Inlines.Add(new System.Windows.Documents.Run("pixabay.com") { FontWeight = FontWeights.Bold });
-            soundCreditsBlock.Inlines.Add(new System.Windows.Documents.Run(" and "));
+            soundCreditsBlock.Inlines.Add(new System.Windows.Documents.Run(Strings.AboutAnd));
             soundCreditsBlock.Inlines.Add(new System.Windows.Documents.Run("pexels.com") { FontWeight = FontWeights.Bold });
 
             parent.Children.Add(soundCreditsBlock);

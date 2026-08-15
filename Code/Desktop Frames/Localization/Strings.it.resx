@@ -1273,4 +1273,30 @@
   <data name="TrayManageProfiles" xml:space="preserve">
     <value>Gestisci i profili...</value>
   </data>
+  <data name="AboutVersion" xml:space="preserve">
+    <value>Versione {0}</value>
+  </data>
+  <data name="AboutSectionAbout" xml:space="preserve">
+    <value>Informazioni</value>
+  </data>
+  <data name="AboutTagline" xml:space="preserve">
+    <value>Metti in ordine il desktop come per magia.</value>
+  </data>
+  <data name="AboutBody" xml:space="preserve">
+    <value>Desktop Frames + crea frame virtuali sul desktop, dove raccogliere e ordinare le icone in modo pulito e comodo.</value>
+  </data>
+  <data name="AboutSectionCredits" xml:space="preserve">
+    <value>Riconoscimenti</value>
+  </data>
+  <data name="AboutCreditsBody" xml:space="preserve">
+    <value>Desktop Frames + è un programma open source per Windows, nato dal lavoro di HakanKokcu con il nome BirdyFences.
+
+Oggi lo cura Nikos Georgousis, che lo ha ampliato e reso più stabile e piacevole da usare.</value>
+  </data>
+  <data name="AboutSoundCredits" xml:space="preserve">
+    <value>Suoni gratuiti da </value>
+  </data>
+  <data name="AboutAnd" xml:space="preserve">
+    <value> e </value>
+  </data>
 </root>

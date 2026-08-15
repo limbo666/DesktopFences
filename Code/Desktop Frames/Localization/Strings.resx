@@ -1273,4 +1273,30 @@
   <data name="TrayManageProfiles" xml:space="preserve">
     <value>Manage Profiles...</value>
   </data>
+  <data name="AboutVersion" xml:space="preserve">
+    <value>Version {0}</value>
+  </data>
+  <data name="AboutSectionAbout" xml:space="preserve">
+    <value>About</value>
+  </data>
+  <data name="AboutTagline" xml:space="preserve">
+    <value>Organize your desktop like magic!</value>
+  </data>
+  <data name="AboutBody" xml:space="preserve">
+    <value>Desktop Frames + creates virtual frames on your desktop, allowing you to group and organize icons in a clean and convenient way.</value>
+  </data>
+  <data name="AboutSectionCredits" xml:space="preserve">
+    <value>Credits</value>
+  </data>
+  <data name="AboutCreditsBody" xml:space="preserve">
+    <value>Desktop Frames + is an open-source utility for Windows, originally created by HakanKokcu under the name BirdyFences.
+
+Desktop Frames + is maintained by Nikos Georgousis, has been enhanced and optimized for stability and better user experience.</value>
+  </data>
+  <data name="AboutSoundCredits" xml:space="preserve">
+    <value>Using free sound files from </value>
+  </data>
+  <data name="AboutAnd" xml:space="preserve">
+    <value> and </value>
+  </data>
 </root>

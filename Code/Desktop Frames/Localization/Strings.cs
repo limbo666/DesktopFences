@@ -473,5 +473,15 @@ namespace Desktop_Frames.Localization
         public static string TrayFocusFrame => Get("TrayFocusFrame");
         public static string TrayCreateNewProfile => Get("TrayCreateNewProfile");
         public static string TrayManageProfiles => Get("TrayManageProfiles");
+
+        // ── About panel ──────────────────────────────────────────
+        public static string AboutVersion => Get("AboutVersion");
+        public static string AboutSectionAbout => Get("AboutSectionAbout");
+        public static string AboutTagline => Get("AboutTagline");
+        public static string AboutBody => Get("AboutBody");
+        public static string AboutSectionCredits => Get("AboutSectionCredits");
+        public static string AboutCreditsBody => Get("AboutCreditsBody");
+        public static string AboutSoundCredits => Get("AboutSoundCredits");
+        public static string AboutAnd => Get("AboutAnd");
     }
 }
