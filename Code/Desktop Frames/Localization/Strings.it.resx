@@ -1311,4 +1311,13 @@ Oggi lo cura Nikos Georgousis, che lo ha ampliato e reso più stabile e piacevol
   <data name="NetStatusDown" xml:space="preserve">
     <value>non attiva</value>
   </data>
+  <data name="LblProcessName" xml:space="preserve">
+    <value>Nome del processo (scegli o scrivi):</value>
+  </data>
+  <data name="LblTargetProfile" xml:space="preserve">
+    <value>Profilo da attivare:</value>
+  </data>
+  <data name="LblActivationDelay" xml:space="preserve">
+    <value>Ritardo di attivazione:</value>
+  </data>
 </root>

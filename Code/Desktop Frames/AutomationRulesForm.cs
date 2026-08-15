@@ -137,7 +137,10 @@ namespace Desktop_Frames
             Button btnDelete = new Button
             {
                 Content = Strings.AutomationDeleteSelected,
-                Width = 120,
+                // A fixed width fits the English label and clips every longer
+                // translation. Minimum plus padding: the button grows instead.
+                MinWidth = 120,
+                Padding = new Thickness(12, 0, 12, 0),
                 Height = 34,
                 HorizontalAlignment = HorizontalAlignment.Right,
                 Background = new SolidColorBrush(_colorRed),
@@ -168,7 +171,7 @@ namespace Desktop_Frames
             StackPanel ruleStack = new StackPanel();
 
             // Process Name + Pick Button
-            CreateLabel(ruleStack, "Process Name (Pick or Type):");
+            CreateLabel(ruleStack, Strings.LblProcessName);
             Grid procGrid = new Grid();
             procGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             procGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
@@ -195,13 +198,13 @@ namespace Desktop_Frames
             ruleStack.Children.Add(procGrid);
 
             // Target Profile
-            CreateLabel(ruleStack, "Target Profile:");
+            CreateLabel(ruleStack, Strings.LblTargetProfile);
             _profileCombo = new ComboBox { Height = 34, Margin = new Thickness(0, 0, 0, 10), VerticalContentAlignment = VerticalAlignment.Center };
             foreach (var p in ProfileManager.GetProfiles()) _profileCombo.Items.Add(p.Name);
             ruleStack.Children.Add(_profileCombo);
 
             // Delay Slider
-            CreateLabel(ruleStack, "Activation Delay:");
+            CreateLabel(ruleStack, Strings.LblActivationDelay);
             Grid delayGrid = new Grid { Margin = new Thickness(0, 0, 0, 10) };
             delayGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             delayGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });

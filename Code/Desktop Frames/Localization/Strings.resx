@@ -1311,4 +1311,13 @@ Desktop Frames + is maintained by Nikos Georgousis, has been enhanced and optimi
   <data name="NetStatusDown" xml:space="preserve">
     <value>Down</value>
   </data>
+  <data name="LblProcessName" xml:space="preserve">
+    <value>Process Name (Pick or Type):</value>
+  </data>
+  <data name="LblTargetProfile" xml:space="preserve">
+    <value>Target Profile:</value>
+  </data>
+  <data name="LblActivationDelay" xml:space="preserve">
+    <value>Activation Delay:</value>
+  </data>
 </root>

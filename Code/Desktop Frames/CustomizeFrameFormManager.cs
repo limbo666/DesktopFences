@@ -344,7 +344,10 @@ namespace Desktop_Frames
             Button defaultButton = new Button
             {
                 Content = Strings.BtnDefault,
-                Width = 80, // Slightly smaller to fit 4 buttons
+                // Minimum instead of fixed: these four labels change with the
+                // language, and "Apply to all" is far shorter than most.
+                MinWidth = 80,
+                Padding = new Thickness(10, 0, 10, 0),
                 Height = 34,
                 FontFamily = new FontFamily("Segoe UI"),
                 FontSize = 12,
@@ -361,7 +364,8 @@ namespace Desktop_Frames
             _btnApply = new Button
             {
                 Content = Strings.BtnApply,
-                Width = 100,
+                MinWidth = 100,
+                Padding = new Thickness(10, 0, 10, 0),
                 Height = 34,
                 FontFamily = new FontFamily("Segoe UI"),
                 FontSize = 12,
@@ -378,7 +382,8 @@ namespace Desktop_Frames
             Button cancelButton = new Button
             {
                 Content = Strings.BtnCancel,
-                Width = 100,
+                MinWidth = 100,
+                Padding = new Thickness(10, 0, 10, 0),
                 Height = 33,
                 FontFamily = new FontFamily("Segoe UI"),
                 FontSize = 12,
@@ -396,7 +401,8 @@ namespace Desktop_Frames
             _btnSave = new Button
             {
                 Content = Strings.BtnSave,
-                Width = 100,
+                MinWidth = 100,
+                Padding = new Thickness(10, 0, 10, 0),
                 Height = 34,
                 FontFamily = new FontFamily("Segoe UI"),
                 FontSize = 12,

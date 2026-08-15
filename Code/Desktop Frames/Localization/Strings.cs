@@ -487,5 +487,8 @@ namespace Desktop_Frames.Localization
         public static string BtnMoveDown => Get("BtnMoveDown");
         public static string NetStatusUp => Get("NetStatusUp");
         public static string NetStatusDown => Get("NetStatusDown");
+        public static string LblProcessName => Get("LblProcessName");
+        public static string LblTargetProfile => Get("LblTargetProfile");
+        public static string LblActivationDelay => Get("LblActivationDelay");
     }
 }
