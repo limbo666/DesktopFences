@@ -356,9 +356,9 @@ namespace Desktop_Frames
 
             StackPanel textAppearanceStack = new StackPanel { Orientation = Orientation.Vertical };
 
-            CreateDropdownField(textAppearanceStack, "Font Size:", _validFontSizes, out _cmbFontSize);
-            CreateDropdownField(textAppearanceStack, "Font Family:", _validFontFamilies, out _cmbFontFamily);
-            CreateDropdownField(textAppearanceStack, "Text Color:", _validTextColors, out _cmbTextColor);
+            CreateDropdownField(textAppearanceStack, Strings.LblFontSize, _validFontSizes, out _cmbFontSize);
+            CreateDropdownField(textAppearanceStack, Strings.LblFontFamily, _validFontFamilies, out _cmbFontFamily);
+            CreateDropdownField(textAppearanceStack, Strings.LblTextColor, _validTextColors, out _cmbTextColor);
 
             textAppearanceGroupBox.Content = textAppearanceStack;
             parent.Children.Add(textAppearanceGroupBox);
@@ -380,8 +380,8 @@ namespace Desktop_Frames
 
             StackPanel textBehaviorStack = new StackPanel { Orientation = Orientation.Vertical };
 
-            CreateCheckboxField(textBehaviorStack, "Word Wrap", out _chkWordWrap);
-            CreateCheckboxField(textBehaviorStack, "Spell Check", out _chkSpellCheck);
+            CreateCheckboxField(textBehaviorStack, Strings.LblWordWrap, out _chkWordWrap);
+            CreateCheckboxField(textBehaviorStack, Strings.LblSpellCheck, out _chkSpellCheck);
 
             textBehaviorGroupBox.Content = textBehaviorStack;
             parent.Children.Add(textBehaviorGroupBox);

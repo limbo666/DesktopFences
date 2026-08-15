@@ -563,7 +563,7 @@ namespace Desktop_Frames.Plugins
                 {
                     _currentValue = 0; _previousValue = 0; _currentOperator = ""; _isNewInput = true; _percentageString = "";
                     if (_operatorSymbol != null) _operatorSymbol.Opacity = 0;
-                    TriggerOperationLabel("Cleared");
+                    TriggerOperationLabel(Strings.CalcCleared);
                 }
                 else // CE
                 {
@@ -572,12 +572,12 @@ namespace Desktop_Frames.Plugins
                     {
                         _previousValue = 0; _currentOperator = ""; _percentageString = "";
                         if (_operatorSymbol != null) _operatorSymbol.Opacity = 0;
-                        TriggerOperationLabel("Cleared All");
+                        TriggerOperationLabel(Strings.CalcClearedAll);
                     }
                     else
                     {
                         _currentValue = 0; _isNewInput = true; _percentageString = "";
-                        TriggerOperationLabel("Entry Cleared");
+                        TriggerOperationLabel(Strings.CalcEntryCleared);
                     }
                 }
                 TriggerTextFlash(Color.FromRgb(255, 80, 80));
@@ -622,7 +622,7 @@ namespace Desktop_Frames.Plugins
                     _currentValue = _currentValue / 100.0;
                 }
                 _isNewInput = true;
-                TriggerOperationLabel("Percentage");
+                TriggerOperationLabel(Strings.CalcPercentage);
                 TriggerTextFlash(Color.FromRgb(255, 180, 0));
                 UpdateDisplay();
             }

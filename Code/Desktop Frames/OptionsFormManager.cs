@@ -289,7 +289,7 @@ namespace Desktop_Frames
             cbSounds.Click += (s, e) => soundGrid.IsEnabled = cbSounds.IsChecked == true;
             // ----------------------------------------
 
-            //     CreateCheckBox(c, "Enable Profile Automation", "EnableProfileAutomation", SettingsManager.EnableProfileAutomation);
+            //     CreateCheckBox(c, Strings.LblEnableProfileAutomation, "EnableProfileAutomation", SettingsManager.EnableProfileAutomation);
             t.Content = new ScrollViewer { Content = c, VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
             _tabControl.Items.Add(t);
         }

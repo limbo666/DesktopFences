@@ -367,7 +367,7 @@ namespace Desktop_Frames
                     // We HIDE this if it is the Source frame, to prevent confusion
                     if (!issourceFrame)
                     {
-                        CreateMoveTargetButton(targetsPanel, "📋 Main Items", "↳", frame, null, item, sourceFrame, moveWindow, true);
+                        CreateMoveTargetButton(targetsPanel, Strings.MoveMainItems, "↳", frame, null, item, sourceFrame, moveWindow, true);
                     }
 
                     // Individual tabs

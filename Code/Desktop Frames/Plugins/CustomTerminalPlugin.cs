@@ -348,7 +348,7 @@ namespace Desktop_Frames.Plugins
                     if (cmdLower == "exit")
                     {
                         _outputBox.Document.Blocks.Clear();
-                        AppendOutput("[Restarting Shell Session...]");
+                        AppendOutput(Strings.TermRestarting);
                         StartProcess();
                         return;
                     }
@@ -403,7 +403,7 @@ namespace Desktop_Frames.Plugins
                 }
                 else
                 {
-                    AppendOutput("[Process exited. Attempting restart...]");
+                    AppendOutput(Strings.TermProcessExited);
                     StartProcess();
                 }
             }

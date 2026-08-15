@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Desktop_Frames.Localization;
+using System;
 using System.Collections.Generic;
 
 namespace Desktop_Frames.Plugins
@@ -29,14 +30,15 @@ namespace Desktop_Frames.Plugins
             // ---------------------------------------------------------
             // REGISTER ALL INTERNAL PLUGINS HERE
             // ---------------------------------------------------------
-            RegisterPlugin("PictureSlideshow", "Photo Frame", () => new PictureSlideshowPlugin());
-          
-            RegisterPlugin("VuMeter", "VU Meter", () => new VUMeterPlugin());
-            RegisterPlugin("IPInfo", "IP Info", () => new SystemIpPlugin());
-            RegisterPlugin("SystemPerformancePlugin", "System Performance Gauges", () => new SystemPerformancePlugin());
-            RegisterPlugin("SystemQueueSaturation", "System Queue Saturation", () => new SystemQueueSaturationPlugin());
-            RegisterPlugin("Calculator", "Calculator", () => new CalculatorPlugin());
-            RegisterPlugin("CustomTerminal", "Terminal Emulator", () => new CustomTerminalPlugin());
+            // Upstream's order is kept; only the names shown to the user are translated.
+            RegisterPlugin("PictureSlideshow", Strings.PluginPhotoFrame, () => new PictureSlideshowPlugin());
+
+            RegisterPlugin("VuMeter", Strings.PluginVuMeter, () => new VUMeterPlugin());
+            RegisterPlugin("IPInfo", Strings.PluginIpInfo, () => new SystemIpPlugin());
+            RegisterPlugin("SystemPerformancePlugin", Strings.PluginPerformance, () => new SystemPerformancePlugin());
+            RegisterPlugin("SystemQueueSaturation", Strings.PluginQueueSaturation, () => new SystemQueueSaturationPlugin());
+            RegisterPlugin("Calculator", Strings.PluginCalculator, () => new CalculatorPlugin());
+            RegisterPlugin("CustomTerminal", Strings.PluginTerminal, () => new CustomTerminalPlugin());
         }
 
         /// <summary>

@@ -122,8 +122,8 @@ namespace Desktop_Frames.Plugins
                 _layoutGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
                 _layoutGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 
-                var leftGauge = CreateGauge("LEFT (L)", out _leftNeedleTransform);
-                var rightGauge = CreateGauge("RIGHT (R)", out _rightNeedleTransform);
+                var leftGauge = CreateGauge(Strings.GaugeLeftL, out _leftNeedleTransform);
+                var rightGauge = CreateGauge(Strings.GaugeRightR, out _rightNeedleTransform);
 
                 Grid.SetColumn(leftGauge, 0);
                 Grid.SetColumn(rightGauge, 1);
@@ -136,15 +136,15 @@ namespace Desktop_Frames.Plugins
             }
             else if (_layoutMode == "Combined")
             {
-                _layoutGrid.Children.Add(CreateGauge("MASTER VU", out _leftNeedleTransform));
+                _layoutGrid.Children.Add(CreateGauge(Strings.GaugeMasterVu, out _leftNeedleTransform));
             }
             else if (_layoutMode == "Left")
             {
-                _layoutGrid.Children.Add(CreateGauge("LEFT VU", out _leftNeedleTransform));
+                _layoutGrid.Children.Add(CreateGauge(Strings.GaugeLeftVu, out _leftNeedleTransform));
             }
             else if (_layoutMode == "Right")
             {
-                _layoutGrid.Children.Add(CreateGauge("RIGHT VU", out _rightNeedleTransform));
+                _layoutGrid.Children.Add(CreateGauge(Strings.GaugeRightVu, out _rightNeedleTransform));
             }
         }
 

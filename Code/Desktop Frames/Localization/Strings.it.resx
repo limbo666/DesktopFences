@@ -1320,4 +1320,106 @@ Oggi lo cura Nikos Georgousis, che lo ha ampliato e reso più stabile e piacevol
   <data name="LblActivationDelay" xml:space="preserve">
     <value>Ritardo di attivazione:</value>
   </data>
+  <data name="PluginPhotoFrame" xml:space="preserve">
+    <value>Cornice foto</value>
+  </data>
+  <data name="PluginCalculator" xml:space="preserve">
+    <value>Calcolatrice</value>
+  </data>
+  <data name="PluginVuMeter" xml:space="preserve">
+    <value>VU meter</value>
+  </data>
+  <data name="PluginIpInfo" xml:space="preserve">
+    <value>Informazioni IP</value>
+  </data>
+  <data name="PluginPerformance" xml:space="preserve">
+    <value>Indicatori delle prestazioni</value>
+  </data>
+  <data name="PluginTerminal" xml:space="preserve">
+    <value>Terminale</value>
+  </data>
+  <data name="PluginQueueSaturation" xml:space="preserve">
+    <value>Saturazione delle code</value>
+  </data>
+  <data name="GaugeCpu" xml:space="preserve">
+    <value>CPU %</value>
+  </data>
+  <data name="GaugeRam" xml:space="preserve">
+    <value>RAM %</value>
+  </data>
+  <data name="GaugeLeftL" xml:space="preserve">
+    <value>SINISTRA (L)</value>
+  </data>
+  <data name="GaugeRightR" xml:space="preserve">
+    <value>DESTRA (R)</value>
+  </data>
+  <data name="GaugeMasterVu" xml:space="preserve">
+    <value>VU PRINCIPALE</value>
+  </data>
+  <data name="GaugeLeftVu" xml:space="preserve">
+    <value>VU SINISTRO</value>
+  </data>
+  <data name="GaugeRightVu" xml:space="preserve">
+    <value>VU DESTRO</value>
+  </data>
+  <data name="DiagCpuUtilization" xml:space="preserve">
+    <value>UTILIZZO CPU</value>
+  </data>
+  <data name="DiagRamUtilization" xml:space="preserve">
+    <value>UTILIZZO RAM</value>
+  </data>
+  <data name="DiagCpuQueue" xml:space="preserve">
+    <value>CODA CPU</value>
+  </data>
+  <data name="DiagDiskIo" xml:space="preserve">
+    <value>I/O DISCO</value>
+  </data>
+  <data name="LblFontFamily" xml:space="preserve">
+    <value>Carattere:</value>
+  </data>
+  <data name="LblWordWrap" xml:space="preserve">
+    <value>A capo automatico</value>
+  </data>
+  <data name="LblSpellCheck" xml:space="preserve">
+    <value>Controllo ortografico</value>
+  </data>
+  <data name="LblDisplayName" xml:space="preserve">
+    <value>Nome visualizzato:</value>
+  </data>
+  <data name="LblArguments" xml:space="preserve">
+    <value>Argomenti:</value>
+  </data>
+  <data name="LblTargetPath" xml:space="preserve">
+    <value>Percorso di destinazione:</value>
+  </data>
+  <data name="TermRestarting" xml:space="preserve">
+    <value>[Riavvio della sessione...]</value>
+  </data>
+  <data name="TermProcessExited" xml:space="preserve">
+    <value>[Processo terminato. Riavvio in corso...]</value>
+  </data>
+  <data name="NetOffline" xml:space="preserve">
+    <value>Non in linea</value>
+  </data>
+  <data name="NetUnreachable" xml:space="preserve">
+    <value>Irraggiungibile</value>
+  </data>
+  <data name="NetChecking" xml:space="preserve">
+    <value>Controllo...</value>
+  </data>
+  <data name="MoveMainItems" xml:space="preserve">
+    <value>📋 Elementi principali</value>
+  </data>
+  <data name="CalcEntryCleared" xml:space="preserve">
+    <value>Voce azzerata</value>
+  </data>
+  <data name="CalcPercentage" xml:space="preserve">
+    <value>Percentuale</value>
+  </data>
+  <data name="CalcCleared" xml:space="preserve">
+    <value>Azzerato</value>
+  </data>
+  <data name="CalcClearedAll" xml:space="preserve">
+    <value>Azzerato tutto</value>
+  </data>
 </root>

@@ -490,5 +490,41 @@ namespace Desktop_Frames.Localization
         public static string LblProcessName => Get("LblProcessName");
         public static string LblTargetProfile => Get("LblTargetProfile");
         public static string LblActivationDelay => Get("LblActivationDelay");
+
+        // ── Found by sweeping every function that takes a string ───────
+        public static string PluginPhotoFrame => Get("PluginPhotoFrame");
+        public static string PluginCalculator => Get("PluginCalculator");
+        public static string PluginVuMeter => Get("PluginVuMeter");
+        public static string PluginIpInfo => Get("PluginIpInfo");
+        public static string PluginPerformance => Get("PluginPerformance");
+        public static string PluginTerminal => Get("PluginTerminal");
+        public static string PluginQueueSaturation => Get("PluginQueueSaturation");
+        public static string GaugeCpu => Get("GaugeCpu");
+        public static string GaugeRam => Get("GaugeRam");
+        public static string GaugeLeftL => Get("GaugeLeftL");
+        public static string GaugeRightR => Get("GaugeRightR");
+        public static string GaugeMasterVu => Get("GaugeMasterVu");
+        public static string GaugeLeftVu => Get("GaugeLeftVu");
+        public static string GaugeRightVu => Get("GaugeRightVu");
+        public static string DiagCpuUtilization => Get("DiagCpuUtilization");
+        public static string DiagRamUtilization => Get("DiagRamUtilization");
+        public static string DiagCpuQueue => Get("DiagCpuQueue");
+        public static string DiagDiskIo => Get("DiagDiskIo");
+        public static string LblFontFamily => Get("LblFontFamily");
+        public static string LblWordWrap => Get("LblWordWrap");
+        public static string LblSpellCheck => Get("LblSpellCheck");
+        public static string LblDisplayName => Get("LblDisplayName");
+        public static string LblArguments => Get("LblArguments");
+        public static string LblTargetPath => Get("LblTargetPath");
+        public static string TermRestarting => Get("TermRestarting");
+        public static string TermProcessExited => Get("TermProcessExited");
+        public static string NetOffline => Get("NetOffline");
+        public static string NetUnreachable => Get("NetUnreachable");
+        public static string NetChecking => Get("NetChecking");
+        public static string MoveMainItems => Get("MoveMainItems");
+        public static string CalcEntryCleared => Get("CalcEntryCleared");
+        public static string CalcPercentage => Get("CalcPercentage");
+        public static string CalcCleared => Get("CalcCleared");
+        public static string CalcClearedAll => Get("CalcClearedAll");
     }
 }

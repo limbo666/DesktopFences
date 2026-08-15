@@ -115,7 +115,7 @@ namespace Desktop_Frames.Plugins
             // Pre-flight check: Is the network card even online?
             if (!NetworkInterface.GetIsNetworkAvailable())
             {
-                UpdatePublicIpState("Offline");
+                UpdatePublicIpState(Strings.NetOffline);
                 return;
             }
 
@@ -127,7 +127,7 @@ namespace Desktop_Frames.Plugins
             }
             catch
             {
-                UpdatePublicIpState("Unreachable");
+                UpdatePublicIpState(Strings.NetUnreachable);
             }
         }
 
@@ -279,7 +279,7 @@ var interfaces = NetworkInterface.GetAllNetworkInterfaces()
 
         private Border CreatePublicIpCard(bool recentlyChanged)
         {
-            bool isUp = _currentPublicIp != "Offline" && _currentPublicIp != "Unreachable" && _currentPublicIp != "Checking...";
+            bool isUp = _currentPublicIp != Strings.NetOffline && _currentPublicIp != Strings.NetUnreachable && _currentPublicIp != Strings.NetChecking;
 
             Border card = new Border
             {

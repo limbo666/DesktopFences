@@ -164,7 +164,7 @@ namespace Desktop_Frames.Plugins
 
                 if (showCpu)
                 {
-                    panel.Children.Add(CreateDiagnosticRow("CPU UTILIZATION", out _cpuBarValueText, out _cpuFillColumn, out _cpuEmptyColumn, out _cpuFillBorder));
+                    panel.Children.Add(CreateDiagnosticRow(Strings.DiagCpuUtilization, out _cpuBarValueText, out _cpuFillColumn, out _cpuEmptyColumn, out _cpuFillBorder));
                 }
 
                 if (showCpu && showRam)
@@ -174,7 +174,7 @@ namespace Desktop_Frames.Plugins
 
                 if (showRam)
                 {
-                    panel.Children.Add(CreateDiagnosticRow("RAM UTILIZATION", out _ramBarValueText, out _ramFillColumn, out _ramEmptyColumn, out _ramFillBorder));
+                    panel.Children.Add(CreateDiagnosticRow(Strings.DiagRamUtilization, out _ramBarValueText, out _ramFillColumn, out _ramEmptyColumn, out _ramFillBorder));
                 }
 
                 mainCard.Child = panel;
@@ -197,8 +197,8 @@ namespace Desktop_Frames.Plugins
                     gaugeContainer.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
                     gaugeContainer.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 
-                    var cpuGauge = CreateGauge("CPU %", out _cpuNeedleTransform, out _cpuValueText);
-                    var ramGauge = CreateGauge("RAM %", out _ramNeedleTransform, out _ramValueText);
+                    var cpuGauge = CreateGauge(Strings.GaugeCpu, out _cpuNeedleTransform, out _cpuValueText);
+                    var ramGauge = CreateGauge(Strings.GaugeRam, out _ramNeedleTransform, out _ramValueText);
 
                     Grid.SetColumn(cpuGauge, 0);
                     Grid.SetColumn(ramGauge, 1);
@@ -211,11 +211,11 @@ namespace Desktop_Frames.Plugins
                 }
                 else if (showCpu)
                 {
-                    gaugeContainer.Children.Add(CreateGauge("CPU %", out _cpuNeedleTransform, out _cpuValueText));
+                    gaugeContainer.Children.Add(CreateGauge(Strings.GaugeCpu, out _cpuNeedleTransform, out _cpuValueText));
                 }
                 else if (showRam)
                 {
-                    gaugeContainer.Children.Add(CreateGauge("RAM %", out _ramNeedleTransform, out _ramValueText));
+                    gaugeContainer.Children.Add(CreateGauge(Strings.GaugeRam, out _ramNeedleTransform, out _ramValueText));
                 }
 
                 gaugeViewbox.Child = gaugeContainer;

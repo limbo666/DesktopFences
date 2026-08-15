@@ -185,13 +185,13 @@ public partial class EditShortcutWindow : Window
         };
 
         // Display Name Section
-        CreateFieldSection(contentPanel, "Display Name:", out nameBox, NewDisplayName);
+        CreateFieldSection(contentPanel, Strings.LblDisplayName, out nameBox, NewDisplayName);
 
         // Target Path Section
-        CreateFieldWithButtonSection(contentPanel, "Target Path:", out targetPathBox, GetCurrentTargetPath(), "Browse...", BrowseTarget_Click);
+        CreateFieldWithButtonSection(contentPanel, Strings.LblTargetPath, out targetPathBox, GetCurrentTargetPath(), Strings.BtnBrowse, BrowseTarget_Click);
 
         // Arguments Section
-        CreateFieldSection(contentPanel, "Arguments:", out argumentsBox, GetCurrentArguments());
+        CreateFieldSection(contentPanel, Strings.LblArguments, out argumentsBox, GetCurrentArguments());
 
         // Icon Section with Preview Space
         CreateIconSection(contentPanel);
@@ -357,7 +357,7 @@ public partial class EditShortcutWindow : Window
 
         iconPreviewBorder.Child = iconPreview;
 
-        Button browseIconButton = CreateModernButton("Browse...", false);
+        Button browseIconButton = CreateModernButton(Strings.BtnBrowse, false);
         browseIconButton.Click += BrowseIcon_Click;
 
         iconGrid.Children.Add(iconPathBox);
@@ -406,7 +406,7 @@ public partial class EditShortcutWindow : Window
         };
         defaultButton.Click += Default_Click;
 
-        Button cancelButton = CreateModernButton("Cancel", false);
+        Button cancelButton = CreateModernButton(Strings.BtnCancel, false);
         cancelButton.Margin = new Thickness(0, 0, 10, 0);
         cancelButton.Click += (s, e) => { DialogResult = false; Close(); };
 

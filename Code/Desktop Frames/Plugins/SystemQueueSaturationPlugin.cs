@@ -101,13 +101,13 @@ namespace Desktop_Frames.Plugins
             panel.Children.Add(_titleText);
 
             // CPU Block (Now includes the tiny logical cores subtitle)
-            panel.Children.Add(CreateDiagnosticRow("CPU QUEUE", $"Logical cores: {_logicalCores}", out _cpuValuesText, out _coresText, out _cpuFillColumn, out _cpuEmptyColumn, out _cpuFillBorder));
+            panel.Children.Add(CreateDiagnosticRow(Strings.DiagCpuQueue, $"Logical cores: {_logicalCores}", out _cpuValuesText, out _coresText, out _cpuFillColumn, out _cpuEmptyColumn, out _cpuFillBorder));
 
             // Spacer
             panel.Children.Add(new Border { Height = 1, Background = new SolidColorBrush(Color.FromArgb(30, 255, 255, 255)), Margin = new Thickness(0, 10, 0, 10) });
 
             // Disk Block
-            panel.Children.Add(CreateDiagnosticRow("DISK I/O", null, out _diskValuesText, out _, out _diskFillColumn, out _diskEmptyColumn, out _diskFillBorder));
+            panel.Children.Add(CreateDiagnosticRow(Strings.DiagDiskIo, null, out _diskValuesText, out _, out _diskFillColumn, out _diskEmptyColumn, out _diskFillBorder));
             _mainCard.Child = panel;
             _rootGrid.Children.Add(_mainCard);
 
