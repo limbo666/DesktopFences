@@ -1,4 +1,5 @@
-﻿using IWshRuntimeLibrary;
+﻿using Desktop_Frames.Localization;
+using IWshRuntimeLibrary;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
@@ -630,7 +631,7 @@ namespace Desktop_Frames
                     Foreground = System.Windows.Media.Brushes.White,
                     BorderThickness = new Thickness(0),
                     Cursor = Cursors.Hand,
-                    ToolTip = "Go Up"
+                    ToolTip = Strings.TooltipGoUp
                 };
                 newBtnBack.Click += (s, e) =>
                 {
@@ -664,7 +665,7 @@ namespace Desktop_Frames
                     Foreground = System.Windows.Media.Brushes.Orange,
                     BorderThickness = new Thickness(0),
                     Cursor = Cursors.Hand,
-                    ToolTip = "Set current view as the new Home for this frame"
+                    ToolTip = Strings.TooltipSetHome
                 };
                 newBtnSetBase.Click += (s, e) =>
                 {
@@ -1199,12 +1200,12 @@ namespace Desktop_Frames
             // ------------------------
 
             // About item
-            var aboutItem = new MenuItem { Header = "About..." };
+            var aboutItem = new MenuItem { Header = Strings.MenuAbout };
             aboutItem.Click += (s, e) => AboutFormManager.ShowAboutForm();
             menu.Items.Add(aboutItem);
 
             // Options item
-            var optionsItem = new MenuItem { Header = "Options..." };
+            var optionsItem = new MenuItem { Header = Strings.MenuOptions };
             optionsItem.Click += (s, e) => OptionsFormManager.ShowOptionsForm();
             menu.Items.Add(optionsItem);
 
@@ -1212,7 +1213,7 @@ namespace Desktop_Frames
             menu.Items.Add(new Separator());
 
             // New frame items
-            var newFrameItem = new MenuItem { Header = "New Frame" };
+            var newFrameItem = new MenuItem { Header = Strings.MenuNewFrame };
             newFrameItem.Click += (s, e) =>
             {
                 var mousePosition = System.Windows.Forms.Cursor.Position;
@@ -1220,7 +1221,7 @@ namespace Desktop_Frames
             };
             menu.Items.Add(newFrameItem);
 
-            var newPortalFrameItem = new MenuItem { Header = "New Portal Frame" };
+            var newPortalFrameItem = new MenuItem { Header = Strings.MenuNewPortalFrame };
             newPortalFrameItem.Click += (s, e) =>
             {
                 var mousePosition = System.Windows.Forms.Cursor.Position;
@@ -1228,7 +1229,7 @@ namespace Desktop_Frames
             };
             menu.Items.Add(newPortalFrameItem);
 
-            MenuItem newNoteFrameItem = new MenuItem { Header = "New Note Frame" };
+            MenuItem newNoteFrameItem = new MenuItem { Header = Strings.MenuNewNoteFrame };
             newNoteFrameItem.Click += (s, e) =>
             {
                 var mousePosition = System.Windows.Forms.Cursor.Position;
@@ -1239,7 +1240,7 @@ namespace Desktop_Frames
             // --- NEW: Tiered Dynamic Plugin Menu ---
             if (SettingsManager.PluginAvailabilityLevel > 0)
             {
-                var addPluginMenu = new MenuItem { Header = "Add Widget | Plugin" };
+                var addPluginMenu = new MenuItem { Header = Strings.MenuAddPlugin };
                 var availablePlugins = PluginManager.GetAvailablePlugins();
 
                 if (availablePlugins != null && availablePlugins.Count > 0)
@@ -1258,7 +1259,7 @@ namespace Desktop_Frames
                 }
                 else
                 {
-                    addPluginMenu.Items.Add(new MenuItem { Header = "(No plugins available at your current level)", IsEnabled = false });
+                    addPluginMenu.Items.Add(new MenuItem { Header = Strings.MenuNoPluginsAvailable, IsEnabled = false });
                 }
                 menu.Items.Add(addPluginMenu);
             }
@@ -1276,7 +1277,7 @@ namespace Desktop_Frames
 
                 var enableTabsItem = new MenuItem
                 {
-                    Header = "Enable Tabs On This Frame",
+                    Header = Strings.MenuEnableTabs,
                     IsCheckable = true,   // Shows checkbox gutter
                     IsChecked = tabsEnabled // Visual checkmark
                 };
@@ -1290,7 +1291,7 @@ namespace Desktop_Frames
 
             // --- REORDERED: Delete Option Second ---
             // Delete this frames
-            var deleteThisFrame = new MenuItem { Header = "Delete this Frame" };
+            var deleteThisFrame = new MenuItem { Header = Strings.MenuDeleteThisFrame };
             deleteThisFrame.Click += (s, e) =>
             {
                 bool result = MessageBoxesManager.ShowCustomMessageBoxForm();
@@ -1328,18 +1329,18 @@ namespace Desktop_Frames
             menu.Items.Add(new Separator());
 
             // Export/Import Group
-            var exportItem = new MenuItem { Header = "Export this Frame" };
+            var exportItem = new MenuItem { Header = Strings.MenuExportThisFrame };
             exportItem.Click += (s, e) => BackupManager.ExportFrame(frame);
             menu.Items.Add(exportItem);
 
-            var importItem = new MenuItem { Header = "Import a Frame..." };
+            var importItem = new MenuItem { Header = Strings.MenuImportFrame };
             importItem.Click += (s, e) => BackupManager.ImportFrame();
             menu.Items.Add(importItem);
 
             // Restore frame item
             var restoreItem = new MenuItem
             {
-                Header = "Restore Last Deleted Frame",
+                Header = Strings.MenuRestoreLastDeleted,
                 Visibility = BackupManager.IsRestoreAvailable ? Visibility.Visible : Visibility.Collapsed
             };
             restoreItem.Click += (s, e) => BackupManager.RestoreLastDeletedFrame();
@@ -1349,7 +1350,7 @@ namespace Desktop_Frames
             menu.Items.Add(new Separator());
 
             // Exit item
-            var exitItem = new MenuItem { Header = "Exit" };
+            var exitItem = new MenuItem { Header = Strings.MenuExit };
             exitItem.Click += (s, e) => System.Windows.Application.Current.Shutdown();
             menu.Items.Add(exitItem);
 
@@ -1415,9 +1416,9 @@ namespace Desktop_Frames
                 if (themedStyle != null) iconContextMenu.Style = themedStyle;
 
                 // --- GROUP 1: MANIPULATION ---
-                MenuItem miEdit = new MenuItem { Header = "Edit..." };
-                MenuItem miMove = new MenuItem { Header = "Move..." };
-                MenuItem miRemove = new MenuItem { Header = "Remove" };
+                MenuItem miEdit = new MenuItem { Header = Strings.MenuEdit };
+                MenuItem miMove = new MenuItem { Header = Strings.MenuMove };
+                MenuItem miRemove = new MenuItem { Header = Strings.MenuRemove };
 
                 iconContextMenu.Items.Add(miEdit);
                 iconContextMenu.Items.Add(miMove);
@@ -1427,7 +1428,7 @@ namespace Desktop_Frames
 
                 // --- GROUP 2: CLIPBOARD ---
                 Separator sepClipboard = new Separator();
-                MenuItem miCopyItem = new MenuItem { Header = "Copy Item" };
+                MenuItem miCopyItem = new MenuItem { Header = Strings.MenuCopyItem };
 
                 iconContextMenu.Items.Add(sepClipboard);
                 iconContextMenu.Items.Add(miCopyItem);
@@ -1450,10 +1451,10 @@ namespace Desktop_Frames
                 {
                     iconContextMenu.Items.Add(new Separator());
 
-                    MenuItem miRunAsAdmin = new MenuItem { Header = "Run as administrator" };
+                    MenuItem miRunAsAdmin = new MenuItem { Header = Strings.MenuRunAsAdmin };
                     miAlwaysAdmin = new MenuItem
                     {
-                        Header = "Always run as administrator",
+                        Header = Strings.MenuAlwaysRunAsAdmin,
                         IsCheckable = true
                     };
 
@@ -1513,14 +1514,14 @@ namespace Desktop_Frames
                 Separator sepPath = new Separator();
                 iconContextMenu.Items.Add(sepPath);
 
-                MenuItem miCopyPathRoot = new MenuItem { Header = "Copy path" };
-                MenuItem miCopyFolder = new MenuItem { Header = "Folder path" };
-                MenuItem miCopyFullPath = new MenuItem { Header = "Full path" };
+                MenuItem miCopyPathRoot = new MenuItem { Header = Strings.MenuCopyPath };
+                MenuItem miCopyFolder = new MenuItem { Header = Strings.MenuFolderPath };
+                MenuItem miCopyFullPath = new MenuItem { Header = Strings.MenuFullPath };
 
                 miCopyPathRoot.Items.Add(miCopyFolder);
                 miCopyPathRoot.Items.Add(miCopyFullPath);
 
-                MenuItem miFindTarget = new MenuItem { Header = "Open target folder..." };
+                MenuItem miFindTarget = new MenuItem { Header = Strings.MenuOpenTargetFolder };
 
                 iconContextMenu.Items.Add(miCopyPathRoot);
                 iconContextMenu.Items.Add(miFindTarget);
@@ -1625,7 +1626,7 @@ namespace Desktop_Frames
                     // 1. Send to Desktop (Ctrl only, Skip for spacers)
                     if (isCtrl && !isSpacer)
                     {
-                        miSendToDesktop = new MenuItem { Header = "Send to Desktop" };
+                        miSendToDesktop = new MenuItem { Header = Strings.MenuSendToDesktop };
                         miSendToDesktop.Click += (sender, args) => CopyPasteManager.SendToDesktop(item);
                         int idxCopy = iconContextMenu.Items.IndexOf(miCopyItem);
                         if (idxCopy != -1) iconContextMenu.Items.Insert(idxCopy + 1, miSendToDesktop);
@@ -1634,8 +1635,8 @@ namespace Desktop_Frames
                     // 2. Different User Options (Ctrl OR if setting is already checked)
                     if (isEligibleForAdmin && (isCtrl || isAlwaysDiffUser))
                     {
-                        miRunAsDifferentUser = new MenuItem { Header = "Run as different user..." };
-                        miAlwaysRunAsDifferentUser = new MenuItem { Header = "Always run as different user", IsCheckable = true };
+                        miRunAsDifferentUser = new MenuItem { Header = Strings.MenuRunAsDifferentUser };
+                        miAlwaysRunAsDifferentUser = new MenuItem { Header = Strings.MenuAlwaysRunAsDifferentUser, IsCheckable = true };
 
                         miRunAsDifferentUser.Click += (sender, args) => {
                             string target = Utility.GetShortcutTarget(filePath);
@@ -2127,7 +2128,7 @@ namespace Desktop_Frames
                 }
                 catch { }
 
-                MenuItem miRemove = new MenuItem { Header = "Remove" };
+                MenuItem miRemove = new MenuItem { Header = Strings.MenuRemove };
 
 
                 miRemove.Click += (sender, e) =>
@@ -2169,7 +2170,7 @@ namespace Desktop_Frames
                 bool alwaysAdmin = Convert.ToBoolean(item["AlwaysRunAsAdmin"] ?? false);
                 MenuItem miAlwaysAdmin = new MenuItem
                 {
-                    Header = "Always run as administrator",
+                    Header = Strings.MenuAlwaysRunAsAdmin,
                     IsCheckable = true,
                     IsChecked = alwaysAdmin
                 };
@@ -4015,10 +4016,10 @@ namespace Desktop_Frames
             Style themedStyle = GetThemedContextMenuStyle(frame);
             if (themedStyle != null) CnMnFramemanager.Style = themedStyle;
 
-            MenuItem miNewnoteFrame = new MenuItem { Header = "New Note Frame" };
+            MenuItem miNewnoteFrame = new MenuItem { Header = Strings.MenuNewNoteFrame };
 
             // --- NEW: Auto Roll Menu Item ---
-            MenuItem miAutoRoll = new MenuItem { Header = "Auto roll", IsCheckable = true };
+            MenuItem miAutoRoll = new MenuItem { Header = Strings.MenuAutoRoll, IsCheckable = true };
             miAutoRoll.IsChecked = frame.AutoRoll?.ToString().ToLower() == "true";
             miAutoRoll.Click += (s, e) =>
             {
@@ -4040,7 +4041,7 @@ namespace Desktop_Frames
             CnMnFramemanager.Items.Add(miAutoRoll);
 
             // --- NEW: Always On Top Menu Item ---
-            MenuItem miAlwaysOnTop = new MenuItem { Header = "Always on top", IsCheckable = true };
+            MenuItem miAlwaysOnTop = new MenuItem { Header = Strings.MenuAlwaysOnTop, IsCheckable = true };
             miAlwaysOnTop.IsChecked = frame.AlwaysOnTop?.ToString().ToLower() == "true";
             miAlwaysOnTop.Click += (s, e) =>
             {
@@ -4051,7 +4052,7 @@ namespace Desktop_Frames
             CnMnFramemanager.Items.Add(new Separator());
             // --------------------------------
 
-            MenuItem miHide = new MenuItem { Header = "Hide Frame" }; // New Hide Frame item
+            MenuItem miHide = new MenuItem { Header = Strings.MenuHideFrame }; // New Hide Frame item
                                                                    
             CnMnFramemanager.Items.Add(miHide); // Add Hide Frame
                                                 // Add Note Frame specific context menu items if this is a Note Frame
@@ -4088,7 +4089,7 @@ namespace Desktop_Frames
                 // We'll modify the context menu after InitContent() is called
             }
             //Peek behind frame
-            MenuItem miPeekBehind = new MenuItem { Header = "Peek Behind" };
+            MenuItem miPeekBehind = new MenuItem { Header = Strings.MenuPeekBehind };
             CnMnFramemanager.Items.Add(miPeekBehind);
             miPeekBehind.Click += (s, e) =>
             {
@@ -4167,7 +4168,7 @@ namespace Desktop_Frames
                 sepClearDead = new Separator { Visibility = Visibility.Collapsed };
                 CnMnFramemanager.Items.Add(sepClearDead);
 
-                miClearDeadShortcuts = new MenuItem { Header = "Clear Dead Shortcuts", Visibility = Visibility.Collapsed };
+                miClearDeadShortcuts = new MenuItem { Header = Strings.MenuClearDeadShortcuts, Visibility = Visibility.Collapsed };
                 CnMnFramemanager.Items.Add(miClearDeadShortcuts);
 
                 miClearDeadShortcuts.Click += (s, e) =>
@@ -4197,7 +4198,7 @@ namespace Desktop_Frames
             // 2. Open Folder & Live View Toggle (Portal Only)
             if (frame.ItemsType?.ToString() == "Portal")
             {
-                MenuItem miOpenFolder = new MenuItem { Header = "Open frame folder" };
+                MenuItem miOpenFolder = new MenuItem { Header = Strings.MenuOpenFrameFolder };
                 miOpenFolder.Click += (s, e) =>
                 {
                     try
@@ -4211,7 +4212,7 @@ namespace Desktop_Frames
                 CnMnFramemanager.Items.Add(miOpenFolder);
 
                 // --- LIVE VIEW MODE TOGGLE ---
-                MenuItem miViewAsDetails = new MenuItem { Header = "View as Details", IsCheckable = true };
+                MenuItem miViewAsDetails = new MenuItem { Header = Strings.MenuViewAsDetails, IsCheckable = true };
 
                 // --- ULTRA FIX: Re-evaluate checkmark state every single time the menu opens at runtime! ---
                 CnMnFramemanager.Opened += (s, e) =>
@@ -4267,7 +4268,7 @@ namespace Desktop_Frames
             CnMnFramemanager.Items.Add(new Separator());
 
             // 3. Paste Item (Initially Hidden)
-            MenuItem miPasteItem = new MenuItem { Header = "Paste Item", Visibility = Visibility.Collapsed };
+            MenuItem miPasteItem = new MenuItem { Header = Strings.MenuPasteItem, Visibility = Visibility.Collapsed };
             miPasteItem.Click += (s, e) => CopyPasteManager.PasteItem(frame);
             CnMnFramemanager.Items.Add(miPasteItem);
 
@@ -4279,7 +4280,7 @@ namespace Desktop_Frames
             // --- NEW: Plugin Settings Context Menu ---
             if (frame.ItemsType?.ToString() == "Plugin")
             {
-                MenuItem miPluginSettings = new MenuItem { Header = "Plugin Settings..." };
+                MenuItem miPluginSettings = new MenuItem { Header = Strings.MenuPluginSettings };
                 miPluginSettings.Click += (s, e) =>
                 {
                     string fId = frame.Id?.ToString();
@@ -4294,7 +4295,7 @@ namespace Desktop_Frames
             // ---------------------------------------
 
             // CnMnFramemanager.Items.Add(miNewCustomize);
-            MenuItem miCustomize = new MenuItem { Header = "Customize..." };
+            MenuItem miCustomize = new MenuItem { Header = Strings.MenuCustomize };
             miCustomize.Click += (s, e) =>
             {
                 try
@@ -4939,13 +4940,13 @@ namespace Desktop_Frames
                 // C. Export All & Spacer Menu (Data Frame + Ctrl)
                 if (isCtrlPressed && isDataFrame)
                 {
-                    miExportAllToDesktop = new MenuItem { Header = "Export all icons to desktop" };
+                    miExportAllToDesktop = new MenuItem { Header = Strings.MenuExportAllIcons };
                     miExportAllToDesktop.Click += (s, e) => ExportAllIconsToDesktop(frame);
 
-                    miAddSpacerMenu = new MenuItem { Header = "Add spacer" };
+                    miAddSpacerMenu = new MenuItem { Header = Strings.MenuAddSpacer };
 
-                    MenuItem miSpacerBlank = new MenuItem { Header = "Blank" };
-                    MenuItem miSpacerDot = new MenuItem { Header = "Dot" };
+                    MenuItem miSpacerBlank = new MenuItem { Header = Strings.MenuSpacerBlank };
+                    MenuItem miSpacerDot = new MenuItem { Header = Strings.MenuSpacerDot };
 
                     // Centralized Spacer Creation Logic
                     Action<string> CreateSpacer = (prefix) =>
@@ -5009,7 +5010,7 @@ namespace Desktop_Frames
                     // Insert before Customize (safe lookup)
                     int insertIndex = CnMnFramemanager.Items.Count - 1;
                     var customizeItem = CnMnFramemanager.Items.OfType<MenuItem>()
-                        .FirstOrDefault(m => m.Header.ToString() == "Customize...");
+                        .FirstOrDefault(m => m.Header.ToString() == Strings.MenuCustomize);
                     if (customizeItem != null) insertIndex = CnMnFramemanager.Items.IndexOf(customizeItem);
 
                     CnMnFramemanager.Items.Insert(insertIndex, miExportAllToDesktop);
@@ -5019,7 +5020,7 @@ namespace Desktop_Frames
                 // D. Name After Target (Portal Frame + Ctrl)
                 if (isCtrlPressed && isPortalFrame)
                 {
-                    miNameAfterPath = new MenuItem { Header = "Name Frame After Target Path" };
+                    miNameAfterPath = new MenuItem { Header = Strings.MenuNameAfterPath };
                     miNameAfterPath.Click += (s, e) =>
                     {
                         // Get Base Path (Not navigation path)
@@ -5055,7 +5056,7 @@ namespace Desktop_Frames
                     // Insert before Customize
                     int insertIndex = CnMnFramemanager.Items.Count - 1;
                     var customizeItem = CnMnFramemanager.Items.OfType<MenuItem>()
-                        .FirstOrDefault(m => m.Header.ToString() == "Customize...");
+                        .FirstOrDefault(m => m.Header.ToString() == Strings.MenuCustomize);
 
                     if (customizeItem != null)
                     {
@@ -5099,7 +5100,7 @@ namespace Desktop_Frames
                     HorizontalAlignment = HorizontalAlignment.Center,
                     Cursor = Cursors.Hand,
                     Margin = new Thickness(0, 0, 5, 0),
-                    ToolTip = "Filter files (e.g. '*.jpg' or '>*.tmp' to exclude)",
+                    ToolTip = Strings.TooltipFilterFiles,
                     Opacity = hasInitialFilter ? 1.0 : ((double)SettingsManager.MenuTintValue / 100)
                 };
 
@@ -5210,7 +5211,7 @@ namespace Desktop_Frames
                     BorderThickness = new Thickness(0),
                     Cursor = Cursors.Hand,
                     Width = 20,
-                    ToolTip = "Clear filter and close"
+                    ToolTip = Strings.TooltipClearFilter
                 };
 
                 filterBar.Children.Add(cmbFilter);
@@ -6862,7 +6863,7 @@ namespace Desktop_Frames
                 sp.Background = System.Windows.Media.Brushes.Transparent;
 
                 sp.Tag = new { FilePath = filePath, IsFolder = false, Arguments = (string)null };
-                sp.ToolTip = new ToolTip { Content = "Blank Spacer (Hold CTRL to move)" };
+                sp.ToolTip = new ToolTip { Content = Strings.TooltipBlankSpacer };
                 wpcont.Children.Add(sp);
                 return; // Skip standard extraction
             }

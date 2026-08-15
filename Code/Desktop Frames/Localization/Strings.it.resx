@@ -94,4 +94,142 @@
   <data name="TrayReloadingFrames" xml:space="preserve">
     <value>Ricaricamento delle frame in corso...</value>
   </data>
+  <data name="TooltipGoUp" xml:space="preserve">
+    <value>Cartella superiore</value>
+  </data>
+  <data name="TooltipSetHome" xml:space="preserve">
+    <value>Imposta la cartella attuale come principale per questa frame</value>
+  </data>
+  <data name="TooltipFilterFiles" xml:space="preserve">
+    <value>Filtra i file (es. '*.jpg', oppure '&gt;*.tmp' per escludere)</value>
+  </data>
+  <data name="TooltipClearFilter" xml:space="preserve">
+    <value>Cancella il filtro e chiudi</value>
+  </data>
+  <data name="TooltipBlankSpacer" xml:space="preserve">
+    <value>Spaziatore vuoto (tieni premuto CTRL per spostarlo)</value>
+  </data>
+  <data name="MenuAbout" xml:space="preserve">
+    <value>Informazioni...</value>
+  </data>
+  <data name="MenuOptions" xml:space="preserve">
+    <value>Opzioni...</value>
+  </data>
+  <data name="MenuNewFrame" xml:space="preserve">
+    <value>Nuova frame</value>
+  </data>
+  <data name="MenuNewPortalFrame" xml:space="preserve">
+    <value>Nuova frame Portal</value>
+  </data>
+  <data name="MenuNewNoteFrame" xml:space="preserve">
+    <value>Nuova frame Nota</value>
+  </data>
+  <data name="MenuAddPlugin" xml:space="preserve">
+    <value>Aggiungi widget | plugin</value>
+  </data>
+  <data name="MenuNoPluginsAvailable" xml:space="preserve">
+    <value>(Nessun plugin disponibile al tuo livello)</value>
+  </data>
+  <data name="MenuEnableTabs" xml:space="preserve">
+    <value>Abilita le schede su questa frame</value>
+  </data>
+  <data name="MenuDeleteThisFrame" xml:space="preserve">
+    <value>Elimina questa frame</value>
+  </data>
+  <data name="MenuExportThisFrame" xml:space="preserve">
+    <value>Esporta questa frame</value>
+  </data>
+  <data name="MenuImportFrame" xml:space="preserve">
+    <value>Importa una frame...</value>
+  </data>
+  <data name="MenuRestoreLastDeleted" xml:space="preserve">
+    <value>Ripristina l'ultima frame eliminata</value>
+  </data>
+  <data name="MenuExit" xml:space="preserve">
+    <value>Esci</value>
+  </data>
+  <data name="MenuEdit" xml:space="preserve">
+    <value>Modifica...</value>
+  </data>
+  <data name="MenuMove" xml:space="preserve">
+    <value>Sposta...</value>
+  </data>
+  <data name="MenuRemove" xml:space="preserve">
+    <value>Rimuovi</value>
+  </data>
+  <data name="MenuCopyItem" xml:space="preserve">
+    <value>Copia elemento</value>
+  </data>
+  <data name="MenuRunAsAdmin" xml:space="preserve">
+    <value>Esegui come amministratore</value>
+  </data>
+  <data name="MenuAlwaysRunAsAdmin" xml:space="preserve">
+    <value>Esegui sempre come amministratore</value>
+  </data>
+  <data name="MenuCopyPath" xml:space="preserve">
+    <value>Copia percorso</value>
+  </data>
+  <data name="MenuFolderPath" xml:space="preserve">
+    <value>Percorso della cartella</value>
+  </data>
+  <data name="MenuFullPath" xml:space="preserve">
+    <value>Percorso completo</value>
+  </data>
+  <data name="MenuOpenTargetFolder" xml:space="preserve">
+    <value>Apri la cartella di destinazione...</value>
+  </data>
+  <data name="MenuSendToDesktop" xml:space="preserve">
+    <value>Invia al desktop</value>
+  </data>
+  <data name="MenuRunAsDifferentUser" xml:space="preserve">
+    <value>Esegui come altro utente...</value>
+  </data>
+  <data name="MenuAlwaysRunAsDifferentUser" xml:space="preserve">
+    <value>Esegui sempre come altro utente</value>
+  </data>
+  <data name="MenuAutoRoll" xml:space="preserve">
+    <value>Riduci automaticamente</value>
+  </data>
+  <data name="MenuAlwaysOnTop" xml:space="preserve">
+    <value>Sempre in primo piano</value>
+  </data>
+  <data name="MenuHideFrame" xml:space="preserve">
+    <value>Nascondi frame</value>
+  </data>
+  <data name="MenuPeekBehind" xml:space="preserve">
+    <value>Sbircia dietro</value>
+  </data>
+  <data name="MenuClearDeadShortcuts" xml:space="preserve">
+    <value>Rimuovi collegamenti non validi</value>
+  </data>
+  <data name="MenuOpenFrameFolder" xml:space="preserve">
+    <value>Apri la cartella della frame</value>
+  </data>
+  <data name="MenuViewAsDetails" xml:space="preserve">
+    <value>Visualizza come elenco</value>
+  </data>
+  <data name="MenuPasteItem" xml:space="preserve">
+    <value>Incolla elemento</value>
+  </data>
+  <data name="MenuPluginSettings" xml:space="preserve">
+    <value>Impostazioni plugin...</value>
+  </data>
+  <data name="MenuCustomize" xml:space="preserve">
+    <value>Personalizza...</value>
+  </data>
+  <data name="MenuExportAllIcons" xml:space="preserve">
+    <value>Esporta tutte le icone sul desktop</value>
+  </data>
+  <data name="MenuAddSpacer" xml:space="preserve">
+    <value>Aggiungi spaziatore</value>
+  </data>
+  <data name="MenuSpacerBlank" xml:space="preserve">
+    <value>Vuoto</value>
+  </data>
+  <data name="MenuSpacerDot" xml:space="preserve">
+    <value>Punto</value>
+  </data>
+  <data name="MenuNameAfterPath" xml:space="preserve">
+    <value>Rinomina la frame come il percorso</value>
+  </data>
 </root>

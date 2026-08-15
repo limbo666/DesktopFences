@@ -94,4 +94,142 @@
   <data name="TrayReloadingFrames" xml:space="preserve">
     <value>Reloading all frames, please wait...</value>
   </data>
+  <data name="TooltipGoUp" xml:space="preserve">
+    <value>Go Up</value>
+  </data>
+  <data name="TooltipSetHome" xml:space="preserve">
+    <value>Set current view as the new Home for this frame</value>
+  </data>
+  <data name="TooltipFilterFiles" xml:space="preserve">
+    <value>Filter files (e.g. '*.jpg' or '&gt;*.tmp' to exclude)</value>
+  </data>
+  <data name="TooltipClearFilter" xml:space="preserve">
+    <value>Clear filter and close</value>
+  </data>
+  <data name="TooltipBlankSpacer" xml:space="preserve">
+    <value>Blank Spacer (Hold CTRL to move)</value>
+  </data>
+  <data name="MenuAbout" xml:space="preserve">
+    <value>About...</value>
+  </data>
+  <data name="MenuOptions" xml:space="preserve">
+    <value>Options...</value>
+  </data>
+  <data name="MenuNewFrame" xml:space="preserve">
+    <value>New Frame</value>
+  </data>
+  <data name="MenuNewPortalFrame" xml:space="preserve">
+    <value>New Portal Frame</value>
+  </data>
+  <data name="MenuNewNoteFrame" xml:space="preserve">
+    <value>New Note Frame</value>
+  </data>
+  <data name="MenuAddPlugin" xml:space="preserve">
+    <value>Add Widget | Plugin</value>
+  </data>
+  <data name="MenuNoPluginsAvailable" xml:space="preserve">
+    <value>(No plugins available at your current level)</value>
+  </data>
+  <data name="MenuEnableTabs" xml:space="preserve">
+    <value>Enable Tabs On This Frame</value>
+  </data>
+  <data name="MenuDeleteThisFrame" xml:space="preserve">
+    <value>Delete this Frame</value>
+  </data>
+  <data name="MenuExportThisFrame" xml:space="preserve">
+    <value>Export this Frame</value>
+  </data>
+  <data name="MenuImportFrame" xml:space="preserve">
+    <value>Import a Frame...</value>
+  </data>
+  <data name="MenuRestoreLastDeleted" xml:space="preserve">
+    <value>Restore Last Deleted Frame</value>
+  </data>
+  <data name="MenuExit" xml:space="preserve">
+    <value>Exit</value>
+  </data>
+  <data name="MenuEdit" xml:space="preserve">
+    <value>Edit...</value>
+  </data>
+  <data name="MenuMove" xml:space="preserve">
+    <value>Move...</value>
+  </data>
+  <data name="MenuRemove" xml:space="preserve">
+    <value>Remove</value>
+  </data>
+  <data name="MenuCopyItem" xml:space="preserve">
+    <value>Copy Item</value>
+  </data>
+  <data name="MenuRunAsAdmin" xml:space="preserve">
+    <value>Run as administrator</value>
+  </data>
+  <data name="MenuAlwaysRunAsAdmin" xml:space="preserve">
+    <value>Always run as administrator</value>
+  </data>
+  <data name="MenuCopyPath" xml:space="preserve">
+    <value>Copy path</value>
+  </data>
+  <data name="MenuFolderPath" xml:space="preserve">
+    <value>Folder path</value>
+  </data>
+  <data name="MenuFullPath" xml:space="preserve">
+    <value>Full path</value>
+  </data>
+  <data name="MenuOpenTargetFolder" xml:space="preserve">
+    <value>Open target folder...</value>
+  </data>
+  <data name="MenuSendToDesktop" xml:space="preserve">
+    <value>Send to Desktop</value>
+  </data>
+  <data name="MenuRunAsDifferentUser" xml:space="preserve">
+    <value>Run as different user...</value>
+  </data>
+  <data name="MenuAlwaysRunAsDifferentUser" xml:space="preserve">
+    <value>Always run as different user</value>
+  </data>
+  <data name="MenuAutoRoll" xml:space="preserve">
+    <value>Auto roll</value>
+  </data>
+  <data name="MenuAlwaysOnTop" xml:space="preserve">
+    <value>Always on top</value>
+  </data>
+  <data name="MenuHideFrame" xml:space="preserve">
+    <value>Hide Frame</value>
+  </data>
+  <data name="MenuPeekBehind" xml:space="preserve">
+    <value>Peek Behind</value>
+  </data>
+  <data name="MenuClearDeadShortcuts" xml:space="preserve">
+    <value>Clear Dead Shortcuts</value>
+  </data>
+  <data name="MenuOpenFrameFolder" xml:space="preserve">
+    <value>Open frame folder</value>
+  </data>
+  <data name="MenuViewAsDetails" xml:space="preserve">
+    <value>View as Details</value>
+  </data>
+  <data name="MenuPasteItem" xml:space="preserve">
+    <value>Paste Item</value>
+  </data>
+  <data name="MenuPluginSettings" xml:space="preserve">
+    <value>Plugin Settings...</value>
+  </data>
+  <data name="MenuCustomize" xml:space="preserve">
+    <value>Customize...</value>
+  </data>
+  <data name="MenuExportAllIcons" xml:space="preserve">
+    <value>Export all icons to desktop</value>
+  </data>
+  <data name="MenuAddSpacer" xml:space="preserve">
+    <value>Add spacer</value>
+  </data>
+  <data name="MenuSpacerBlank" xml:space="preserve">
+    <value>Blank</value>
+  </data>
+  <data name="MenuSpacerDot" xml:space="preserve">
+    <value>Dot</value>
+  </data>
+  <data name="MenuNameAfterPath" xml:space="preserve">
+    <value>Name Frame After Target Path</value>
+  </data>
 </root>

@@ -76,5 +76,53 @@ namespace Desktop_Frames.Localization
         public static string TrayExportFailedTitle => Get("TrayExportFailedTitle");
         public static string TrayExportFailedText => Get("TrayExportFailedText");
         public static string TrayReloadingFrames => Get("TrayReloadingFrames");
+
+        // ── Context menus and frame tooltips ─────────────────────────
+        public static string TooltipGoUp => Get("TooltipGoUp");
+        public static string TooltipSetHome => Get("TooltipSetHome");
+        public static string TooltipFilterFiles => Get("TooltipFilterFiles");
+        public static string TooltipClearFilter => Get("TooltipClearFilter");
+        public static string TooltipBlankSpacer => Get("TooltipBlankSpacer");
+        public static string MenuAbout => Get("MenuAbout");
+        public static string MenuOptions => Get("MenuOptions");
+        public static string MenuNewFrame => Get("MenuNewFrame");
+        public static string MenuNewPortalFrame => Get("MenuNewPortalFrame");
+        public static string MenuNewNoteFrame => Get("MenuNewNoteFrame");
+        public static string MenuAddPlugin => Get("MenuAddPlugin");
+        public static string MenuNoPluginsAvailable => Get("MenuNoPluginsAvailable");
+        public static string MenuEnableTabs => Get("MenuEnableTabs");
+        public static string MenuDeleteThisFrame => Get("MenuDeleteThisFrame");
+        public static string MenuExportThisFrame => Get("MenuExportThisFrame");
+        public static string MenuImportFrame => Get("MenuImportFrame");
+        public static string MenuRestoreLastDeleted => Get("MenuRestoreLastDeleted");
+        public static string MenuExit => Get("MenuExit");
+        public static string MenuEdit => Get("MenuEdit");
+        public static string MenuMove => Get("MenuMove");
+        public static string MenuRemove => Get("MenuRemove");
+        public static string MenuCopyItem => Get("MenuCopyItem");
+        public static string MenuRunAsAdmin => Get("MenuRunAsAdmin");
+        public static string MenuAlwaysRunAsAdmin => Get("MenuAlwaysRunAsAdmin");
+        public static string MenuCopyPath => Get("MenuCopyPath");
+        public static string MenuFolderPath => Get("MenuFolderPath");
+        public static string MenuFullPath => Get("MenuFullPath");
+        public static string MenuOpenTargetFolder => Get("MenuOpenTargetFolder");
+        public static string MenuSendToDesktop => Get("MenuSendToDesktop");
+        public static string MenuRunAsDifferentUser => Get("MenuRunAsDifferentUser");
+        public static string MenuAlwaysRunAsDifferentUser => Get("MenuAlwaysRunAsDifferentUser");
+        public static string MenuAutoRoll => Get("MenuAutoRoll");
+        public static string MenuAlwaysOnTop => Get("MenuAlwaysOnTop");
+        public static string MenuHideFrame => Get("MenuHideFrame");
+        public static string MenuPeekBehind => Get("MenuPeekBehind");
+        public static string MenuClearDeadShortcuts => Get("MenuClearDeadShortcuts");
+        public static string MenuOpenFrameFolder => Get("MenuOpenFrameFolder");
+        public static string MenuViewAsDetails => Get("MenuViewAsDetails");
+        public static string MenuPasteItem => Get("MenuPasteItem");
+        public static string MenuPluginSettings => Get("MenuPluginSettings");
+        public static string MenuCustomize => Get("MenuCustomize");
+        public static string MenuExportAllIcons => Get("MenuExportAllIcons");
+        public static string MenuAddSpacer => Get("MenuAddSpacer");
+        public static string MenuSpacerBlank => Get("MenuSpacerBlank");
+        public static string MenuSpacerDot => Get("MenuSpacerDot");
+        public static string MenuNameAfterPath => Get("MenuNameAfterPath");
     }
 }
