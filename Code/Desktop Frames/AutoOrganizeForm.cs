@@ -31,13 +31,16 @@ namespace Desktop_Frames
         private List<OrganizeRule> _localRules;
         private bool _isLoadingRule = false; // Prevents dropdowns from overwriting data during load
 
+        /// <summary>The preset that lets the user type an extension list by hand.</summary>
+        private const string CustomExtensionsPreset = "Custom Extensions...";
+
         private readonly Dictionary<string, string> _presets = new Dictionary<string, string>
         {
             { "Images", "*.jpg; *.jpeg; *.png; *.gif; *.bmp; *.webp" },
             { "Documents", "*.doc*; *.pdf; *.txt; *.rtf; *.xls*; *.ppt*" },
             { "Executables", "*.exe; *.bat; *.msi; *.cmd; *.ps1" },
             { "Archives", "*.zip; *.rar; *.7z; *.tar; *.gz" },
-            { "Custom Extensions...", "" }
+            { CustomExtensionsPreset, "" }
         };
 
         public AutoOrganizeForm()
@@ -325,7 +328,7 @@ namespace Desktop_Frames
             StackPanel customExtStack = new StackPanel();
             customExtStack.Children.Add(new TextBlock { Text = Strings.AutoOrgCustomExtensions, FontSize = 12, FontWeight = FontWeights.Medium, Foreground = new SolidColorBrush(Color.FromRgb(95, 99, 104)), Margin = new Thickness(0, 12, 0, 8) });
             _txtCustomExt = new TextBox { FontSize = 13, Padding = new Thickness(8, 6, 8, 6), BorderBrush = new SolidColorBrush(Color.FromRgb(218, 220, 224)), BorderThickness = new Thickness(1), Background = Brushes.White, Foreground = new SolidColorBrush(Color.FromRgb(32, 33, 36)) };
-            _txtCustomExt.TextChanged += (s, e) => { if (!_isLoadingRule && _selectedRule != null && _cmbCondition.SelectedItem?.ToString() == "Custom Extensions...") _selectedRule.Extensions = _txtCustomExt.Text; };
+            _txtCustomExt.TextChanged += (s, e) => { if (!_isLoadingRule && _selectedRule != null && SelectedConditionKey == CustomExtensionsPreset) _selectedRule.Extensions = _txtCustomExt.Text; };
             customExtStack.Children.Add(_txtCustomExt);
             _customExtBorder.Child = customExtStack;
             sp2.Children.Add(_customExtBorder);
@@ -490,8 +493,8 @@ namespace Desktop_Frames
             string newExt = "*.jpg; *.jpeg; *.png; *.gif; *.bmp; *.webp";
             if (_cmbCondition.SelectedItem != null)
             {
-                string selected = (_cmbCondition.SelectedItem as ComboBoxItem)?.Tag as string ?? "Images";
-                newExt = selected == "Custom Extensions..." ? _txtCustomExt.Text : _presets[selected];
+                string selected = SelectedConditionKey ?? "Images";
+                newExt = selected == CustomExtensionsPreset ? _txtCustomExt.Text : _presets[selected];
             }
 
             string newTarget = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
@@ -567,13 +570,12 @@ namespace Desktop_Frames
             var matchingPreset = _presets.FirstOrDefault(p => p.Value == rule.Extensions).Key;
             if (matchingPreset != null)
             {
-                _cmbCondition.SelectedItem = _cmbCondition.Items.OfType<ComboBoxItem>()
-                    .FirstOrDefault(i => (string)i.Tag == matchingPreset);
+                SelectCondition(matchingPreset);
                 _customExtBorder.Visibility = Visibility.Collapsed;
             }
             else
             {
-                _cmbCondition.SelectedItem = "Custom Extensions...";
+                SelectCondition(CustomExtensionsPreset);
                 _txtCustomExt.Text = rule.Extensions;
                 _customExtBorder.Visibility = Visibility.Visible;
             }
@@ -601,21 +603,37 @@ namespace Desktop_Frames
             _isLoadingRule = false; // Unlock events
         }
 
+        /// <summary>
+        /// The preset name behind the currently selected condition, or null when nothing
+        /// is selected. The visible label is translated, so only the Tag can be compared
+        /// against _presets — reading SelectedItem directly yields the ComboBoxItem
+        /// itself, which matches no key.
+        /// </summary>
+        private string SelectedConditionKey => (_cmbCondition.SelectedItem as ComboBoxItem)?.Tag as string;
+
+        /// <summary>Selects the condition entry carrying the given preset name.</summary>
+        private void SelectCondition(string presetName)
+        {
+            _cmbCondition.SelectedItem = _cmbCondition.Items.OfType<ComboBoxItem>()
+                .FirstOrDefault(i => (string)i.Tag == presetName);
+        }
+
         private void CmbCondition_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (_isLoadingRule || _selectedRule == null || _cmbCondition.SelectedItem == null) return;
+            if (_isLoadingRule || _selectedRule == null) return;
 
-            string selected = _cmbCondition.SelectedItem.ToString();
+            string selected = SelectedConditionKey;
+            if (selected == null) return;
 
-            if (selected == "Custom Extensions...")
+            if (selected == CustomExtensionsPreset)
             {
                 _customExtBorder.Visibility = Visibility.Visible;
                 _selectedRule.Extensions = _txtCustomExt.Text;
             }
-            else
+            else if (_presets.TryGetValue(selected, out string presetExtensions))
             {
                 _customExtBorder.Visibility = Visibility.Collapsed;
-                _selectedRule.Extensions = _presets[selected];
+                _selectedRule.Extensions = presetExtensions;
             }
         }
 
