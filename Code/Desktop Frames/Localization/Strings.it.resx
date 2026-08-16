@@ -1458,4 +1458,37 @@ Oggi lo cura Nikos Georgousis, che lo ha ampliato e reso più stabile e piacevol
   <data name="NoteLanguageRestart" xml:space="preserve">
     <value>Nota: la lingua cambia dopo il riavvio del programma. I pacchetti copiati nella cartella Languages vengono letti al prossimo avvio.</value>
   </data>
+  <data name="CatImages" xml:space="preserve">
+    <value>Immagini</value>
+  </data>
+  <data name="CatDocuments" xml:space="preserve">
+    <value>Documenti</value>
+  </data>
+  <data name="CatExecutables" xml:space="preserve">
+    <value>Programmi</value>
+  </data>
+  <data name="CatArchives" xml:space="preserve">
+    <value>Archivi</value>
+  </data>
+  <data name="CatCustomExtensions" xml:space="preserve">
+    <value>Estensioni personalizzate...</value>
+  </data>
+  <data name="ConflictAutoRename" xml:space="preserve">
+    <value>Rinomina automaticamente (es. File (1).jpg)</value>
+  </data>
+  <data name="ConflictOverwrite" xml:space="preserve">
+    <value>Sostituisci (il vecchio va nel cestino)</value>
+  </data>
+  <data name="ConflictSkip" xml:space="preserve">
+    <value>Salta (lascia sul desktop)</value>
+  </data>
+  <data name="TargetPortalFrame" xml:space="preserve">
+    <value>Frame Portal: {0}</value>
+  </data>
+  <data name="LastRunNever" xml:space="preserve">
+    <value>Ultima esecuzione riuscita: mai</value>
+  </data>
+  <data name="LastRunAt" xml:space="preserve">
+    <value>Ultima esecuzione riuscita: {0}</value>
+  </data>
 </root>

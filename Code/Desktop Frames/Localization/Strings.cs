@@ -424,6 +424,18 @@ namespace Desktop_Frames.Localization
         public static string ViewDetails => Get("ViewDetails");
         public static string ViewIcons => Get("ViewIcons");
 
+        public static string CatImages => Get("CatImages");
+        public static string CatDocuments => Get("CatDocuments");
+        public static string CatExecutables => Get("CatExecutables");
+        public static string CatArchives => Get("CatArchives");
+        public static string CatCustomExtensions => Get("CatCustomExtensions");
+        public static string ConflictAutoRename => Get("ConflictAutoRename");
+        public static string ConflictOverwrite => Get("ConflictOverwrite");
+        public static string ConflictSkip => Get("ConflictSkip");
+        public static string TargetPortalFrame => Get("TargetPortalFrame");
+        public static string LastRunNever => Get("LastRunNever");
+        public static string LastRunAt => Get("LastRunAt");
+
         // ── Dialogs and confirmations ──────────────────────────────────────
         public static string AutoOrgAddRule => Get("AutoOrgAddRule");
         public static string AutoOrgBrowseFolder => Get("AutoOrgBrowseFolder");

@@ -314,7 +314,10 @@ namespace Desktop_Frames
 
             sp2.Children.Add(new TextBlock { Text = Strings.AutoOrgIfExtension, FontSize = 12, FontWeight = FontWeights.Medium, Foreground = new SolidColorBrush(Color.FromRgb(95, 99, 104)), Margin = new Thickness(0, 0, 0, 8) });
             _cmbCondition = new ComboBox { FontSize = 13, Padding = new Thickness(8, 6, 8, 6), BorderBrush = new SolidColorBrush(Color.FromRgb(218, 220, 224)), BorderThickness = new Thickness(1), Background = Brushes.White, Foreground = new SolidColorBrush(Color.FromRgb(32, 33, 36)) };
-            foreach (var p in _presets.Keys) _cmbCondition.Items.Add(p);
+            // The preset name is a dictionary key, so it travels in the Tag and only
+            // the label is translated — otherwise the lookup below would throw.
+            foreach (var p in _presets.Keys)
+                _cmbCondition.Items.Add(new ComboBoxItem { Content = Strings.Get("Cat" + p.Replace(" ", "").Replace(".", "")), Tag = p });
             _cmbCondition.SelectionChanged += CmbCondition_SelectionChanged;
             sp2.Children.Add(_cmbCondition);
 
@@ -352,9 +355,9 @@ namespace Desktop_Frames
 
             sp3.Children.Add(new TextBlock { Text = Strings.AutoOrgIfExists, FontSize = 12, FontWeight = FontWeights.Medium, Foreground = new SolidColorBrush(Color.FromRgb(95, 99, 104)), Margin = new Thickness(0, 12, 0, 8) });
             _cmbConflict = new ComboBox { FontSize = 13, Padding = new Thickness(8, 6, 8, 6), BorderBrush = new SolidColorBrush(Color.FromRgb(218, 220, 224)), BorderThickness = new Thickness(1), Background = Brushes.White, Foreground = new SolidColorBrush(Color.FromRgb(32, 33, 36)) };
-            _cmbConflict.Items.Add("Auto-Rename (e.g., File (1).jpg)");
-            _cmbConflict.Items.Add("Overwrite (Send old file to Recycle Bin)");
-            _cmbConflict.Items.Add("Skip (Leave on Desktop)");
+            _cmbConflict.Items.Add(Strings.ConflictAutoRename);
+            _cmbConflict.Items.Add(Strings.ConflictOverwrite);
+            _cmbConflict.Items.Add(Strings.ConflictSkip);
             _cmbConflict.SelectionChanged += (s, e) => { if (!_isLoadingRule && _selectedRule != null) _selectedRule.ConflictAction = (RuleConflictAction)_cmbConflict.SelectedIndex; };
             sp3.Children.Add(_cmbConflict);
 
@@ -464,7 +467,7 @@ namespace Desktop_Frames
 
                         if (!string.IsNullOrEmpty(fPath))
                         {
-                            ComboBoxItem item = new ComboBoxItem { Content = $"Portal frame: {fTitle}", Tag = fPath };
+                            ComboBoxItem item = new ComboBoxItem { Content = Strings.Get("TargetPortalFrame", fTitle), Tag = fPath };
                             _cmbTarget.Items.Add(item);
                         }
                     }
@@ -487,7 +490,7 @@ namespace Desktop_Frames
             string newExt = "*.jpg; *.jpeg; *.png; *.gif; *.bmp; *.webp";
             if (_cmbCondition.SelectedItem != null)
             {
-                string selected = _cmbCondition.SelectedItem.ToString();
+                string selected = (_cmbCondition.SelectedItem as ComboBoxItem)?.Tag as string ?? "Images";
                 newExt = selected == "Custom Extensions..." ? _txtCustomExt.Text : _presets[selected];
             }
 
@@ -557,14 +560,15 @@ namespace Desktop_Frames
             _chkIsEnabled.IsChecked = rule.IsEnabled;
             _txtNameContains.Text = rule.NameContains ?? "";
             // Add this to update the timestamp!
-            _txtLastRun.Text = rule.LastRun.HasValue ? $"Last successful run: {rule.LastRun.Value.ToString("g")}" : "Last successful run: Never";
+            _txtLastRun.Text = rule.LastRun.HasValue ? Strings.Get("LastRunAt", rule.LastRun.Value.ToString("g")) : Strings.LastRunNever;
             _cmbConflict.SelectedIndex = (int)rule.ConflictAction;
             _chkAutoCreate.IsChecked = rule.AutoCreateFrame;
 
             var matchingPreset = _presets.FirstOrDefault(p => p.Value == rule.Extensions).Key;
             if (matchingPreset != null)
             {
-                _cmbCondition.SelectedItem = matchingPreset;
+                _cmbCondition.SelectedItem = _cmbCondition.Items.OfType<ComboBoxItem>()
+                    .FirstOrDefault(i => (string)i.Tag == matchingPreset);
                 _customExtBorder.Visibility = Visibility.Collapsed;
             }
             else

@@ -1458,4 +1458,37 @@ Desktop Frames + is maintained by Nikos Georgousis, has been enhanced and optimi
   <data name="NoteLanguageRestart" xml:space="preserve">
     <value>Note: the language changes after restarting the program. Packs dropped into the Languages folder are picked up on the next start.</value>
   </data>
+  <data name="CatImages" xml:space="preserve">
+    <value>Images</value>
+  </data>
+  <data name="CatDocuments" xml:space="preserve">
+    <value>Documents</value>
+  </data>
+  <data name="CatExecutables" xml:space="preserve">
+    <value>Executables</value>
+  </data>
+  <data name="CatArchives" xml:space="preserve">
+    <value>Archives</value>
+  </data>
+  <data name="CatCustomExtensions" xml:space="preserve">
+    <value>Custom Extensions...</value>
+  </data>
+  <data name="ConflictAutoRename" xml:space="preserve">
+    <value>Auto-Rename (e.g., File (1).jpg)</value>
+  </data>
+  <data name="ConflictOverwrite" xml:space="preserve">
+    <value>Overwrite (Send old file to Recycle Bin)</value>
+  </data>
+  <data name="ConflictSkip" xml:space="preserve">
+    <value>Skip (Leave on Desktop)</value>
+  </data>
+  <data name="TargetPortalFrame" xml:space="preserve">
+    <value>Portal frame: {0}</value>
+  </data>
+  <data name="LastRunNever" xml:space="preserve">
+    <value>Last successful run: never</value>
+  </data>
+  <data name="LastRunAt" xml:space="preserve">
+    <value>Last successful run: {0}</value>
+  </data>
 </root>
