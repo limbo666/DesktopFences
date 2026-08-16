@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <root>
-  <!-- Seed translation produced with AI assistance and not yet reviewed by a native speaker. Keys left out fall back to English at runtime. -->
+  <!-- Seed translation produced with AI assistance and not yet reviewed by a native speaker. Any key that is ever removed falls back to English at runtime. -->
   <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
     <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
     <xsd:element name="root" msdata:IsDataSet="true">
@@ -103,6 +103,9 @@
   <data name="AboutThinkAgain" xml:space="preserve">
     <value>Уверены? Подумайте ещё раз!</value>
   </data>
+  <data name="AboutTitle" xml:space="preserve">
+    <value>О программе Desktop Frames +</value>
+  </data>
   <data name="AboutVersion" xml:space="preserve">
     <value>Версия {0}</value>
   </data>
@@ -111,6 +114,9 @@
   </data>
   <data name="AboutWhat" xml:space="preserve">
     <value>Что!?</value>
+  </data>
+  <data name="AutomationClickTarget" xml:space="preserve">
+    <value>ЩЁЛКНИТЕ ПО ЦЕЛЕВОМУ ОКНУ</value>
   </data>
   <data name="AutomationDeleteSelected" xml:space="preserve">
     <value>Удалить выбранное</value>
@@ -208,6 +214,9 @@
   <data name="BtnDonate" xml:space="preserve">
     <value>♥ Поддержать через PayPal</value>
   </data>
+  <data name="BtnImportLanguagePack" xml:space="preserve">
+    <value>Импортировать языковой пакет…</value>
+  </data>
   <data name="BtnManageAutomation" xml:space="preserve">
     <value>Управление автоматизацией</value>
   </data>
@@ -223,11 +232,17 @@
   <data name="BtnOpenBackupsFolder" xml:space="preserve">
     <value>Открыть папку резервных копий</value>
   </data>
+  <data name="BtnOpenLanguagesFolder" xml:space="preserve">
+    <value>Открыть папку языков</value>
+  </data>
   <data name="BtnOpenLog" xml:space="preserve">
     <value>Открыть журнал</value>
   </data>
   <data name="BtnOrganizeNow" xml:space="preserve">
     <value>Разобрать сейчас</value>
+  </data>
+  <data name="BtnReset" xml:space="preserve">
+    <value>Сбросить</value>
   </data>
   <data name="BtnResetStyles" xml:space="preserve">
     <value>Сбросить стили</value>
@@ -310,6 +325,21 @@
   <data name="CalcShowTape" xml:space="preserve">
     <value>Показывать ленту вычислений</value>
   </data>
+  <data name="CatArchives" xml:space="preserve">
+    <value>Архивы</value>
+  </data>
+  <data name="CatCustomExtensions" xml:space="preserve">
+    <value>Свои расширения...</value>
+  </data>
+  <data name="CatDocuments" xml:space="preserve">
+    <value>Документы</value>
+  </data>
+  <data name="CatExecutables" xml:space="preserve">
+    <value>Программы</value>
+  </data>
+  <data name="CatImages" xml:space="preserve">
+    <value>Изображения</value>
+  </data>
   <data name="ColDateModified" xml:space="preserve">
     <value>Дата изменения</value>
   </data>
@@ -360,6 +390,15 @@
   </data>
   <data name="ConfirmDeleteTitle" xml:space="preserve">
     <value>Подтвердите удаление</value>
+  </data>
+  <data name="ConflictAutoRename" xml:space="preserve">
+    <value>Переименовать автоматически (например, Файл (1).jpg)</value>
+  </data>
+  <data name="ConflictOverwrite" xml:space="preserve">
+    <value>Заменить (старый файл — в корзину)</value>
+  </data>
+  <data name="ConflictSkip" xml:space="preserve">
+    <value>Пропустить (оставить на рабочем столе)</value>
   </data>
   <data name="CustomizeTitle" xml:space="preserve">
     <value>Настройка рамки</value>
@@ -445,6 +484,9 @@
   <data name="FxZoom" xml:space="preserve">
     <value>Наплыв</value>
   </data>
+  <data name="GaugeCpu" xml:space="preserve">
+    <value>CPU %</value>
+  </data>
   <data name="GaugeLeftL" xml:space="preserve">
     <value>ЛЕВЫЙ (L)</value>
   </data>
@@ -453,6 +495,9 @@
   </data>
   <data name="GaugeMasterVu" xml:space="preserve">
     <value>ОБЩИЙ VU</value>
+  </data>
+  <data name="GaugeRam" xml:space="preserve">
+    <value>RAM %</value>
   </data>
   <data name="GaugeRightR" xml:space="preserve">
     <value>ПРАВЫЙ (R)</value>
@@ -619,6 +664,24 @@
   <data name="KeyTilde" xml:space="preserve">
     <value>Тильда (~)</value>
   </data>
+  <data name="LangAutomatic" xml:space="preserve">
+    <value>Автоматически (как в Windows)</value>
+  </data>
+  <data name="LanguagePackBadName" xml:space="preserve">
+    <value>Имя файла должно быть кодом языка, например ru.resx или pt-BR.resx.</value>
+  </data>
+  <data name="LanguagePackFilter" xml:space="preserve">
+    <value>Языковые пакеты (*.resx)|*.resx</value>
+  </data>
+  <data name="LanguagePackImported" xml:space="preserve">
+    <value>Языковой пакет установлен: {0}. Перезапустите, чтобы увидеть его в списке.</value>
+  </data>
+  <data name="LastRunAt" xml:space="preserve">
+    <value>Последний удачный запуск: {0}</value>
+  </data>
+  <data name="LastRunNever" xml:space="preserve">
+    <value>Последний удачный запуск: никогда</value>
+  </data>
   <data name="LblActivationDelay" xml:space="preserve">
     <value>Задержка активации:</value>
   </data>
@@ -681,6 +744,9 @@
   </data>
   <data name="LblIconSpacing" xml:space="preserve">
     <value>Расстояние между значками:</value>
+  </data>
+  <data name="LblLanguage" xml:space="preserve">
+    <value>Язык интерфейса:</value>
   </data>
   <data name="LblLockIcon" xml:space="preserve">
     <value>Значок замка</value>
@@ -943,6 +1009,9 @@
   <data name="NoteHotkeysRestart" xml:space="preserve">
     <value>Примечание: изменения глобальных горячих клавиш вступают в силу после перезапуска программы.</value>
   </data>
+  <data name="NoteLanguageRestart" xml:space="preserve">
+    <value>Примечание: язык меняется после перезапуска программы. Пакеты, помещённые в папку Languages, читаются при следующем запуске.</value>
+  </data>
   <data name="NoteTextFormat" xml:space="preserve">
     <value>Формат текста…</value>
   </data>
@@ -1180,6 +1249,9 @@
   <data name="SecIdleFadeOut" xml:space="preserve">
     <value>Затухание при простое</value>
   </data>
+  <data name="SecLanguage" xml:space="preserve">
+    <value>Язык</value>
+  </data>
   <data name="SecLog" xml:space="preserve">
     <value>Журнал</value>
   </data>
@@ -1243,6 +1315,12 @@
   <data name="SndSoftDing" xml:space="preserve">
     <value>Тихий динь</value>
   </data>
+  <data name="TabAddNew" xml:space="preserve">
+    <value>Добавить вкладку</value>
+  </data>
+  <data name="TabAddNewHint" xml:space="preserve">
+    <value>Добавить вкладку (Ctrl+щелчок — импорт)</value>
+  </data>
   <data name="TabFrame" xml:space="preserve">
     <value>Рамка</value>
   </data>
@@ -1258,8 +1336,17 @@
   <data name="TabLookDeeper" xml:space="preserve">
     <value>Подробнее</value>
   </data>
+  <data name="TabMoveLeft" xml:space="preserve">
+    <value>Переместить влево</value>
+  </data>
+  <data name="TabMoveRight" xml:space="preserve">
+    <value>Переместить вправо</value>
+  </data>
   <data name="TabProfiles" xml:space="preserve">
     <value>Профили</value>
+  </data>
+  <data name="TabRename" xml:space="preserve">
+    <value>Переименовать вкладку</value>
   </data>
   <data name="TabSmartDesktop" xml:space="preserve">
     <value>Умный рабочий стол</value>
@@ -1272,6 +1359,9 @@
   </data>
   <data name="TabTools" xml:space="preserve">
     <value>Инструменты</value>
+  </data>
+  <data name="TargetPortalFrame" xml:space="preserve">
+    <value>Рамка-портал: {0}</value>
   </data>
   <data name="TermClearHistory" xml:space="preserve">
     <value>Очистить историю команд</value>
@@ -1344,6 +1434,9 @@
   </data>
   <data name="TrayExportFailedTitle" xml:space="preserve">
     <value>Desktop Frames Plus - Ошибка</value>
+  </data>
+  <data name="TrayFocusFrame" xml:space="preserve">
+    <value>Перейти к рамке... ({0})</value>
   </data>
   <data name="TrayManageProfiles" xml:space="preserve">
     <value>Управление профилями…</value>

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <root>
-  <!-- Seed translation produced with AI assistance and not yet reviewed by a native speaker. Keys left out fall back to English at runtime. -->
+  <!-- Seed translation produced with AI assistance and not yet reviewed by a native speaker. Any key that is ever removed falls back to English at runtime. -->
   <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
     <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
     <xsd:element name="root" msdata:IsDataSet="true">
@@ -103,6 +103,9 @@ Il est aujourd'hui maintenu par Nikos Georgousis, qui l'a enrichi et rendu plus 
   <data name="AboutThinkAgain" xml:space="preserve">
     <value>Vraiment ? Réfléchissez !</value>
   </data>
+  <data name="AboutTitle" xml:space="preserve">
+    <value>À propos de Desktop Frames +</value>
+  </data>
   <data name="AboutVersion" xml:space="preserve">
     <value>Version {0}</value>
   </data>
@@ -111,6 +114,9 @@ Il est aujourd'hui maintenu par Nikos Georgousis, qui l'a enrichi et rendu plus 
   </data>
   <data name="AboutWhat" xml:space="preserve">
     <value>Comment !?</value>
+  </data>
+  <data name="AutomationClickTarget" xml:space="preserve">
+    <value>CLIQUEZ SUR LA FENÊTRE CIBLE</value>
   </data>
   <data name="AutomationDeleteSelected" xml:space="preserve">
     <value>Supprimer la sélection</value>
@@ -208,6 +214,9 @@ Il est aujourd'hui maintenu par Nikos Georgousis, qui l'a enrichi et rendu plus 
   <data name="BtnDonate" xml:space="preserve">
     <value>♥ Faire un don via PayPal</value>
   </data>
+  <data name="BtnImportLanguagePack" xml:space="preserve">
+    <value>Importer un pack de langue…</value>
+  </data>
   <data name="BtnManageAutomation" xml:space="preserve">
     <value>Gérer l'automatisation</value>
   </data>
@@ -223,11 +232,17 @@ Il est aujourd'hui maintenu par Nikos Georgousis, qui l'a enrichi et rendu plus 
   <data name="BtnOpenBackupsFolder" xml:space="preserve">
     <value>Ouvrir le dossier des sauvegardes</value>
   </data>
+  <data name="BtnOpenLanguagesFolder" xml:space="preserve">
+    <value>Ouvrir le dossier des langues</value>
+  </data>
   <data name="BtnOpenLog" xml:space="preserve">
     <value>Ouvrir le journal</value>
   </data>
   <data name="BtnOrganizeNow" xml:space="preserve">
     <value>Organiser maintenant</value>
+  </data>
+  <data name="BtnReset" xml:space="preserve">
+    <value>Réinitialiser</value>
   </data>
   <data name="BtnResetStyles" xml:space="preserve">
     <value>Réinitialiser les styles</value>
@@ -310,6 +325,21 @@ Il est aujourd'hui maintenu par Nikos Georgousis, qui l'a enrichi et rendu plus 
   <data name="CalcShowTape" xml:space="preserve">
     <value>Afficher le ruban des calculs</value>
   </data>
+  <data name="CatArchives" xml:space="preserve">
+    <value>Archives</value>
+  </data>
+  <data name="CatCustomExtensions" xml:space="preserve">
+    <value>Extensions personnalisées...</value>
+  </data>
+  <data name="CatDocuments" xml:space="preserve">
+    <value>Documents</value>
+  </data>
+  <data name="CatExecutables" xml:space="preserve">
+    <value>Exécutables</value>
+  </data>
+  <data name="CatImages" xml:space="preserve">
+    <value>Images</value>
+  </data>
   <data name="ColDateModified" xml:space="preserve">
     <value>Date de modification</value>
   </data>
@@ -360,6 +390,15 @@ Il est aujourd'hui maintenu par Nikos Georgousis, qui l'a enrichi et rendu plus 
   </data>
   <data name="ConfirmDeleteTitle" xml:space="preserve">
     <value>Confirmer la suppression</value>
+  </data>
+  <data name="ConflictAutoRename" xml:space="preserve">
+    <value>Renommer automatiquement (ex. Fichier (1).jpg)</value>
+  </data>
+  <data name="ConflictOverwrite" xml:space="preserve">
+    <value>Remplacer (l'ancien fichier va à la corbeille)</value>
+  </data>
+  <data name="ConflictSkip" xml:space="preserve">
+    <value>Ignorer (laisser sur le bureau)</value>
   </data>
   <data name="CustomizeTitle" xml:space="preserve">
     <value>Personnaliser le cadre</value>
@@ -445,6 +484,9 @@ Il est aujourd'hui maintenu par Nikos Georgousis, qui l'a enrichi et rendu plus 
   <data name="FxZoom" xml:space="preserve">
     <value>Zoom</value>
   </data>
+  <data name="GaugeCpu" xml:space="preserve">
+    <value>CPU %</value>
+  </data>
   <data name="GaugeLeftL" xml:space="preserve">
     <value>GAUCHE (L)</value>
   </data>
@@ -453,6 +495,9 @@ Il est aujourd'hui maintenu par Nikos Georgousis, qui l'a enrichi et rendu plus 
   </data>
   <data name="GaugeMasterVu" xml:space="preserve">
     <value>VU PRINCIPAL</value>
+  </data>
+  <data name="GaugeRam" xml:space="preserve">
+    <value>RAM %</value>
   </data>
   <data name="GaugeRightR" xml:space="preserve">
     <value>DROITE (R)</value>
@@ -619,6 +664,24 @@ Il est aujourd'hui maintenu par Nikos Georgousis, qui l'a enrichi et rendu plus 
   <data name="KeyTilde" xml:space="preserve">
     <value>Tilde (~)</value>
   </data>
+  <data name="LangAutomatic" xml:space="preserve">
+    <value>Automatique (suivre Windows)</value>
+  </data>
+  <data name="LanguagePackBadName" xml:space="preserve">
+    <value>Le nom du fichier doit être un code de culture, comme fr.resx ou pt-BR.resx.</value>
+  </data>
+  <data name="LanguagePackFilter" xml:space="preserve">
+    <value>Packs de langue (*.resx)|*.resx</value>
+  </data>
+  <data name="LanguagePackImported" xml:space="preserve">
+    <value>Pack de langue installé : {0}. Redémarrez pour le voir dans la liste.</value>
+  </data>
+  <data name="LastRunAt" xml:space="preserve">
+    <value>Dernière exécution réussie : {0}</value>
+  </data>
+  <data name="LastRunNever" xml:space="preserve">
+    <value>Dernière exécution réussie : jamais</value>
+  </data>
   <data name="LblActivationDelay" xml:space="preserve">
     <value>Délai d'activation :</value>
   </data>
@@ -681,6 +744,9 @@ Il est aujourd'hui maintenu par Nikos Georgousis, qui l'a enrichi et rendu plus 
   </data>
   <data name="LblIconSpacing" xml:space="preserve">
     <value>Espacement des icônes :</value>
+  </data>
+  <data name="LblLanguage" xml:space="preserve">
+    <value>Langue de l'interface :</value>
   </data>
   <data name="LblLockIcon" xml:space="preserve">
     <value>Icône du cadenas</value>
@@ -943,6 +1009,9 @@ Il est aujourd'hui maintenu par Nikos Georgousis, qui l'a enrichi et rendu plus 
   <data name="NoteHotkeysRestart" xml:space="preserve">
     <value>Remarque : les modifications des raccourcis globaux prennent effet après redémarrage du programme.</value>
   </data>
+  <data name="NoteLanguageRestart" xml:space="preserve">
+    <value>Remarque : la langue change après le redémarrage du programme. Les packs déposés dans le dossier Languages sont pris en compte au démarrage suivant.</value>
+  </data>
   <data name="NoteTextFormat" xml:space="preserve">
     <value>Format du texte…</value>
   </data>
@@ -1180,6 +1249,9 @@ Il est aujourd'hui maintenu par Nikos Georgousis, qui l'a enrichi et rendu plus 
   <data name="SecIdleFadeOut" xml:space="preserve">
     <value>Fondu à l'inactivité</value>
   </data>
+  <data name="SecLanguage" xml:space="preserve">
+    <value>Langue</value>
+  </data>
   <data name="SecLog" xml:space="preserve">
     <value>Journal</value>
   </data>
@@ -1243,6 +1315,12 @@ Il est aujourd'hui maintenu par Nikos Georgousis, qui l'a enrichi et rendu plus 
   <data name="SndSoftDing" xml:space="preserve">
     <value>Ding feutré</value>
   </data>
+  <data name="TabAddNew" xml:space="preserve">
+    <value>Ajouter un onglet</value>
+  </data>
+  <data name="TabAddNewHint" xml:space="preserve">
+    <value>Ajouter un onglet (Ctrl+clic pour importer)</value>
+  </data>
   <data name="TabFrame" xml:space="preserve">
     <value>Cadre</value>
   </data>
@@ -1258,8 +1336,17 @@ Il est aujourd'hui maintenu par Nikos Georgousis, qui l'a enrichi et rendu plus 
   <data name="TabLookDeeper" xml:space="preserve">
     <value>Approfondir</value>
   </data>
+  <data name="TabMoveLeft" xml:space="preserve">
+    <value>Déplacer vers la gauche</value>
+  </data>
+  <data name="TabMoveRight" xml:space="preserve">
+    <value>Déplacer vers la droite</value>
+  </data>
   <data name="TabProfiles" xml:space="preserve">
     <value>Profils</value>
+  </data>
+  <data name="TabRename" xml:space="preserve">
+    <value>Renommer l'onglet</value>
   </data>
   <data name="TabSmartDesktop" xml:space="preserve">
     <value>Bureau intelligent</value>
@@ -1272,6 +1359,9 @@ Il est aujourd'hui maintenu par Nikos Georgousis, qui l'a enrichi et rendu plus 
   </data>
   <data name="TabTools" xml:space="preserve">
     <value>Outils</value>
+  </data>
+  <data name="TargetPortalFrame" xml:space="preserve">
+    <value>Cadre Portail : {0}</value>
   </data>
   <data name="TermClearHistory" xml:space="preserve">
     <value>Effacer l'historique des commandes</value>
@@ -1344,6 +1434,9 @@ Il est aujourd'hui maintenu par Nikos Georgousis, qui l'a enrichi et rendu plus 
   </data>
   <data name="TrayExportFailedTitle" xml:space="preserve">
     <value>Desktop Frames Plus - Erreur</value>
+  </data>
+  <data name="TrayFocusFrame" xml:space="preserve">
+    <value>Aller au cadre... ({0})</value>
   </data>
   <data name="TrayManageProfiles" xml:space="preserve">
     <value>Gérer les profils…</value>
