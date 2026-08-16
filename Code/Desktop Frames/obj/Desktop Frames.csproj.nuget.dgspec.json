@@ -1,23 +1,23 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\Nikos\\Desktop\\Ultra -Code\\Desktop Frames\\Desktop Frames.csproj": {}
+    "G:\\Nextcloud\\Development\\VCS14\\Desktop Fences\\DesktopFences_Active_Dev\\DesktopFrames+_Repo\\DesktopFrames+\\Code\\Desktop Frames\\Desktop Frames.csproj": {}
   },
   "projects": {
-    "C:\\Users\\Nikos\\Desktop\\Ultra -Code\\Desktop Frames\\Desktop Frames.csproj": {
+    "G:\\Nextcloud\\Development\\VCS14\\Desktop Fences\\DesktopFences_Active_Dev\\DesktopFrames+_Repo\\DesktopFrames+\\Code\\Desktop Frames\\Desktop Frames.csproj": {
       "version": "2.7.8.352",
       "restore": {
-        "projectUniqueName": "C:\\Users\\Nikos\\Desktop\\Ultra -Code\\Desktop Frames\\Desktop Frames.csproj",
+        "projectUniqueName": "G:\\Nextcloud\\Development\\VCS14\\Desktop Fences\\DesktopFences_Active_Dev\\DesktopFrames+_Repo\\DesktopFrames+\\Code\\Desktop Frames\\Desktop Frames.csproj",
         "projectName": "Desktop Frames",
-        "projectPath": "C:\\Users\\Nikos\\Desktop\\Ultra -Code\\Desktop Frames\\Desktop Frames.csproj",
-        "packagesPath": "C:\\Users\\Nikos\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\Nikos\\Desktop\\Ultra -Code\\Desktop Frames\\obj\\",
+        "projectPath": "G:\\Nextcloud\\Development\\VCS14\\Desktop Fences\\DesktopFences_Active_Dev\\DesktopFrames+_Repo\\DesktopFrames+\\Code\\Desktop Frames\\Desktop Frames.csproj",
+        "packagesPath": "C:\\Users\\admin\\.nuget\\packages\\",
+        "outputPath": "G:\\Nextcloud\\Development\\VCS14\\Desktop Fences\\DesktopFences_Active_Dev\\DesktopFrames+_Repo\\DesktopFrames+\\Code\\Desktop Frames\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\Nikos\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\admin\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
@@ -73,24 +73,6 @@
           ],
           "assetTargetFallback": true,
           "warn": true,
-          "downloadDependencies": [
-            {
-              "name": "Microsoft.AspNetCore.App.Ref",
-              "version": "[8.0.28, 8.0.28]"
-            },
-            {
-              "name": "Microsoft.NETCore.App.Host.win-x64",
-              "version": "[8.0.28, 8.0.28]"
-            },
-            {
-              "name": "Microsoft.NETCore.App.Ref",
-              "version": "[8.0.28, 8.0.28]"
-            },
-            {
-              "name": "Microsoft.WindowsDesktop.App.Ref",
-              "version": "[8.0.28, 8.0.28]"
-            }
-          ],
           "frameworkReferences": {
             "Microsoft.NETCore.App": {
               "privateAssets": "all"
@@ -99,7 +81,7 @@
               "privateAssets": "none"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.301/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.302/PortableRuntimeIdentifierGraph.json"
         }
       }
     }
