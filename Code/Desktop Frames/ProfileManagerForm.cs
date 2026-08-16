@@ -119,7 +119,7 @@ namespace Desktop_Frames
                         RefreshList();
                         TrayManager.Instance?.UpdateProfilesMenu();
                     }
-                    else MessageBoxesManager.ShowOKOnlyMessageBoxForm("Invalid name or profile already exists.", "Error");
+                    else MessageBoxesManager.ShowOKOnlyMessageBoxForm(Strings.MsgProfileNameInvalid, Strings.DlgError);
                 }
             };
 
@@ -271,7 +271,7 @@ namespace Desktop_Frames
                                 RefreshList();
                                 TrayManager.Instance?.UpdateProfilesMenu();
                             }
-                            else MessageBoxesManager.ShowOKOnlyMessageBoxForm("Rename failed. Name may be in use or invalid.", "Error");
+                            else MessageBoxesManager.ShowOKOnlyMessageBoxForm(Strings.MsgRenameProfileFailed, Strings.DlgError);
                         }
                     };
                 }
@@ -288,7 +288,7 @@ namespace Desktop_Frames
                     btnDelete.Click += (s, e) =>
                     {
                         e.Handled = true; // Prevent card click
-                        if (MessageBoxesManager.ShowCustomYesNoMessageBox($"Are you sure you want to delete profile '{p.Name}'?\nThis cannot be undone.", "Delete Profile"))
+                        if (MessageBoxesManager.ShowCustomYesNoMessageBox(Strings.Get("MsgConfirmDeleteProfile", p.Name), Strings.DlgDeleteProfile))
                         {
                             if (ProfileManager.DeleteProfile(p.Name))
                             {

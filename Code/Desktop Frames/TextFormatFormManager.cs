@@ -159,7 +159,7 @@ namespace Desktop_Frames
             catch (Exception ex)
             {
                 LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI, $"Error initializing TextFormatForm: {ex.Message}");
-                MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Error initializing form: {ex.Message}", "Form Error");
+                MessageBoxesManager.ShowOKOnlyMessageBoxForm(Strings.Get("MsgFormInitFailed", ex.Message), Strings.DlgFormError);
             }
         }
 
@@ -699,7 +699,7 @@ namespace Desktop_Frames
             {
                 LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI,
                     $"Error applying changes: {ex.Message}");
-                MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Error applying changes: {ex.Message}", "Apply Error");
+                MessageBoxesManager.ShowOKOnlyMessageBoxForm(Strings.Get("MsgApplyChangesFailed", ex.Message), Strings.DlgApplyError);
             }
         }
 
@@ -719,7 +719,7 @@ namespace Desktop_Frames
             {
                 LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI,
                     $"Error saving changes: {ex.Message}");
-                MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Error saving changes: {ex.Message}", "Save Error");
+                MessageBoxesManager.ShowOKOnlyMessageBoxForm(Strings.Get("MsgSaveChangesFailed", ex.Message), Strings.DlgSaveError);
             }
         }
 

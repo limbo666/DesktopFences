@@ -322,8 +322,8 @@ namespace Desktop_Frames
             {
                 // Confirmation Dialog inside the click
                 if (MessageBoxesManager.ShowCustomYesNoMessageBox(
-                    $"Import contents of '{text}' into a new tab?",
-                    "Confirm Import"))
+                    Strings.Get("MsgConfirmImportIntoTab", text),
+                    Strings.DlgConfirmImport))
                 {
                     PerformImport(targetFrame, targetWindow, sourceFrame, sourceTabIndex);
                     importWindow.Close();
@@ -413,7 +413,7 @@ namespace Desktop_Frames
             catch (Exception ex)
             {
                 LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.ImportExport, $"Import Failed: {ex.Message}");
-                MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Import failed: {ex.Message}", "Error");
+                MessageBoxesManager.ShowOKOnlyMessageBoxForm(Strings.Get("MsgImportFailed", ex.Message), Strings.DlgError);
             }
         }
 

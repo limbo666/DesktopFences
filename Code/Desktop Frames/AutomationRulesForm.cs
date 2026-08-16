@@ -83,7 +83,7 @@ namespace Desktop_Frames
             }
             catch (Exception ex)
             {
-                MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Error initializing: {ex.Message}", "Error");
+                MessageBoxesManager.ShowOKOnlyMessageBoxForm(Strings.Get("MsgInitFailed", ex.Message), Strings.DlgError);
             }
         }
 

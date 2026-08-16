@@ -675,7 +675,7 @@ namespace Desktop_Frames
             // When you close it, Resume() will run and process the new rules instantly.
 
             // Stay open, but confirm save!
-            MessageBoxesManager.ShowOKOnlyMessageBoxForm("Your rules have been saved and applied successfully.", "Saved");
+            MessageBoxesManager.ShowOKOnlyMessageBoxForm(Strings.MsgRulesSaved, Strings.DlgSaved);
         }
     }
 }

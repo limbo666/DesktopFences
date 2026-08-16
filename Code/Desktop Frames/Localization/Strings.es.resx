@@ -424,6 +424,117 @@ Hoy la mantiene Nikos Georgousis, que la ha ampliado y la ha hecho más estable 
   <data name="DiagRamUtilization" xml:space="preserve">
     <value>USO DE RAM</value>
   </data>
+  <data name="DlgApplyError" xml:space="preserve">
+    <value>Error al aplicar</value>
+  </data>
+  <data name="DlgBackup" xml:space="preserve">
+    <value>Copia de seguridad</value>
+  </data>
+  <data name="DlgBrowseError" xml:space="preserve">
+    <value>Error al examinar</value>
+  </data>
+  <data name="DlgConfirmImport" xml:space="preserve">
+    <value>Confirmar importación</value>
+  </data>
+  <data name="DlgCopyError" xml:space="preserve">
+    <value>Error al copiar</value>
+  </data>
+  <data name="DlgCopyItem" xml:space="preserve">
+    <value>Copiar elemento</value>
+  </data>
+  <data name="DlgCriticalError" xml:space="preserve">
+    <value>Error crítico</value>
+  </data>
+  <data name="DlgDefaultError" xml:space="preserve">
+    <value>Error al restablecer</value>
+  </data>
+  <data name="DlgDeleteProfile" xml:space="preserve">
+    <value>Eliminar perfil</value>
+  </data>
+  <data name="DlgDeleteTab" xml:space="preserve">
+    <value>Eliminar pestaña</value>
+  </data>
+  <data name="DlgError" xml:space="preserve">
+    <value>Error</value>
+  </data>
+  <data name="DlgExportError" xml:space="preserve">
+    <value>Error de exportación</value>
+  </data>
+  <data name="DlgExportSuccessful" xml:space="preserve">
+    <value>Exportación correcta</value>
+  </data>
+  <data name="DlgFactoryReset" xml:space="preserve">
+    <value>Restablecer de fábrica</value>
+  </data>
+  <data name="DlgFormError" xml:space="preserve">
+    <value>Error de la ventana</value>
+  </data>
+  <data name="DlgImportComplete" xml:space="preserve">
+    <value>Importación completada</value>
+  </data>
+  <data name="DlgImportError" xml:space="preserve">
+    <value>Error de importación</value>
+  </data>
+  <data name="DlgInfo" xml:space="preserve">
+    <value>Información</value>
+  </data>
+  <data name="DlgInformation" xml:space="preserve">
+    <value>Información</value>
+  </data>
+  <data name="DlgKeyboardCheck" xml:space="preserve">
+    <value>Opcional: comprobación del teclado</value>
+  </data>
+  <data name="DlgLaunchError" xml:space="preserve">
+    <value>Error al abrir</value>
+  </data>
+  <data name="DlgLoadError" xml:space="preserve">
+    <value>Error de carga</value>
+  </data>
+  <data name="DlgPasteError" xml:space="preserve">
+    <value>Error al pegar</value>
+  </data>
+  <data name="DlgPasteItem" xml:space="preserve">
+    <value>Pegar elemento</value>
+  </data>
+  <data name="DlgRenameError" xml:space="preserve">
+    <value>Error al cambiar el nombre</value>
+  </data>
+  <data name="DlgResetComplete" xml:space="preserve">
+    <value>Restablecimiento completado</value>
+  </data>
+  <data name="DlgResetSuccessful" xml:space="preserve">
+    <value>Restablecimiento correcto</value>
+  </data>
+  <data name="DlgRestartRequired" xml:space="preserve">
+    <value>Es necesario reiniciar</value>
+  </data>
+  <data name="DlgRestore" xml:space="preserve">
+    <value>Restaurar</value>
+  </data>
+  <data name="DlgRestoreError" xml:space="preserve">
+    <value>Error al restaurar</value>
+  </data>
+  <data name="DlgRestoreSettings" xml:space="preserve">
+    <value>Restaurar la configuración</value>
+  </data>
+  <data name="DlgSaveError" xml:space="preserve">
+    <value>Error al guardar</value>
+  </data>
+  <data name="DlgSaved" xml:space="preserve">
+    <value>Guardado</value>
+  </data>
+  <data name="DlgSuccess" xml:space="preserve">
+    <value>Operación correcta</value>
+  </data>
+  <data name="DlgSweepDesktop" xml:space="preserve">
+    <value>Ordenar el escritorio</value>
+  </data>
+  <data name="DlgUpdatePortalFrame" xml:space="preserve">
+    <value>Actualizar el marco Portal</value>
+  </data>
+  <data name="DlgValidationError" xml:space="preserve">
+    <value>Dato no válido</value>
+  </data>
   <data name="EditSelectIcon" xml:space="preserve">
     <value>Elegir un icono</value>
   </data>
@@ -945,6 +1056,250 @@ Hoy la mantiene Nikos Georgousis, que la ha ampliado y la ha hecho más estable 
   </data>
   <data name="MoveMainItems" xml:space="preserve">
     <value>📋 Elementos principales</value>
+  </data>
+  <data name="MsgAddItemFailed" xml:space="preserve">
+    <value>No se pudo añadir {0}: {1}</value>
+  </data>
+  <data name="MsgApplyChangesFailed" xml:space="preserve">
+    <value>Error al aplicar los cambios: {0}</value>
+  </data>
+  <data name="MsgApplySettingsFailed" xml:space="preserve">
+    <value>Error al aplicar la configuración: {0}</value>
+  </data>
+  <data name="MsgBackupDone" xml:space="preserve">
+    <value>Copia de seguridad completada.</value>
+  </data>
+  <data name="MsgBackupFailed" xml:space="preserve">
+    <value>Se produjo un error durante la copia de seguridad: {0}</value>
+  </data>
+  <data name="MsgCannotDeleteLastTab" xml:space="preserve">
+    <value>No puedes eliminar la única pestaña que queda.</value>
+  </data>
+  <data name="MsgConfirmDeleteProfile" xml:space="preserve">
+    <value>¿Seguro que quieres eliminar el perfil '{0}'?
+Esta acción no se puede deshacer.</value>
+  </data>
+  <data name="MsgConfirmDisableCtrlAltHotkeys" xml:space="preserve">
+    <value>Los atajos de perfil están configurados como Ctrl+Alt.
+
+En muchos teclados internacionales Windows usa la misma combinación para la tecla 'AltGr'. Esto puede impedirte escribir caracteres como @, €, [ o {.
+
+• Pulsa 'Sí' para desactivarlos (soluciona los problemas al escribir)
+• Pulsa 'No' para conservarlos (si todo funciona bien)</value>
+  </data>
+  <data name="MsgConfirmFactoryReset" xml:space="preserve">
+    <value>ATENCIÓN: se eliminarán TODOS los marcos, accesos directos y ajustes del PERFIL ACTUAL.
+
+¿Quieres continuar?</value>
+  </data>
+  <data name="MsgConfirmImportIntoTab" xml:space="preserve">
+    <value>¿Importar el contenido de '{0}' en una pestaña nueva?</value>
+  </data>
+  <data name="MsgConfirmResetCustomizations" xml:space="preserve">
+    <value>¿Restablecer todas las personalizaciones visuales?</value>
+  </data>
+  <data name="MsgConfirmRestoreSettings" xml:space="preserve">
+    <value>Esta copia de seguridad también contiene la configuración (options.json).
+
+¿Quieres restaurar también los ajustes generales?</value>
+  </data>
+  <data name="MsgConfirmSetPortalHome" xml:space="preserve">
+    <value>¿Usar esta carpeta como nuevo origen?
+
+{0}</value>
+  </data>
+  <data name="MsgConfirmSweepDesktop" xml:space="preserve">
+    <value>Los archivos que ya están en el escritorio se moverán a tus carpetas de destino según tus reglas.
+
+¿Continuar?</value>
+  </data>
+  <data name="MsgCopyItemFailed" xml:space="preserve">
+    <value>Error al copiar el elemento: {0}</value>
+  </data>
+  <data name="MsgCopyPathFailed" xml:space="preserve">
+    <value>No se pudo copiar la ruta.</value>
+  </data>
+  <data name="MsgCreateProfileFailed" xml:space="preserve">
+    <value>No se pudo crear el perfil. El nombre no es válido o ya existe.</value>
+  </data>
+  <data name="MsgCustomizationsReset" xml:space="preserve">
+    <value>Se han restablecido todas las personalizaciones visuales.
+Tus iconos y la posición de los marcos se han conservado.</value>
+  </data>
+  <data name="MsgDeleteItemFailed" xml:space="preserve">
+    <value>No se pudo eliminar el elemento.</value>
+  </data>
+  <data name="MsgDesktopOrganized" xml:space="preserve">
+    <value>Escritorio ordenado.</value>
+  </data>
+  <data name="MsgDestinationFolderGone" xml:space="preserve">
+    <value>La carpeta de destino '{0}' ya no existe.</value>
+  </data>
+  <data name="MsgEditNotAvailable" xml:space="preserve">
+    <value>Este tipo de elemento no se puede editar.</value>
+  </data>
+  <data name="MsgExportFailed" xml:space="preserve">
+    <value>La exportación falló: {0}</value>
+  </data>
+  <data name="MsgExportIconsFailed" xml:space="preserve">
+    <value>Error al exportar los iconos: {0}</value>
+  </data>
+  <data name="MsgFactoryResetDone" xml:space="preserve">
+    <value>Restablecimiento de fábrica completado.
+La aplicación se reiniciará.</value>
+  </data>
+  <data name="MsgFileNotFoundInProfile" xml:space="preserve">
+    <value>Archivo no encontrado en el perfil activo:
+{0}</value>
+  </data>
+  <data name="MsgFormInitFailed" xml:space="preserve">
+    <value>Error al abrir la ventana: {0}</value>
+  </data>
+  <data name="MsgFrameExportedTo" xml:space="preserve">
+    <value>Marco exportado a:
+{0}</value>
+  </data>
+  <data name="MsgFrameImported" xml:space="preserve">
+    <value>Marco importado correctamente.</value>
+  </data>
+  <data name="MsgFramesMovedIntoBounds" xml:space="preserve">
+    <value>Se han comprobado todos los marcos y se han movido dentro de los límites de la pantalla.</value>
+  </data>
+  <data name="MsgGenericError" xml:space="preserve">
+    <value>Error: {0}</value>
+  </data>
+  <data name="MsgGlobalSettingsRestored" xml:space="preserve">
+    <value>Se ha restaurado la configuración general.
+La aplicación se reiniciará para aplicarla.</value>
+  </data>
+  <data name="MsgHotkeysSavedRestartNeeded" xml:space="preserve">
+    <value>Los atajos de teclado se han guardado y aplicado a todos los perfiles.
+
+Reinicia Desktop Frames para activarlos.</value>
+  </data>
+  <data name="MsgImportFailed" xml:space="preserve">
+    <value>La importación falló: {0}</value>
+  </data>
+  <data name="MsgImportFrameFailed" xml:space="preserve">
+    <value>No se pudo importar el marco: {0}</value>
+  </data>
+  <data name="MsgInitFailed" xml:space="preserve">
+    <value>Error de inicialización: {0}</value>
+  </data>
+  <data name="MsgInvalidFileOrFolder" xml:space="preserve">
+    <value>Archivo o carpeta no válidos: {0}</value>
+  </data>
+  <data name="MsgInvalidUrlFile" xml:space="preserve">
+    <value>Archivo .url no válido: {0}</value>
+  </data>
+  <data name="MsgItemCopiedReady" xml:space="preserve">
+    <value>Elemento '{0}' copiado y listo para pegar.</value>
+  </data>
+  <data name="MsgLaunchFailed" xml:space="preserve">
+    <value>Error al abrir: {0}</value>
+  </data>
+  <data name="MsgLoadFramePropertiesFailed" xml:space="preserve">
+    <value>Error al cargar las propiedades del marco: {0}</value>
+  </data>
+  <data name="MsgLogFileNotFound" xml:space="preserve">
+    <value>No se encontró el archivo de registro.</value>
+  </data>
+  <data name="MsgMoveFailed" xml:space="preserve">
+    <value>No se pudo mover: {0}</value>
+  </data>
+  <data name="MsgNameAlreadyExists" xml:space="preserve">
+    <value>Ya existe un archivo o una carpeta con ese nombre.</value>
+  </data>
+  <data name="MsgNameAndTargetRequired" xml:space="preserve">
+    <value>El nombre visible y la ruta de destino no pueden estar vacíos.</value>
+  </data>
+  <data name="MsgNoFrameToRestore" xml:space="preserve">
+    <value>No hay ningún marco que restaurar</value>
+  </data>
+  <data name="MsgNoItemToPaste" xml:space="preserve">
+    <value>No hay ningún elemento que pegar</value>
+  </data>
+  <data name="MsgNoPortalDestination" xml:space="preserve">
+    <value>Este marco Portal no tiene definida una carpeta de destino.</value>
+  </data>
+  <data name="MsgOpenCustomizeFailed" xml:space="preserve">
+    <value>Error al abrir la ventana de personalización: {0}</value>
+  </data>
+  <data name="MsgOpenFileBrowserFailed" xml:space="preserve">
+    <value>Error al abrir el selector de archivos: {0}</value>
+  </data>
+  <data name="MsgOpenTextFormatFailed" xml:space="preserve">
+    <value>Error al abrir la ventana de formato de texto: {0}</value>
+  </data>
+  <data name="MsgPasteItemFailed" xml:space="preserve">
+    <value>Error al pegar el elemento: {0}</value>
+  </data>
+  <data name="MsgPortalInitFailed" xml:space="preserve">
+    <value>No se pudo inicializar el marco Portal: {0}</value>
+  </data>
+  <data name="MsgProfileCreated" xml:space="preserve">
+    <value>Perfil '{0}' creado correctamente.</value>
+  </data>
+  <data name="MsgProfileNameInvalid" xml:space="preserve">
+    <value>Nombre no válido o el perfil ya existe.</value>
+  </data>
+  <data name="MsgProfileSystemError" xml:space="preserve">
+    <value>Error del sistema de perfiles: {0}</value>
+  </data>
+  <data name="MsgRecycleBinFailed" xml:space="preserve">
+    <value>No se pudo mover el elemento a la papelera.</value>
+  </data>
+  <data name="MsgReloadFramesFailed" xml:space="preserve">
+    <value>Se produjo un error al recargar los marcos: {0}</value>
+  </data>
+  <data name="MsgReloadingFramesFailed" xml:space="preserve">
+    <value>Error al recargar los marcos: {0}</value>
+  </data>
+  <data name="MsgRenameItemFailed" xml:space="preserve">
+    <value>No se pudo cambiar el nombre del elemento: {0}</value>
+  </data>
+  <data name="MsgRenameProfileFailed" xml:space="preserve">
+    <value>No se pudo cambiar el nombre. Puede que ya esté en uso o no sea válido.</value>
+  </data>
+  <data name="MsgResetCustomizationsFailed" xml:space="preserve">
+    <value>Error al restablecer las personalizaciones: {0}</value>
+  </data>
+  <data name="MsgResetDefaultsFailed" xml:space="preserve">
+    <value>Error al restablecer los valores predeterminados: {0}</value>
+  </data>
+  <data name="MsgResetFailed" xml:space="preserve">
+    <value>No se pudo restablecer: {0}</value>
+  </data>
+  <data name="MsgRestoreDefaultsFailed" xml:space="preserve">
+    <value>Error al restaurar los valores predeterminados: {0}</value>
+  </data>
+  <data name="MsgRestoreDone" xml:space="preserve">
+    <value>Restauración completada.</value>
+  </data>
+  <data name="MsgRestoreFailed" xml:space="preserve">
+    <value>No se pudo restaurar: {0}</value>
+  </data>
+  <data name="MsgRestoreFrameFailed" xml:space="preserve">
+    <value>Error al restaurar el marco: {0}</value>
+  </data>
+  <data name="MsgRulesSaved" xml:space="preserve">
+    <value>Tus reglas se han guardado y aplicado.</value>
+  </data>
+  <data name="MsgRunAsAdminFailed" xml:space="preserve">
+    <value>Error al ejecutar como administrador: {0}</value>
+  </data>
+  <data name="MsgSaveChangesFailed" xml:space="preserve">
+    <value>Error al guardar los cambios: {0}</value>
+  </data>
+  <data name="MsgSaveSettingsFailed" xml:space="preserve">
+    <value>Error al guardar la configuración: {0}</value>
+  </data>
+  <data name="MsgSaveShortcutFailed" xml:space="preserve">
+    <value>No se pudo guardar el acceso directo: {0}</value>
+  </data>
+  <data name="MsgTargetNotFound" xml:space="preserve">
+    <value>No se encontró el destino:
+{0}</value>
   </data>
   <data name="NetChecking" xml:space="preserve">
     <value>Comprobando…</value>

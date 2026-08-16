@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
+using Desktop_Frames.Localization;
 
 namespace Desktop_Frames
 {

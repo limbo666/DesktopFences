@@ -574,7 +574,7 @@ namespace Desktop_Frames
 
                 LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.IconHandling,
                     $"Error during move operation: {ex.Message}");
-                MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Move failed: {ex.Message}", "Error");
+                MessageBoxesManager.ShowOKOnlyMessageBoxForm(Strings.Get("MsgMoveFailed", ex.Message), Strings.DlgError);
             }
         }
 

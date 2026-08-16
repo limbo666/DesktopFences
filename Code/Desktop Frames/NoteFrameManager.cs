@@ -535,7 +535,7 @@ namespace Desktop_Frames
                     {
                         LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI,
                             $"Error opening Text Format form: {ex.Message}");
-                        MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Error opening Text Format form: {ex.Message}", "Form Error");
+                        MessageBoxesManager.ShowOKOnlyMessageBoxForm(Strings.Get("MsgOpenTextFormatFailed", ex.Message), Strings.DlgFormError);
                     }
                 };
                 menu.Items.Add(textFormatFormItem);

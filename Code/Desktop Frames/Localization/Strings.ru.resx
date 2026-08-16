@@ -424,6 +424,117 @@
   <data name="DiagRamUtilization" xml:space="preserve">
     <value>ЗАГРУЗКА ОЗУ</value>
   </data>
+  <data name="DlgApplyError" xml:space="preserve">
+    <value>Ошибка применения</value>
+  </data>
+  <data name="DlgBackup" xml:space="preserve">
+    <value>Резервная копия</value>
+  </data>
+  <data name="DlgBrowseError" xml:space="preserve">
+    <value>Ошибка обзора</value>
+  </data>
+  <data name="DlgConfirmImport" xml:space="preserve">
+    <value>Подтверждение импорта</value>
+  </data>
+  <data name="DlgCopyError" xml:space="preserve">
+    <value>Ошибка копирования</value>
+  </data>
+  <data name="DlgCopyItem" xml:space="preserve">
+    <value>Копировать элемент</value>
+  </data>
+  <data name="DlgCriticalError" xml:space="preserve">
+    <value>Критическая ошибка</value>
+  </data>
+  <data name="DlgDefaultError" xml:space="preserve">
+    <value>Ошибка сброса</value>
+  </data>
+  <data name="DlgDeleteProfile" xml:space="preserve">
+    <value>Удалить профиль</value>
+  </data>
+  <data name="DlgDeleteTab" xml:space="preserve">
+    <value>Удалить вкладку</value>
+  </data>
+  <data name="DlgError" xml:space="preserve">
+    <value>Ошибка</value>
+  </data>
+  <data name="DlgExportError" xml:space="preserve">
+    <value>Ошибка экспорта</value>
+  </data>
+  <data name="DlgExportSuccessful" xml:space="preserve">
+    <value>Экспорт выполнен</value>
+  </data>
+  <data name="DlgFactoryReset" xml:space="preserve">
+    <value>Сброс к исходным настройкам</value>
+  </data>
+  <data name="DlgFormError" xml:space="preserve">
+    <value>Ошибка окна</value>
+  </data>
+  <data name="DlgImportComplete" xml:space="preserve">
+    <value>Импорт завершён</value>
+  </data>
+  <data name="DlgImportError" xml:space="preserve">
+    <value>Ошибка импорта</value>
+  </data>
+  <data name="DlgInfo" xml:space="preserve">
+    <value>Сведения</value>
+  </data>
+  <data name="DlgInformation" xml:space="preserve">
+    <value>Информация</value>
+  </data>
+  <data name="DlgKeyboardCheck" xml:space="preserve">
+    <value>Необязательно: проверка клавиатуры</value>
+  </data>
+  <data name="DlgLaunchError" xml:space="preserve">
+    <value>Ошибка запуска</value>
+  </data>
+  <data name="DlgLoadError" xml:space="preserve">
+    <value>Ошибка загрузки</value>
+  </data>
+  <data name="DlgPasteError" xml:space="preserve">
+    <value>Ошибка вставки</value>
+  </data>
+  <data name="DlgPasteItem" xml:space="preserve">
+    <value>Вставить элемент</value>
+  </data>
+  <data name="DlgRenameError" xml:space="preserve">
+    <value>Ошибка переименования</value>
+  </data>
+  <data name="DlgResetComplete" xml:space="preserve">
+    <value>Сброс завершён</value>
+  </data>
+  <data name="DlgResetSuccessful" xml:space="preserve">
+    <value>Сброс выполнен</value>
+  </data>
+  <data name="DlgRestartRequired" xml:space="preserve">
+    <value>Требуется перезапуск</value>
+  </data>
+  <data name="DlgRestore" xml:space="preserve">
+    <value>Восстановление</value>
+  </data>
+  <data name="DlgRestoreError" xml:space="preserve">
+    <value>Ошибка восстановления</value>
+  </data>
+  <data name="DlgRestoreSettings" xml:space="preserve">
+    <value>Восстановить настройки</value>
+  </data>
+  <data name="DlgSaveError" xml:space="preserve">
+    <value>Ошибка сохранения</value>
+  </data>
+  <data name="DlgSaved" xml:space="preserve">
+    <value>Сохранено</value>
+  </data>
+  <data name="DlgSuccess" xml:space="preserve">
+    <value>Готово</value>
+  </data>
+  <data name="DlgSweepDesktop" xml:space="preserve">
+    <value>Разобрать рабочий стол</value>
+  </data>
+  <data name="DlgUpdatePortalFrame" xml:space="preserve">
+    <value>Обновить рамку-портал</value>
+  </data>
+  <data name="DlgValidationError" xml:space="preserve">
+    <value>Неверные данные</value>
+  </data>
   <data name="EditSelectIcon" xml:space="preserve">
     <value>Выберите значок</value>
   </data>
@@ -945,6 +1056,250 @@
   </data>
   <data name="MoveMainItems" xml:space="preserve">
     <value>📋 Основные элементы</value>
+  </data>
+  <data name="MsgAddItemFailed" xml:space="preserve">
+    <value>Не удалось добавить {0}: {1}</value>
+  </data>
+  <data name="MsgApplyChangesFailed" xml:space="preserve">
+    <value>Ошибка при применении изменений: {0}</value>
+  </data>
+  <data name="MsgApplySettingsFailed" xml:space="preserve">
+    <value>Ошибка при применении настроек: {0}</value>
+  </data>
+  <data name="MsgBackupDone" xml:space="preserve">
+    <value>Резервное копирование завершено.</value>
+  </data>
+  <data name="MsgBackupFailed" xml:space="preserve">
+    <value>Во время резервного копирования произошла ошибка: {0}</value>
+  </data>
+  <data name="MsgCannotDeleteLastTab" xml:space="preserve">
+    <value>Нельзя удалить последнюю оставшуюся вкладку.</value>
+  </data>
+  <data name="MsgConfirmDeleteProfile" xml:space="preserve">
+    <value>Удалить профиль «{0}»?
+Это действие нельзя отменить.</value>
+  </data>
+  <data name="MsgConfirmDisableCtrlAltHotkeys" xml:space="preserve">
+    <value>Сочетания клавиш профилей сейчас заданы как Ctrl+Alt.
+
+На многих международных раскладках Windows использует эту же комбинацию для клавиши «AltGr». Из-за этого могут не набираться символы @, €, [ и {.
+
+• «Да» — отключить их (решает проблемы с вводом)
+• «Нет» — оставить их (если всё работает)</value>
+  </data>
+  <data name="MsgConfirmFactoryReset" xml:space="preserve">
+    <value>ВНИМАНИЕ: будут удалены ВСЕ рамки, ярлыки и настройки ТЕКУЩЕГО ПРОФИЛЯ!
+
+Продолжить?</value>
+  </data>
+  <data name="MsgConfirmImportIntoTab" xml:space="preserve">
+    <value>Импортировать содержимое «{0}» в новую вкладку?</value>
+  </data>
+  <data name="MsgConfirmResetCustomizations" xml:space="preserve">
+    <value>Сбросить все настройки внешнего вида?</value>
+  </data>
+  <data name="MsgConfirmRestoreSettings" xml:space="preserve">
+    <value>В этой резервной копии есть и настройки (options.json).
+
+Восстановить также общие настройки?</value>
+  </data>
+  <data name="MsgConfirmSetPortalHome" xml:space="preserve">
+    <value>Использовать эту папку как новый источник?
+
+{0}</value>
+  </data>
+  <data name="MsgConfirmSweepDesktop" xml:space="preserve">
+    <value>Файлы, уже лежащие на рабочем столе, будут перемещены в целевые папки по вашим правилам.
+
+Продолжить?</value>
+  </data>
+  <data name="MsgCopyItemFailed" xml:space="preserve">
+    <value>Ошибка при копировании объекта: {0}</value>
+  </data>
+  <data name="MsgCopyPathFailed" xml:space="preserve">
+    <value>Не удалось скопировать путь.</value>
+  </data>
+  <data name="MsgCreateProfileFailed" xml:space="preserve">
+    <value>Не удалось создать профиль. Имя неверно или уже занято.</value>
+  </data>
+  <data name="MsgCustomizationsReset" xml:space="preserve">
+    <value>Все настройки внешнего вида сброшены.
+Значки и положение рамок сохранены.</value>
+  </data>
+  <data name="MsgDeleteItemFailed" xml:space="preserve">
+    <value>Не удалось удалить объект.</value>
+  </data>
+  <data name="MsgDesktopOrganized" xml:space="preserve">
+    <value>Рабочий стол разобран.</value>
+  </data>
+  <data name="MsgDestinationFolderGone" xml:space="preserve">
+    <value>Целевая папка «{0}» больше не существует.</value>
+  </data>
+  <data name="MsgEditNotAvailable" xml:space="preserve">
+    <value>Этот тип объекта нельзя изменить.</value>
+  </data>
+  <data name="MsgExportFailed" xml:space="preserve">
+    <value>Не удалось выполнить экспорт: {0}</value>
+  </data>
+  <data name="MsgExportIconsFailed" xml:space="preserve">
+    <value>Ошибка при экспорте значков: {0}</value>
+  </data>
+  <data name="MsgFactoryResetDone" xml:space="preserve">
+    <value>Сброс к исходным настройкам завершён.
+Приложение будет перезапущено.</value>
+  </data>
+  <data name="MsgFileNotFoundInProfile" xml:space="preserve">
+    <value>Файл не найден в активном профиле:
+{0}</value>
+  </data>
+  <data name="MsgFormInitFailed" xml:space="preserve">
+    <value>Ошибка при открытии окна: {0}</value>
+  </data>
+  <data name="MsgFrameExportedTo" xml:space="preserve">
+    <value>Рамка экспортирована в:
+{0}</value>
+  </data>
+  <data name="MsgFrameImported" xml:space="preserve">
+    <value>Рамка успешно импортирована.</value>
+  </data>
+  <data name="MsgFramesMovedIntoBounds" xml:space="preserve">
+    <value>Все рамки проверены и возвращены в видимую область экрана.</value>
+  </data>
+  <data name="MsgGenericError" xml:space="preserve">
+    <value>Ошибка: {0}</value>
+  </data>
+  <data name="MsgGlobalSettingsRestored" xml:space="preserve">
+    <value>Общие настройки восстановлены.
+Приложение перезапустится, чтобы применить их.</value>
+  </data>
+  <data name="MsgHotkeysSavedRestartNeeded" xml:space="preserve">
+    <value>Глобальные сочетания клавиш сохранены и применены ко всем профилям.
+
+Перезапустите Desktop Frames, чтобы они заработали.</value>
+  </data>
+  <data name="MsgImportFailed" xml:space="preserve">
+    <value>Не удалось выполнить импорт: {0}</value>
+  </data>
+  <data name="MsgImportFrameFailed" xml:space="preserve">
+    <value>Не удалось импортировать рамку: {0}</value>
+  </data>
+  <data name="MsgInitFailed" xml:space="preserve">
+    <value>Ошибка инициализации: {0}</value>
+  </data>
+  <data name="MsgInvalidFileOrFolder" xml:space="preserve">
+    <value>Неверный файл или папка: {0}</value>
+  </data>
+  <data name="MsgInvalidUrlFile" xml:space="preserve">
+    <value>Неверный файл .url: {0}</value>
+  </data>
+  <data name="MsgItemCopiedReady" xml:space="preserve">
+    <value>Объект «{0}» скопирован и готов к вставке.</value>
+  </data>
+  <data name="MsgLaunchFailed" xml:space="preserve">
+    <value>Ошибка при запуске: {0}</value>
+  </data>
+  <data name="MsgLoadFramePropertiesFailed" xml:space="preserve">
+    <value>Ошибка при загрузке свойств рамки: {0}</value>
+  </data>
+  <data name="MsgLogFileNotFound" xml:space="preserve">
+    <value>Файл журнала не найден.</value>
+  </data>
+  <data name="MsgMoveFailed" xml:space="preserve">
+    <value>Не удалось переместить: {0}</value>
+  </data>
+  <data name="MsgNameAlreadyExists" xml:space="preserve">
+    <value>Файл или папка с таким именем уже существует.</value>
+  </data>
+  <data name="MsgNameAndTargetRequired" xml:space="preserve">
+    <value>Отображаемое имя и путь назначения не могут быть пустыми.</value>
+  </data>
+  <data name="MsgNoFrameToRestore" xml:space="preserve">
+    <value>Нет рамки для восстановления</value>
+  </data>
+  <data name="MsgNoItemToPaste" xml:space="preserve">
+    <value>Нечего вставлять</value>
+  </data>
+  <data name="MsgNoPortalDestination" xml:space="preserve">
+    <value>Для этой рамки-портала не задана целевая папка.</value>
+  </data>
+  <data name="MsgOpenCustomizeFailed" xml:space="preserve">
+    <value>Ошибка при открытии окна настройки: {0}</value>
+  </data>
+  <data name="MsgOpenFileBrowserFailed" xml:space="preserve">
+    <value>Ошибка при открытии выбора файлов: {0}</value>
+  </data>
+  <data name="MsgOpenTextFormatFailed" xml:space="preserve">
+    <value>Ошибка при открытии окна форматирования текста: {0}</value>
+  </data>
+  <data name="MsgPasteItemFailed" xml:space="preserve">
+    <value>Ошибка при вставке объекта: {0}</value>
+  </data>
+  <data name="MsgPortalInitFailed" xml:space="preserve">
+    <value>Не удалось создать рамку-портал: {0}</value>
+  </data>
+  <data name="MsgProfileCreated" xml:space="preserve">
+    <value>Профиль «{0}» создан.</value>
+  </data>
+  <data name="MsgProfileNameInvalid" xml:space="preserve">
+    <value>Неверное имя или профиль уже существует.</value>
+  </data>
+  <data name="MsgProfileSystemError" xml:space="preserve">
+    <value>Ошибка системы профилей: {0}</value>
+  </data>
+  <data name="MsgRecycleBinFailed" xml:space="preserve">
+    <value>Не удалось переместить объект в корзину.</value>
+  </data>
+  <data name="MsgReloadFramesFailed" xml:space="preserve">
+    <value>При перезагрузке рамок произошла ошибка: {0}</value>
+  </data>
+  <data name="MsgReloadingFramesFailed" xml:space="preserve">
+    <value>Ошибка при перезагрузке рамок: {0}</value>
+  </data>
+  <data name="MsgRenameItemFailed" xml:space="preserve">
+    <value>Не удалось переименовать объект: {0}</value>
+  </data>
+  <data name="MsgRenameProfileFailed" xml:space="preserve">
+    <value>Переименование не удалось. Имя занято или неверно.</value>
+  </data>
+  <data name="MsgResetCustomizationsFailed" xml:space="preserve">
+    <value>Ошибка при сбросе оформления: {0}</value>
+  </data>
+  <data name="MsgResetDefaultsFailed" xml:space="preserve">
+    <value>Ошибка при возврате к значениям по умолчанию: {0}</value>
+  </data>
+  <data name="MsgResetFailed" xml:space="preserve">
+    <value>Сброс не выполнен: {0}</value>
+  </data>
+  <data name="MsgRestoreDefaultsFailed" xml:space="preserve">
+    <value>Ошибка при восстановлении значений по умолчанию: {0}</value>
+  </data>
+  <data name="MsgRestoreDone" xml:space="preserve">
+    <value>Восстановление завершено.</value>
+  </data>
+  <data name="MsgRestoreFailed" xml:space="preserve">
+    <value>Восстановление не выполнено: {0}</value>
+  </data>
+  <data name="MsgRestoreFrameFailed" xml:space="preserve">
+    <value>Ошибка при восстановлении рамки: {0}</value>
+  </data>
+  <data name="MsgRulesSaved" xml:space="preserve">
+    <value>Правила сохранены и применены.</value>
+  </data>
+  <data name="MsgRunAsAdminFailed" xml:space="preserve">
+    <value>Ошибка при запуске от имени администратора: {0}</value>
+  </data>
+  <data name="MsgSaveChangesFailed" xml:space="preserve">
+    <value>Ошибка при сохранении изменений: {0}</value>
+  </data>
+  <data name="MsgSaveSettingsFailed" xml:space="preserve">
+    <value>Ошибка при сохранении настроек: {0}</value>
+  </data>
+  <data name="MsgSaveShortcutFailed" xml:space="preserve">
+    <value>Не удалось сохранить ярлык: {0}</value>
+  </data>
+  <data name="MsgTargetNotFound" xml:space="preserve">
+    <value>Цель не найдена:
+{0}</value>
   </data>
   <data name="NetChecking" xml:space="preserve">
     <value>Проверка…</value>

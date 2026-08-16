@@ -1146,7 +1146,7 @@ namespace Desktop_Frames
                 // Check if target name already exists
                 if (System.IO.File.Exists(newPath) || Directory.Exists(newPath))
                 {
-                    MessageBoxesManager.ShowOKOnlyMessageBoxForm("A file or folder with that name already exists.", "Rename Error");
+                    MessageBoxesManager.ShowOKOnlyMessageBoxForm(Strings.MsgNameAlreadyExists, Strings.DlgRenameError);
                     return;
                 }
 
@@ -1167,7 +1167,7 @@ namespace Desktop_Frames
             catch (Exception ex)
             {
                 LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.General, $"Failed to rename {currentPath}: {ex.Message}");
-                MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Failed to rename item: {ex.Message}", "Rename Error");
+                MessageBoxesManager.ShowOKOnlyMessageBoxForm(Strings.Get("MsgRenameItemFailed", ex.Message), Strings.DlgRenameError);
             }
         }
 
@@ -1212,7 +1212,7 @@ namespace Desktop_Frames
             catch (Exception ex)
             {
                 LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI, $"Failed to copy path for {path}: {ex.Message}");
-                MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Unable to copy path.", "Error");
+                MessageBoxesManager.ShowOKOnlyMessageBoxForm(Strings.MsgCopyPathFailed, Strings.DlgError);
             }
         }
 
@@ -1252,7 +1252,7 @@ namespace Desktop_Frames
                 catch (Exception ex)
                 {
                     LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.General, $"Failed to move item {path} to recycle bin: {ex.Message}");
-                    MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Unable to move item to recycle bin.", "Error");
+                    MessageBoxesManager.ShowOKOnlyMessageBoxForm(Strings.MsgRecycleBinFailed, Strings.DlgError);
                 }
             }
             else
@@ -1284,7 +1284,7 @@ namespace Desktop_Frames
                 catch (Exception ex)
                 {
                     LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.General, $"Failed to delete item {path}: {ex.Message}");
-                    MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Unable to delete item.", "Error");
+                    MessageBoxesManager.ShowOKOnlyMessageBoxForm(Strings.MsgDeleteItemFailed, Strings.DlgError);
                 }
             }
         }

@@ -634,7 +634,7 @@ namespace Desktop_Frames
                 // 2. Validation: Don't allow deleting the last tab
                 if (tabs.Count <= 1)
                 {
-                    MessageBoxesManager.ShowOKOnlyMessageBoxForm("Cannot delete the last remaining tab.", "Delete Tab");
+                    MessageBoxesManager.ShowOKOnlyMessageBoxForm(Strings.MsgCannotDeleteLastTab, Strings.DlgDeleteTab);
                     return;
                 }
 

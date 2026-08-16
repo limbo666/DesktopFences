@@ -565,7 +565,7 @@ namespace Desktop_Frames
                     // This calls the wrapper that handles the variable flipping
                     Framemanager.ForceRepositionallFrames();
 
-                    MessageBoxesManager.ShowOKOnlyMessageBoxForm("All frames have been checked and moved within valid screen bounds.", "Success");
+                    MessageBoxesManager.ShowOKOnlyMessageBoxForm(Strings.MsgFramesMovedIntoBounds, Strings.DlgSuccess);
                 };
             }
             else
@@ -581,7 +581,7 @@ namespace Desktop_Frames
             CreateSectionHeader(c, Strings.BtnReset, Colors.Red);
             Button r1 = CreateStyledButton(Strings.BtnResetStyles, Color.FromRgb(108, 117, 125));
             r1.Width = 255; r1.Height = 45; r1.Margin = new Thickness(0, 0, 0, 15);
-            r1.Click += (s, e) => { if (MessageBoxesManager.ShowCustomYesNoMessageBox("Reset all visual customizations?", Strings.BtnReset)) { Framemanager.ResetAllCustomizations(); _optionsWindow.Close(); } };
+            r1.Click += (s, e) => { if (MessageBoxesManager.ShowCustomYesNoMessageBox(Strings.MsgConfirmResetCustomizations, Strings.BtnReset)) { Framemanager.ResetAllCustomizations(); _optionsWindow.Close(); } };
 
             Button r2 = CreateStyledButton(Strings.BtnClearAllData, Color.FromRgb(220, 53, 69));
             r2.Width = 255; r2.Height = 45;
@@ -783,7 +783,7 @@ namespace Desktop_Frames
             btnOrganizeNow.HorizontalAlignment = HorizontalAlignment.Left;
             btnOrganizeNow.Click += (s, e) =>
             {
-                if (MessageBoxesManager.ShowCustomYesNoMessageBox("This will move existing files on your desktop to your target folders based on your rules.\n\nProceed?", "Sweep Desktop"))
+                if (MessageBoxesManager.ShowCustomYesNoMessageBox(Strings.MsgConfirmSweepDesktop, Strings.DlgSweepDesktop))
                 {
                     AutoOrganizeManager.ProcessDesktopNow();
                 }
@@ -1149,7 +1149,7 @@ namespace Desktop_Frames
                     // Propagate the new hotkeys across all existing profiles
                     SettingsManager.BroadcastHotkeysToAllProfiles();
 
-                    MessageBoxesManager.ShowOKOnlyMessageBoxForm("Global Hotkey changes have been saved and applied to all profiles.\n\nPlease restart Desktop Frames to activate the new shortcuts.", "Restart Required");
+                    MessageBoxesManager.ShowOKOnlyMessageBoxForm(Strings.MsgHotkeysSavedRestartNeeded, Strings.DlgRestartRequired);
                 }
 
                 // 5. Smart Desktop (Auto-Organize)
@@ -1247,7 +1247,7 @@ namespace Desktop_Frames
             catch (Exception ex)
             {
                 LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.Settings, $"Error saving options: {ex.Message}");
-                MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Error: {ex.Message}", "Save Error");
+                MessageBoxesManager.ShowOKOnlyMessageBoxForm(Strings.Get("MsgGenericError", ex.Message), Strings.DlgSaveError);
             }
         }
 
@@ -1297,7 +1297,7 @@ namespace Desktop_Frames
             }
             catch (Exception ex)
             {
-                MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Restore failed: {ex.Message}", "Error");
+                MessageBoxesManager.ShowOKOnlyMessageBoxForm(Strings.Get("MsgRestoreFailed", ex.Message), Strings.DlgError);
             }
         }
         private static void OpenBackupsFolder()
@@ -1312,14 +1312,14 @@ namespace Desktop_Frames
             {
                 string p = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "Desktop_Frames.log");
                 if (System.IO.File.Exists(p)) Process.Start(new ProcessStartInfo { FileName = p, UseShellExecute = true });
-                else MessageBoxesManager.ShowOKOnlyMessageBoxForm("Log file not found.", "Information");
+                else MessageBoxesManager.ShowOKOnlyMessageBoxForm(Strings.MsgLogFileNotFound, Strings.DlgInformation);
             }
             catch { }
         }
 
         private static void PerformFullFactoryReset()
         {
-            if (MessageBoxesManager.ShowCustomYesNoMessageBox("WARNING: This will delete ALL frames, shortcuts, and settings for the CURRENT PROFILE!\n\nAre you sure you want to proceed?", "Factory Reset"))
+            if (MessageBoxesManager.ShowCustomYesNoMessageBox(Strings.MsgConfirmFactoryReset, Strings.DlgFactoryReset))
             {
                 // KISS: Hijack cursor to show processing
                 System.Windows.Application.Current?.Dispatcher.Invoke(() => System.Windows.Input.Mouse.OverrideCursor = System.Windows.Input.Cursors.Wait);
@@ -1353,7 +1353,7 @@ namespace Desktop_Frames
                     System.IO.File.WriteAllText(oj, "{}");
 
                     // 4. Force a clean OS-level restart (Guarantees all UI clears properly)
-                    MessageBoxesManager.ShowOKOnlyMessageBoxForm("Factory Reset complete.\nThe application will now restart.", "Reset Successful");
+                    MessageBoxesManager.ShowOKOnlyMessageBoxForm(Strings.MsgFactoryResetDone, Strings.DlgResetSuccessful);
 
                     string appPath = System.Diagnostics.Process.GetCurrentProcess().MainModule.FileName;
                     System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
@@ -1371,7 +1371,7 @@ namespace Desktop_Frames
                 catch (Exception ex)
                 {
                     LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.Error, $"Factory reset failed: {ex.Message}");
-                    MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Reset failed: {ex.Message}", "Error");
+                    MessageBoxesManager.ShowOKOnlyMessageBoxForm(Strings.Get("MsgResetFailed", ex.Message), Strings.DlgError);
                 }
                 finally
                 {

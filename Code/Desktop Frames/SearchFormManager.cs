@@ -446,7 +446,7 @@ namespace Desktop_Frames
                     // Logic for Standard Files & .URL files
                     if (!System.IO.File.Exists(finalPath) && !finalPath.StartsWith("http"))
                     {
-                        MessageBoxesManager.ShowOKOnlyMessageBoxForm($"File not found in active profile:\n{finalPath}", "Launch Error");
+                        MessageBoxesManager.ShowOKOnlyMessageBoxForm(Strings.Get("MsgFileNotFoundInProfile", finalPath), Strings.DlgLaunchError);
                         return;
                     }
 
@@ -471,7 +471,7 @@ namespace Desktop_Frames
             }
             catch (Exception ex)
             {
-                MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Error launching: {ex.Message}", "Error");
+                MessageBoxesManager.ShowOKOnlyMessageBoxForm(Strings.Get("MsgLaunchFailed", ex.Message), Strings.DlgError);
             }
         }
        

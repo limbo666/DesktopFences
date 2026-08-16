@@ -610,7 +610,7 @@ public partial class EditShortcutWindow : Window
         catch (Exception ex)
         {
             LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI, $"Error in target browse dialog: {ex.Message}");
-            MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Error opening file browser: {ex.Message}", "Browse Error");
+            MessageBoxesManager.ShowOKOnlyMessageBoxForm(Strings.Get("MsgOpenFileBrowserFailed", ex.Message), Strings.DlgBrowseError);
         }
     }
 
@@ -695,7 +695,7 @@ public partial class EditShortcutWindow : Window
         catch (Exception ex)
         {
             LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI, $"Error restoring defaults: {ex.Message}");
-            MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Error restoring default values: {ex.Message}", "Default Error");
+            MessageBoxesManager.ShowOKOnlyMessageBoxForm(Strings.Get("MsgRestoreDefaultsFailed", ex.Message), Strings.DlgDefaultError);
         }
     }
 
@@ -712,7 +712,7 @@ public partial class EditShortcutWindow : Window
 
             if (string.IsNullOrWhiteSpace(newDisplayName) || string.IsNullOrWhiteSpace(newTargetPath))
             {
-                MessageBoxesManager.ShowOKOnlyMessageBoxForm("Display name and Target path cannot be empty.", "Validation Error");
+                MessageBoxesManager.ShowOKOnlyMessageBoxForm(Strings.MsgNameAndTargetRequired, Strings.DlgValidationError);
                 return;
             }
 
@@ -814,7 +814,7 @@ public partial class EditShortcutWindow : Window
         catch (Exception ex)
         {
             LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI, $"Error saving shortcut: {ex.Message}");
-            MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Failed to save shortcut: {ex.Message}", "Save Error");
+            MessageBoxesManager.ShowOKOnlyMessageBoxForm(Strings.Get("MsgSaveShortcutFailed", ex.Message), Strings.DlgSaveError);
         }
     }
 

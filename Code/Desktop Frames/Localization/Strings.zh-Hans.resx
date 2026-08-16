@@ -424,6 +424,117 @@
   <data name="DiagRamUtilization" xml:space="preserve">
     <value>内存使用率</value>
   </data>
+  <data name="DlgApplyError" xml:space="preserve">
+    <value>应用失败</value>
+  </data>
+  <data name="DlgBackup" xml:space="preserve">
+    <value>备份</value>
+  </data>
+  <data name="DlgBrowseError" xml:space="preserve">
+    <value>浏览失败</value>
+  </data>
+  <data name="DlgConfirmImport" xml:space="preserve">
+    <value>确认导入</value>
+  </data>
+  <data name="DlgCopyError" xml:space="preserve">
+    <value>复制失败</value>
+  </data>
+  <data name="DlgCopyItem" xml:space="preserve">
+    <value>复制项目</value>
+  </data>
+  <data name="DlgCriticalError" xml:space="preserve">
+    <value>严重错误</value>
+  </data>
+  <data name="DlgDefaultError" xml:space="preserve">
+    <value>恢复默认失败</value>
+  </data>
+  <data name="DlgDeleteProfile" xml:space="preserve">
+    <value>删除配置</value>
+  </data>
+  <data name="DlgDeleteTab" xml:space="preserve">
+    <value>删除标签页</value>
+  </data>
+  <data name="DlgError" xml:space="preserve">
+    <value>错误</value>
+  </data>
+  <data name="DlgExportError" xml:space="preserve">
+    <value>导出失败</value>
+  </data>
+  <data name="DlgExportSuccessful" xml:space="preserve">
+    <value>导出成功</value>
+  </data>
+  <data name="DlgFactoryReset" xml:space="preserve">
+    <value>恢复出厂设置</value>
+  </data>
+  <data name="DlgFormError" xml:space="preserve">
+    <value>窗口错误</value>
+  </data>
+  <data name="DlgImportComplete" xml:space="preserve">
+    <value>导入完成</value>
+  </data>
+  <data name="DlgImportError" xml:space="preserve">
+    <value>导入失败</value>
+  </data>
+  <data name="DlgInfo" xml:space="preserve">
+    <value>提示</value>
+  </data>
+  <data name="DlgInformation" xml:space="preserve">
+    <value>信息</value>
+  </data>
+  <data name="DlgKeyboardCheck" xml:space="preserve">
+    <value>可选：键盘兼容性检查</value>
+  </data>
+  <data name="DlgLaunchError" xml:space="preserve">
+    <value>启动失败</value>
+  </data>
+  <data name="DlgLoadError" xml:space="preserve">
+    <value>加载失败</value>
+  </data>
+  <data name="DlgPasteError" xml:space="preserve">
+    <value>粘贴失败</value>
+  </data>
+  <data name="DlgPasteItem" xml:space="preserve">
+    <value>粘贴项目</value>
+  </data>
+  <data name="DlgRenameError" xml:space="preserve">
+    <value>重命名失败</value>
+  </data>
+  <data name="DlgResetComplete" xml:space="preserve">
+    <value>重置完成</value>
+  </data>
+  <data name="DlgResetSuccessful" xml:space="preserve">
+    <value>重置成功</value>
+  </data>
+  <data name="DlgRestartRequired" xml:space="preserve">
+    <value>需要重启</value>
+  </data>
+  <data name="DlgRestore" xml:space="preserve">
+    <value>还原</value>
+  </data>
+  <data name="DlgRestoreError" xml:space="preserve">
+    <value>还原失败</value>
+  </data>
+  <data name="DlgRestoreSettings" xml:space="preserve">
+    <value>还原设置</value>
+  </data>
+  <data name="DlgSaveError" xml:space="preserve">
+    <value>保存失败</value>
+  </data>
+  <data name="DlgSaved" xml:space="preserve">
+    <value>已保存</value>
+  </data>
+  <data name="DlgSuccess" xml:space="preserve">
+    <value>操作成功</value>
+  </data>
+  <data name="DlgSweepDesktop" xml:space="preserve">
+    <value>整理桌面</value>
+  </data>
+  <data name="DlgUpdatePortalFrame" xml:space="preserve">
+    <value>更新门户框</value>
+  </data>
+  <data name="DlgValidationError" xml:space="preserve">
+    <value>输入无效</value>
+  </data>
   <data name="EditSelectIcon" xml:space="preserve">
     <value>选择图标</value>
   </data>
@@ -945,6 +1056,250 @@
   </data>
   <data name="MoveMainItems" xml:space="preserve">
     <value>📋 主要项目</value>
+  </data>
+  <data name="MsgAddItemFailed" xml:space="preserve">
+    <value>无法添加 {0}：{1}</value>
+  </data>
+  <data name="MsgApplyChangesFailed" xml:space="preserve">
+    <value>应用更改时出错：{0}</value>
+  </data>
+  <data name="MsgApplySettingsFailed" xml:space="preserve">
+    <value>应用设置时出错：{0}</value>
+  </data>
+  <data name="MsgBackupDone" xml:space="preserve">
+    <value>备份完成。</value>
+  </data>
+  <data name="MsgBackupFailed" xml:space="preserve">
+    <value>备份过程中出错：{0}</value>
+  </data>
+  <data name="MsgCannotDeleteLastTab" xml:space="preserve">
+    <value>无法删除最后一个标签页。</value>
+  </data>
+  <data name="MsgConfirmDeleteProfile" xml:space="preserve">
+    <value>确定要删除配置“{0}”吗？
+此操作无法撤销。</value>
+  </data>
+  <data name="MsgConfirmDisableCtrlAltHotkeys" xml:space="preserve">
+    <value>配置快捷键当前设为 Ctrl+Alt。
+
+在许多国际键盘上，Windows 把这个组合同时用作 'AltGr' 键。这会导致无法输入 @、€、[ 或 { 等字符。
+
+• 点击“是”将其禁用（解决输入问题）
+• 点击“否”保留它们（如果一切正常）</value>
+  </data>
+  <data name="MsgConfirmFactoryReset" xml:space="preserve">
+    <value>警告：将删除当前配置的所有框、快捷方式和设置！
+
+确定要继续吗？</value>
+  </data>
+  <data name="MsgConfirmImportIntoTab" xml:space="preserve">
+    <value>把“{0}”的内容导入到新标签页吗？</value>
+  </data>
+  <data name="MsgConfirmResetCustomizations" xml:space="preserve">
+    <value>要重置所有外观自定义吗？</value>
+  </data>
+  <data name="MsgConfirmRestoreSettings" xml:space="preserve">
+    <value>此备份还包含配置设置（options.json）。
+
+是否同时还原全局设置？</value>
+  </data>
+  <data name="MsgConfirmSetPortalHome" xml:space="preserve">
+    <value>把这个文件夹设为新的来源吗？
+
+{0}</value>
+  </data>
+  <data name="MsgConfirmSweepDesktop" xml:space="preserve">
+    <value>桌面上已有的文件将按你的规则移动到目标文件夹。
+
+继续吗？</value>
+  </data>
+  <data name="MsgCopyItemFailed" xml:space="preserve">
+    <value>复制项目时出错：{0}</value>
+  </data>
+  <data name="MsgCopyPathFailed" xml:space="preserve">
+    <value>无法复制路径。</value>
+  </data>
+  <data name="MsgCreateProfileFailed" xml:space="preserve">
+    <value>无法创建配置。名称无效或已存在。</value>
+  </data>
+  <data name="MsgCustomizationsReset" xml:space="preserve">
+    <value>所有外观自定义已重置。
+图标和框的位置保持不变。</value>
+  </data>
+  <data name="MsgDeleteItemFailed" xml:space="preserve">
+    <value>无法删除该项目。</value>
+  </data>
+  <data name="MsgDesktopOrganized" xml:space="preserve">
+    <value>桌面整理完成。</value>
+  </data>
+  <data name="MsgDestinationFolderGone" xml:space="preserve">
+    <value>目标文件夹“{0}”已不存在。</value>
+  </data>
+  <data name="MsgEditNotAvailable" xml:space="preserve">
+    <value>此类项目无法编辑。</value>
+  </data>
+  <data name="MsgExportFailed" xml:space="preserve">
+    <value>导出失败：{0}</value>
+  </data>
+  <data name="MsgExportIconsFailed" xml:space="preserve">
+    <value>导出图标时出错：{0}</value>
+  </data>
+  <data name="MsgFactoryResetDone" xml:space="preserve">
+    <value>已恢复出厂设置。
+应用程序将重新启动。</value>
+  </data>
+  <data name="MsgFileNotFoundInProfile" xml:space="preserve">
+    <value>在当前配置中找不到文件：
+{0}</value>
+  </data>
+  <data name="MsgFormInitFailed" xml:space="preserve">
+    <value>打开窗口时出错：{0}</value>
+  </data>
+  <data name="MsgFrameExportedTo" xml:space="preserve">
+    <value>框已导出到：
+{0}</value>
+  </data>
+  <data name="MsgFrameImported" xml:space="preserve">
+    <value>框导入成功。</value>
+  </data>
+  <data name="MsgFramesMovedIntoBounds" xml:space="preserve">
+    <value>已检查所有框并移回屏幕可见范围内。</value>
+  </data>
+  <data name="MsgGenericError" xml:space="preserve">
+    <value>错误：{0}</value>
+  </data>
+  <data name="MsgGlobalSettingsRestored" xml:space="preserve">
+    <value>全局设置已还原。
+应用程序将重新启动以应用更改。</value>
+  </data>
+  <data name="MsgHotkeysSavedRestartNeeded" xml:space="preserve">
+    <value>全局快捷键已保存并应用到所有配置。
+
+请重新启动 Desktop Frames 以启用。</value>
+  </data>
+  <data name="MsgImportFailed" xml:space="preserve">
+    <value>导入失败：{0}</value>
+  </data>
+  <data name="MsgImportFrameFailed" xml:space="preserve">
+    <value>无法导入框：{0}</value>
+  </data>
+  <data name="MsgInitFailed" xml:space="preserve">
+    <value>初始化出错：{0}</value>
+  </data>
+  <data name="MsgInvalidFileOrFolder" xml:space="preserve">
+    <value>无效的文件或文件夹：{0}</value>
+  </data>
+  <data name="MsgInvalidUrlFile" xml:space="preserve">
+    <value>无效的 .url 文件：{0}</value>
+  </data>
+  <data name="MsgItemCopiedReady" xml:space="preserve">
+    <value>已复制项目“{0}”，可以粘贴了。</value>
+  </data>
+  <data name="MsgLaunchFailed" xml:space="preserve">
+    <value>启动时出错：{0}</value>
+  </data>
+  <data name="MsgLoadFramePropertiesFailed" xml:space="preserve">
+    <value>加载框属性时出错：{0}</value>
+  </data>
+  <data name="MsgLogFileNotFound" xml:space="preserve">
+    <value>找不到日志文件。</value>
+  </data>
+  <data name="MsgMoveFailed" xml:space="preserve">
+    <value>移动失败：{0}</value>
+  </data>
+  <data name="MsgNameAlreadyExists" xml:space="preserve">
+    <value>已存在同名的文件或文件夹。</value>
+  </data>
+  <data name="MsgNameAndTargetRequired" xml:space="preserve">
+    <value>显示名称和目标路径不能为空。</value>
+  </data>
+  <data name="MsgNoFrameToRestore" xml:space="preserve">
+    <value>没有可还原的框</value>
+  </data>
+  <data name="MsgNoItemToPaste" xml:space="preserve">
+    <value>没有可粘贴的项目</value>
+  </data>
+  <data name="MsgNoPortalDestination" xml:space="preserve">
+    <value>此门户框尚未设置目标文件夹。</value>
+  </data>
+  <data name="MsgOpenCustomizeFailed" xml:space="preserve">
+    <value>打开自定义窗口时出错：{0}</value>
+  </data>
+  <data name="MsgOpenFileBrowserFailed" xml:space="preserve">
+    <value>打开文件选择器时出错：{0}</value>
+  </data>
+  <data name="MsgOpenTextFormatFailed" xml:space="preserve">
+    <value>打开文本格式窗口时出错：{0}</value>
+  </data>
+  <data name="MsgPasteItemFailed" xml:space="preserve">
+    <value>粘贴项目时出错：{0}</value>
+  </data>
+  <data name="MsgPortalInitFailed" xml:space="preserve">
+    <value>无法初始化门户框：{0}</value>
+  </data>
+  <data name="MsgProfileCreated" xml:space="preserve">
+    <value>配置“{0}”创建成功。</value>
+  </data>
+  <data name="MsgProfileNameInvalid" xml:space="preserve">
+    <value>名称无效，或配置已存在。</value>
+  </data>
+  <data name="MsgProfileSystemError" xml:space="preserve">
+    <value>配置系统错误：{0}</value>
+  </data>
+  <data name="MsgRecycleBinFailed" xml:space="preserve">
+    <value>无法把该项目移入回收站。</value>
+  </data>
+  <data name="MsgReloadFramesFailed" xml:space="preserve">
+    <value>重新加载框时出错：{0}</value>
+  </data>
+  <data name="MsgReloadingFramesFailed" xml:space="preserve">
+    <value>重新加载框时出错：{0}</value>
+  </data>
+  <data name="MsgRenameItemFailed" xml:space="preserve">
+    <value>无法重命名该项目：{0}</value>
+  </data>
+  <data name="MsgRenameProfileFailed" xml:space="preserve">
+    <value>重命名失败。名称可能已被占用或无效。</value>
+  </data>
+  <data name="MsgResetCustomizationsFailed" xml:space="preserve">
+    <value>重置自定义设置时出错：{0}</value>
+  </data>
+  <data name="MsgResetDefaultsFailed" xml:space="preserve">
+    <value>恢复默认值时出错：{0}</value>
+  </data>
+  <data name="MsgResetFailed" xml:space="preserve">
+    <value>重置失败：{0}</value>
+  </data>
+  <data name="MsgRestoreDefaultsFailed" xml:space="preserve">
+    <value>还原默认值时出错：{0}</value>
+  </data>
+  <data name="MsgRestoreDone" xml:space="preserve">
+    <value>还原完成。</value>
+  </data>
+  <data name="MsgRestoreFailed" xml:space="preserve">
+    <value>还原失败：{0}</value>
+  </data>
+  <data name="MsgRestoreFrameFailed" xml:space="preserve">
+    <value>还原框时出错：{0}</value>
+  </data>
+  <data name="MsgRulesSaved" xml:space="preserve">
+    <value>规则已保存并生效。</value>
+  </data>
+  <data name="MsgRunAsAdminFailed" xml:space="preserve">
+    <value>以管理员身份运行时出错：{0}</value>
+  </data>
+  <data name="MsgSaveChangesFailed" xml:space="preserve">
+    <value>保存更改时出错：{0}</value>
+  </data>
+  <data name="MsgSaveSettingsFailed" xml:space="preserve">
+    <value>保存设置时出错：{0}</value>
+  </data>
+  <data name="MsgSaveShortcutFailed" xml:space="preserve">
+    <value>无法保存快捷方式：{0}</value>
+  </data>
+  <data name="MsgTargetNotFound" xml:space="preserve">
+    <value>找不到目标：
+{0}</value>
   </data>
   <data name="NetChecking" xml:space="preserve">
     <value>检查中…</value>

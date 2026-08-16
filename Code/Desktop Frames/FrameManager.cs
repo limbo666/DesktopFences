@@ -469,7 +469,7 @@ namespace Desktop_Frames
             catch (Exception ex)
             {
                 LogManager.Log(LogManager.LogLevel.Warn, LogManager.LogCategory.Error, $"Error reloading frames: {ex.Message}");
-                MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Error reloading frames: {ex.Message}", "Error");
+                MessageBoxesManager.ShowOKOnlyMessageBoxForm(Strings.Get("MsgReloadingFramesFailed", ex.Message), Strings.DlgError);
             }
         }
   
@@ -672,7 +672,7 @@ namespace Desktop_Frames
                     if (s is Button btn && btn.Tag != null)
                     {
                         string target = btn.Tag.ToString();
-                        if (MessageBoxesManager.ShowCustomYesNoMessageBox($"Set this folder as the new home?\n\n{target}", "Update Portal Frame"))
+                        if (MessageBoxesManager.ShowCustomYesNoMessageBox(Strings.Get("MsgConfirmSetPortalHome", target), Strings.DlgUpdatePortalFrame))
                         {
                             UpdateFrameProperty(liveFrame, "Path", target, "Updated Portal Path");
                             _portalNavigationStates.Remove(frameId);
@@ -1482,7 +1482,7 @@ namespace Desktop_Frames
                         try { Process.Start(psi); }
                         catch (Exception ex)
                         {
-                            MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Error running as admin: {ex.Message}", "Error");
+                            MessageBoxesManager.ShowOKOnlyMessageBoxForm(Strings.Get("MsgRunAsAdminFailed", ex.Message), Strings.DlgError);
                         }
                     };
 
@@ -1856,7 +1856,7 @@ namespace Desktop_Frames
                     $"Error in ExportAllIconsToDesktop: {ex.Message}");
 
                 // Always show errors, even in silent mode, so user knows why it failed
-                MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Error exporting icons: {ex.Message}", "Export Error");
+                MessageBoxesManager.ShowOKOnlyMessageBoxForm(Strings.Get("MsgExportIconsFailed", ex.Message), Strings.DlgExportError);
             }
         }
 
@@ -2439,15 +2439,15 @@ namespace Desktop_Frames
                         "All frame customizations have been reset to defaults.");
 
                     MessageBoxesManager.ShowOKOnlyMessageBoxForm(
-                        "All visual customizations have been reset.\nYour icons and frame positions were preserved.",
-                        "Reset Complete");
+                        Strings.MsgCustomizationsReset,
+                        Strings.DlgResetComplete);
                 }
             }
             catch (Exception ex)
             {
                 LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.Error,
                     $"Error resetting customizations: {ex.Message}");
-                MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Error resetting customizations: {ex.Message}", "Error");
+                MessageBoxesManager.ShowOKOnlyMessageBoxForm(Strings.Get("MsgResetCustomizationsFailed", ex.Message), Strings.DlgError);
             }
         }
 
@@ -3200,12 +3200,8 @@ namespace Desktop_Frames
                 if (mods.Contains("control") && mods.Contains("alt"))
                 {
                     bool disableHotkeys = MessageBoxesManager.ShowCustomYesNoMessageBox(
-                                  "Your profile hotkeys are currently set to Ctrl+Alt.\n\n" +
-                                  "Windows shares this shortcut with the 'AltGr' key on many international keyboards. " +
-                                  "This can block you from typing special characters like @, €, [, or {.\n\n" +
-                                  "• Click 'Yes' to disable them (fixes typing issues)\n" +
-                                  "• Click 'No' to keep them (if everything works fine)",
-                                  "Optional: Keyboard Compatibility Check",
+                                  Strings.MsgConfirmDisableCtrlAltHotkeys,
+                                  Strings.DlgKeyboardCheck,
                                   NotificationSound.NadaAlert); // Override the user's sound preference for this critical alert
 
                     if (disableHotkeys)
@@ -4315,7 +4311,7 @@ namespace Desktop_Frames
                 catch (Exception ex)
                 {
                     LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI, $"Error opening CustomizeFrameFormManager: {ex.Message}");
-                    MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Error opening customize form: {ex.Message}", "Form Error");
+                    MessageBoxesManager.ShowOKOnlyMessageBoxForm(Strings.Get("MsgOpenCustomizeFailed", ex.Message), Strings.DlgFormError);
                 }
             };
             CnMnFramemanager.Items.Add(miCustomize);
@@ -6228,7 +6224,7 @@ namespace Desktop_Frames
                     }
                     catch (Exception ex)
                     {
-                        MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Failed to initialize Portal Frame: {ex.Message}", "Error");
+                        MessageBoxesManager.ShowOKOnlyMessageBoxForm(Strings.Get("MsgPortalInitFailed", ex.Message), Strings.DlgError);
                         FrameDataManager.FrameData.Remove(frame);
                         FrameDataManager.SaveFrameData();
                         win.Close();
@@ -6285,7 +6281,7 @@ namespace Desktop_Frames
 
                             if (!fileExists && !directoryExists)
                             {
-                                MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Invalid file or directory: {droppedFile}", "Error");
+                                MessageBoxesManager.ShowOKOnlyMessageBoxForm(Strings.Get("MsgInvalidFileOrFolder", droppedFile), Strings.DlgError);
                                 continue;
                             }
 
@@ -6543,12 +6539,12 @@ namespace Desktop_Frames
 
                                 if (string.IsNullOrEmpty(destinationFolder))
                                 {
-                                    MessageBoxesManager.ShowOKOnlyMessageBoxForm($"No destination folder defined for this Portal Frame.", "Error");
+                                    MessageBoxesManager.ShowOKOnlyMessageBoxForm(Strings.MsgNoPortalDestination, Strings.DlgError);
                                     continue;
                                 }
                                 if (!System.IO.Directory.Exists(destinationFolder))
                                 {
-                                    MessageBoxesManager.ShowOKOnlyMessageBoxForm($"The destination folder '{destinationFolder}' no longer exists.", "Error");
+                                    MessageBoxesManager.ShowOKOnlyMessageBoxForm(Strings.Get("MsgDestinationFolderGone", destinationFolder), Strings.DlgError);
                                     continue;
                                 }
 
@@ -6576,7 +6572,7 @@ namespace Desktop_Frames
                         }
                         catch (Exception ex)
                         {
-                            MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Failed to add {droppedFile}: {ex.Message}", "Error");
+                            MessageBoxesManager.ShowOKOnlyMessageBoxForm(Strings.Get("MsgAddItemFailed", droppedFile, ex.Message), Strings.DlgError);
                         }
                     }
 
@@ -7791,7 +7787,7 @@ namespace Desktop_Frames
 
             if (!isEditable)
             {
-                MessageBoxesManager.ShowOKOnlyMessageBoxForm("Edit is not available for this item type.", "Info");
+                MessageBoxesManager.ShowOKOnlyMessageBoxForm(Strings.MsgEditNotAvailable, Strings.DlgInfo);
                 return;
             }
 
@@ -8682,7 +8678,7 @@ namespace Desktop_Frames
                     targetPath = ExtractUrlFromUrlFile(fullPath);
                     if (string.IsNullOrEmpty(targetPath))
                     {
-                        MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Invalid .url file: {path}", "Error");
+                        MessageBoxesManager.ShowOKOnlyMessageBoxForm(Strings.Get("MsgInvalidUrlFile", path), Strings.DlgError);
                         return;
                     }
                 }
@@ -8728,7 +8724,7 @@ namespace Desktop_Frames
                 if (!targetExists && !isWebUrl && !isSpecialPath && !isStoreApp && !isNetworkRoot)
                 {
                     LogManager.Log(LogManager.LogLevel.Warn, LogManager.LogCategory.General, $"Target not found: {targetPath}");
-                    MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Target not found:\n{targetPath}", "Launch Error");
+                    MessageBoxesManager.ShowOKOnlyMessageBoxForm(Strings.Get("MsgTargetNotFound", targetPath), Strings.DlgLaunchError);
                     return;
                 }
 
@@ -8817,7 +8813,7 @@ namespace Desktop_Frames
                 {
                     LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.General, $"Launch Error: {ex.Message}");
                     if (!SettingsManager.SuppressLaunchWarnings)
-                        MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Error launching: {ex.Message}", "Launch Error");
+                        MessageBoxesManager.ShowOKOnlyMessageBoxForm(Strings.Get("MsgLaunchFailed", ex.Message), Strings.DlgLaunchError);
                 }
             }
         }

@@ -456,7 +456,7 @@ namespace Desktop_Frames
             }
             catch (Exception ex)
             {
-                MessageBoxesManager.ShowOKOnlyMessageBoxFormStatic($"An error occurred while reloading frames: {ex.Message}", "Error");
+                MessageBoxesManager.ShowOKOnlyMessageBoxFormStatic(Strings.Get("MsgReloadFramesFailed", ex.Message), Strings.DlgError);
             }
             finally
             {
@@ -581,11 +581,11 @@ namespace Desktop_Frames
                     if (ProfileManager.CreateProfile(newName))
                     {
                         UpdateProfilesMenu();
-                        MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Profile '{newName}' created successfully.", "Success");
+                        MessageBoxesManager.ShowOKOnlyMessageBoxForm(Strings.Get("MsgProfileCreated", newName), Strings.DlgSuccess);
                     }
                     else
                     {
-                        MessageBoxesManager.ShowOKOnlyMessageBoxForm("Failed to create profile. Name invalid or already exists.", "Error");
+                        MessageBoxesManager.ShowOKOnlyMessageBoxForm(Strings.MsgCreateProfileFailed, Strings.DlgError);
                     }
                 }
             };

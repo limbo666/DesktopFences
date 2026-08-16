@@ -154,7 +154,7 @@ namespace Desktop_Frames
             catch (Exception ex)
             {
                 LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI, $"Error initializing CustomizeFrameFormWPF: {ex.Message}");
-                MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Error initializing form: {ex.Message}", "Form Error");
+                MessageBoxesManager.ShowOKOnlyMessageBoxForm(Strings.Get("MsgFormInitFailed", ex.Message), Strings.DlgFormError);
             }
         }
 
@@ -652,7 +652,7 @@ namespace Desktop_Frames
             catch (Exception ex)
             {
                 LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI, $"Error resetting controls to defaults: {ex.Message}");
-              MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Error resetting to defaults: {ex.Message}", "Default Error");
+              MessageBoxesManager.ShowOKOnlyMessageBoxForm(Strings.Get("MsgResetDefaultsFailed", ex.Message), Strings.DlgDefaultError);
             }
         }
 
@@ -675,7 +675,7 @@ namespace Desktop_Frames
             catch (Exception ex)
             {
                 LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI, $"Error saving settings: {ex.Message}");
-                MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Error saving settings: {ex.Message}", "Save Error");
+                MessageBoxesManager.ShowOKOnlyMessageBoxForm(Strings.Get("MsgSaveSettingsFailed", ex.Message), Strings.DlgSaveError);
             }
         }
 
@@ -699,7 +699,7 @@ namespace Desktop_Frames
             catch (Exception ex)
             {
                 LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI, $"Error applying settings: {ex.Message}");
-                MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Error applying settings: {ex.Message}", "Apply Error");
+                MessageBoxesManager.ShowOKOnlyMessageBoxForm(Strings.Get("MsgApplySettingsFailed", ex.Message), Strings.DlgApplyError);
             }
         }
 
@@ -1012,7 +1012,7 @@ namespace Desktop_Frames
             catch (Exception ex)
             {
                 LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI, $"Error loading current values: {ex.Message}");
-                MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Error loading frame properties: {ex.Message}", "Load Error");
+                MessageBoxesManager.ShowOKOnlyMessageBoxForm(Strings.Get("MsgLoadFramePropertiesFailed", ex.Message), Strings.DlgLoadError);
             }
         }
 
