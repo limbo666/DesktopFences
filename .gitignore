@@ -1,9 +1,15 @@
-Code/Desktop Fences/obj/project.nuget.cache
-/Code/Desktop Frames/obj
-Code/Desktop Frames/obj/project.nuget.cache
-/Code/.vs/Desktop Frames/v18
-/Code/.vs/ProjectEvaluation
-/Code/Desktop Frames/obj
-Code/Desktop Frames/obj/project.assets.json
-/Code/.vs
-/Code/Desktop Frames/obj
+Code snippet
+# Visual Studio directory and settings
+.vs/
+*.user
+*.suo
+
+# Build results (will automatically ignore bin/ and obj/ anywhere in the repository)
+[Bb]in/
+[Oo]bj/
+
+# NuGet Packages
+*.nuget.props
+*.nuget.targets
+project.lock.json
+project.assets.json
