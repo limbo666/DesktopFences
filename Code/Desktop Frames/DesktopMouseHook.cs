@@ -99,6 +99,14 @@ namespace DesktopFrames
             if (nCode >= 0 && (int)wParam == WM_LBUTTONDOWN)
             {
                 var data = Marshal.PtrToStructure<MSLLHOOKSTRUCT>(lParam);
+
+                // --- NEW: Taskbar Show Desktop Click Detection ---
+                // If this is a direct hit on the taskbar corner, fire the Win+D recovery event
+                if (TaskbarAnalyzer.IsShowDesktopButtonClick(data.pt.x, data.pt.y))
+                {
+                    GlobalHotkeyManager.FireWindowsPlusDEvent();
+                }
+
                 HandleClick(data.pt, data.time);
             }
             return CallNextHookEx(_hookHandle, nCode, wParam, lParam);

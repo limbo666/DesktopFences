@@ -30,13 +30,13 @@ namespace Desktop_Frames.Plugins
             // REGISTER ALL INTERNAL PLUGINS HERE
             // ---------------------------------------------------------
             RegisterPlugin("PictureSlideshow", "Photo Frame", () => new PictureSlideshowPlugin());
-            RegisterPlugin("Calculator", "Calculator", () => new CalculatorPlugin());
+          
             RegisterPlugin("VuMeter", "VU Meter", () => new VUMeterPlugin());
             RegisterPlugin("IPInfo", "IP Info", () => new SystemIpPlugin());
             RegisterPlugin("SystemPerformancePlugin", "System Performance Gauges", () => new SystemPerformancePlugin());
-            RegisterPlugin("CustomTerminal", "Terminal Emulator", () => new CustomTerminalPlugin());
             RegisterPlugin("SystemQueueSaturation", "System Queue Saturation", () => new SystemQueueSaturationPlugin());
-
+            RegisterPlugin("Calculator", "Calculator", () => new CalculatorPlugin());
+            RegisterPlugin("CustomTerminal", "Terminal Emulator", () => new CustomTerminalPlugin());
         }
 
         /// <summary>

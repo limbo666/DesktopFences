@@ -2526,7 +2526,7 @@ namespace Desktop_Frames
                         // Apply runtime changes
                         if (propertyName == "CustomColor")
                         {
-                            Utility.ApplyTintAndColorToFrame(win, string.IsNullOrEmpty(value) ? _options.SelectedColor : value);
+                            Utility.ApplyTintAndColorToFrame(win, value);
                             LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.FrameUpdate, $"Applied color '{value ?? "Default"}' to frame '{frame.Title}' at runtime");
                         }
                         else if (propertyName == "IsHidden")
@@ -6741,9 +6741,9 @@ namespace Desktop_Frames
 
             IDictionary<string, object> frameDict = frame is IDictionary<string, object> dict ? dict : ((JObject)frame).ToObject<IDictionary<string, object>>();
             SnapManager.AddSnapping(win, frameDict);
-            // Apply custom color if present, otherwise use global
+            // Apply custom color if present, otherwise let Utility handle the fallback
             string customColor = frame.CustomColor?.ToString();
-            Utility.ApplyTintAndColorToFrame(win, string.IsNullOrEmpty(customColor) ? SettingsManager.SelectedColor : customColor);
+            Utility.ApplyTintAndColorToFrame(win, customColor);
             targetChecker.Start();
         }
 

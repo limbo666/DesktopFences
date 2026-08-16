@@ -124,6 +124,18 @@ namespace Desktop_Frames
             }
             catch { }
         }
+
+
+        // --- NEW: Public Trigger for Mouse Hook Integration ---
+        public static void FireWindowsPlusDEvent()
+        {
+            System.Windows.Application.Current?.Dispatcher.BeginInvoke(new Action(() =>
+            {
+                LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.General, "Taskbar Show Desktop Click Detected.");
+                WindowsPlusDDetected?.Invoke(null, EventArgs.Empty);
+            }));
+        }
+
         #endregion
 
         #region Private Methods

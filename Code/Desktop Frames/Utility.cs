@@ -202,62 +202,67 @@ namespace Desktop_Frames
             var frameControl = frame.Content as Border; // Matches your structure
             if (frameControl == null) return;
 
-            string effectiveColor = colorName ?? SettingsManager.SelectedColor; // Fallback to global
+            // --- THE ARCHITECTURAL FIX ---
+            // We now properly distinguish between an explicit custom color and a global fallback
+            bool isDefault = string.IsNullOrEmpty(colorName) || colorName == "Default";
+
+            Color finalColor;
+            if (isDefault)
+            {
+                finalColor = SettingsManager.EnableChameleonMode
+                             ? WallpaperColorManager.CurrentWallpaperColor
+                             : GetColorFromName(SettingsManager.SelectedColor);
+            }
+            else
+            {
+                finalColor = GetColorFromName(colorName);
+            }
 
             LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.Settings,
-                $"ApplyTintAndColorToFrame: TintValue={SettingsManager.TintValue}, Color={effectiveColor}, Opacity={SettingsManager.TintValue / 100.0}");
+                $"ApplyTintAndColorToFrame: TintValue={SettingsManager.TintValue}, Color={(isDefault ? "Default" : colorName)}, Opacity={SettingsManager.TintValue / 100.0}");
 
             // Use TintValue from SettingsManager to determine if tint is applied
             frameControl.Background = SettingsManager.TintValue > 0
-                ? new SolidColorBrush(GetColorFromName(effectiveColor)) { Opacity = SettingsManager.TintValue / 100.0 }
+                ? new SolidColorBrush(finalColor) { Opacity = SettingsManager.TintValue / 100.0 }
                 : Brushes.Transparent;
 
             // TABS FEATURE: Refresh tab colors when frame color changes
             if (frame is NonActivatingWindow frameWindow)
             {
-                TabManager.RefreshTabColors(frameWindow, effectiveColor);
+                string tabColorName = isDefault
+                    ? (SettingsManager.EnableChameleonMode ? "Chameleon" : SettingsManager.SelectedColor)
+                    : colorName;
+                TabManager.RefreshTabColors(frameWindow, tabColorName);
             }
         }
 
 
         public static Color GetColorFromName(string colorName)
         {
-            // --- CHAMELEON MODE HOOK ---
-            // If Chameleon is enabled and this frame is using the global default color
-            if (SettingsManager.EnableChameleonMode && (string.IsNullOrEmpty(colorName) || colorName == SettingsManager.SelectedColor || colorName == "Default"))
-            {
-                return WallpaperColorManager.CurrentWallpaperColor;
-            }
+            // The specialized Chameleon tab hook
+            if (colorName == "Chameleon") return WallpaperColorManager.CurrentWallpaperColor;
 
-            return colorName switch
-            {
+            // Normalize the string to absolutely prevent case-sensitivity bugs
+            string normalizedColor = colorName?.Trim().ToLower() ?? "";
 
-                "Red" => (Color)ColorConverter.ConvertFromString("#9E052E"),
-                "Green" => (Color)ColorConverter.ConvertFromString("#06491A"),
-                "Teal" => (Color)ColorConverter.ConvertFromString("#008080"),
-                "Blue" => (Color)ColorConverter.ConvertFromString("#012162"),
-                "Bismark" => (Color)ColorConverter.ConvertFromString("#49697E"),
-                "White" => (Color)ColorConverter.ConvertFromString("#F1F1F6"),
-                "Beige" => (Color)ColorConverter.ConvertFromString("#C8AD7E"),
-                "Gray" => (Color)ColorConverter.ConvertFromString("#6E6E6E"),
-                "Black" => (Color)ColorConverter.ConvertFromString("#0b0b0c"),
-                "Purple" => (Color)ColorConverter.ConvertFromString("#3a0b50"),
-                "Fuchsia" => (Color)ColorConverter.ConvertFromString("#5F093d"),
-                "Yellow" => (Color)ColorConverter.ConvertFromString("#C1C708"),
-                "Orange" => (Color)ColorConverter.ConvertFromString("#B75433"),
+            return normalizedColor switch
+            {
+                "red" => (Color)ColorConverter.ConvertFromString("#9E052E"),
+                "green" => (Color)ColorConverter.ConvertFromString("#06491A"),
+                "teal" => (Color)ColorConverter.ConvertFromString("#008080"),
+                "blue" => (Color)ColorConverter.ConvertFromString("#012162"),
+                "bismark" => (Color)ColorConverter.ConvertFromString("#49697E"),
+                "white" => (Color)ColorConverter.ConvertFromString("#F1F1F6"),
+                "beige" => (Color)ColorConverter.ConvertFromString("#C8AD7E"),
+                "gray" => (Color)ColorConverter.ConvertFromString("#6E6E6E"),
+                "black" => (Color)ColorConverter.ConvertFromString("#0b0b0c"),
+                "purple" => (Color)ColorConverter.ConvertFromString("#3a0b50"),
+                "fuchsia" => (Color)ColorConverter.ConvertFromString("#C1007A"), // Fixed: Distinct, unmistakable Fuchsia
+                "yellow" => (Color)ColorConverter.ConvertFromString("#C1C708"),
+                "orange" => (Color)ColorConverter.ConvertFromString("#B75433"),
                 _ => Colors.Transparent,
-                // "Red" => (Color)ColorConverter.ConvertFromString("#c10338"),
-                // "Green" => (Color)ColorConverter.ConvertFromString("#005618"),
-                // "Blue" => (Color)ColorConverter.ConvertFromString("#012162"),
-                //  "White" => (Color)ColorConverter.ConvertFromString("#fdfdff"),
-                //  "Gray" => (Color)ColorConverter.ConvertFromString("#3d3d3f"),
-                //  "Black" => (Color)ColorConverter.ConvertFromString("#0b0b0c"),
-                // "Purple" => (Color)ColorConverter.ConvertFromString("#3a0b50"),
-                //  "Yellow" => (Color)ColorConverter.ConvertFromString("#d8da1f"),
-                //  _ => Colors.Transparent, 
             };
         }
-
 
         public static void UpdateFrameVisuals()
         {
@@ -312,7 +317,7 @@ namespace Desktop_Frames
                     }
 
                     // Determine Color
-                    string colorToApply = SettingsManager.SelectedColor; // Default to Global
+                    string colorToApply = null; // Default to Global fallback
 
                     if (FrameData != null)
                     {

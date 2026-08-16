@@ -1465,7 +1465,7 @@ namespace Desktop_Frames
                 }
                 else
                 {
-                    Utility.ApplyTintAndColorToFrame(win, SettingsManager.SelectedColor);
+                    Utility.ApplyTintAndColorToFrame(win, null);
                     LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI, $"Applied default color to frame");
                 }
             }
