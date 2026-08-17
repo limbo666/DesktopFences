@@ -459,6 +459,7 @@ namespace Desktop_Frames.Localization
         public static string MsgSaveShortcutFailed => Get("MsgSaveShortcutFailed");
         public static string MsgTargetNotFound => Get("MsgTargetNotFound");
 
+        public static string MsgRestartForLanguage => Get("MsgRestartForLanguage");
         public static string SecAppearance => Get("SecAppearance");
         public static string SecAutoHideFrames => Get("SecAutoHideFrames");
         public static string SecDesktopIconVisibility => Get("SecDesktopIconVisibility");

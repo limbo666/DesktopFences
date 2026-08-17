@@ -214,6 +214,57 @@ namespace Desktop_Frames
         /// The combo stores the culture name in the item's Tag — the label is
         /// what the language calls itself, and that must never be saved.
         /// </summary>
+        /// <summary>
+        /// The language selector, remembered when the row is built.
+        ///
+        /// Saving used to look for it by name among the direct children of each Grid on the
+        /// tab, the way the other dropdowns are found. This one sits inside a StackPanel
+        /// inside that Grid, so the search never reached it: the chosen language was applied
+        /// on the spot but never written to options.json, and came back as it was on the next
+        /// start. Holding the reference cannot go wrong when the layout changes.
+        /// </summary>
+        private static ComboBox _languageCombo;
+
+        /// <summary>Set when the saved options carry a different language than before.</summary>
+        private static bool _languageChanged;
+
+        /// <summary>
+        /// Offers to restart once the settings are on disk, when the language changed.
+        ///
+        /// Every window, menu and label reads its text while being built, so a language chosen
+        /// now only shows up on the next start. Saying so in a note was not enough: the choice
+        /// is saved and nothing visibly happens, which reads like a failure. The program
+        /// already restarts itself after a factory reset and after restoring settings, so it
+        /// does the same here — asked, not imposed.
+        /// </summary>
+        private static void OfferRestartAfterLanguageChange()
+        {
+            if (!_languageChanged) return;
+            _languageChanged = false;
+
+            if (!MessageBoxesManager.ShowCustomYesNoMessageBox(Strings.MsgRestartForLanguage, Strings.DlgRestartRequired))
+                return;
+
+            try
+            {
+                string appPath = System.Diagnostics.Process.GetCurrentProcess().MainModule.FileName;
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = "cmd.exe",
+                    Arguments = $"/c ping 127.0.0.1 -n 3 > nul & start \"\" \"{appPath}\"",
+                    WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden,
+                    CreateNoWindow = true,
+                    UseShellExecute = false
+                });
+                System.Diagnostics.Process.GetCurrentProcess().Kill();
+            }
+            catch (Exception ex)
+            {
+                LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.Settings,
+                    $"Could not restart to apply the language: {ex.Message}");
+            }
+        }
+
         private static void CreateLanguageRow(StackPanel parent)
         {
             Grid g = new Grid { Margin = new Thickness(15, 8, 15, 8) };
@@ -253,6 +304,7 @@ namespace Desktop_Frames
                 .FirstOrDefault(i => string.Equals(i.Tag as string, SettingsManager.Language,
                                                    StringComparison.OrdinalIgnoreCase))
                 ?? cb.Items.OfType<ComboBoxItem>().FirstOrDefault();
+            _languageCombo = cb;
             right.Children.Add(cb);
 
             Button importa = new Button
@@ -1017,12 +1069,6 @@ namespace Desktop_Frames
                             };
                         }
 
-                        var langCombo = genGrid.Children.OfType<ComboBox>().FirstOrDefault(c => c.Name == "LanguageComboBox");
-                        if ((langCombo?.SelectedItem as ComboBoxItem)?.Tag is string langTag)
-                        {
-                            SettingsManager.Language = langTag;
-                        }
-
                         var pvCombo = genGrid.Children.OfType<ComboBox>().FirstOrDefault(c => c.Name == "DefaultPortalViewComboBox");
                         if (pvCombo?.SelectedItem != null)
                         {
@@ -1037,6 +1083,16 @@ namespace Desktop_Frames
                     //    if (SettingsManager.EnableProfileAutomation) AutomationManager.Start();
                     //}
 
+                }
+
+                // Read outside the loop above: the selector is nested inside a row, so walking
+                // the direct children of each Grid never reaches it.
+                if ((_languageCombo?.SelectedItem as ComboBoxItem)?.Tag is string languageTag)
+                {
+                    // Remembered so the offer to restart is made only when the language really
+                    // changed, and not every time the options are saved.
+                    _languageChanged = !string.Equals(SettingsManager.Language, languageTag, StringComparison.OrdinalIgnoreCase);
+                    SettingsManager.Language = languageTag;
                 }
 
 
@@ -1243,6 +1299,10 @@ namespace Desktop_Frames
                 Framemanager.RefreshScrollbarSettings();
 
                 _optionsWindow.Close();
+
+                // After the window is closed and everything is on disk, so a restart cannot
+                // lose anything that was just saved.
+                OfferRestartAfterLanguageChange();
             }
             catch (Exception ex)
             {

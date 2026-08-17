@@ -1270,6 +1270,13 @@ Reinicia Desktop Frames para activarlos.</value>
   <data name="MsgResetFailed" xml:space="preserve">
     <value>No se pudo restablecer: {0}</value>
   </data>
+  <data name="MsgRestartForLanguage" xml:space="preserve">
+    <value>El idioma se ha guardado.
+
+Cada ventana lee sus textos mientras se construye, así que el cambio se ve al reiniciar el programa.
+
+¿Reiniciar ahora?</value>
+  </data>
   <data name="MsgRestoreDefaultsFailed" xml:space="preserve">
     <value>Error al restaurar los valores predeterminados: {0}</value>
   </data>

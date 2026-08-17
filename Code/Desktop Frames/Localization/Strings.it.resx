@@ -1218,6 +1218,13 @@ Riavvia Desktop Frames per attivarle.</value>
   <data name="MsgResetFailed" xml:space="preserve">
     <value>Ripristino non riuscito: {0}</value>
   </data>
+  <data name="MsgRestartForLanguage" xml:space="preserve">
+    <value>La lingua è stata salvata.
+
+Ogni finestra legge i propri testi mentre viene costruita, quindi il cambiamento si vede al riavvio del programma.
+
+Vuoi riavviare adesso?</value>
+  </data>
   <data name="MsgRestoreDefaultsFailed" xml:space="preserve">
     <value>Errore nel ripristino dei valori predefiniti: {0}</value>
   </data>

@@ -1270,6 +1270,13 @@ Redémarrez Desktop Frames pour les activer.</value>
   <data name="MsgResetFailed" xml:space="preserve">
     <value>Échec de la réinitialisation : {0}</value>
   </data>
+  <data name="MsgRestartForLanguage" xml:space="preserve">
+    <value>La langue a été enregistrée.
+
+Chaque fenêtre lit ses textes au moment où elle est construite, le changement apparaît donc au redémarrage du programme.
+
+Redémarrer maintenant ?</value>
+  </data>
   <data name="MsgRestoreDefaultsFailed" xml:space="preserve">
     <value>Erreur lors du retour aux valeurs par défaut : {0}</value>
   </data>

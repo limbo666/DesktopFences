@@ -1270,6 +1270,13 @@ Reinicie o Desktop Frames para os ativar.</value>
   <data name="MsgResetFailed" xml:space="preserve">
     <value>Não foi possível repor: {0}</value>
   </data>
+  <data name="MsgRestartForLanguage" xml:space="preserve">
+    <value>O idioma foi guardado.
+
+Cada janela lê os seus textos enquanto é construída, por isso a alteração aparece quando o programa reiniciar.
+
+Reiniciar agora?</value>
+  </data>
   <data name="MsgRestoreDefaultsFailed" xml:space="preserve">
     <value>Erro ao restaurar os valores predefinidos: {0}</value>
   </data>

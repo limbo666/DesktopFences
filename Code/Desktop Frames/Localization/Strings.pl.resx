@@ -1270,6 +1270,13 @@ Uruchom ponownie Desktop Frames, aby je włączyć.</value>
   <data name="MsgResetFailed" xml:space="preserve">
     <value>Resetowanie nie powiodło się: {0}</value>
   </data>
+  <data name="MsgRestartForLanguage" xml:space="preserve">
+    <value>Język został zapisany.
+
+Każde okno odczytuje swoje teksty podczas tworzenia, więc zmiana pojawi się po ponownym uruchomieniu programu.
+
+Uruchomić ponownie teraz?</value>
+  </data>
   <data name="MsgRestoreDefaultsFailed" xml:space="preserve">
     <value>Błąd podczas przywracania wartości domyślnych: {0}</value>
   </data>

@@ -1218,6 +1218,13 @@ Please restart Desktop Frames to activate the new shortcuts.</value>
   <data name="MsgResetFailed" xml:space="preserve">
     <value>Reset failed: {0}</value>
   </data>
+  <data name="MsgRestartForLanguage" xml:space="preserve">
+    <value>The language has been saved.
+
+Every window reads its text while it is being built, so the change appears once the program restarts.
+
+Restart now?</value>
+  </data>
   <data name="MsgRestoreDefaultsFailed" xml:space="preserve">
     <value>Error restoring default values: {0}</value>
   </data>

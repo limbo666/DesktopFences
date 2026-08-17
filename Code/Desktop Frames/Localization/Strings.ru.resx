@@ -1270,6 +1270,13 @@
   <data name="MsgResetFailed" xml:space="preserve">
     <value>Сброс не выполнен: {0}</value>
   </data>
+  <data name="MsgRestartForLanguage" xml:space="preserve">
+    <value>Язык сохранён.
+
+Каждое окно читает свои надписи при создании, поэтому изменение появится после перезапуска программы.
+
+Перезапустить сейчас?</value>
+  </data>
   <data name="MsgRestoreDefaultsFailed" xml:space="preserve">
     <value>Ошибка при восстановлении значений по умолчанию: {0}</value>
   </data>
