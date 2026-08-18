@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json.Linq;
+﻿using Desktop_Frames.Localization;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -320,7 +321,7 @@ namespace Desktop_Frames
                             FontSize = 14,
                             FontWeight = FontWeights.Bold,
                             Cursor = Cursors.Hand,
-                            ToolTip = "Click to finish editing",
+                            ToolTip = Strings.NoteClickFinish,
                             Visibility = Visibility.Collapsed,
                         };
 
@@ -434,7 +435,7 @@ namespace Desktop_Frames
                     }
                 };
 
-                noteTextBox.ToolTip = "Click to edit note content";
+                noteTextBox.ToolTip = Strings.NoteClickEdit;
             }
             catch (Exception ex)
             {
@@ -521,7 +522,7 @@ namespace Desktop_Frames
  
 
                 // Text Format form (new unified approach)
-                MenuItem textFormatFormItem = new MenuItem { Header = "Text Format..." };
+                MenuItem textFormatFormItem = new MenuItem { Header = Strings.NoteTextFormat };
                 textFormatFormItem.Click += (s, e) =>
                 {
                     try
@@ -534,7 +535,7 @@ namespace Desktop_Frames
                     {
                         LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI,
                             $"Error opening Text Format form: {ex.Message}");
-                        MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Error opening Text Format form: {ex.Message}", "Form Error");
+                        MessageBoxesManager.ShowOKOnlyMessageBoxForm(Strings.Get("MsgOpenTextFormatFailed", ex.Message), Strings.DlgFormError);
                     }
                 };
                 menu.Items.Add(textFormatFormItem);
@@ -542,11 +543,11 @@ namespace Desktop_Frames
                 // A seperator to commnds to note-specific commands
                 menu.Items.Add(new Separator());
 
-                MenuItem copyAllItem = new MenuItem { Header = "Copy All Text" };
+                MenuItem copyAllItem = new MenuItem { Header = Strings.NoteCopyAll };
                 copyAllItem.Click += (s, e) => CopyAllNoteText(noteTextBox);
                 menu.Items.Add(copyAllItem);
 
-                MenuItem clearAllItem = new MenuItem { Header = "Clear All Text" };
+                MenuItem clearAllItem = new MenuItem { Header = Strings.NoteClearAll };
                 clearAllItem.Click += (s, e) => ClearAllNoteText(frame, noteTextBox);
                 menu.Items.Add(clearAllItem);
 

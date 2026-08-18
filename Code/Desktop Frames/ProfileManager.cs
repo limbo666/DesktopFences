@@ -11,6 +11,7 @@ using System.Windows.Media.Effects;
 using System.Windows.Threading;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Desktop_Frames.Localization;
 
 namespace Desktop_Frames
 {
@@ -98,7 +99,7 @@ namespace Desktop_Frames
             catch (Exception ex)
             {
                 LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.General, $"Profile Init Failed: {ex.Message}");
-                MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Profile System Error: {ex.Message}", "Critical Error");
+                MessageBoxesManager.ShowOKOnlyMessageBoxForm(Strings.Get("MsgProfileSystemError", ex.Message), Strings.DlgCriticalError);
             }
         }
 

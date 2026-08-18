@@ -74,6 +74,10 @@ namespace Desktop_Frames
         // --- NEW: Context Menu Option ---
         public static bool EnableContextMenu { get; set; } = false;
 
+        // Interface language. Empty means "follow Windows", which is what a
+        // fresh installation does. Stored as a culture name ("it", "pt-BR").
+        public static string Language { get; set; } = "";
+
         // --- NEW: Portal Details View Defaults ---
         public static string DefaultPortalView { get; set; } = "Icons"; // "Icons" or "Details"
         public static string GlobalFontFamily { get; set; } = "Segoe UI";
@@ -252,6 +256,7 @@ namespace Desktop_Frames
                 ApplyTintToIcons,
                 EnableContextMenu,
                 DefaultPortalView,
+                Language,
                 GlobalFontFamily,
                 DefaultItemFontSize,
                 PluginAvailabilityLevel,
@@ -348,6 +353,7 @@ namespace Desktop_Frames
             try { ApplyTintToIcons = data.ApplyTintToIcons ?? false; } catch { ApplyTintToIcons = false; }
             try { EnableContextMenu = data.EnableContextMenu ?? false; } catch { EnableContextMenu = false; }
             try { DefaultPortalView = data.DefaultPortalView?.ToString() ?? "Icons"; } catch { DefaultPortalView = "Icons"; }
+            try { Language = data.Language?.ToString() ?? ""; } catch { Language = ""; }
             try { GlobalFontFamily = data.GlobalFontFamily?.ToString() ?? "Segoe UI"; } catch { GlobalFontFamily = "Segoe UI"; }
             try { DefaultItemFontSize = data.DefaultItemFontSize ?? 12; } catch { DefaultItemFontSize = 12; }
             try { PluginAvailabilityLevel = data.PluginAvailabilityLevel ?? 1; } catch { PluginAvailabilityLevel = 1; }

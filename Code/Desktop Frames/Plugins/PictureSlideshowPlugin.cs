@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json.Linq;
+﻿using Desktop_Frames.Localization;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -151,7 +152,7 @@ namespace Desktop_Frames.Plugins
             // --- 2. Build Modern Window Shell ---
             Window win = new Window
             {
-                Title = "Photo Frame Settings",
+                Title = Strings.PhotoSettings,
                 Width = 540,
                 SizeToContent = SizeToContent.Height,
                 WindowStartupLocation = WindowStartupLocation.CenterOwner,
@@ -179,7 +180,7 @@ namespace Desktop_Frames.Plugins
             headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
-            headerGrid.Children.Add(new TextBlock { Text = "Photo Frame Settings", FontSize = 14, FontWeight = FontWeights.Bold, Foreground = Brushes.White, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(16, 0, 0, 0) });
+            headerGrid.Children.Add(new TextBlock { Text = Strings.PhotoSettings, FontSize = 14, FontWeight = FontWeights.Bold, Foreground = Brushes.White, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(16, 0, 0, 0) });
 
             Button closeBtn = new Button { Content = "✕", Width = 32, Height = 32, FontSize = 12, FontWeight = FontWeights.Bold, Foreground = Brushes.White, Background = Brushes.Transparent, BorderBrush = Brushes.Transparent, Cursor = Cursors.Hand, Margin = new Thickness(0, 0, 9, 0), VerticalAlignment = VerticalAlignment.Center };
             closeBtn.MouseEnter += (s, e) => closeBtn.Background = new SolidColorBrush(Color.FromArgb(50, 255, 255, 255));
@@ -212,7 +213,7 @@ namespace Desktop_Frames.Plugins
             pathGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             pathGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
             TextBox txtPath = new TextBox { Text = currentPath, FontSize = 13, Padding = new Thickness(8, 6, 8, 6), BorderBrush = new SolidColorBrush(Color.FromRgb(218, 220, 224)), BorderThickness = new Thickness(1), Margin = new Thickness(0, 0, 10, 0) };
-            Button btnBrowse = new Button { Content = "Browse...", Height = 32, MinWidth = 80, FontSize = 13, Background = Brushes.White, BorderBrush = new SolidColorBrush(Color.FromRgb(218, 220, 224)), BorderThickness = new Thickness(1), Cursor = Cursors.Hand };
+            Button btnBrowse = new Button { Content = Strings.BtnBrowse, Height = 32, MinWidth = 80, FontSize = 13, Background = Brushes.White, BorderBrush = new SolidColorBrush(Color.FromRgb(218, 220, 224)), BorderThickness = new Thickness(1), Cursor = Cursors.Hand };
             btnBrowse.Click += (s, e) => { using (var dialog = new System.Windows.Forms.FolderBrowserDialog()) { if (dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK) txtPath.Text = dialog.SelectedPath; } };
             Grid.SetColumn(txtPath, 0); Grid.SetColumn(btnBrowse, 1);
             pathGrid.Children.Add(txtPath); pathGrid.Children.Add(btnBrowse);
@@ -229,24 +230,24 @@ namespace Desktop_Frames.Plugins
             comboGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 
             StackPanel stretchPanel = new StackPanel();
-            stretchPanel.Children.Add(new TextBlock { Text = "Image Fit Mode:", FontSize = 12, FontWeight = FontWeights.Medium, Foreground = new SolidColorBrush(Color.FromRgb(95, 99, 104)), Margin = new Thickness(0, 0, 0, 8) });
+            stretchPanel.Children.Add(new TextBlock { Text = Strings.PhotoFitMode, FontSize = 12, FontWeight = FontWeights.Medium, Foreground = new SolidColorBrush(Color.FromRgb(95, 99, 104)), Margin = new Thickness(0, 0, 0, 8) });
             ComboBox cmbStretch = new ComboBox { FontSize = 13, Height = 30, Padding = new Thickness(8, 4, 8, 4) };
-            cmbStretch.Items.Add(new ComboBoxItem { Content = "Crop to Fill Frame", Tag = "UniformToFill" });
-            cmbStretch.Items.Add(new ComboBoxItem { Content = "Fit Inside (Show All)", Tag = "Uniform" });
-            cmbStretch.Items.Add(new ComboBoxItem { Content = "Stretch to Fill (Distort)", Tag = "Fill" });
-            cmbStretch.Items.Add(new ComboBoxItem { Content = "Original Size (No Scale)", Tag = "None" });
+            cmbStretch.Items.Add(new ComboBoxItem { Content = Strings.PhotoCropToFill, Tag = "UniformToFill" });
+            cmbStretch.Items.Add(new ComboBoxItem { Content = Strings.PhotoFitInside, Tag = "Uniform" });
+            cmbStretch.Items.Add(new ComboBoxItem { Content = Strings.PhotoStretch, Tag = "Fill" });
+            cmbStretch.Items.Add(new ComboBoxItem { Content = Strings.PhotoOriginalSize, Tag = "None" });
             foreach (ComboBoxItem item in cmbStretch.Items) { if (item.Tag.ToString() == currentStretch) item.IsSelected = true; }
             stretchPanel.Children.Add(cmbStretch);
             Grid.SetColumn(stretchPanel, 0);
 
             StackPanel transPanel = new StackPanel();
-            transPanel.Children.Add(new TextBlock { Text = "Transition Effect:", FontSize = 12, FontWeight = FontWeights.Medium, Foreground = new SolidColorBrush(Color.FromRgb(95, 99, 104)), Margin = new Thickness(0, 0, 0, 8) });
+            transPanel.Children.Add(new TextBlock { Text = Strings.PhotoTransition, FontSize = 12, FontWeight = FontWeights.Medium, Foreground = new SolidColorBrush(Color.FromRgb(95, 99, 104)), Margin = new Thickness(0, 0, 0, 8) });
             ComboBox cmbTransition = new ComboBox { FontSize = 13, Height = 30, Padding = new Thickness(8, 4, 8, 4) };
-            cmbTransition.Items.Add(new ComboBoxItem { Content = "Classic Crossfade", Tag = "Fade" });
-            cmbTransition.Items.Add(new ComboBoxItem { Content = "Blur Crossfade", Tag = "Blur" });
-            cmbTransition.Items.Add(new ComboBoxItem { Content = "Soft Vertical Wipe", Tag = "Wipe" });
-            cmbTransition.Items.Add(new ComboBoxItem { Content = "Subtle Twist", Tag = "Twist" });
-            cmbTransition.Items.Add(new ComboBoxItem { Content = "None (Instant Snap)", Tag = "None" });
+            cmbTransition.Items.Add(new ComboBoxItem { Content = Strings.PhotoCrossfade, Tag = "Fade" });
+            cmbTransition.Items.Add(new ComboBoxItem { Content = Strings.PhotoBlurCrossfade, Tag = "Blur" });
+            cmbTransition.Items.Add(new ComboBoxItem { Content = Strings.PhotoVerticalWipe, Tag = "Wipe" });
+            cmbTransition.Items.Add(new ComboBoxItem { Content = Strings.PhotoSubtleTwist, Tag = "Twist" });
+            cmbTransition.Items.Add(new ComboBoxItem { Content = Strings.PhotoNoTransition, Tag = "None" });
             foreach (ComboBoxItem item in cmbTransition.Items) { if (item.Tag.ToString() == currentTransition) item.IsSelected = true; }
             transPanel.Children.Add(cmbTransition);
             Grid.SetColumn(transPanel, 2);
@@ -259,7 +260,7 @@ namespace Desktop_Frames.Plugins
             contentPanel.Children.Add(displayBorder);
 
             // Rescan Checkbox
-            CheckBox chkRescan = new CheckBox { Content = "Live folder rescan (Detect new/deleted pictures)", IsChecked = currentRescan, FontSize = 13, Foreground = new SolidColorBrush(Color.FromRgb(32, 33, 36)), Margin = new Thickness(2, 5, 0, 5) };
+            CheckBox chkRescan = new CheckBox { Content = Strings.PhotoLiveRescan, IsChecked = currentRescan, FontSize = 13, Foreground = new SolidColorBrush(Color.FromRgb(32, 33, 36)), Margin = new Thickness(2, 5, 0, 5) };
             contentPanel.Children.Add(chkRescan);
 
             contentBorder.Child = contentPanel;
@@ -270,10 +271,10 @@ namespace Desktop_Frames.Plugins
             Border footerBorder = new Border { Background = new SolidColorBrush(Color.FromRgb(248, 249, 250)), BorderBrush = new SolidColorBrush(Color.FromRgb(218, 220, 224)), BorderThickness = new Thickness(0, 1, 0, 0), Padding = new Thickness(20, 16, 20, 16) };
             StackPanel buttonPanel = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
 
-            Button cancelBtn = new Button { Content = "Cancel", Height = 36, MinWidth = 80, FontSize = 13, FontWeight = FontWeights.Medium, Background = Brushes.White, BorderBrush = new SolidColorBrush(Color.FromRgb(218, 220, 224)), BorderThickness = new Thickness(1), Cursor = Cursors.Hand, Margin = new Thickness(0, 0, 10, 0) };
+            Button cancelBtn = new Button { Content = Strings.BtnCancel, Height = 36, MinWidth = 80, FontSize = 13, FontWeight = FontWeights.Medium, Background = Brushes.White, BorderBrush = new SolidColorBrush(Color.FromRgb(218, 220, 224)), BorderThickness = new Thickness(1), Cursor = Cursors.Hand, Margin = new Thickness(0, 0, 10, 0) };
             cancelBtn.Click += (s, e) => win.Close();
 
-            Button saveBtn = new Button { Content = "Save", Height = 36, MinWidth = 80, FontSize = 13, FontWeight = FontWeights.Bold, Background = accentBrush, Foreground = Brushes.White, BorderThickness = new Thickness(0), Cursor = Cursors.Hand, Padding = new Thickness(16, 0, 16, 0) };
+            Button saveBtn = new Button { Content = Strings.BtnSave, Height = 36, MinWidth = 80, FontSize = 13, FontWeight = FontWeights.Bold, Background = accentBrush, Foreground = Brushes.White, BorderThickness = new Thickness(0), Cursor = Cursors.Hand, Padding = new Thickness(16, 0, 16, 0) };
             saveBtn.Click += (s, e) =>
             {
                 settings["Path"] = txtPath.Text;

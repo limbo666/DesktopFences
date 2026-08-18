@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Desktop_Frames.Localization;
+using System;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Windows;
@@ -37,7 +38,7 @@ public partial class EditShortcutWindow : Window
 
     private void InitializeModernComponent()
     {
-        Title = "Edit Shortcut";
+        Title = Strings.EditShortcutTitle;
         Width = 540;
         Height = 550;
         WindowStartupLocation = WindowStartupLocation.CenterScreen;
@@ -132,7 +133,7 @@ public partial class EditShortcutWindow : Window
         // Title label with white text (same as CustomizeFrameForm)
         TextBlock titleText = new TextBlock
         {
-            Text = "Edit Shortcut",
+            Text = Strings.EditShortcutTitle,
             FontSize = 14,
             FontWeight = FontWeights.Bold, // Bold like CustomizeFrameForm
             Foreground = Brushes.White, // White text on colored background
@@ -184,13 +185,13 @@ public partial class EditShortcutWindow : Window
         };
 
         // Display Name Section
-        CreateFieldSection(contentPanel, "Display Name:", out nameBox, NewDisplayName);
+        CreateFieldSection(contentPanel, Strings.LblDisplayName, out nameBox, NewDisplayName);
 
         // Target Path Section
-        CreateFieldWithButtonSection(contentPanel, "Target Path:", out targetPathBox, GetCurrentTargetPath(), "Browse...", BrowseTarget_Click);
+        CreateFieldWithButtonSection(contentPanel, Strings.LblTargetPath, out targetPathBox, GetCurrentTargetPath(), Strings.BtnBrowse, BrowseTarget_Click);
 
         // Arguments Section
-        CreateFieldSection(contentPanel, "Arguments:", out argumentsBox, GetCurrentArguments());
+        CreateFieldSection(contentPanel, Strings.LblArguments, out argumentsBox, GetCurrentArguments());
 
         // Icon Section with Preview Space
         CreateIconSection(contentPanel);
@@ -308,7 +309,7 @@ public partial class EditShortcutWindow : Window
 
         TextBlock iconLabel = new TextBlock
         {
-            Text = "Icon:",
+            Text = Strings.LblIcon,
             FontSize = 12,
             FontWeight = FontWeights.Medium,
             Foreground = new SolidColorBrush(Color.FromRgb(95, 99, 104)),
@@ -356,7 +357,7 @@ public partial class EditShortcutWindow : Window
 
         iconPreviewBorder.Child = iconPreview;
 
-        Button browseIconButton = CreateModernButton("Browse...", false);
+        Button browseIconButton = CreateModernButton(Strings.BtnBrowse, false);
         browseIconButton.Click += BrowseIcon_Click;
 
         iconGrid.Children.Add(iconPathBox);
@@ -391,7 +392,7 @@ public partial class EditShortcutWindow : Window
         // Green default button (same as CustomizeFrameForm)
         Button defaultButton = new Button
         {
-            Content = "Default",
+            Content = Strings.BtnDefault,
             Height = 36,
             MinWidth = 80,
             FontSize = 13,
@@ -405,14 +406,14 @@ public partial class EditShortcutWindow : Window
         };
         defaultButton.Click += Default_Click;
 
-        Button cancelButton = CreateModernButton("Cancel", false);
+        Button cancelButton = CreateModernButton(Strings.BtnCancel, false);
         cancelButton.Margin = new Thickness(0, 0, 10, 0);
         cancelButton.Click += (s, e) => { DialogResult = false; Close(); };
 
         // Save button with accent color (same as CustomizeFrameForm)
         _saveButton = new Button
         {
-            Content = "Save",
+            Content = Strings.BtnSave,
             Height = 36,
             MinWidth = 80,
             FontSize = 13,
@@ -588,7 +589,7 @@ public partial class EditShortcutWindow : Window
             var fileDialog = new System.Windows.Forms.OpenFileDialog
             {
                 Filter = "Executable Files (*.exe)|*.exe|All Files (*.*)|*.*",
-                Title = "Select Target File",
+                Title = Strings.EditSelectTarget,
                 CheckFileExists = true,
                 CheckPathExists = true
             };
@@ -609,7 +610,7 @@ public partial class EditShortcutWindow : Window
         catch (Exception ex)
         {
             LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI, $"Error in target browse dialog: {ex.Message}");
-            MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Error opening file browser: {ex.Message}", "Browse Error");
+            MessageBoxesManager.ShowOKOnlyMessageBoxForm(Strings.Get("MsgOpenFileBrowserFailed", ex.Message), Strings.DlgBrowseError);
         }
     }
 
@@ -618,7 +619,7 @@ public partial class EditShortcutWindow : Window
         var dialog = new System.Windows.Forms.OpenFileDialog
         {
             Filter = "Icon Files (*.ico)|*.ico|Executable Files (*.exe)|*.exe|DLL Files (*.dll)|*.dll|All Files (*.*)|*.*",
-            Title = "Select an Icon"
+            Title = Strings.EditSelectIcon
         };
 
         if (dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
@@ -694,7 +695,7 @@ public partial class EditShortcutWindow : Window
         catch (Exception ex)
         {
             LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI, $"Error restoring defaults: {ex.Message}");
-            MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Error restoring default values: {ex.Message}", "Default Error");
+            MessageBoxesManager.ShowOKOnlyMessageBoxForm(Strings.Get("MsgRestoreDefaultsFailed", ex.Message), Strings.DlgDefaultError);
         }
     }
 
@@ -711,7 +712,7 @@ public partial class EditShortcutWindow : Window
 
             if (string.IsNullOrWhiteSpace(newDisplayName) || string.IsNullOrWhiteSpace(newTargetPath))
             {
-                MessageBoxesManager.ShowOKOnlyMessageBoxForm("Display name and Target path cannot be empty.", "Validation Error");
+                MessageBoxesManager.ShowOKOnlyMessageBoxForm(Strings.MsgNameAndTargetRequired, Strings.DlgValidationError);
                 return;
             }
 
@@ -813,7 +814,7 @@ public partial class EditShortcutWindow : Window
         catch (Exception ex)
         {
             LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI, $"Error saving shortcut: {ex.Message}");
-            MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Failed to save shortcut: {ex.Message}", "Save Error");
+            MessageBoxesManager.ShowOKOnlyMessageBoxForm(Strings.Get("MsgSaveShortcutFailed", ex.Message), Strings.DlgSaveError);
         }
     }
 

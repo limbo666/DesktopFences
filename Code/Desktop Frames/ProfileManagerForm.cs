@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Desktop_Frames.Localization;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
@@ -16,7 +17,7 @@ namespace Desktop_Frames
         public ProfileManagerForm()
         {
             // Window Setup
-            Title = "Profile Manager";
+            Title = Strings.ProfileManagerTitle;
             Width = 480;
             Height = 720; // Height increased to prevent footer cutoff
             WindowStartupLocation = WindowStartupLocation.CenterScreen;
@@ -66,7 +67,7 @@ namespace Desktop_Frames
             headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
             StackPanel titleStack = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
-            titleStack.Children.Add(new TextBlock { Text = "Profile Manager", FontSize = 18, FontWeight = FontWeights.Bold, Foreground = Brushes.White });
+            titleStack.Children.Add(new TextBlock { Text = Strings.ProfileManagerTitle, FontSize = 18, FontWeight = FontWeights.Bold, Foreground = Brushes.White });
             // Subtitle removed or kept small to fit clean header style
 
             Button closeBtn = new Button { Content = "✕", Background = Brushes.Transparent, BorderThickness = new Thickness(0), Foreground = Brushes.White, FontSize = 16, Cursor = System.Windows.Input.Cursors.Hand, VerticalAlignment = VerticalAlignment.Center };
@@ -98,7 +99,7 @@ namespace Desktop_Frames
 
             Button btnAdd = new Button
             {
-                Content = "Create",
+                Content = Strings.BtnCreate,
                 Height = 34,
                 Width = 100,
                 Margin = new Thickness(10, 0, 0, 0),
@@ -118,7 +119,7 @@ namespace Desktop_Frames
                         RefreshList();
                         TrayManager.Instance?.UpdateProfilesMenu();
                     }
-                    else MessageBoxesManager.ShowOKOnlyMessageBoxForm("Invalid name or profile already exists.", "Error");
+                    else MessageBoxesManager.ShowOKOnlyMessageBoxForm(Strings.MsgProfileNameInvalid, Strings.DlgError);
                 }
             };
 
@@ -138,7 +139,7 @@ namespace Desktop_Frames
             };
             Button btnClose = new Button
             {
-                Content = "Close",
+                Content = Strings.BtnClose,
                 Width = 100,
                 Height = 34,
                 HorizontalAlignment = HorizontalAlignment.Right,
@@ -217,7 +218,7 @@ namespace Desktop_Frames
                 if (isActive)
                 {
                     Border badge = new Border { Background = new SolidColorBrush(Color.FromRgb(220, 255, 220)), CornerRadius = new CornerRadius(0), Margin = new Thickness(10, 0, 0, 0), Padding = new Thickness(5, 1, 5, 1) };
-                    badge.Child = new TextBlock { Text = "Active", FontSize = 10, Foreground = Brushes.Green };
+                    badge.Child = new TextBlock { Text = Strings.ProfileActive, FontSize = 10, Foreground = Brushes.Green };
                     nameStack.Children.Add(badge);
                 }
                 Grid.SetColumn(nameStack, 1);
@@ -270,7 +271,7 @@ namespace Desktop_Frames
                                 RefreshList();
                                 TrayManager.Instance?.UpdateProfilesMenu();
                             }
-                            else MessageBoxesManager.ShowOKOnlyMessageBoxForm("Rename failed. Name may be in use or invalid.", "Error");
+                            else MessageBoxesManager.ShowOKOnlyMessageBoxForm(Strings.MsgRenameProfileFailed, Strings.DlgError);
                         }
                     };
                 }
@@ -287,7 +288,7 @@ namespace Desktop_Frames
                     btnDelete.Click += (s, e) =>
                     {
                         e.Handled = true; // Prevent card click
-                        if (MessageBoxesManager.ShowCustomYesNoMessageBox($"Are you sure you want to delete profile '{p.Name}'?\nThis cannot be undone.", "Delete Profile"))
+                        if (MessageBoxesManager.ShowCustomYesNoMessageBox(Strings.Get("MsgConfirmDeleteProfile", p.Name), Strings.DlgDeleteProfile))
                         {
                             if (ProfileManager.DeleteProfile(p.Name))
                             {

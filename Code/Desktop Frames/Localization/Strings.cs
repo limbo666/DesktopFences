@@ -1,0 +1,759 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
+using System.Linq;
+using System.Resources;
+using System.Xml.Linq;
+
+namespace Desktop_Frames.Localization
+{
+    /// <summary>
+    /// User-facing text, kept out of the code so it can be translated.
+    ///
+    /// Only text the user actually reads belongs here: window titles, menu
+    /// entries, labels, tooltips and message boxes. Log messages stay in
+    /// English in the code — they are read by the developer, not by the user,
+    /// and a translated log is a log nobody can search.
+    ///
+    /// The same rule protects the values that are written to frames.json
+    /// ("Medium", "Details", "Gray"…): those are keys, not text, and must never
+    /// go through here or the saved configuration stops being readable.
+    ///
+    /// The language follows Windows unless <see cref="OverrideCulture"/> is set.
+    /// </summary>
+    internal static class Strings
+    {
+        private static readonly ResourceManager Manager =
+            new ResourceManager("Desktop_Frames.Localization.Strings", typeof(Strings).Assembly);
+
+        /// <summary>Forces a language; null (the default) follows Windows.</summary>
+        public static CultureInfo? OverrideCulture { get; set; }
+
+        private static CultureInfo Culture => OverrideCulture ?? CultureInfo.CurrentUICulture;
+
+        // ── Language packs dropped in by hand ───────────────────────────────
+        //
+        // A .resx placed in the Languages folder next to the executable is read
+        // at run time and wins over the compiled resources. That is what lets
+        // someone add a language, or fix a wording they disagree with, without
+        // a compiler: edit the file, restart, done.
+
+        /// <summary>Folder scanned for hand-installed language packs.</summary>
+        public static string PacksFolder =>
+            Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Languages");
+
+        private static readonly Dictionary<string, Dictionary<string, string>> PackCache =
+            new Dictionary<string, Dictionary<string, string>>(StringComparer.OrdinalIgnoreCase);
+
+        /// <summary>Forget the loaded packs, so the next lookup re-reads them.</summary>
+        public static void ReloadPacks() => PackCache.Clear();
+
+        /// <summary>
+        /// Entries of the pack for a culture, or null if there is no file.
+        /// A pack for "pt-BR" also picks up a "pt" file, the same way .NET
+        /// falls back from a specific culture to its neutral parent.
+        /// </summary>
+        private static Dictionary<string, string>? Pack(CultureInfo culture)
+        {
+            foreach (string name in new[] { culture.Name, culture.TwoLetterISOLanguageName })
+            {
+                if (string.IsNullOrEmpty(name)) continue;
+                if (PackCache.TryGetValue(name, out var cached)) return cached;
+
+                string file = Path.Combine(PacksFolder, name + ".resx");
+                if (!File.Exists(file)) continue;
+                try
+                {
+                    var entries = XDocument.Load(file).Root?.Elements("data")
+                        .Where(d => d.Attribute("name") != null && d.Element("value") != null)
+                        .ToDictionary(d => d.Attribute("name")!.Value,
+                                      d => d.Element("value")!.Value,
+                                      StringComparer.Ordinal)
+                        ?? new Dictionary<string, string>(StringComparer.Ordinal);
+                    PackCache[name] = entries;
+                    return entries;
+                }
+                catch (Exception)
+                {
+                    // A malformed pack must not take the program down with it:
+                    // remember the failure as empty and carry on in English.
+                    PackCache[name] = new Dictionary<string, string>(StringComparer.Ordinal);
+                }
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Text for a key. A hand-installed pack wins, then the compiled
+        /// resources. Falls back to the key itself if nothing has it, so a
+        /// forgotten entry shows up as a visible label instead of crashing a
+        /// window that was about to open.
+        /// </summary>
+        public static string Get(string key)
+        {
+            var pack = Pack(Culture);
+            if (pack != null && pack.TryGetValue(key, out string? fromPack) && !string.IsNullOrEmpty(fromPack))
+                return fromPack;
+            try
+            {
+                return Manager.GetString(key, Culture) ?? key;
+            }
+            catch (MissingManifestResourceException)
+            {
+                return key;
+            }
+        }
+
+        /// <summary>Text for a key, with {0}, {1}… replaced.</summary>
+        public static string Get(string key, params object[] args)
+        {
+            string format = Get(key);
+            try
+            {
+                return string.Format(Culture, format, args);
+            }
+            catch (FormatException)
+            {
+                return format;
+            }
+        }
+
+
+        /// <summary>
+        /// Label for a value that is stored in the configuration ("Medium",
+        /// "Details", "Gray"…). Only the label is translated: the value itself
+        /// travels untouched, so saved settings stay readable in any language.
+        /// </summary>
+        public static string Item(string storedValue) =>
+            string.IsNullOrEmpty(storedValue) ? storedValue : Get("Item" + storedValue.Replace(" ", ""));
+
+
+        /// <summary>
+        /// Label for a hotkey. Letters, digits and function keys read the same
+        /// everywhere and stay as they are; only the named keys get translated.
+        /// The key code itself is untouched — it lives in the item's Tag.
+        /// </summary>
+        public static string KeyLabel(string name) => name switch
+        {
+            "Comma (,)" => Get("KeyComma"),
+            "Period (.)" => Get("KeyPeriod"),
+            "Tilde (~)" => Get("KeyTilde"),
+            "Space" => Get("KeySpace"),
+            "Tab" => Get("KeyTab"),
+            "Enter" => Get("KeyEnter"),
+            "Escape" => Get("KeyEscape"),
+            _ => name
+        };
+
+        /// <summary>
+        /// Languages the program can actually show: the English it is written
+        /// in, the ones compiled into satellite assemblies, and any pack found
+        /// in the Languages folder. Sorted by the name each language calls
+        /// itself, because that is what its own speakers will look for.
+        /// </summary>
+        public static IReadOnlyList<CultureInfo> AvailableLanguages()
+        {
+            var found = new Dictionary<string, CultureInfo>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["en"] = new CultureInfo("en")
+            };
+
+            void Add(string name)
+            {
+                if (string.IsNullOrWhiteSpace(name) || found.ContainsKey(name)) return;
+                try { found[name] = new CultureInfo(name); }
+                catch (CultureNotFoundException) { /* a folder that is not a language */ }
+            }
+
+            try
+            {
+                string baseDir = AppDomain.CurrentDomain.BaseDirectory;
+                foreach (string dir in Directory.GetDirectories(baseDir))
+                    if (File.Exists(Path.Combine(dir, "Desktop Frames.resources.dll")))
+                        Add(Path.GetFileName(dir));
+            }
+            catch (Exception) { }
+
+            try
+            {
+                if (Directory.Exists(PacksFolder))
+                    foreach (string f in Directory.GetFiles(PacksFolder, "*.resx"))
+                        Add(Path.GetFileNameWithoutExtension(f));
+            }
+            catch (Exception) { }
+
+            return found.Values.OrderBy(c => c.NativeName, StringComparer.CurrentCulture).ToList();
+        }
+
+        /// <summary>
+        /// Applies a saved language setting. An empty value means "follow
+        /// Windows", which is what a fresh installation does.
+        /// </summary>
+        public static void SetLanguage(string? cultureName)
+        {
+            ReloadPacks();
+            if (string.IsNullOrWhiteSpace(cultureName))
+            {
+                OverrideCulture = null;
+                return;
+            }
+            try { OverrideCulture = new CultureInfo(cultureName); }
+            catch (CultureNotFoundException) { OverrideCulture = null; }
+        }
+
+        // ── Shared buttons ─────────────────────────────────────────────────
+        public static string BtnApply => Get("BtnApply");
+        public static string BtnApplyToAll => Get("BtnApplyToAll");
+        public static string BtnBackup => Get("BtnBackup");
+        public static string BtnBrowse => Get("BtnBrowse");
+        public static string BtnCancel => Get("BtnCancel");
+        public static string BtnClearAllData => Get("BtnClearAllData");
+        public static string BtnClose => Get("BtnClose");
+        public static string BtnCreate => Get("BtnCreate");
+        public static string BtnDefault => Get("BtnDefault");
+        public static string BtnDonate => Get("BtnDonate");
+        public static string BtnManageAutomation => Get("BtnManageAutomation");
+        public static string BtnManageProfiles => Get("BtnManageProfiles");
+        public static string BtnMoveDown => Get("BtnMoveDown");
+        public static string BtnMoveUp => Get("BtnMoveUp");
+        public static string BtnOpenBackupsFolder => Get("BtnOpenBackupsFolder");
+        public static string BtnOpenLog => Get("BtnOpenLog");
+        public static string BtnOrganizeNow => Get("BtnOrganizeNow");
+        public static string BtnReset => Get("BtnReset");
+        public static string BtnResetStyles => Get("BtnResetStyles");
+        public static string BtnRestore => Get("BtnRestore");
+        public static string BtnSave => Get("BtnSave");
+        public static string BtnSaveToAll => Get("BtnSaveToAll");
+        public static string BtnScreenBoundFrames => Get("BtnScreenBoundFrames");
+        public static string BtnSmartDesktopRules => Get("BtnSmartDesktopRules");
+        public static string ButtonNo => Get("ButtonNo");
+        public static string ButtonOk => Get("ButtonOk");
+        public static string ButtonYes => Get("ButtonYes");
+
+        // ── Frame context menus ────────────────────────────────────────────
+        public static string MenuAbout => Get("MenuAbout");
+        public static string MenuAddPlugin => Get("MenuAddPlugin");
+        public static string MenuAddSpacer => Get("MenuAddSpacer");
+        public static string MenuAlwaysOnTop => Get("MenuAlwaysOnTop");
+        public static string MenuAlwaysRunAsAdmin => Get("MenuAlwaysRunAsAdmin");
+        public static string MenuAlwaysRunAsDifferentUser => Get("MenuAlwaysRunAsDifferentUser");
+        public static string MenuAutoRoll => Get("MenuAutoRoll");
+        public static string MenuClearDeadShortcuts => Get("MenuClearDeadShortcuts");
+        public static string MenuCopyFolderPath => Get("MenuCopyFolderPath");
+        public static string MenuCopyItem => Get("MenuCopyItem");
+        public static string MenuCopyItemPath => Get("MenuCopyItemPath");
+        public static string MenuCopyPath => Get("MenuCopyPath");
+        public static string MenuCustomize => Get("MenuCustomize");
+        public static string MenuCutItem => Get("MenuCutItem");
+        public static string MenuDeleteItem => Get("MenuDeleteItem");
+        public static string MenuDeleteThisFrame => Get("MenuDeleteThisFrame");
+        public static string MenuEdit => Get("MenuEdit");
+        public static string MenuEnableTabs => Get("MenuEnableTabs");
+        public static string MenuExit => Get("MenuExit");
+        public static string MenuExportAllIcons => Get("MenuExportAllIcons");
+        public static string MenuExportThisFrame => Get("MenuExportThisFrame");
+        public static string MenuFolderPath => Get("MenuFolderPath");
+        public static string MenuFullPath => Get("MenuFullPath");
+        public static string MenuHideFrame => Get("MenuHideFrame");
+        public static string MenuImportFrame => Get("MenuImportFrame");
+        public static string MenuMove => Get("MenuMove");
+        public static string MenuNameAfterPath => Get("MenuNameAfterPath");
+        public static string MenuNewFrame => Get("MenuNewFrame");
+        public static string MenuNewNoteFrame => Get("MenuNewNoteFrame");
+        public static string MenuNewPortalFrame => Get("MenuNewPortalFrame");
+        public static string MenuNoPluginsAvailable => Get("MenuNoPluginsAvailable");
+        public static string MenuOpenFrameFolder => Get("MenuOpenFrameFolder");
+        public static string MenuOpenTargetFolder => Get("MenuOpenTargetFolder");
+        public static string MenuOpenWith => Get("MenuOpenWith");
+        public static string MenuOptions => Get("MenuOptions");
+        public static string MenuPasteItem => Get("MenuPasteItem");
+        public static string MenuPeekBehind => Get("MenuPeekBehind");
+        public static string MenuPluginSettings => Get("MenuPluginSettings");
+        public static string MenuRemove => Get("MenuRemove");
+        public static string MenuRenameItem => Get("MenuRenameItem");
+        public static string MenuResetColumns => Get("MenuResetColumns");
+        public static string MenuResetSorting => Get("MenuResetSorting");
+        public static string MenuRestoreLastDeleted => Get("MenuRestoreLastDeleted");
+        public static string MenuRunAsAdmin => Get("MenuRunAsAdmin");
+        public static string MenuRunAsDifferentUser => Get("MenuRunAsDifferentUser");
+        public static string MenuSendToDesktop => Get("MenuSendToDesktop");
+        public static string MenuSpacerBlank => Get("MenuSpacerBlank");
+        public static string MenuSpacerDot => Get("MenuSpacerDot");
+        public static string MenuViewAsDetails => Get("MenuViewAsDetails");
+
+        // ── Frame tooltips and inline labels ───────────────────────────────
+        public static string TooltipAutoReposition => Get("TooltipAutoReposition");
+        public static string TooltipBlankSpacer => Get("TooltipBlankSpacer");
+        public static string TooltipChameleon => Get("TooltipChameleon");
+        public static string TooltipClearFilter => Get("TooltipClearFilter");
+        public static string TooltipFilterFiles => Get("TooltipFilterFiles");
+        public static string TooltipGoUp => Get("TooltipGoUp");
+        public static string TooltipSetHome => Get("TooltipSetHome");
+
+        // ── Tray icon and its menu ─────────────────────────────────────────
+        public static string TrayCreateNewProfile => Get("TrayCreateNewProfile");
+        public static string TrayExportDoneText => Get("TrayExportDoneText");
+        public static string TrayExportDoneTitle => Get("TrayExportDoneTitle");
+        public static string TrayExportFailedText => Get("TrayExportFailedText");
+        public static string TrayExportFailedTitle => Get("TrayExportFailedTitle");
+        public static string TrayManageProfiles => Get("TrayManageProfiles");
+        public static string TrayProfiles => Get("TrayProfiles");
+        public static string TrayReloadAllFrames => Get("TrayReloadAllFrames");
+        public static string TrayReloadingFrames => Get("TrayReloadingFrames");
+        public static string TrayShowHiddenFrames => Get("TrayShowHiddenFrames");
+
+        public static string SecLanguage => Get("SecLanguage");
+        public static string LblLanguage => Get("LblLanguage");
+        public static string LangAutomatic => Get("LangAutomatic");
+        public static string BtnImportLanguagePack => Get("BtnImportLanguagePack");
+        public static string BtnOpenLanguagesFolder => Get("BtnOpenLanguagesFolder");
+        public static string LanguagePackFilter => Get("LanguagePackFilter");
+        public static string LanguagePackImported => Get("LanguagePackImported");
+        public static string LanguagePackBadName => Get("LanguagePackBadName");
+        public static string NoteLanguageRestart => Get("NoteLanguageRestart");
+
+        // ── Options window ─────────────────────────────────────────────────
+        public static string HkDirectProfile => Get("HkDirectProfile");
+        public static string HkFocusFrame => Get("HkFocusFrame");
+        public static string HkNextProfile => Get("HkNextProfile");
+        public static string HkPreviousProfile => Get("HkPreviousProfile");
+        public static string HkSpotSearch => Get("HkSpotSearch");
+        public static string OptAutoHideFrames => Get("OptAutoHideFrames");
+        public static string OptAutoOrganize => Get("OptAutoOrganize");
+        public static string OptAutomaticBackup => Get("OptAutomaticBackup");
+        public static string OptChameleon => Get("OptChameleon");
+        public static string OptDimensionSnap => Get("OptDimensionSnap");
+        public static string OptDisableScrollbars => Get("OptDisableScrollbars");
+        public static string OptEnableLogging => Get("OptEnableLogging");
+        public static string OptEnableSounds => Get("OptEnableSounds");
+        public static string OptExecutionToasts => Get("OptExecutionToasts");
+        public static string OptFocusFrameHotkey => Get("OptFocusFrameHotkey");
+        public static string OptFrameTint => Get("OptFrameTint");
+        public static string OptHideIconsRunning => Get("OptHideIconsRunning");
+        public static string OptHideIconsWhenHidden => Get("OptHideIconsWhenHidden");
+        public static string OptIdleFadeOut => Get("OptIdleFadeOut");
+        public static string OptNewFrameContextMenu => Get("OptNewFrameContextMenu");
+        public static string OptNoteWatermark => Get("OptNoteWatermark");
+        public static string OptPortalWatermark => Get("OptPortalWatermark");
+        public static string OptProfileHotkeys => Get("OptProfileHotkeys");
+        public static string OptRecycleBin => Get("OptRecycleBin");
+        public static string OptSingleClick => Get("OptSingleClick");
+        public static string OptSnapNearFrames => Get("OptSnapNearFrames");
+        public static string OptSpotSearchHotkey => Get("OptSpotSearchHotkey");
+        public static string OptStartWithWindows => Get("OptStartWithWindows");
+        public static string OptTrayIcon => Get("OptTrayIcon");
+        public static string OptionsHeading => Get("OptionsHeading");
+        public static string OptionsTitle => Get("OptionsTitle");
+        // Dialog titles and message box texts.
+        // The {0} placeholders carry the values the caller passes in.
+        public static string DlgApplyError => Get("DlgApplyError");
+        public static string DlgBackup => Get("DlgBackup");
+        public static string DlgBrowseError => Get("DlgBrowseError");
+        public static string DlgConfirmImport => Get("DlgConfirmImport");
+        public static string DlgCopyError => Get("DlgCopyError");
+        public static string DlgCopyItem => Get("DlgCopyItem");
+        public static string DlgCriticalError => Get("DlgCriticalError");
+        public static string DlgDefaultError => Get("DlgDefaultError");
+        public static string DlgDeleteProfile => Get("DlgDeleteProfile");
+        public static string DlgDeleteTab => Get("DlgDeleteTab");
+        public static string DlgError => Get("DlgError");
+        public static string DlgExportError => Get("DlgExportError");
+        public static string DlgExportSuccessful => Get("DlgExportSuccessful");
+        public static string DlgFactoryReset => Get("DlgFactoryReset");
+        public static string DlgFormError => Get("DlgFormError");
+        public static string DlgImportComplete => Get("DlgImportComplete");
+        public static string DlgImportError => Get("DlgImportError");
+        public static string DlgInfo => Get("DlgInfo");
+        public static string DlgInformation => Get("DlgInformation");
+        public static string DlgKeyboardCheck => Get("DlgKeyboardCheck");
+        public static string DlgLaunchError => Get("DlgLaunchError");
+        public static string DlgLoadError => Get("DlgLoadError");
+        public static string DlgPasteError => Get("DlgPasteError");
+        public static string DlgPasteItem => Get("DlgPasteItem");
+        public static string DlgRenameError => Get("DlgRenameError");
+        public static string DlgResetComplete => Get("DlgResetComplete");
+        public static string DlgResetSuccessful => Get("DlgResetSuccessful");
+        public static string DlgRestartRequired => Get("DlgRestartRequired");
+        public static string DlgRestore => Get("DlgRestore");
+        public static string DlgRestoreError => Get("DlgRestoreError");
+        public static string DlgRestoreSettings => Get("DlgRestoreSettings");
+        public static string DlgSaveError => Get("DlgSaveError");
+        public static string DlgSaved => Get("DlgSaved");
+        public static string DlgSuccess => Get("DlgSuccess");
+        public static string DlgSweepDesktop => Get("DlgSweepDesktop");
+        public static string DlgUpdatePortalFrame => Get("DlgUpdatePortalFrame");
+        public static string DlgValidationError => Get("DlgValidationError");
+        public static string MsgAddItemFailed => Get("MsgAddItemFailed");
+        public static string MsgApplyChangesFailed => Get("MsgApplyChangesFailed");
+        public static string MsgApplySettingsFailed => Get("MsgApplySettingsFailed");
+        public static string MsgBackupDone => Get("MsgBackupDone");
+        public static string MsgBackupFailed => Get("MsgBackupFailed");
+        public static string MsgCannotDeleteLastTab => Get("MsgCannotDeleteLastTab");
+        public static string MsgConfirmDeleteProfile => Get("MsgConfirmDeleteProfile");
+        public static string MsgConfirmDisableCtrlAltHotkeys => Get("MsgConfirmDisableCtrlAltHotkeys");
+        public static string MsgConfirmFactoryReset => Get("MsgConfirmFactoryReset");
+        public static string MsgConfirmImportIntoTab => Get("MsgConfirmImportIntoTab");
+        public static string MsgConfirmResetCustomizations => Get("MsgConfirmResetCustomizations");
+        public static string MsgConfirmRestoreSettings => Get("MsgConfirmRestoreSettings");
+        public static string MsgConfirmSetPortalHome => Get("MsgConfirmSetPortalHome");
+        public static string MsgConfirmSweepDesktop => Get("MsgConfirmSweepDesktop");
+        public static string MsgCopyItemFailed => Get("MsgCopyItemFailed");
+        public static string MsgCopyPathFailed => Get("MsgCopyPathFailed");
+        public static string MsgCreateProfileFailed => Get("MsgCreateProfileFailed");
+        public static string MsgCustomizationsReset => Get("MsgCustomizationsReset");
+        public static string MsgDeleteItemFailed => Get("MsgDeleteItemFailed");
+        public static string MsgDesktopOrganized => Get("MsgDesktopOrganized");
+        public static string MsgDestinationFolderGone => Get("MsgDestinationFolderGone");
+        public static string MsgEditNotAvailable => Get("MsgEditNotAvailable");
+        public static string MsgExportFailed => Get("MsgExportFailed");
+        public static string MsgExportIconsFailed => Get("MsgExportIconsFailed");
+        public static string MsgFactoryResetDone => Get("MsgFactoryResetDone");
+        public static string MsgFileNotFoundInProfile => Get("MsgFileNotFoundInProfile");
+        public static string MsgFormInitFailed => Get("MsgFormInitFailed");
+        public static string MsgFrameExportedTo => Get("MsgFrameExportedTo");
+        public static string MsgFrameImported => Get("MsgFrameImported");
+        public static string MsgFramesMovedIntoBounds => Get("MsgFramesMovedIntoBounds");
+        public static string MsgGenericError => Get("MsgGenericError");
+        public static string MsgGlobalSettingsRestored => Get("MsgGlobalSettingsRestored");
+        public static string MsgHotkeysSavedRestartNeeded => Get("MsgHotkeysSavedRestartNeeded");
+        public static string MsgImportFailed => Get("MsgImportFailed");
+        public static string MsgImportFrameFailed => Get("MsgImportFrameFailed");
+        public static string MsgInitFailed => Get("MsgInitFailed");
+        public static string MsgInvalidFileOrFolder => Get("MsgInvalidFileOrFolder");
+        public static string MsgInvalidUrlFile => Get("MsgInvalidUrlFile");
+        public static string MsgItemCopiedReady => Get("MsgItemCopiedReady");
+        public static string MsgLaunchFailed => Get("MsgLaunchFailed");
+        public static string MsgLoadFramePropertiesFailed => Get("MsgLoadFramePropertiesFailed");
+        public static string MsgLogFileNotFound => Get("MsgLogFileNotFound");
+        public static string MsgMoveFailed => Get("MsgMoveFailed");
+        public static string MsgNameAlreadyExists => Get("MsgNameAlreadyExists");
+        public static string MsgNameAndTargetRequired => Get("MsgNameAndTargetRequired");
+        public static string MsgNoFrameToRestore => Get("MsgNoFrameToRestore");
+        public static string MsgNoItemToPaste => Get("MsgNoItemToPaste");
+        public static string MsgNoPortalDestination => Get("MsgNoPortalDestination");
+        public static string MsgOpenCustomizeFailed => Get("MsgOpenCustomizeFailed");
+        public static string MsgOpenFileBrowserFailed => Get("MsgOpenFileBrowserFailed");
+        public static string MsgOpenTextFormatFailed => Get("MsgOpenTextFormatFailed");
+        public static string MsgPasteItemFailed => Get("MsgPasteItemFailed");
+        public static string MsgPortalInitFailed => Get("MsgPortalInitFailed");
+        public static string MsgProfileCreated => Get("MsgProfileCreated");
+        public static string MsgProfileNameInvalid => Get("MsgProfileNameInvalid");
+        public static string MsgProfileSystemError => Get("MsgProfileSystemError");
+        public static string MsgRecycleBinFailed => Get("MsgRecycleBinFailed");
+        public static string MsgReloadFramesFailed => Get("MsgReloadFramesFailed");
+        public static string MsgReloadingFramesFailed => Get("MsgReloadingFramesFailed");
+        public static string MsgRenameItemFailed => Get("MsgRenameItemFailed");
+        public static string MsgRenameProfileFailed => Get("MsgRenameProfileFailed");
+        public static string MsgResetCustomizationsFailed => Get("MsgResetCustomizationsFailed");
+        public static string MsgResetDefaultsFailed => Get("MsgResetDefaultsFailed");
+        public static string MsgResetFailed => Get("MsgResetFailed");
+        public static string MsgRestoreDefaultsFailed => Get("MsgRestoreDefaultsFailed");
+        public static string MsgRestoreDone => Get("MsgRestoreDone");
+        public static string MsgRestoreFailed => Get("MsgRestoreFailed");
+        public static string MsgRestoreFrameFailed => Get("MsgRestoreFrameFailed");
+        public static string MsgRulesSaved => Get("MsgRulesSaved");
+        public static string MsgRunAsAdminFailed => Get("MsgRunAsAdminFailed");
+        public static string MsgSaveChangesFailed => Get("MsgSaveChangesFailed");
+        public static string MsgSaveSettingsFailed => Get("MsgSaveSettingsFailed");
+        public static string MsgSaveShortcutFailed => Get("MsgSaveShortcutFailed");
+        public static string MsgTargetNotFound => Get("MsgTargetNotFound");
+
+        public static string MsgRestartForLanguage => Get("MsgRestartForLanguage");
+        public static string SecAppearance => Get("SecAppearance");
+        public static string SecAutoHideFrames => Get("SecAutoHideFrames");
+        public static string SecDesktopIconVisibility => Get("SecDesktopIconVisibility");
+        public static string SecIcons => Get("SecIcons");
+        public static string SecIdleAutoRoll => Get("SecIdleAutoRoll");
+        public static string SecIdleFadeOut => Get("SecIdleFadeOut");
+        public static string SecLog => Get("SecLog");
+        public static string SecLogCategories => Get("SecLogCategories");
+        public static string SecLogConfiguration => Get("SecLogConfiguration");
+        public static string SecMaintenance => Get("SecMaintenance");
+        public static string SecProfileManagement => Get("SecProfileManagement");
+        public static string SecProfileSwitching => Get("SecProfileSwitching");
+        public static string SecSelections => Get("SecSelections");
+        public static string SecSmartDesktopAuto => Get("SecSmartDesktopAuto");
+        public static string SecStartup => Get("SecStartup");
+        public static string SecUtilities => Get("SecUtilities");
+        public static string SldAutoHideTime => Get("SldAutoHideTime");
+        public static string SldFadeTargetOpacity => Get("SldFadeTargetOpacity");
+        public static string SldFrameTint => Get("SldFrameTint");
+        public static string SldIdleTime => Get("SldIdleTime");
+        public static string SldMenuTint => Get("SldMenuTint");
+        public static string TabAddNew => Get("TabAddNew");
+        public static string TabAddNewHint => Get("TabAddNewHint");
+        public static string TabFrame => Get("TabFrame");
+        public static string TabGeneral => Get("TabGeneral");
+        public static string TabHotkeys => Get("TabHotkeys");
+        public static string TabIcons => Get("TabIcons");
+        public static string TabLookDeeper => Get("TabLookDeeper");
+        public static string TabMoveLeft => Get("TabMoveLeft");
+        public static string TabMoveRight => Get("TabMoveRight");
+        public static string TabProfiles => Get("TabProfiles");
+        public static string TabRename => Get("TabRename");
+        public static string TabSmartDesktop => Get("TabSmartDesktop");
+        public static string TabStyleFx => Get("TabStyleFx");
+        public static string TabTitle => Get("TabTitle");
+        public static string TabTools => Get("TabTools");
+
+        // ── Customize Frame window ─────────────────────────────────────────
+        public static string ColDateModified => Get("ColDateModified");
+        public static string ColName => Get("ColName");
+        public static string ColSize => Get("ColSize");
+        public static string ColType => Get("ColType");
+        public static string CustomizeTitle => Get("CustomizeTitle");
+        public static string LblActivationDelay => Get("LblActivationDelay");
+        public static string LblArguments => Get("LblArguments");
+        public static string LblBoldTitleText => Get("LblBoldTitleText");
+        public static string LblColor => Get("LblColor");
+        public static string LblCustomColor => Get("LblCustomColor");
+        public static string LblCustomLaunchEffect => Get("LblCustomLaunchEffect");
+        public static string LblDefaultPortalView => Get("LblDefaultPortalView");
+        public static string LblDisableTextShadow => Get("LblDisableTextShadow");
+        public static string LblDisplayName => Get("LblDisplayName");
+        public static string LblDonate => Get("LblDonate");
+        public static string LblEffect => Get("LblEffect");
+        public static string LblEnableProfileAutomation => Get("LblEnableProfileAutomation");
+        public static string LblFontFamily => Get("LblFontFamily");
+        public static string LblFontSize => Get("LblFontSize");
+        public static string LblFrameBorderColor => Get("LblFrameBorderColor");
+        public static string LblFrameBorderThickness => Get("LblFrameBorderThickness");
+        public static string LblGrayscaleIcons => Get("LblGrayscaleIcons");
+        public static string LblIcon => Get("LblIcon");
+        public static string LblIconSize => Get("LblIconSize");
+        public static string LblIconSpacing => Get("LblIconSpacing");
+        public static string LblLockIcon => Get("LblLockIcon");
+        public static string LblMenuIcon => Get("LblMenuIcon");
+        public static string LblMinimumLogLevel => Get("LblMinimumLogLevel");
+        public static string LblNotificationSound => Get("LblNotificationSound");
+        public static string LblPortalView => Get("LblPortalView");
+        public static string LblProcessName => Get("LblProcessName");
+        public static string LblSpellCheck => Get("LblSpellCheck");
+        public static string LblTargetPath => Get("LblTargetPath");
+        public static string LblTargetProfile => Get("LblTargetProfile");
+        public static string LblTextColor => Get("LblTextColor");
+        public static string LblTitleTextColor => Get("LblTitleTextColor");
+        public static string LblTitleTextSize => Get("LblTitleTextSize");
+        public static string LblWordWrap => Get("LblWordWrap");
+        public static string ViewDetails => Get("ViewDetails");
+        public static string ViewIcons => Get("ViewIcons");
+
+        public static string CatImages => Get("CatImages");
+        public static string CatDocuments => Get("CatDocuments");
+        public static string CatExecutables => Get("CatExecutables");
+        public static string CatArchives => Get("CatArchives");
+        public static string CatCustomExtensions => Get("CatCustomExtensions");
+        public static string ConflictAutoRename => Get("ConflictAutoRename");
+        public static string ConflictOverwrite => Get("ConflictOverwrite");
+        public static string ConflictSkip => Get("ConflictSkip");
+        public static string TargetPortalFrame => Get("TargetPortalFrame");
+        public static string LastRunNever => Get("LastRunNever");
+        public static string LastRunAt => Get("LastRunAt");
+
+        // ── Dialogs and confirmations ──────────────────────────────────────
+        public static string AutoOrgAddRule => Get("AutoOrgAddRule");
+        public static string AutoOrgBrowseFolder => Get("AutoOrgBrowseFolder");
+        public static string AutoOrgCustomExtensions => Get("AutoOrgCustomExtensions");
+        public static string AutoOrgEnableRule => Get("AutoOrgEnableRule");
+        public static string AutoOrgFilenameContains => Get("AutoOrgFilenameContains");
+        public static string AutoOrgGeneratePortal => Get("AutoOrgGeneratePortal");
+        public static string AutoOrgIfExists => Get("AutoOrgIfExists");
+        public static string AutoOrgIfExtension => Get("AutoOrgIfExtension");
+        public static string AutoOrgMoveTo => Get("AutoOrgMoveTo");
+        public static string AutoOrgRemove => Get("AutoOrgRemove");
+        public static string AutoOrgRuleName => Get("AutoOrgRuleName");
+        public static string AutoOrgSaveRules => Get("AutoOrgSaveRules");
+        public static string AutoOrgTitle => Get("AutoOrgTitle");
+        public static string AutomationClickTarget => Get("AutomationClickTarget");
+        public static string AutomationDeleteSelected => Get("AutomationDeleteSelected");
+        public static string AutomationDoubleClickEdit => Get("AutomationDoubleClickEdit");
+        public static string AutomationExisting => Get("AutomationExisting");
+        public static string AutomationManage => Get("AutomationManage");
+        public static string AutomationPersistedMode => Get("AutomationPersistedMode");
+        public static string AutomationPickWindow => Get("AutomationPickWindow");
+        public static string AutomationRuleDefinition => Get("AutomationRuleDefinition");
+        public static string AutomationTitle => Get("AutomationTitle");
+        public static string BackupSelectExportFile => Get("BackupSelectExportFile");
+        public static string ConfirmDeleteTitle => Get("ConfirmDeleteTitle");
+        public static string DeleteFrameHeading => Get("DeleteFrameHeading");
+        public static string DeleteFrameQuestion => Get("DeleteFrameQuestion");
+        public static string DeleteTabTitle => Get("DeleteTabTitle");
+        public static string EditSelectIcon => Get("EditSelectIcon");
+        public static string EditSelectTarget => Get("EditSelectTarget");
+        public static string EditShortcutTitle => Get("EditShortcutTitle");
+        public static string FocusFrameTitle => Get("FocusFrameTitle");
+        public static string FocusSearchActive => Get("FocusSearchActive");
+        public static string IconPickerHint => Get("IconPickerHint");
+        public static string IconPickerTitle => Get("IconPickerTitle");
+        public static string ImportTabNoFrames => Get("ImportTabNoFrames");
+        public static string ImportTabPrompt => Get("ImportTabPrompt");
+        public static string ImportTabTitle => Get("ImportTabTitle");
+        public static string MoveItemPrompt => Get("MoveItemPrompt");
+        public static string MoveItemTitle => Get("MoveItemTitle");
+        public static string MoveMainItems => Get("MoveMainItems");
+        public static string NoteAutoOrganize => Get("NoteAutoOrganize");
+        public static string NoteAutoRoll => Get("NoteAutoRoll");
+        public static string NoteClearAll => Get("NoteClearAll");
+        public static string NoteClickEdit => Get("NoteClickEdit");
+        public static string NoteClickFinish => Get("NoteClickFinish");
+        public static string NoteCopyAll => Get("NoteCopyAll");
+        public static string NoteHotkeysRestart => Get("NoteHotkeysRestart");
+        public static string NoteTextFormat => Get("NoteTextFormat");
+        public static string NotificationDontShowAgain => Get("NotificationDontShowAgain");
+        public static string NotificationTitle => Get("NotificationTitle");
+        public static string ProfileActive => Get("ProfileActive");
+        public static string ProfileManagerTitle => Get("ProfileManagerTitle");
+        public static string SearchPlaceholder => Get("SearchPlaceholder");
+        public static string SearchTitle => Get("SearchTitle");
+        public static string TextAppearance => Get("TextAppearance");
+        public static string TextBehavior => Get("TextBehavior");
+        public static string TextFormatTitle => Get("TextFormatTitle");
+        public static string UpdateAvailable => Get("UpdateAvailable");
+
+        // ── About panel ────────────────────────────────────────────────────
+        public static string AboutAnd => Get("AboutAnd");
+        public static string AboutBody => Get("AboutBody");
+        public static string AboutCreditsBody => Get("AboutCreditsBody");
+        public static string AboutDonateBig => Get("AboutDonateBig");
+        public static string AboutDontFeedDragons => Get("AboutDontFeedDragons");
+        public static string AboutGreatToHaveYou => Get("AboutGreatToHaveYou");
+        public static string AboutLicense => Get("AboutLicense");
+        public static string AboutPleaseDonate => Get("AboutPleaseDonate");
+        public static string AboutSectionAbout => Get("AboutSectionAbout");
+        public static string AboutSectionCredits => Get("AboutSectionCredits");
+        public static string AboutSoundCredits => Get("AboutSoundCredits");
+        public static string AboutSupportDevelopment => Get("AboutSupportDevelopment");
+        public static string AboutTagline => Get("AboutTagline");
+        public static string AboutThinkAgain => Get("AboutThinkAgain");
+        public static string AboutTitle => Get("AboutTitle");
+        public static string AboutVisitGitHub => Get("AboutVisitGitHub");
+        public static string AboutWhat => Get("AboutWhat");
+
+        // ── Widget plugins ─────────────────────────────────────────────────
+        public static string CalcBadgeFade => Get("CalcBadgeFade");
+        public static string CalcClear => Get("CalcClear");
+        public static string CalcClearHistory => Get("CalcClearHistory");
+        public static string CalcClearMemory => Get("CalcClearMemory");
+        public static string CalcClearOnNewInput => Get("CalcClearOnNewInput");
+        public static string CalcCleared => Get("CalcCleared");
+        public static string CalcClearedAll => Get("CalcClearedAll");
+        public static string CalcCopy => Get("CalcCopy");
+        public static string CalcDisplayColor => Get("CalcDisplayColor");
+        public static string CalcEntryCleared => Get("CalcEntryCleared");
+        public static string CalcErrorDisplay => Get("CalcErrorDisplay");
+        public static string CalcHistoryColor => Get("CalcHistoryColor");
+        public static string CalcPaste => Get("CalcPaste");
+        public static string CalcPercentage => Get("CalcPercentage");
+        public static string CalcSettings => Get("CalcSettings");
+        public static string CalcShowKeypad => Get("CalcShowKeypad");
+        public static string CalcShowOperationNames => Get("CalcShowOperationNames");
+        public static string CalcShowTape => Get("CalcShowTape");
+        public static string DiagCpuQueue => Get("DiagCpuQueue");
+        public static string DiagCpuUtilization => Get("DiagCpuUtilization");
+        public static string DiagDiskIo => Get("DiagDiskIo");
+        public static string DiagRamUtilization => Get("DiagRamUtilization");
+        public static string FxAgitate => Get("FxAgitate");
+        public static string FxBounce => Get("FxBounce");
+        public static string FxElastic => Get("FxElastic");
+        public static string FxFadeOut => Get("FxFadeOut");
+        public static string FxFlip3D => Get("FxFlip3D");
+        public static string FxGrowAndFly => Get("FxGrowAndFly");
+        public static string FxMatrix => Get("FxMatrix");
+        public static string FxPulse => Get("FxPulse");
+        public static string FxRotate => Get("FxRotate");
+        public static string FxShockwave => Get("FxShockwave");
+        public static string FxSlideUp => Get("FxSlideUp");
+        public static string FxSpiral => Get("FxSpiral");
+        public static string FxSupernova => Get("FxSupernova");
+        public static string FxTeleport => Get("FxTeleport");
+        public static string FxZoom => Get("FxZoom");
+        public static string GaugeCpu => Get("GaugeCpu");
+        public static string GaugeLeftL => Get("GaugeLeftL");
+        public static string GaugeLeftVu => Get("GaugeLeftVu");
+        public static string GaugeMasterVu => Get("GaugeMasterVu");
+        public static string GaugeRam => Get("GaugeRam");
+        public static string GaugeRightR => Get("GaugeRightR");
+        public static string GaugeRightVu => Get("GaugeRightVu");
+        public static string NetChecking => Get("NetChecking");
+        public static string NetExternal => Get("NetExternal");
+        public static string NetIpLabel => Get("NetIpLabel");
+        public static string NetLocalAdapters => Get("NetLocalAdapters");
+        public static string NetNoInterfaces => Get("NetNoInterfaces");
+        public static string NetOffline => Get("NetOffline");
+        public static string NetPublicWan => Get("NetPublicWan");
+        public static string NetSelectInterfaces => Get("NetSelectInterfaces");
+        public static string NetSettings => Get("NetSettings");
+        public static string NetShowDisconnected => Get("NetShowDisconnected");
+        public static string NetShowPublicWan => Get("NetShowPublicWan");
+        public static string NetStatusDown => Get("NetStatusDown");
+        public static string NetStatusUp => Get("NetStatusUp");
+        public static string NetUnreachable => Get("NetUnreachable");
+        public static string PerfDynamicColors => Get("PerfDynamicColors");
+        public static string PerfRefreshRate => Get("PerfRefreshRate");
+        public static string PerfSensors => Get("PerfSensors");
+        public static string PerfSettings => Get("PerfSettings");
+        public static string PerfStaticBarColor => Get("PerfStaticBarColor");
+        public static string PerfThemeLayout => Get("PerfThemeLayout");
+        public static string PerfVisualStyle => Get("PerfVisualStyle");
+        public static string PhotoBlurCrossfade => Get("PhotoBlurCrossfade");
+        public static string PhotoCropToFill => Get("PhotoCropToFill");
+        public static string PhotoCrossfade => Get("PhotoCrossfade");
+        public static string PhotoFitInside => Get("PhotoFitInside");
+        public static string PhotoFitMode => Get("PhotoFitMode");
+        public static string PhotoLiveRescan => Get("PhotoLiveRescan");
+        public static string PhotoNoTransition => Get("PhotoNoTransition");
+        public static string PhotoOriginalSize => Get("PhotoOriginalSize");
+        public static string PhotoSettings => Get("PhotoSettings");
+        public static string PhotoStretch => Get("PhotoStretch");
+        public static string PhotoSubtleTwist => Get("PhotoSubtleTwist");
+        public static string PhotoTransition => Get("PhotoTransition");
+        public static string PhotoVerticalWipe => Get("PhotoVerticalWipe");
+        public static string PluginCalculator => Get("PluginCalculator");
+        public static string PluginIpInfo => Get("PluginIpInfo");
+        public static string PluginPerformance => Get("PluginPerformance");
+        public static string PluginPhotoFrame => Get("PluginPhotoFrame");
+        public static string PluginQueueSaturation => Get("PluginQueueSaturation");
+        public static string PluginTerminal => Get("PluginTerminal");
+        public static string PluginVuMeter => Get("PluginVuMeter");
+        public static string QueueConfig => Get("QueueConfig");
+        public static string QueueDiagnosticSettings => Get("QueueDiagnosticSettings");
+        public static string QueueDynamicColors => Get("QueueDynamicColors");
+        public static string QueueInitializing => Get("QueueInitializing");
+        public static string QueueRefreshRate => Get("QueueRefreshRate");
+        public static string QueueShowCores => Get("QueueShowCores");
+        public static string QueueShowTitle => Get("QueueShowTitle");
+        public static string QueueShowValues => Get("QueueShowValues");
+        public static string QueueTitle => Get("QueueTitle");
+        public static string QueueWmiError => Get("QueueWmiError");
+        public static string SndDefault => Get("SndDefault");
+        public static string SndDoubleDing => Get("SndDoubleDing");
+        public static string SndGentleDing => Get("SndGentleDing");
+        public static string SndMessageDing => Get("SndMessageDing");
+        public static string SndSmoothTickle => Get("SndSmoothTickle");
+        public static string SndSoftDing => Get("SndSoftDing");
+        public static string TermClearHistory => Get("TermClearHistory");
+        public static string TermConsoleOptions => Get("TermConsoleOptions");
+        public static string TermHistoryCleared => Get("TermHistoryCleared");
+        public static string TermProcessExited => Get("TermProcessExited");
+        public static string TermRestarting => Get("TermRestarting");
+        public static string TermSelectStartupDir => Get("TermSelectStartupDir");
+        public static string TermSettings => Get("TermSettings");
+        public static string TermStartupDirectory => Get("TermStartupDirectory");
+        public static string TermTargetShell => Get("TermTargetShell");
+        public static string VuAttack => Get("VuAttack");
+        public static string VuAttackHint => Get("VuAttackHint");
+        public static string VuBallistics => Get("VuBallistics");
+        public static string VuDecay => Get("VuDecay");
+        public static string VuDecayHint => Get("VuDecayHint");
+        public static string VuDisplayOptions => Get("VuDisplayOptions");
+        public static string VuGainHint => Get("VuGainHint");
+        public static string VuLayoutMode => Get("VuLayoutMode");
+        public static string VuSettings => Get("VuSettings");
+        public static string VuSignalGain => Get("VuSignalGain");
+
+        // ── Generated frame names ──────────────────────────────────────────
+        public static string RandomNameAdjectives => Get("RandomNameAdjectives");
+        public static string RandomNamePlaces => Get("RandomNamePlaces");
+    }
+}

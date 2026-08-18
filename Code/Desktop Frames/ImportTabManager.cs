@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Desktop_Frames.Localization;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
@@ -25,7 +26,7 @@ namespace Desktop_Frames
                 // 1. Window Setup (Matches ItemMoveDialog)
                 var importWindow = new Window
                 {
-                    Title = "Import Tab",
+                    Title = Strings.ImportTabTitle,
                     Width = 480,
                     Height = 600,
                     WindowStartupLocation = WindowStartupLocation.CenterScreen,
@@ -71,7 +72,7 @@ namespace Desktop_Frames
                 StackPanel titlePanel = new StackPanel();
                 TextBlock mainTitle = new TextBlock
                 {
-                    Text = "Import Tab",
+                    Text = Strings.ImportTabTitle,
                     FontSize = 16,
                     FontWeight = FontWeights.SemiBold,
                     Foreground = System.Windows.Media.Brushes.White,
@@ -118,7 +119,7 @@ namespace Desktop_Frames
                 StackPanel contentStack = new StackPanel();
                 contentStack.Children.Add(new TextBlock
                 {
-                    Text = "Select a source frame or tab to import:",
+                    Text = Strings.ImportTabPrompt,
                     FontSize = 13,
                     FontWeight = FontWeights.Medium,
                     Foreground = new SolidColorBrush(System.Windows.Media.Color.FromRgb(95, 99, 104)),
@@ -157,7 +158,7 @@ namespace Desktop_Frames
 
                 Button cancelButton = new Button
                 {
-                    Content = "Cancel",
+                    Content = Strings.BtnCancel,
                     Width = 100,
                     Height = 36,
                     FontSize = 13,
@@ -266,7 +267,7 @@ namespace Desktop_Frames
             {
                 targetsPanel.Children.Add(new TextBlock
                 {
-                    Text = "No other Data frames found to import.",
+                    Text = Strings.ImportTabNoFrames,
                     Foreground = Brushes.Gray,
                     FontStyle = FontStyles.Italic,
                     Margin = new Thickness(5)
@@ -321,8 +322,8 @@ namespace Desktop_Frames
             {
                 // Confirmation Dialog inside the click
                 if (MessageBoxesManager.ShowCustomYesNoMessageBox(
-                    $"Import contents of '{text}' into a new tab?",
-                    "Confirm Import"))
+                    Strings.Get("MsgConfirmImportIntoTab", text),
+                    Strings.DlgConfirmImport))
                 {
                     PerformImport(targetFrame, targetWindow, sourceFrame, sourceTabIndex);
                     importWindow.Close();
@@ -412,7 +413,7 @@ namespace Desktop_Frames
             catch (Exception ex)
             {
                 LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.ImportExport, $"Import Failed: {ex.Message}");
-                MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Import failed: {ex.Message}", "Error");
+                MessageBoxesManager.ShowOKOnlyMessageBoxForm(Strings.Get("MsgImportFailed", ex.Message), Strings.DlgError);
             }
         }
 

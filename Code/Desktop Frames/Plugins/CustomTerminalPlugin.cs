@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Desktop_Frames.Localization;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -347,7 +348,7 @@ namespace Desktop_Frames.Plugins
                     if (cmdLower == "exit")
                     {
                         _outputBox.Document.Blocks.Clear();
-                        AppendOutput("[Restarting Shell Session...]");
+                        AppendOutput(Strings.TermRestarting);
                         StartProcess();
                         return;
                     }
@@ -402,7 +403,7 @@ namespace Desktop_Frames.Plugins
                 }
                 else
                 {
-                    AppendOutput("[Process exited. Attempting restart...]");
+                    AppendOutput(Strings.TermProcessExited);
                     StartProcess();
                 }
             }
@@ -626,7 +627,7 @@ namespace Desktop_Frames.Plugins
             Grid headerGrid = new Grid();
             headerGrid.Children.Add(new TextBlock
             {
-                Text = "Terminal Settings",
+                Text = Strings.TermSettings,
                 Foreground = Brushes.White,
                 FontWeight = FontWeights.Bold,
                 VerticalAlignment = VerticalAlignment.Center,
@@ -664,16 +665,16 @@ namespace Desktop_Frames.Plugins
             };
 
             StackPanel groupSp = new StackPanel();
-            groupSp.Children.Add(new TextBlock { Text = "Console Options", FontWeight = FontWeights.Bold, Margin = new Thickness(0, 0, 0, 10) });
+            groupSp.Children.Add(new TextBlock { Text = Strings.TermConsoleOptions, FontWeight = FontWeights.Bold, Margin = new Thickness(0, 0, 0, 10) });
 
-            groupSp.Children.Add(new TextBlock { Text = "Target Shell:", Margin = new Thickness(0, 0, 0, 5) });
+            groupSp.Children.Add(new TextBlock { Text = Strings.TermTargetShell, Margin = new Thickness(0, 0, 0, 5) });
             ComboBox cmbShell = new ComboBox { Margin = new Thickness(0, 0, 0, 15) };
             cmbShell.Items.Add("powershell.exe");
             cmbShell.Items.Add("cmd.exe");
             cmbShell.SelectedItem = _shellType;
             groupSp.Children.Add(cmbShell);
 
-            groupSp.Children.Add(new TextBlock { Text = "Text Color:", Margin = new Thickness(0, 0, 0, 5) });
+            groupSp.Children.Add(new TextBlock { Text = Strings.LblTextColor, Margin = new Thickness(0, 0, 0, 5) });
             ComboBox cmbColor = new ComboBox { Margin = new Thickness(0, 0, 0, 15) };
             cmbColor.Items.Add("Green");
             cmbColor.Items.Add("White");
@@ -681,11 +682,11 @@ namespace Desktop_Frames.Plugins
             cmbColor.SelectedItem = _terminalColor;
             groupSp.Children.Add(cmbColor);
 
-            groupSp.Children.Add(new TextBlock { Text = "Font Size:", Margin = new Thickness(0, 0, 0, 5) });
+            groupSp.Children.Add(new TextBlock { Text = Strings.LblFontSize, Margin = new Thickness(0, 0, 0, 5) });
             TextBox txtFontSize = new TextBox { Text = _fontSize.ToString(), Margin = new Thickness(0, 0, 0, 15) };
             groupSp.Children.Add(txtFontSize);
 
-            groupSp.Children.Add(new TextBlock { Text = "Startup Directory:", Margin = new Thickness(0, 0, 0, 5) });
+            groupSp.Children.Add(new TextBlock { Text = Strings.TermStartupDirectory, Margin = new Thickness(0, 0, 0, 5) });
 
             Grid dirGrid = new Grid { Margin = new Thickness(0, 0, 0, 15) };
             dirGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
@@ -701,7 +702,7 @@ namespace Desktop_Frames.Plugins
                 // Native .NET 8 WPF Folder Dialog
                 var dialog = new Microsoft.Win32.OpenFolderDialog
                 {
-                    Title = "Select Terminal Startup Directory",
+                    Title = Strings.TermSelectStartupDir,
                     InitialDirectory = System.IO.Directory.Exists(txtStartupDir.Text) ? txtStartupDir.Text : "C:\\"
                 };
 
@@ -718,7 +719,7 @@ namespace Desktop_Frames.Plugins
             // Clear History Button
             Button btnClearHistory = new Button
             {
-                Content = "Clear Command History",
+                Content = Strings.TermClearHistory,
                 Background = Brushes.White,
                 BorderBrush = Brushes.LightGray,
                 Padding = new Thickness(5),
@@ -727,7 +728,7 @@ namespace Desktop_Frames.Plugins
             btnClearHistory.Click += (s, e) =>
             {
                 ClearHistory();
-                btnClearHistory.Content = "History Cleared!";
+                btnClearHistory.Content = Strings.TermHistoryCleared;
                 btnClearHistory.IsEnabled = false;
             };
             groupSp.Children.Add(btnClearHistory);
@@ -748,7 +749,7 @@ namespace Desktop_Frames.Plugins
 
             Button btnCancel = new Button
             {
-                Content = "Cancel",
+                Content = Strings.BtnCancel,
                 Background = Brushes.White,
                 BorderBrush = Brushes.Gray,
                 Foreground = Brushes.Black,
@@ -760,7 +761,7 @@ namespace Desktop_Frames.Plugins
 
             Button btnSave = new Button
             {
-                Content = "Save",
+                Content = Strings.BtnSave,
                 Background = accentBrush,
                 Foreground = Brushes.White,
                 FontWeight = FontWeights.Bold,

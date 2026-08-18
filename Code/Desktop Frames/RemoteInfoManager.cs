@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Desktop_Frames.Localization;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
@@ -146,7 +147,7 @@ namespace Desktop_Frames
                     var updateMsg = new RemoteAnnouncement
                     {
                         Id = $"UPDATE_{remoteVer}", // Unique ID ensures they see it once/max count
-                        Title = "Update Available",
+                        Title = Strings.UpdateAvailable,
                         Body = $"A new version ({remoteVer}) is available.\nYou are currently using {currentVer}.",
                         Type = meta.CriticalUpdate ? "Alert" : "Info",
                         Link = !string.IsNullOrEmpty(meta.DownloadUrl) ? meta.DownloadUrl : "https://github.com/limbo666/DesktopFramesPlus/releases",

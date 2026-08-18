@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Desktop_Frames.Localization;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
@@ -61,7 +62,7 @@ namespace Desktop_Frames
             // Create modern hierarchical Move dialog
             var moveWindow = new Window
             {
-                Title = "Move Item To...",
+                Title = Strings.MoveItemTitle,
                 Width = 480,
                 Height = 600,
                 WindowStartupLocation = WindowStartupLocation.CenterScreen,
@@ -118,7 +119,7 @@ namespace Desktop_Frames
 
             TextBlock mainTitle = new TextBlock
             {
-                Text = "Move Item To...",
+                Text = Strings.MoveItemTitle,
                 FontSize = 16,
                 FontWeight = FontWeights.SemiBold,
                 Foreground = System.Windows.Media.Brushes.White,
@@ -177,7 +178,7 @@ namespace Desktop_Frames
             // Instructions
             TextBlock instructionsText = new TextBlock
             {
-                Text = "Select a destination frame or tab:",
+                Text = Strings.MoveItemPrompt,
                 FontSize = 13,
                 FontWeight = FontWeights.Medium,
                 Foreground = new SolidColorBrush(System.Windows.Media.Color.FromRgb(95, 99, 104)),
@@ -219,7 +220,7 @@ namespace Desktop_Frames
 
             Button cancelButton = new Button
             {
-                Content = "Cancel",
+                Content = Strings.BtnCancel,
                 Width = 100,
                 Height = 36,
                 FontSize = 13,
@@ -366,7 +367,7 @@ namespace Desktop_Frames
                     // We HIDE this if it is the Source frame, to prevent confusion
                     if (!issourceFrame)
                     {
-                        CreateMoveTargetButton(targetsPanel, "📋 Main Items", "↳", frame, null, item, sourceFrame, moveWindow, true);
+                        CreateMoveTargetButton(targetsPanel, Strings.MoveMainItems, "↳", frame, null, item, sourceFrame, moveWindow, true);
                     }
 
                     // Individual tabs
@@ -573,7 +574,7 @@ namespace Desktop_Frames
 
                 LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.IconHandling,
                     $"Error during move operation: {ex.Message}");
-                MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Move failed: {ex.Message}", "Error");
+                MessageBoxesManager.ShowOKOnlyMessageBoxForm(Strings.Get("MsgMoveFailed", ex.Message), Strings.DlgError);
             }
         }
 

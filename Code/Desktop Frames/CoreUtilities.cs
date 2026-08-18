@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Desktop_Frames.Localization;
+using System;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -456,33 +457,23 @@ namespace Desktop_Frames
         #endregion
 
         #region Random Name Generation - frame Naming Utilities
-        // Adjectives for random frame name generation
-        private static readonly string[] adjectives = {
-            "High", "Low", "Tiny", "Vast", "Wide", "Slim", "Flat", "Bold", "Cold", "Warm",
-            "Soft", "Hard", "Dark", "Pale", "Fast", "Slow", "Deep", "Tall", "Short", "Bent",
-            "Thin", "Bright", "Light", "Sharp", "Dull", "Loud", "Mute", "Grim", "Kind", "Neat",
-            "Rough", "Smooth", "Brave", "Fierce", "Plain", "Worn", "Dry", "Damp", "Strong", "Weak"
-        };
-
-        // Places for random frame name generation
-        private static readonly string[] places = {
-            "Bay", "Hill", "Lake", "Cove", "Peak", "Reef", "Dune", "Glen", "Moor", "Vale",
-            "Rock", "Shore", "Bank", "Ford", "Cape", "Crag", "Marsh", "Pond", "Cliff", "Wood",
-            "Dell", "Pass", "Cave", "Ridge", "Falls", "Grove", "Creek", "Bluff", "Trail", "Point"
-        };
+        // The word lists live in the resources: a language needs its own words,
+        // not a translation of these. The order is localized too — English puts
+        // the adjective first ("Dark Rock"), Italian puts it last ("Roccia Scura").
 
         /// <summary>
         /// Generates a random frame name using adjective + place pattern
         /// Used by: Framemanager.CreateNewFrame for default naming
         /// Category: Name Generation
-
         /// </summary>
         public static string GenerateRandomFrameName()
         {
+            string[] adjectives = Strings.RandomNameAdjectives.Split(',');
+            string[] places = Strings.RandomNamePlaces.Split(',');
             Random random = new Random();
-            string adjective = adjectives[random.Next(adjectives.Length)];
-            string place = places[random.Next(places.Length)];
-            return $"{adjective} {place}";
+            string adjective = adjectives[random.Next(adjectives.Length)].Trim();
+            string place = places[random.Next(places.Length)].Trim();
+            return Strings.Get("RandomNameFormat", adjective, place);
         }
 
         /// <summary>
@@ -493,10 +484,8 @@ namespace Desktop_Frames
         /// </summary>
         public static string GenerateRandomName()
         {
-            Random random = new Random();
-            string adjective = adjectives[random.Next(adjectives.Length)];
-            string place = places[random.Next(places.Length)];
-            return $"{adjective} {place}";
+            // Same source as GenerateRandomFrameName, so both stay in one language.
+            return GenerateRandomFrameName();
         }
 
         /// <summary>

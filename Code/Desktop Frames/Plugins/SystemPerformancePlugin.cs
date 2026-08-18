@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Desktop_Frames.Localization;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -163,7 +164,7 @@ namespace Desktop_Frames.Plugins
 
                 if (showCpu)
                 {
-                    panel.Children.Add(CreateDiagnosticRow("CPU UTILIZATION", out _cpuBarValueText, out _cpuFillColumn, out _cpuEmptyColumn, out _cpuFillBorder));
+                    panel.Children.Add(CreateDiagnosticRow(Strings.DiagCpuUtilization, out _cpuBarValueText, out _cpuFillColumn, out _cpuEmptyColumn, out _cpuFillBorder));
                 }
 
                 if (showCpu && showRam)
@@ -173,7 +174,7 @@ namespace Desktop_Frames.Plugins
 
                 if (showRam)
                 {
-                    panel.Children.Add(CreateDiagnosticRow("RAM UTILIZATION", out _ramBarValueText, out _ramFillColumn, out _ramEmptyColumn, out _ramFillBorder));
+                    panel.Children.Add(CreateDiagnosticRow(Strings.DiagRamUtilization, out _ramBarValueText, out _ramFillColumn, out _ramEmptyColumn, out _ramFillBorder));
                 }
 
                 mainCard.Child = panel;
@@ -196,8 +197,8 @@ namespace Desktop_Frames.Plugins
                     gaugeContainer.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
                     gaugeContainer.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 
-                    var cpuGauge = CreateGauge("CPU %", out _cpuNeedleTransform, out _cpuValueText);
-                    var ramGauge = CreateGauge("RAM %", out _ramNeedleTransform, out _ramValueText);
+                    var cpuGauge = CreateGauge(Strings.GaugeCpu, out _cpuNeedleTransform, out _cpuValueText);
+                    var ramGauge = CreateGauge(Strings.GaugeRam, out _ramNeedleTransform, out _ramValueText);
 
                     Grid.SetColumn(cpuGauge, 0);
                     Grid.SetColumn(ramGauge, 1);
@@ -210,11 +211,11 @@ namespace Desktop_Frames.Plugins
                 }
                 else if (showCpu)
                 {
-                    gaugeContainer.Children.Add(CreateGauge("CPU %", out _cpuNeedleTransform, out _cpuValueText));
+                    gaugeContainer.Children.Add(CreateGauge(Strings.GaugeCpu, out _cpuNeedleTransform, out _cpuValueText));
                 }
                 else if (showRam)
                 {
-                    gaugeContainer.Children.Add(CreateGauge("RAM %", out _ramNeedleTransform, out _ramValueText));
+                    gaugeContainer.Children.Add(CreateGauge(Strings.GaugeRam, out _ramNeedleTransform, out _ramValueText));
                 }
 
                 gaugeViewbox.Child = gaugeContainer;
@@ -485,7 +486,7 @@ namespace Desktop_Frames.Plugins
             Grid headerGrid = new Grid();
             headerGrid.Children.Add(new TextBlock
             {
-                Text = "System Performance Settings",
+                Text = Strings.PerfSettings,
                 Foreground = Brushes.White,
                 FontWeight = FontWeights.Bold,
                 VerticalAlignment = VerticalAlignment.Center,
@@ -523,21 +524,21 @@ namespace Desktop_Frames.Plugins
             };
 
             StackPanel groupSp = new StackPanel();
-            groupSp.Children.Add(new TextBlock { Text = "Visual Theme & Layout", FontWeight = FontWeights.Bold, Margin = new Thickness(0, 0, 0, 12) });
+            groupSp.Children.Add(new TextBlock { Text = Strings.PerfThemeLayout, FontWeight = FontWeights.Bold, Margin = new Thickness(0, 0, 0, 12) });
 
             // 1. Visual Theme (Determines gauge logic vs bar logic)
-            groupSp.Children.Add(new TextBlock { Text = "Visual Style:", FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 0, 0, 5) });
+            groupSp.Children.Add(new TextBlock { Text = Strings.PerfVisualStyle, FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 0, 0, 5) });
             ComboBox cmbTheme = new ComboBox { Margin = new Thickness(0, 0, 0, 15) };
             cmbTheme.Items.Add("Gauges");
             cmbTheme.Items.Add("Bars");
             cmbTheme.SelectedItem = _visualTheme;
             groupSp.Children.Add(cmbTheme);
 
-            CheckBox chkDynamic = new CheckBox { Content = "Use Dynamic Colors for Bars", IsChecked = _useDynamicColors, Margin = new Thickness(0, 0, 0, 10), FontWeight = FontWeights.SemiBold };
+            CheckBox chkDynamic = new CheckBox { Content = Strings.PerfDynamicColors, IsChecked = _useDynamicColors, Margin = new Thickness(0, 0, 0, 10), FontWeight = FontWeights.SemiBold };
             groupSp.Children.Add(chkDynamic);
 
             StackPanel colorSp = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 15) };
-            colorSp.Children.Add(new TextBlock { Text = "Static Bar Color:", Width = 150, FontWeight = FontWeights.SemiBold, VerticalAlignment = VerticalAlignment.Center });
+            colorSp.Children.Add(new TextBlock { Text = Strings.PerfStaticBarColor, Width = 150, FontWeight = FontWeights.SemiBold, VerticalAlignment = VerticalAlignment.Center });
             ComboBox cmbStaticColor = new ComboBox { Width = 120 };
             string[] presetColors = { "DeepSkyBlue", "Cyan", "LimeGreen", "Gold", "Orange", "Magenta", "White", "LightGray" };
             foreach (var c in presetColors) cmbStaticColor.Items.Add(c);
@@ -546,7 +547,7 @@ namespace Desktop_Frames.Plugins
             groupSp.Children.Add(colorSp);
 
             // 2. Hardware Toggles
-            groupSp.Children.Add(new TextBlock { Text = "Sensors to Display:", FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 0, 0, 5) });
+            groupSp.Children.Add(new TextBlock { Text = Strings.PerfSensors, FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 0, 0, 5) });
             ComboBox cmbLayout = new ComboBox { Margin = new Thickness(0, 0, 0, 15) };
             cmbLayout.Items.Add("CPU");
             cmbLayout.Items.Add("RAM");
@@ -555,7 +556,7 @@ namespace Desktop_Frames.Plugins
             groupSp.Children.Add(cmbLayout);
 
             // 3. Refresh Rate handling via predefined combo rather than loose textbox
-            groupSp.Children.Add(new TextBlock { Text = "Sensor Refresh Rate (ms):", FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 0, 0, 5) });
+            groupSp.Children.Add(new TextBlock { Text = Strings.PerfRefreshRate, FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 0, 0, 5) });
             ComboBox cmbRate = new ComboBox { Margin = new Thickness(0, 0, 0, 5) };
             cmbRate.Items.Add("500");
             cmbRate.Items.Add("1000");
@@ -581,7 +582,7 @@ namespace Desktop_Frames.Plugins
 
             Button btnCancel = new Button
             {
-                Content = "Cancel",
+                Content = Strings.BtnCancel,
                 Background = Brushes.White,
                 BorderBrush = Brushes.Gray,
                 Foreground = Brushes.Black,
@@ -593,7 +594,7 @@ namespace Desktop_Frames.Plugins
 
             Button btnSave = new Button
             {
-                Content = "Save",
+                Content = Strings.BtnSave,
                 Background = accentBrush,
                 Foreground = Brushes.White,
                 FontWeight = FontWeights.Bold,

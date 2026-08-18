@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using Desktop_Frames.Localization;
 
 namespace Desktop_Frames
 {
@@ -185,13 +186,13 @@ namespace Desktop_Frames
                     $"Item '{displayName}' copied successfully for pasting");
 
                 // Show auto-closing success notification - MessageDialogs pattern
-                MessageBoxesManager.ShowAutoClosingMessageBoxForm($"Item '{displayName}' copied and ready to paste.", "Copy Item", 2000);
+                MessageBoxesManager.ShowAutoClosingMessageBoxForm(Strings.Get("MsgItemCopiedReady", displayName), Strings.DlgCopyItem, 2000);
             }
             catch (Exception ex)
             {
                 LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.FrameUpdate,
                     $"Error copying item: {ex.Message}");
-                MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Error copying item: {ex.Message}", "Copy Error");
+                MessageBoxesManager.ShowOKOnlyMessageBoxForm(Strings.Get("MsgCopyItemFailed", ex.Message), Strings.DlgCopyError);
 
                 // Reset state on error
                 _isCopyAvailable = false;
@@ -214,7 +215,7 @@ namespace Desktop_Frames
                 {
                     LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.FrameUpdate,
                         "No item available to paste");
-                    MessageBoxesManager.ShowOKOnlyMessageBoxForm("No item to paste", "Paste Item");
+                    MessageBoxesManager.ShowOKOnlyMessageBoxForm(Strings.MsgNoItemToPaste, Strings.DlgPasteItem);
                     return;
                 }
 
@@ -352,7 +353,7 @@ namespace Desktop_Frames
             {
                 LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.FrameUpdate,
                     $"Error pasting item: {ex.Message}");
-                MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Error pasting item: {ex.Message}", "Paste Error");
+                MessageBoxesManager.ShowOKOnlyMessageBoxForm(Strings.Get("MsgPasteItemFailed", ex.Message), Strings.DlgPasteError);
             }
         }
 

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Desktop_Frames.Localization;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
@@ -114,7 +115,7 @@ namespace Desktop_Frames.Plugins
             // Pre-flight check: Is the network card even online?
             if (!NetworkInterface.GetIsNetworkAvailable())
             {
-                UpdatePublicIpState("Offline");
+                UpdatePublicIpState(Strings.NetOffline);
                 return;
             }
 
@@ -126,7 +127,7 @@ namespace Desktop_Frames.Plugins
             }
             catch
             {
-                UpdatePublicIpState("Unreachable");
+                UpdatePublicIpState(Strings.NetUnreachable);
             }
         }
 
@@ -229,7 +230,7 @@ var interfaces = NetworkInterface.GetAllNetworkInterfaces()
                 {
                     _cardsPanel.Children.Add(new TextBlock
                     {
-                        Text = "No active interfaces found.",
+                        Text = Strings.NetNoInterfaces,
                         Foreground = Brushes.Gray,
                         FontStyle = FontStyles.Italic,
                         HorizontalAlignment = HorizontalAlignment.Center,
@@ -278,7 +279,7 @@ var interfaces = NetworkInterface.GetAllNetworkInterfaces()
 
         private Border CreatePublicIpCard(bool recentlyChanged)
         {
-            bool isUp = _currentPublicIp != "Offline" && _currentPublicIp != "Unreachable" && _currentPublicIp != "Checking...";
+            bool isUp = _currentPublicIp != Strings.NetOffline && _currentPublicIp != Strings.NetUnreachable && _currentPublicIp != Strings.NetChecking;
 
             Border card = new Border
             {
@@ -323,7 +324,7 @@ var interfaces = NetworkInterface.GetAllNetworkInterfaces()
 
             TextBlock lblName = new TextBlock
             {
-                Text = "Public WAN Address",
+                Text = Strings.NetPublicWan,
                 Foreground = Brushes.LightSkyBlue, // Distinctive title color
                 FontWeight = FontWeights.Bold,
                 FontSize = 13,
@@ -341,7 +342,7 @@ var interfaces = NetworkInterface.GetAllNetworkInterfaces()
 
             TextBlock lblIpPrefix = new TextBlock
             {
-                Text = "IP:",
+                Text = Strings.NetIpLabel,
                 Foreground = Brushes.DarkGray,
                 FontSize = 11,
                 VerticalAlignment = VerticalAlignment.Center
@@ -440,7 +441,7 @@ var interfaces = NetworkInterface.GetAllNetworkInterfaces()
 
             TextBlock lblIpPrefix = new TextBlock
             {
-                Text = "IP:",
+                Text = Strings.NetIpLabel,
                 Foreground = Brushes.DarkGray,
                 FontSize = 11,
                 VerticalAlignment = VerticalAlignment.Center
@@ -550,7 +551,7 @@ var interfaces = NetworkInterface.GetAllNetworkInterfaces()
             Border headerBorder = new Border { Height = 50, Background = accentBrush };
             headerBorder.MouseLeftButtonDown += (s, e) => { if (e.ButtonState == MouseButtonState.Pressed) win.DragMove(); };
             Grid headerGrid = new Grid();
-            headerGrid.Children.Add(new TextBlock { Text = "Network IP Monitor Settings", Foreground = Brushes.White, FontWeight = FontWeights.Bold, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(15, 0, 0, 0) });
+            headerGrid.Children.Add(new TextBlock { Text = Strings.NetSettings, Foreground = Brushes.White, FontWeight = FontWeights.Bold, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(15, 0, 0, 0) });
             Button btnClose = new Button { Content = "X", Foreground = Brushes.White, Background = Brushes.Transparent, BorderThickness = new Thickness(0), Width = 40, HorizontalAlignment = HorizontalAlignment.Right };
             btnClose.Click += (s, e) => win.Close();
             headerGrid.Children.Add(btnClose);
@@ -560,11 +561,11 @@ var interfaces = NetworkInterface.GetAllNetworkInterfaces()
             StackPanel contentPanel = new StackPanel();
 
             // --- EXTERNAL NETWORK SETTINGS ---
-            contentPanel.Children.Add(new TextBlock { Text = "External Network", FontWeight = FontWeights.Bold, Margin = new Thickness(0, 0, 0, 10), Foreground = accentBrush });
+            contentPanel.Children.Add(new TextBlock { Text = Strings.NetExternal, FontWeight = FontWeights.Bold, Margin = new Thickness(0, 0, 0, 10), Foreground = accentBrush });
 
             CheckBox chkShowPublicIp = new CheckBox
             {
-                Content = "Display Public WAN IP",
+                Content = Strings.NetShowPublicWan,
                 IsChecked = _showPublicIp,
                 Margin = new Thickness(0, 0, 0, 20),
                 FontWeight = FontWeights.SemiBold
@@ -572,11 +573,11 @@ var interfaces = NetworkInterface.GetAllNetworkInterfaces()
             contentPanel.Children.Add(chkShowPublicIp);
 
             // --- LOCAL NETWORK SETTINGS ---
-            contentPanel.Children.Add(new TextBlock { Text = "Local Adapters", FontWeight = FontWeights.Bold, Margin = new Thickness(0, 0, 0, 10), Foreground = accentBrush });
+            contentPanel.Children.Add(new TextBlock { Text = Strings.NetLocalAdapters, FontWeight = FontWeights.Bold, Margin = new Thickness(0, 0, 0, 10), Foreground = accentBrush });
 
             CheckBox chkShowDisconnected = new CheckBox
             {
-                Content = "Show Disconnected Interfaces",
+                Content = Strings.NetShowDisconnected,
                 IsChecked = _showDisconnected,
                 Margin = new Thickness(0, 0, 0, 15),
                 FontWeight = FontWeights.SemiBold
@@ -586,7 +587,7 @@ var interfaces = NetworkInterface.GetAllNetworkInterfaces()
 
             contentPanel.Children.Add(new TextBlock
             {
-                Text = "Select Interfaces to Display:",
+                Text = Strings.NetSelectInterfaces,
                 FontWeight = FontWeights.SemiBold,
                 Margin = new Thickness(0, 0, 0, 5)
             });
@@ -608,7 +609,7 @@ var interfaces = NetworkInterface.GetAllNetworkInterfaces()
 
                 CheckBox chk = new CheckBox
                 {
-                    Content = $"{ni.Name} ({(ni.OperationalStatus == OperationalStatus.Up ? "Up" : "Down")})",
+                    Content = $"{ni.Name} ({(ni.OperationalStatus == OperationalStatus.Up ? Strings.NetStatusUp : Strings.NetStatusDown)})",
                     Tag = ni.Name,
                     IsChecked = shouldCheck,
                     Margin = new Thickness(0, 5, 0, 5)
@@ -632,10 +633,10 @@ var interfaces = NetworkInterface.GetAllNetworkInterfaces()
             Border footerBorder = new Border { Background = new SolidColorBrush(Color.FromRgb(248, 249, 250)), BorderThickness = new Thickness(0, 1, 0, 0), BorderBrush = Brushes.LightGray, Padding = new Thickness(15) };
             StackPanel footerSp = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
 
-            Button btnCancel = new Button { Content = "Cancel", Background = Brushes.White, BorderBrush = Brushes.Gray, Width = 80, Height = 30, Margin = new Thickness(0, 0, 10, 0) };
+            Button btnCancel = new Button { Content = Strings.BtnCancel, Background = Brushes.White, BorderBrush = Brushes.Gray, Width = 80, Height = 30, Margin = new Thickness(0, 0, 10, 0) };
             btnCancel.Click += (s, e) => win.Close();
 
-            Button btnSave = new Button { Content = "Save", Background = accentBrush, Foreground = Brushes.White, FontWeight = FontWeights.Bold, BorderThickness = new Thickness(0), Width = 80, Height = 30 };
+            Button btnSave = new Button { Content = Strings.BtnSave, Background = accentBrush, Foreground = Brushes.White, FontWeight = FontWeights.Bold, BorderThickness = new Thickness(0), Width = 80, Height = 30 };
             btnSave.Click += (s, e) =>
             {
                 _shownInterfaces.Clear();

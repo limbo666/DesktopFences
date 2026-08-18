@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Desktop_Frames.Localization;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -35,7 +36,7 @@ namespace Desktop_Frames
 
                 _optionsWindow = new Window
                 {
-                    Title = "Desktop Frames + Options",
+                    Title = Strings.OptionsTitle,
                     Width = 800,
                     Height = 850,
                     WindowStartupLocation = WindowStartupLocation.CenterScreen,
@@ -77,7 +78,7 @@ namespace Desktop_Frames
 
                 TextBlock titleBlock = new TextBlock
                 {
-                    Text = "Options",
+                    Text = Strings.OptionsHeading,
                     FontFamily = new FontFamily("Segoe UI"),
                     FontSize = 16,
                     FontWeight = FontWeights.Bold,
@@ -151,13 +152,13 @@ namespace Desktop_Frames
             CreateLookDeeperTab();
 
             _tabControl.SelectedIndex = _lastSelectedTabIndex;
-            CreateTabButton(tabPanel, "General", 0, _lastSelectedTabIndex == 0);
-            CreateTabButton(tabPanel, "Style & FX", 1, _lastSelectedTabIndex == 1);
-            CreateTabButton(tabPanel, "Tools", 2, _lastSelectedTabIndex == 2);
-            CreateTabButton(tabPanel, "Profiles", 3, _lastSelectedTabIndex == 3);
-            CreateTabButton(tabPanel, "Hotkeys", 4, _lastSelectedTabIndex == 4);
-            CreateTabButton(tabPanel, "Smart Desktop", 5, _lastSelectedTabIndex == 5);
-            CreateTabButton(tabPanel, "Look Deeper", 6, _lastSelectedTabIndex == 6);
+            CreateTabButton(tabPanel, Strings.TabGeneral, 0, _lastSelectedTabIndex == 0);
+            CreateTabButton(tabPanel, Strings.TabStyleFx, 1, _lastSelectedTabIndex == 1);
+            CreateTabButton(tabPanel, Strings.TabTools, 2, _lastSelectedTabIndex == 2);
+            CreateTabButton(tabPanel, Strings.TabProfiles, 3, _lastSelectedTabIndex == 3);
+            CreateTabButton(tabPanel, Strings.TabHotkeys, 4, _lastSelectedTabIndex == 4);
+            CreateTabButton(tabPanel, Strings.TabSmartDesktop, 5, _lastSelectedTabIndex == 5);
+            CreateTabButton(tabPanel, Strings.TabLookDeeper, 6, _lastSelectedTabIndex == 6);
 
             contentBorder.Child = _tabControl;
             Grid.SetColumn(tabPanel, 0); contentGrid.Children.Add(tabPanel);
@@ -180,16 +181,18 @@ namespace Desktop_Frames
                 Padding = new Thickness(20, 0, 0, 0),
                 Margin = new Thickness(0, 0, 0, 2)
             };
-            SetTabButtonColors(tabButton, title, isSelected);
+            SetTabButtonColors(tabButton, tabIndex, isSelected);
             tabButton.Click += (s, e) => SelectTab(tabIndex, tabButton);
-            tabButton.MouseEnter += (s, e) => { if (_tabControl.SelectedIndex != tabIndex) SetTabButtonColors(tabButton, title, false, true); };
-            tabButton.MouseLeave += (s, e) => { if (_tabControl.SelectedIndex != tabIndex) SetTabButtonColors(tabButton, title, false, false); };
+            tabButton.MouseEnter += (s, e) => { if (_tabControl.SelectedIndex != tabIndex) SetTabButtonColors(tabButton, tabIndex, false, true); };
+            tabButton.MouseLeave += (s, e) => { if (_tabControl.SelectedIndex != tabIndex) SetTabButtonColors(tabButton, tabIndex, false, false); };
             parent.Children.Add(tabButton);
         }
 
-        private static void SetTabButtonColors(Button button, string title, bool isSelected, bool isHover = false)
+        private static void SetTabButtonColors(Button button, int tabIndex, bool isSelected, bool isHover = false)
         {
-            Color activeColor = title switch { "Style & FX" => ColorStyle, "Tools" => ColorTools, "Profiles" => ColorProfiles, "Hotkeys" => ColorHotkeys, "Smart Desktop" => ColorSmartDesktop, "Look Deeper" => ColorLookDeeper, _ => _userAccentColor };
+            // Keyed on the tab index, not on its label. The labels are translated
+            // now, and a switch needs compile-time constants anyway.
+            Color activeColor = tabIndex switch { 1 => ColorStyle, 2 => ColorTools, 3 => ColorProfiles, 4 => ColorHotkeys, 5 => ColorSmartDesktop, 6 => ColorLookDeeper, _ => _userAccentColor };
             if (isSelected) { button.Background = new SolidColorBrush(activeColor); button.Foreground = Brushes.White; }
             else if (isHover) { button.Background = new SolidColorBrush(Color.FromRgb((byte)(activeColor.R + 40), (byte)(activeColor.G + 40), (byte)(activeColor.B + 40))); button.Foreground = Brushes.White; }
             else { button.Background = new SolidColorBrush(Color.FromRgb(200, 200, 200)); button.Foreground = new SolidColorBrush(Color.FromRgb(60, 60, 60)); }
@@ -200,38 +203,238 @@ namespace Desktop_Frames
             _lastSelectedTabIndex = tabIndex;
             _tabControl.SelectedIndex = tabIndex;
             StackPanel tabPanel = (StackPanel)selectedButton.Parent;
-            for (int i = 0; i < tabPanel.Children.Count; i++) if (tabPanel.Children[i] is Button btn) SetTabButtonColors(btn, btn.Content.ToString(), i == tabIndex);
+            for (int i = 0; i < tabPanel.Children.Count; i++) if (tabPanel.Children[i] is Button btn) SetTabButtonColors(btn, i, i == tabIndex);
         }
 
         // --- Tabs ---
+
+        /// <summary>
+        /// Language picker plus the two buttons that make hand-installed packs
+        /// usable: one to import a .resx, one to open the folder they live in.
+        /// The combo stores the culture name in the item's Tag — the label is
+        /// what the language calls itself, and that must never be saved.
+        /// </summary>
+        /// <summary>
+        /// The language selector, remembered when the row is built.
+        ///
+        /// Saving used to look for it by name among the direct children of each Grid on the
+        /// tab, the way the other dropdowns are found. This one sits inside a StackPanel
+        /// inside that Grid, so the search never reached it: the chosen language was applied
+        /// on the spot but never written to options.json, and came back as it was on the next
+        /// start. Holding the reference cannot go wrong when the layout changes.
+        /// </summary>
+        private static ComboBox _languageCombo;
+
+        /// <summary>Set when the saved options carry a different language than before.</summary>
+        private static bool _languageChanged;
+
+        /// <summary>
+        /// Offers to restart once the settings are on disk, when the language changed.
+        ///
+        /// Every window, menu and label reads its text while being built, so a language chosen
+        /// now only shows up on the next start. Saying so in a note was not enough: the choice
+        /// is saved and nothing visibly happens, which reads like a failure. The program
+        /// already restarts itself after a factory reset and after restoring settings, so it
+        /// does the same here — asked, not imposed.
+        /// </summary>
+        private static void OfferRestartAfterLanguageChange()
+        {
+            if (!_languageChanged) return;
+            _languageChanged = false;
+
+            if (!MessageBoxesManager.ShowCustomYesNoMessageBox(Strings.MsgRestartForLanguage, Strings.DlgRestartRequired))
+                return;
+
+            try
+            {
+                string appPath = System.Diagnostics.Process.GetCurrentProcess().MainModule.FileName;
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = "cmd.exe",
+                    Arguments = $"/c ping 127.0.0.1 -n 3 > nul & start \"\" \"{appPath}\"",
+                    WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden,
+                    CreateNoWindow = true,
+                    UseShellExecute = false
+                });
+                System.Diagnostics.Process.GetCurrentProcess().Kill();
+            }
+            catch (Exception ex)
+            {
+                LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.Settings,
+                    $"Could not restart to apply the language: {ex.Message}");
+            }
+        }
+
+        private static void CreateLanguageRow(StackPanel parent)
+        {
+            Grid g = new Grid { Margin = new Thickness(15, 8, 15, 8) };
+            g.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(150) });
+            g.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+
+            g.Children.Add(new TextBlock
+            {
+                Text = Strings.LblLanguage,
+                FontFamily = new FontFamily("Segoe UI"),
+                FontSize = 13,
+                VerticalAlignment = VerticalAlignment.Center
+            });
+
+            StackPanel right = new StackPanel { Orientation = Orientation.Horizontal };
+            Grid.SetColumn(right, 1);
+
+            ComboBox cb = new ComboBox
+            {
+                Name = "LanguageComboBox",
+                Width = 220,
+                Height = 25,
+                FontFamily = new FontFamily("Segoe UI"),
+                FontSize = 13,
+                VerticalAlignment = VerticalAlignment.Center
+            };
+            cb.Items.Add(new ComboBoxItem { Content = Strings.LangAutomatic, Tag = "" });
+            foreach (var ci in Desktop_Frames.Localization.Strings.AvailableLanguages())
+            {
+                cb.Items.Add(new ComboBoxItem
+                {
+                    Content = ci.NativeName + "  (" + ci.Name + ")",
+                    Tag = ci.Name
+                });
+            }
+            cb.SelectedItem = cb.Items.OfType<ComboBoxItem>()
+                .FirstOrDefault(i => string.Equals(i.Tag as string, SettingsManager.Language,
+                                                   StringComparison.OrdinalIgnoreCase))
+                ?? cb.Items.OfType<ComboBoxItem>().FirstOrDefault();
+            _languageCombo = cb;
+            right.Children.Add(cb);
+
+            Button importa = new Button
+            {
+                Content = Strings.BtnImportLanguagePack,
+                MinWidth = 150,
+                Height = 25,
+                Padding = new Thickness(10, 0, 10, 0),
+                Margin = new Thickness(10, 0, 0, 0),
+                Cursor = Cursors.Hand,
+                FontFamily = new FontFamily("Segoe UI"),
+                FontSize = 12
+            };
+            importa.Click += (s, e) => ImportLanguagePack();
+            right.Children.Add(importa);
+
+            Button apri = new Button
+            {
+                Content = Strings.BtnOpenLanguagesFolder,
+                MinWidth = 150,
+                Height = 25,
+                Padding = new Thickness(10, 0, 10, 0),
+                Margin = new Thickness(8, 0, 0, 0),
+                Cursor = Cursors.Hand,
+                FontFamily = new FontFamily("Segoe UI"),
+                FontSize = 12
+            };
+            apri.Click += (s, e) =>
+            {
+                try
+                {
+                    System.IO.Directory.CreateDirectory(Desktop_Frames.Localization.Strings.PacksFolder);
+                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                    {
+                        FileName = Desktop_Frames.Localization.Strings.PacksFolder,
+                        UseShellExecute = true
+                    });
+                }
+                catch (Exception ex)
+                {
+                    LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI,
+                        $"Cannot open languages folder: {ex.Message}");
+                }
+            };
+            right.Children.Add(apri);
+
+            g.Children.Add(right);
+            parent.Children.Add(g);
+        }
+
+        /// <summary>
+        /// Copies a .resx into the Languages folder. The file name is the
+        /// culture code, so it is checked before copying: a pack called
+        /// "italiano.resx" would sit there forever without ever being read.
+        /// </summary>
+        private static void ImportLanguagePack()
+        {
+            try
+            {
+                var dlg = new Microsoft.Win32.OpenFileDialog
+                {
+                    Filter = Strings.LanguagePackFilter,
+                    CheckFileExists = true
+                };
+                if (dlg.ShowDialog() != true) return;
+
+                string name = System.IO.Path.GetFileNameWithoutExtension(dlg.FileName);
+                try { _ = new System.Globalization.CultureInfo(name); }
+                catch (System.Globalization.CultureNotFoundException)
+                {
+                    MessageBoxesManager.ShowOKOnlyMessageBoxFormStatic(Strings.LanguagePackBadName, Strings.SecLanguage);
+                    return;
+                }
+
+                System.IO.Directory.CreateDirectory(Desktop_Frames.Localization.Strings.PacksFolder);
+                System.IO.File.Copy(dlg.FileName,
+                    System.IO.Path.Combine(Desktop_Frames.Localization.Strings.PacksFolder, name + ".resx"), true);
+                Desktop_Frames.Localization.Strings.ReloadPacks();
+                MessageBoxesManager.ShowOKOnlyMessageBoxFormStatic(Strings.Get("LanguagePackImported", name), Strings.SecLanguage);
+            }
+            catch (Exception ex)
+            {
+                LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI,
+                    $"Cannot import language pack: {ex.Message}");
+            }
+        }
+
         private static void CreateGeneralTab()
         {
             TabItem t = new TabItem();
             StackPanel c = new StackPanel();
-            CreateSectionHeader(c, "Startup", _userAccentColor);
-            CreateCheckBox(c, "Start with Windows", "StartWithWindows", TrayManager.IsStartWithWindows);
-            CreateSectionHeader(c, "Selections", _userAccentColor);
-            CreateCheckBox(c, "Single Click to Launch", "SingleClickToLaunch", SettingsManager.SingleClickToLaunch);
-            CreateCheckBox(c, "Enable Snap Near Frames", "EnableSnapNearFrames", SettingsManager.IsSnapEnabled);
-            CreateCheckBox(c, "Enable Dimension Snap", "EnableDimensionSnap", SettingsManager.EnableDimensionSnap);
-            CreateCheckBox(c, "Enable Tray Icon", "EnableTrayIcon", SettingsManager.ShowInTray);
-            CreateCheckBox(c, "Use Recycle Bin on Portal Frames 'Delete item' command", "UseRecycleBin", SettingsManager.UseRecycleBin);
+            CreateSectionHeader(c, Strings.SecLanguage, _userAccentColor);
+            CreateLanguageRow(c);
+            c.Children.Add(new TextBlock
+            {
+                Text = Strings.NoteLanguageRestart,
+                FontFamily = new FontFamily("Segoe UI"),
+                FontSize = 11,
+                FontStyle = FontStyles.Italic,
+                Foreground = new SolidColorBrush(Color.FromRgb(120, 120, 120)),
+                TextWrapping = TextWrapping.Wrap,
+                Margin = new Thickness(15, 0, 15, 10)
+            });
+
+            CreateSectionHeader(c, Strings.SecStartup, _userAccentColor);
+            CreateCheckBox(c, Strings.OptStartWithWindows, "StartWithWindows", TrayManager.IsStartWithWindows);
+            CreateSectionHeader(c, Strings.SecSelections, _userAccentColor);
+            CreateCheckBox(c, Strings.OptSingleClick, "SingleClickToLaunch", SettingsManager.SingleClickToLaunch);
+            CreateCheckBox(c, Strings.OptSnapNearFrames, "EnableSnapNearFrames", SettingsManager.IsSnapEnabled);
+            CreateCheckBox(c, Strings.OptDimensionSnap, "EnableDimensionSnap", SettingsManager.EnableDimensionSnap);
+            CreateCheckBox(c, Strings.OptTrayIcon, "EnableTrayIcon", SettingsManager.ShowInTray);
+            CreateCheckBox(c, Strings.OptRecycleBin, "UseRecycleBin", SettingsManager.UseRecycleBin);
 
             // NEW: Context Menu Option
-            CreateCheckBox(c, "Show 'New Frame' in Desktop Context Menu", "EnableContextMenu", SettingsManager.EnableContextMenu);
+            CreateCheckBox(c, Strings.OptNewFrameContextMenu, "EnableContextMenu", SettingsManager.EnableContextMenu);
 
             // --- NEW: Default Portal View Dropdown ---
             Grid portalViewGrid = new Grid { Margin = new Thickness(15, 8, 0, 8) };
             portalViewGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(140) });
             portalViewGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(150) });
 
-            TextBlock lblPortalView = new TextBlock { Text = "Default Portal View:", FontFamily = new FontFamily("Segoe UI"), FontSize = 13, VerticalAlignment = VerticalAlignment.Center };
+            TextBlock lblPortalView = new TextBlock { Text = Strings.LblDefaultPortalView, FontFamily = new FontFamily("Segoe UI"), FontSize = 13, VerticalAlignment = VerticalAlignment.Center };
             Grid.SetColumn(lblPortalView, 0);
 
             ComboBox cbPortalView = new ComboBox { Name = "DefaultPortalViewComboBox", Height = 25, FontFamily = new FontFamily("Segoe UI"), FontSize = 13, VerticalAlignment = VerticalAlignment.Center };
-            cbPortalView.Items.Add("Icons");
-            cbPortalView.Items.Add("Details");
-            cbPortalView.SelectedItem = string.Equals(SettingsManager.DefaultPortalView, "Details", StringComparison.OrdinalIgnoreCase) ? "Details" : "Icons";
+            // Content is what the user reads, Tag is what gets written to the
+            // settings file. Never save the label: it changes with the language.
+            cbPortalView.Items.Add(new ComboBoxItem { Content = Strings.ViewIcons, Tag = "Icons" });
+            cbPortalView.Items.Add(new ComboBoxItem { Content = Strings.ViewDetails, Tag = "Details" });
+            cbPortalView.SelectedIndex = string.Equals(SettingsManager.DefaultPortalView, "Details", StringComparison.OrdinalIgnoreCase) ? 1 : 0;
             Grid.SetColumn(cbPortalView, 1);
 
             portalViewGrid.Children.Add(lblPortalView);
@@ -240,29 +443,29 @@ namespace Desktop_Frames
             // -----------------------------------------
 
             // Moved from Style Tab (Choices)
-            CreateCheckBox(c, "Enable Portal Frames Watermark", "EnablePortalWatermark", SettingsManager.ShowBackgroundImageOnPortalFrames);
-            var n = CreateCheckBoxReturn(c, "Enable Note Frames Watermark (Coming Soon)", "EnableNoteWatermark", false);
+            CreateCheckBox(c, Strings.OptPortalWatermark, "EnablePortalWatermark", SettingsManager.ShowBackgroundImageOnPortalFrames);
+            var n = CreateCheckBoxReturn(c, Strings.OptNoteWatermark, "EnableNoteWatermark", false);
             n.IsEnabled = false; n.Foreground = Brushes.Gray;
-            CreateCheckBox(c, "Disable Frame Scrollbars", "DisableFrameScrollbars", SettingsManager.DisableFrameScrollbars);
+            CreateCheckBox(c, Strings.OptDisableScrollbars, "DisableFrameScrollbars", SettingsManager.DisableFrameScrollbars);
 
 
             // --- NEW: Notification Sound Dropdown ---
-            CheckBox cbSounds = CreateCheckBoxReturn(c, "Enable Sounds", "EnableSounds", SettingsManager.EnableSounds);
+            CheckBox cbSounds = CreateCheckBoxReturn(c, Strings.OptEnableSounds, "EnableSounds", SettingsManager.EnableSounds);
 
             Grid soundGrid = new Grid { Margin = new Thickness(35, 0, 0, 8) }; // Indented to show parent/child relationship
             soundGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(140) });
             soundGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(200) });
 
-            TextBlock lblSound = new TextBlock { Text = "Notification Sound:", FontFamily = new FontFamily("Segoe UI"), FontSize = 13, VerticalAlignment = VerticalAlignment.Center };
+            TextBlock lblSound = new TextBlock { Text = Strings.LblNotificationSound, FontFamily = new FontFamily("Segoe UI"), FontSize = 13, VerticalAlignment = VerticalAlignment.Center };
             Grid.SetColumn(lblSound, 0);
 
             ComboBox cbSoundType = new ComboBox { Name = "NotificationSoundComboBox", Height = 25, FontFamily = new FontFamily("Segoe UI"), FontSize = 13, VerticalAlignment = VerticalAlignment.Center };
-            cbSoundType.Items.Add("Default Sound");
-            cbSoundType.Items.Add("Double Ding");
-            cbSoundType.Items.Add("Smooth Tickle");
-            cbSoundType.Items.Add("Message Ding");
-            cbSoundType.Items.Add("Gentle Ding");
-            cbSoundType.Items.Add("Soft Ding");
+            cbSoundType.Items.Add(Strings.SndDefault);
+            cbSoundType.Items.Add(Strings.SndDoubleDing);
+            cbSoundType.Items.Add(Strings.SndSmoothTickle);
+            cbSoundType.Items.Add(Strings.SndMessageDing);
+            cbSoundType.Items.Add(Strings.SndGentleDing);
+            cbSoundType.Items.Add(Strings.SndSoftDing);
 
             // Map the current Enum back to the UI index
             cbSoundType.SelectedIndex = SettingsManager.NotificationSound switch
@@ -284,7 +487,7 @@ namespace Desktop_Frames
             cbSounds.Click += (s, e) => soundGrid.IsEnabled = cbSounds.IsChecked == true;
             // ----------------------------------------
 
-            //     CreateCheckBox(c, "Enable Profile Automation", "EnableProfileAutomation", SettingsManager.EnableProfileAutomation);
+            //     CreateCheckBox(c, Strings.LblEnableProfileAutomation, "EnableProfileAutomation", SettingsManager.EnableProfileAutomation);
             t.Content = new ScrollViewer { Content = c, VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
             _tabControl.Items.Add(t);
         }
@@ -294,38 +497,38 @@ namespace Desktop_Frames
             TabItem t = new TabItem();
             StackPanel c = new StackPanel();
 
-            CreateSectionHeader(c, "Appearance", ColorStyle);
+            CreateSectionHeader(c, Strings.SecAppearance, ColorStyle);
 
             // --- CHAMELEON TOGGLE ---
-            var chamCb = CreateCheckBoxReturn(c, "Enable Chameleon Mode (Auto-match Wallpaper Color)", "EnableChameleon", SettingsManager.EnableChameleonMode);
-            chamCb.ToolTip = "Frames will automatically change color to blend perfectly with your desktop background.";
+            var chamCb = CreateCheckBoxReturn(c, Strings.OptChameleon, "EnableChameleon", SettingsManager.EnableChameleonMode);
+            chamCb.ToolTip = Strings.TooltipChameleon;
 
-            CreateSliderControl(c, "Frame Tint", "TintSlider", SettingsManager.TintValue);
-            CreateSliderControl(c, "Menu Tint", "MenuTintSlider", SettingsManager.MenuTintValue);
+            CreateSliderControl(c, Strings.SldFrameTint, "TintSlider", SettingsManager.TintValue);
+            CreateSliderControl(c, Strings.SldMenuTint, "MenuTintSlider", SettingsManager.MenuTintValue);
 
             // Pass the chamCb reference so we can wire up the toggle event
             CreateColorAndEffectComboBoxes(c, chamCb);
 
-            CreateCheckBox(c, "Apply Frame Tint (Opacity) to Icons and Text", "ApplyTintToIcons", SettingsManager.ApplyTintToIcons);
+            CreateCheckBox(c, Strings.OptFrameTint, "ApplyTintToIcons", SettingsManager.ApplyTintToIcons);
 
             // --- Moved from General Tab (Auto-Hide Options) ---
-            CreateSectionHeader(c, "Auto-Hide Frames", ColorStyle);
-            CreateCheckBox(c, "Auto hide frames", "AutoHideFrames", SettingsManager.AutoHideFrames);
-            CreateSliderControl(c, "Auto hide time (sec)", "AutoHideTimeSlider", SettingsManager.AutoHideTime, 300);
+            CreateSectionHeader(c, Strings.SecAutoHideFrames, ColorStyle);
+            CreateCheckBox(c, Strings.OptAutoHideFrames, "AutoHideFrames", SettingsManager.AutoHideFrames);
+            CreateSliderControl(c, Strings.SldAutoHideTime, "AutoHideTimeSlider", SettingsManager.AutoHideTime, 300);
 
             // --- Moved from General Tab (Idle Fade-Out Options) ---
-            CreateSectionHeader(c, "Idle Fade-Out", ColorStyle);
-            CreateCheckBox(c, "Enable Idle Fade-Out", "FramesFadeOutFx", SettingsManager.FramesFadeOutFx);
-            CreateSliderControl(c, "Idle Time (sec)", "FadeOutTimeSlider", SettingsManager.FadeOutTime, 300);
-            CreateSliderControl(c, "Fade Target Opacity (%)", "FadeOutAlphaSlider", (int)(SettingsManager.FadeOutFxTargetAlpha * 100), 100);
+            CreateSectionHeader(c, Strings.SecIdleFadeOut, ColorStyle);
+            CreateCheckBox(c, Strings.OptIdleFadeOut, "FramesFadeOutFx", SettingsManager.FramesFadeOutFx);
+            CreateSliderControl(c, Strings.SldIdleTime, "FadeOutTimeSlider", SettingsManager.FadeOutTime, 300);
+            CreateSliderControl(c, Strings.SldFadeTargetOpacity, "FadeOutAlphaSlider", (int)(SettingsManager.FadeOutFxTargetAlpha * 100), 100);
 
             // --- Moved from General Tab (Idle Auto-Roll Options) ---
-            CreateSectionHeader(c, "Idle Auto-Roll", ColorStyle);
+            CreateSectionHeader(c, Strings.SecIdleAutoRoll, ColorStyle);
 
             // --- NEW: Contextual Help Text ---
             c.Children.Add(new TextBlock
             {
-                Text = "Note: Enable auto-roll individually per frame via the frame's right-click menu.",
+                Text = Strings.NoteAutoRoll,
                 FontStyle = FontStyles.Italic,
                 Foreground = Brushes.Gray,
                 FontSize = 12,
@@ -333,28 +536,28 @@ namespace Desktop_Frames
                 TextWrapping = TextWrapping.Wrap
             });
 
-            CreateSliderControl(c, "Idle Time (sec)", "AutoRollTimeSlider", SettingsManager.AutoRollTime, 300);
+            CreateSliderControl(c, Strings.SldIdleTime, "AutoRollTimeSlider", SettingsManager.AutoRollTime, 300);
 
 
             // --- NEW: Desktop Icon Visibility ---
-            CreateSectionHeader(c, "Desktop Icon Visibility", ColorStyle);
-            CreateCheckBox(c, "Hide native desktop icons while program is running", "HideDesktopElementsOnStart", SettingsManager.HideDesktopElementsOnStart);
-            CreateCheckBox(c, "Hide native desktop icons when Frames are hidden", "HideDesktopElementsOnAllFramesHide", SettingsManager.HideDesktopElementsOnAllFramesHide);
+            CreateSectionHeader(c, Strings.SecDesktopIconVisibility, ColorStyle);
+            CreateCheckBox(c, Strings.OptHideIconsRunning, "HideDesktopElementsOnStart", SettingsManager.HideDesktopElementsOnStart);
+            CreateCheckBox(c, Strings.OptHideIconsWhenHidden, "HideDesktopElementsOnAllFramesHide", SettingsManager.HideDesktopElementsOnAllFramesHide);
 
 
 
             // --- Icons Section ---
-            CreateSectionHeader(c, "Icons", ColorStyle);
+            CreateSectionHeader(c, Strings.SecIcons, ColorStyle);
             Grid iconGrid = new Grid { Margin = new Thickness(15, 5, 0, 15) };
             iconGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             iconGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 
             StackPanel menuIconPanel = new StackPanel();
-            menuIconPanel.Children.Add(new TextBlock { Text = "Menu Icon", FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 0, 0, 0) });
+            menuIconPanel.Children.Add(new TextBlock { Text = Strings.LblMenuIcon, FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 0, 0, 0) });
             CreateIconRadioButtonGroup(menuIconPanel, "MenuIconGroup", new Dictionary<string, int> { { "♥", 0 }, { "☰", 1 }, { "≣", 2 }, { "𓃑", 3 } }, SettingsManager.MenuIcon);
 
             StackPanel lockIconPanel = new StackPanel();
-            lockIconPanel.Children.Add(new TextBlock { Text = "Lock Icon", FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 0, 0, 0) });
+            lockIconPanel.Children.Add(new TextBlock { Text = Strings.LblLockIcon, FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 0, 0, 0) });
             CreateIconRadioButtonGroup(lockIconPanel, "LockIconGroup", new Dictionary<string, int> { { "🛡️", 0 }, { "🔑", 1 }, { "🔐", 2 }, { "🔒", 3 } }, SettingsManager.LockIcon);
 
             Grid.SetColumn(menuIconPanel, 0);
@@ -371,7 +574,7 @@ namespace Desktop_Frames
         {
             TabItem t = new TabItem();
             StackPanel c = new StackPanel();
-            CreateSectionHeader(c, "Tools", ColorTools);
+            CreateSectionHeader(c, Strings.TabTools, ColorTools);
 
             Grid g = new Grid { Margin = new Thickness(0, 10, 0, 0) };
             g.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(120) });
@@ -381,24 +584,24 @@ namespace Desktop_Frames
             g.RowDefinitions.Add(new RowDefinition { Height = new GridLength(15) });
             g.RowDefinitions.Add(new RowDefinition { Height = new GridLength(45) });
 
-            Button b1 = CreateStyledButton("Backup", ColorTools); b1.Click += (s, e) => BackupManager.BackupData();
-            Button b2 = CreateStyledButton("Restore...", Color.FromRgb(255, 152, 0)); b2.Click += (s, e) => RestoreBackup();
-            Button b3 = CreateStyledButton("Open Backups Folder", Color.FromRgb(0, 123, 191)); b3.Click += (s, e) => OpenBackupsFolder();
+            Button b1 = CreateStyledButton(Strings.BtnBackup, ColorTools); b1.Click += (s, e) => BackupManager.BackupData();
+            Button b2 = CreateStyledButton(Strings.BtnRestore, Color.FromRgb(255, 152, 0)); b2.Click += (s, e) => RestoreBackup();
+            Button b3 = CreateStyledButton(Strings.BtnOpenBackupsFolder, Color.FromRgb(0, 123, 191)); b3.Click += (s, e) => OpenBackupsFolder();
             Grid.SetRow(b1, 0); Grid.SetColumn(b1, 0);
             Grid.SetRow(b2, 0); Grid.SetColumn(b2, 2);
             Grid.SetRow(b3, 2); Grid.SetColumn(b3, 0); Grid.SetColumnSpan(b3, 3);
             g.Children.Add(b1); g.Children.Add(b2); g.Children.Add(b3);
             c.Children.Add(g);
 
-            CreateCheckBox(c, "Automatic Backup (Daily)", "EnableAutoBackup", SettingsManager.EnableAutoBackup);
+            CreateCheckBox(c, Strings.OptAutomaticBackup, "EnableAutoBackup", SettingsManager.EnableAutoBackup);
 
 
 
             // --- Maintenance Section ---
             Color darkPink = Color.FromRgb(199, 21, 133); // MediumVioletRed
-            CreateSectionHeader(c, "Maintenance", darkPink);
+            CreateSectionHeader(c, Strings.SecMaintenance, darkPink);
 
-            Button btnBound = CreateStyledButton("Screen Bound Frames", darkPink);
+            Button btnBound = CreateStyledButton(Strings.BtnScreenBoundFrames, darkPink);
             btnBound.Width = 255;
             btnBound.Height = 45;
             btnBound.Margin = new Thickness(0, 0, 0, 15);
@@ -414,25 +617,25 @@ namespace Desktop_Frames
                     // This calls the wrapper that handles the variable flipping
                     Framemanager.ForceRepositionallFrames();
 
-                    MessageBoxesManager.ShowOKOnlyMessageBoxForm("All frames have been checked and moved within valid screen bounds.", "Success");
+                    MessageBoxesManager.ShowOKOnlyMessageBoxForm(Strings.MsgFramesMovedIntoBounds, Strings.DlgSuccess);
                 };
             }
             else
             {
                 btnBound.Opacity = 0.90;
-                btnBound.ToolTip = "Auto-reposition is active (Hidden Setting). Frames are already managed automatically.";
+                btnBound.ToolTip = Strings.TooltipAutoReposition;
             }
 
             c.Children.Add(btnBound);
 
 
 
-            CreateSectionHeader(c, "Reset", Colors.Red);
-            Button r1 = CreateStyledButton("Reset Styles", Color.FromRgb(108, 117, 125));
+            CreateSectionHeader(c, Strings.BtnReset, Colors.Red);
+            Button r1 = CreateStyledButton(Strings.BtnResetStyles, Color.FromRgb(108, 117, 125));
             r1.Width = 255; r1.Height = 45; r1.Margin = new Thickness(0, 0, 0, 15);
-            r1.Click += (s, e) => { if (MessageBoxesManager.ShowCustomYesNoMessageBox("Reset all visual customizations?", "Reset")) { Framemanager.ResetAllCustomizations(); _optionsWindow.Close(); } };
+            r1.Click += (s, e) => { if (MessageBoxesManager.ShowCustomYesNoMessageBox(Strings.MsgConfirmResetCustomizations, Strings.BtnReset)) { Framemanager.ResetAllCustomizations(); _optionsWindow.Close(); } };
 
-            Button r2 = CreateStyledButton("Clear All Data", Color.FromRgb(220, 53, 69));
+            Button r2 = CreateStyledButton(Strings.BtnClearAllData, Color.FromRgb(220, 53, 69));
             r2.Width = 255; r2.Height = 45;
             r2.Click += (s, e) => PerformFullFactoryReset();
 
@@ -452,16 +655,16 @@ namespace Desktop_Frames
         {
             TabItem t = new TabItem();
             StackPanel c = new StackPanel();
-            CreateSectionHeader(c, "Profile Management", ColorProfiles);
+            CreateSectionHeader(c, Strings.SecProfileManagement, ColorProfiles);
 
             // Button 1: Manage Profiles (Green)
-            Button btnManageProfiles = CreateStyledButton("Manage Profiles", Color.FromRgb(34, 139, 34)); // Tools Green
+            Button btnManageProfiles = CreateStyledButton(Strings.BtnManageProfiles, Color.FromRgb(34, 139, 34)); // Tools Green
             btnManageProfiles.Width = 255; btnManageProfiles.Height = 45; btnManageProfiles.Margin = new Thickness(15, 0, 0, 15);
             btnManageProfiles.HorizontalAlignment = HorizontalAlignment.Left;
             btnManageProfiles.Click += (s, e) => { new ProfileManagerForm().ShowDialog(); };
 
             // Button 2: Manage Automation (Blue)
-            Button btnManageAutomation = CreateStyledButton("Manage Automation", Color.FromRgb(0, 123, 191)); // Tools Blue
+            Button btnManageAutomation = CreateStyledButton(Strings.BtnManageAutomation, Color.FromRgb(0, 123, 191)); // Tools Blue
             btnManageAutomation.Width = 255; btnManageAutomation.Height = 45; btnManageAutomation.Margin = new Thickness(15, 0, 0, 15);
             btnManageAutomation.HorizontalAlignment = HorizontalAlignment.Left;
             btnManageAutomation.Click += (s, e) => { new AutomationRulesForm().ShowDialog(); };
@@ -474,7 +677,7 @@ namespace Desktop_Frames
             CheckBox autoCb = new CheckBox
             {
                 Name = "EnableProfileAutomation",
-                Content = "Enable Profile Automation",
+                Content = Strings.LblEnableProfileAutomation,
                 IsChecked = SettingsManager.EnableProfileAutomation,
                 FontFamily = new FontFamily("Segoe UI"),
                 FontSize = 13,
@@ -507,31 +710,31 @@ namespace Desktop_Frames
             TabItem t = new TabItem();
             StackPanel c = new StackPanel();
 
-            CreateSectionHeader(c, "Profile Switching", ColorHotkeys);
-            CheckBox cbProf = CreateCheckBoxReturn(c, "Enable Profile Switching Hotkeys", "EnableProfileHotkeys", SettingsManager.EnableProfileHotkeys);
-            Grid gProf1 = CreateHotkeyEditor(c, "Direct Profile [0-9]", "ProfSwitch", SettingsManager.ProfileSwitchModifier, 0, false);
-            Grid gProf2 = CreateHotkeyEditor(c, "Previous Profile", "ProfPrev", SettingsManager.ProfilePrevModifier, SettingsManager.ProfilePrevKey, true);
-            Grid gProf3 = CreateHotkeyEditor(c, "Next Profile", "ProfNext", SettingsManager.ProfileNextModifier, SettingsManager.ProfileNextKey, true);
+            CreateSectionHeader(c, Strings.SecProfileSwitching, ColorHotkeys);
+            CheckBox cbProf = CreateCheckBoxReturn(c, Strings.OptProfileHotkeys, "EnableProfileHotkeys", SettingsManager.EnableProfileHotkeys);
+            Grid gProf1 = CreateHotkeyEditor(c, Strings.HkDirectProfile, "ProfSwitch", SettingsManager.ProfileSwitchModifier, 0, false);
+            Grid gProf2 = CreateHotkeyEditor(c, Strings.HkPreviousProfile, "ProfPrev", SettingsManager.ProfilePrevModifier, SettingsManager.ProfilePrevKey, true);
+            Grid gProf3 = CreateHotkeyEditor(c, Strings.HkNextProfile, "ProfNext", SettingsManager.ProfileNextModifier, SettingsManager.ProfileNextKey, true);
 
             // Bind initial state and live toggling
             gProf1.IsEnabled = gProf2.IsEnabled = gProf3.IsEnabled = cbProf.IsChecked == true;
             cbProf.Click += (s, e) => gProf1.IsEnabled = gProf2.IsEnabled = gProf3.IsEnabled = cbProf.IsChecked == true;
 
-            CreateSectionHeader(c, "Utilities", ColorHotkeys);
+            CreateSectionHeader(c, Strings.SecUtilities, ColorHotkeys);
 
-            CheckBox cbFocus = CreateCheckBoxReturn(c, "Enable Focus Frame Hotkey", "EnableFocusFrameHotkey", SettingsManager.EnableFocusFrameHotkey);
-            Grid gFocus = CreateHotkeyEditor(c, "Focus Frame", "FocusFrame", SettingsManager.FocusFrameModifier, SettingsManager.FocusFrameKey, true);
+            CheckBox cbFocus = CreateCheckBoxReturn(c, Strings.OptFocusFrameHotkey, "EnableFocusFrameHotkey", SettingsManager.EnableFocusFrameHotkey);
+            Grid gFocus = CreateHotkeyEditor(c, Strings.HkFocusFrame, "FocusFrame", SettingsManager.FocusFrameModifier, SettingsManager.FocusFrameKey, true);
             gFocus.IsEnabled = cbFocus.IsChecked == true;
             cbFocus.Click += (s, e) => gFocus.IsEnabled = cbFocus.IsChecked == true;
 
-            CheckBox cbSpot = CreateCheckBoxReturn(c, "Enable Spot Search Hotkey", "EnableSpotSearchHotkey", SettingsManager.EnableSpotSearchHotkey);
-            Grid gSpot = CreateHotkeyEditor(c, "Spot Search", "SpotSearch", SettingsManager.SpotSearchModifier, SettingsManager.SpotSearchKey, true);
+            CheckBox cbSpot = CreateCheckBoxReturn(c, Strings.OptSpotSearchHotkey, "EnableSpotSearchHotkey", SettingsManager.EnableSpotSearchHotkey);
+            Grid gSpot = CreateHotkeyEditor(c, Strings.HkSpotSearch, "SpotSearch", SettingsManager.SpotSearchModifier, SettingsManager.SpotSearchKey, true);
             gSpot.IsEnabled = cbSpot.IsChecked == true;
             cbSpot.Click += (s, e) => gSpot.IsEnabled = cbSpot.IsChecked == true;
 
             TextBlock infoText = new TextBlock
             {
-                Text = "Note: Changes to Global Hotkeys require an application restart to take effect.",
+                Text = Strings.NoteHotkeysRestart,
                 FontStyle = FontStyles.Italic,
                 Foreground = Brushes.Gray,
                 Margin = new Thickness(15, 20, 0, 0)
@@ -571,7 +774,7 @@ namespace Desktop_Frames
                 ComboBox cmb = new ComboBox { Name = namePrefix + "Key", Width = 100, VerticalAlignment = VerticalAlignment.Center };
                 foreach (var kvp in AvailableKeys)
                 {
-                    ComboBoxItem item = new ComboBoxItem { Content = kvp.Key, Tag = kvp.Value };
+                    ComboBoxItem item = new ComboBoxItem { Content = Strings.KeyLabel(kvp.Key), Tag = kvp.Value };
                     cmb.Items.Add(item);
                     if (kvp.Value == currentKey) cmb.SelectedItem = item;
                 }
@@ -591,26 +794,26 @@ namespace Desktop_Frames
             TabItem t = new TabItem();
             StackPanel c = new StackPanel();
 
-            CreateSectionHeader(c, "Smart Desktop (Auto-Organize)", ColorSmartDesktop);
+            CreateSectionHeader(c, Strings.SecSmartDesktopAuto, ColorSmartDesktop);
 
-            CheckBox cbMain = CreateCheckBoxReturn(c, "Enable Auto-Organize", "EnableAutoOrganize", SettingsManager.EnableAutoOrganize);
+            CheckBox cbMain = CreateCheckBoxReturn(c, Strings.OptAutoOrganize, "EnableAutoOrganize", SettingsManager.EnableAutoOrganize);
 
-            CheckBox cbNotif = CreateCheckBoxReturn(c, "Show execution toast notifications", "EnableAutoOrganizeNotifications", SettingsManager.EnableAutoOrganizeNotifications);
+            CheckBox cbNotif = CreateCheckBoxReturn(c, Strings.OptExecutionToasts, "EnableAutoOrganizeNotifications", SettingsManager.EnableAutoOrganizeNotifications);
             cbNotif.Margin = new Thickness(35, 0, 0, 8); // Indent it!
             cbNotif.IsEnabled = cbMain.IsChecked == true;
 
             // NEW: Live Rule Statistics (Horizontal Layout)
             StackPanel statsPanel = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(15, 15, 0, 15) };
-            TextBlock txtTotalRules = new TextBlock { Text = $"Total number of rules: {AutoOrganizeManager.Rules.Count}", FontFamily = new FontFamily("Segoe UI"), FontSize = 13, FontWeight = FontWeights.Medium };
+            TextBlock txtTotalRules = new TextBlock { Text = Strings.Get("LblTotalRules", AutoOrganizeManager.Rules.Count), FontFamily = new FontFamily("Segoe UI"), FontSize = 13, FontWeight = FontWeights.Medium };
             TextBlock txtSeparator = new TextBlock { Text = "   -   ", FontFamily = new FontFamily("Segoe UI"), FontSize = 13, FontWeight = FontWeights.Medium, Foreground = Brushes.Gray };
-            TextBlock txtEnabledRules = new TextBlock { Text = $"Enabled: {AutoOrganizeManager.Rules.Count(r => r.IsEnabled)}", FontFamily = new FontFamily("Segoe UI"), FontSize = 13, FontWeight = FontWeights.Bold, Foreground = new SolidColorBrush(Color.FromRgb(34, 139, 34)) };
+            TextBlock txtEnabledRules = new TextBlock { Text = Strings.Get("LblEnabledRules", AutoOrganizeManager.Rules.Count(r => r.IsEnabled)), FontFamily = new FontFamily("Segoe UI"), FontSize = 13, FontWeight = FontWeights.Bold, Foreground = new SolidColorBrush(Color.FromRgb(34, 139, 34)) };
             statsPanel.Children.Add(txtTotalRules);
             statsPanel.Children.Add(txtSeparator);
             statsPanel.Children.Add(txtEnabledRules);
             c.Children.Add(statsPanel);
 
             // Navy Blue - Manage Rules Button
-            Button btnManageRules = CreateStyledButton("Smart Desktop Rules...", Color.FromRgb(0, 0, 128));
+            Button btnManageRules = CreateStyledButton(Strings.BtnSmartDesktopRules, Color.FromRgb(0, 0, 128));
             btnManageRules.Width = 255;
             btnManageRules.Height = 45;
             btnManageRules.Margin = new Thickness(15, 0, 0, 15);
@@ -619,20 +822,20 @@ namespace Desktop_Frames
             {
                 new AutoOrganizeForm().ShowDialog();
                 // Refresh statistics when the editor closes
-                txtTotalRules.Text = $"Total number of rules: {AutoOrganizeManager.Rules.Count}";
-                txtEnabledRules.Text = $"Enabled: {AutoOrganizeManager.Rules.Count(r => r.IsEnabled)}";
+                txtTotalRules.Text = Strings.Get("LblTotalRules", AutoOrganizeManager.Rules.Count);
+                txtEnabledRules.Text = Strings.Get("LblEnabledRules", AutoOrganizeManager.Rules.Count(r => r.IsEnabled));
             };
             c.Children.Add(btnManageRules);
 
             // Dark Red - Organize Desktop Now Button
-            Button btnOrganizeNow = CreateStyledButton("Organize Now (Run)", Color.FromRgb(139, 0, 0));
+            Button btnOrganizeNow = CreateStyledButton(Strings.BtnOrganizeNow, Color.FromRgb(139, 0, 0));
             btnOrganizeNow.Width = 255;
             btnOrganizeNow.Height = 45;
             btnOrganizeNow.Margin = new Thickness(15, 0, 0, 15);
             btnOrganizeNow.HorizontalAlignment = HorizontalAlignment.Left;
             btnOrganizeNow.Click += (s, e) =>
             {
-                if (MessageBoxesManager.ShowCustomYesNoMessageBox("This will move existing files on your desktop to your target folders based on your rules.\n\nProceed?", "Sweep Desktop"))
+                if (MessageBoxesManager.ShowCustomYesNoMessageBox(Strings.MsgConfirmSweepDesktop, Strings.DlgSweepDesktop))
                 {
                     AutoOrganizeManager.ProcessDesktopNow();
                 }
@@ -641,7 +844,7 @@ namespace Desktop_Frames
 
             TextBlock infoText = new TextBlock
             {
-                Text = "Note: Auto-Organize continuously monitors your Desktop for new files. When a file matches an enabled rule's conditions, it is automatically and physically moved to your target Portal Frame or Folder. Use this to keep your Desktop permanently clean and automatically route downloads to their proper locations.",
+                Text = Strings.NoteAutoOrganize,
                 FontStyle = FontStyles.Italic,
                 Foreground = Brushes.Gray,
                 Margin = new Thickness(15, 20, 0, 0),
@@ -657,15 +860,15 @@ namespace Desktop_Frames
         {
             TabItem t = new TabItem();
             StackPanel c = new StackPanel();
-            CreateSectionHeader(c, "Log", ColorLookDeeper);
-            CreateCheckBox(c, "Enable logging", "EnableLogging", SettingsManager.IsLogEnabled);
-            Button b = CreateStyledButton("Open Log", ColorLookDeeper); b.Width = 100; b.Height = 25; b.HorizontalAlignment = HorizontalAlignment.Left;
+            CreateSectionHeader(c, Strings.SecLog, ColorLookDeeper);
+            CreateCheckBox(c, Strings.OptEnableLogging, "EnableLogging", SettingsManager.IsLogEnabled);
+            Button b = CreateStyledButton(Strings.BtnOpenLog, ColorLookDeeper); b.Width = 100; b.Height = 25; b.HorizontalAlignment = HorizontalAlignment.Left;
             b.Click += (s, e) => OpenLogFile();
             c.Children.Add(b);
 
-            CreateSectionHeader(c, "Log configuration", ColorLookDeeper);
+            CreateSectionHeader(c, Strings.SecLogConfiguration, ColorLookDeeper);
             CreateLogLevelComboBox(c);
-            CreateSectionHeader(c, "Log Categories", ColorLookDeeper);
+            CreateSectionHeader(c, Strings.SecLogCategories, ColorLookDeeper);
 
             // This method creates checkboxes for all Enums (except Error now)
             CreateLogCategoryCheckBoxes(c);
@@ -735,11 +938,14 @@ namespace Desktop_Frames
             g.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
             g.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(140) });
 
-            TextBlock lblColor = new TextBlock { Text = "Color", FontSize = 13, VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 0, 10, 0) };
+            TextBlock lblColor = new TextBlock { Text = Strings.LblColor, FontSize = 13, VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 0, 10, 0) };
             // Constrain Width to 140 and Left-align so it doesn't stretch to fill the 160px column, creating the gap automatically
             ComboBox cbColor = new ComboBox { Name = "ColorComboBox", Width = 140, HorizontalAlignment = HorizontalAlignment.Left, Height = 25, FontSize = 13, VerticalAlignment = VerticalAlignment.Center };
-            foreach (string c in new[] { "Gray", "Black", "White", "Beige", "Green", "Purple", "Fuchsia", "Yellow", "Orange", "Red", "Blue", "Bismark" }) cbColor.Items.Add(c);
-            cbColor.SelectedItem = SettingsManager.SelectedColor;
+            foreach (string c in new[] { "Gray", "Black", "White", "Beige", "Green", "Purple", "Fuchsia", "Yellow", "Orange", "Red", "Blue", "Bismark" })
+                cbColor.Items.Add(new ComboBoxItem { Content = Strings.Get("Color" + c), Tag = c });
+            cbColor.SelectedItem = cbColor.Items.OfType<ComboBoxItem>()
+                .FirstOrDefault(i => string.Equals(i.Tag as string, SettingsManager.SelectedColor, StringComparison.OrdinalIgnoreCase))
+                ?? cbColor.Items.OfType<ComboBoxItem>().FirstOrDefault();
 
             // --- BUG FIX: Disable Color dropdown if Chameleon mode is ON ---
             cbColor.IsEnabled = chamCb.IsChecked != true;
@@ -747,9 +953,10 @@ namespace Desktop_Frames
             // ---------------------------------------------------------------
 
             // UI FIX: Starts perfectly flush at the new 205px mark
-            TextBlock lblEffect = new TextBlock { Text = "Effect", FontSize = 13, VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Left, Margin = new Thickness(0, 0, 10, 0) };
+            TextBlock lblEffect = new TextBlock { Text = Strings.LblEffect, FontSize = 13, VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Left, Margin = new Thickness(0, 0, 10, 0) };
             ComboBox cbEffect = new ComboBox { Name = "LaunchEffectComboBox", Width = 140, HorizontalAlignment = HorizontalAlignment.Left, Height = 25, FontSize = 13, VerticalAlignment = VerticalAlignment.Center };
-            foreach (string e in new[] { "Zoom", "Bounce", "FadeOut", "SlideUp", "Rotate", "Agitate", "GrowAndFly", "Pulse", "Elastic", "Flip3D", "Spiral", "Shockwave", "Matrix", "Supernova", "Teleport" }) cbEffect.Items.Add(e);
+            // Same order as the LaunchEffect enum: the value is the index, not the label.
+            foreach (string e in new[] { Strings.FxZoom, Strings.FxBounce, Strings.FxFadeOut, Strings.FxSlideUp, Strings.FxRotate, Strings.FxAgitate, Strings.FxGrowAndFly, Strings.FxPulse, Strings.FxElastic, Strings.FxFlip3D, Strings.FxSpiral, Strings.FxShockwave, Strings.FxMatrix, Strings.FxSupernova, Strings.FxTeleport }) cbEffect.Items.Add(e);
             cbEffect.SelectedIndex = (int)SettingsManager.LaunchEffect;
 
             Grid.SetColumn(lblColor, 0); g.Children.Add(lblColor);
@@ -767,7 +974,7 @@ namespace Desktop_Frames
             Grid g = new Grid { Margin = new Thickness(0, 10, 0, 10) };
             g.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(120) });
             g.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(120) });
-            g.Children.Add(new TextBlock { Text = "Minimum Log Level", FontSize = 13, VerticalAlignment = VerticalAlignment.Center });
+            g.Children.Add(new TextBlock { Text = Strings.LblMinimumLogLevel, FontSize = 13, VerticalAlignment = VerticalAlignment.Center });
             ComboBox cb = new ComboBox { Name = "LogLevelComboBox", Height = 25, FontSize = 13, VerticalAlignment = VerticalAlignment.Center };
             foreach (var l in new[] { "Debug", "Info", "Warn", "Error" }) cb.Items.Add(l);
             cb.SelectedItem = SettingsManager.MinLogLevel.ToString();
@@ -865,7 +1072,7 @@ namespace Desktop_Frames
                         var pvCombo = genGrid.Children.OfType<ComboBox>().FirstOrDefault(c => c.Name == "DefaultPortalViewComboBox");
                         if (pvCombo?.SelectedItem != null)
                         {
-                            SettingsManager.DefaultPortalView = pvCombo.SelectedItem.ToString();
+                            SettingsManager.DefaultPortalView = (pvCombo.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? SettingsManager.DefaultPortalView;
                         }
                     }
 
@@ -876,6 +1083,16 @@ namespace Desktop_Frames
                     //    if (SettingsManager.EnableProfileAutomation) AutomationManager.Start();
                     //}
 
+                }
+
+                // Read outside the loop above: the selector is nested inside a row, so walking
+                // the direct children of each Grid never reaches it.
+                if ((_languageCombo?.SelectedItem as ComboBoxItem)?.Tag is string languageTag)
+                {
+                    // Remembered so the offer to restart is made only when the language really
+                    // changed, and not every time the options are saved.
+                    _languageChanged = !string.Equals(SettingsManager.Language, languageTag, StringComparison.OrdinalIgnoreCase);
+                    SettingsManager.Language = languageTag;
                 }
 
 
@@ -906,7 +1123,7 @@ namespace Desktop_Frames
                     else if (child is Grid g)
                     {
                         var tint = g.Children.OfType<Slider>().FirstOrDefault(s => s.Name == "TintSlider"); if (tint != null) SettingsManager.TintValue = (int)tint.Value; var mtint = g.Children.OfType<Slider>().FirstOrDefault(s => s.Name == "MenuTintSlider"); if (mtint != null) SettingsManager.MenuTintValue = (int)mtint.Value;
-                        var col = g.Children.OfType<ComboBox>().FirstOrDefault(c => c.Name == "ColorComboBox"); if (col?.SelectedItem != null) SettingsManager.SelectedColor = col.SelectedItem.ToString();
+                        var col = g.Children.OfType<ComboBox>().FirstOrDefault(c => c.Name == "ColorComboBox"); if ((col?.SelectedItem as ComboBoxItem)?.Tag is string colTag) SettingsManager.SelectedColor = colTag;
                         var eff = g.Children.OfType<ComboBox>().FirstOrDefault(c => c.Name == "LaunchEffectComboBox"); if (eff != null) SettingsManager.LaunchEffect = (LaunchEffectsManager.LaunchEffect)eff.SelectedIndex;
 
                         // Parse Sliders (Moved from General)
@@ -988,7 +1205,7 @@ namespace Desktop_Frames
                     // Propagate the new hotkeys across all existing profiles
                     SettingsManager.BroadcastHotkeysToAllProfiles();
 
-                    MessageBoxesManager.ShowOKOnlyMessageBoxForm("Global Hotkey changes have been saved and applied to all profiles.\n\nPlease restart Desktop Frames to activate the new shortcuts.", "Restart Required");
+                    MessageBoxesManager.ShowOKOnlyMessageBoxForm(Strings.MsgHotkeysSavedRestartNeeded, Strings.DlgRestartRequired);
                 }
 
                 // 5. Smart Desktop (Auto-Organize)
@@ -1082,11 +1299,15 @@ namespace Desktop_Frames
                 Framemanager.RefreshScrollbarSettings();
 
                 _optionsWindow.Close();
+
+                // After the window is closed and everything is on disk, so a restart cannot
+                // lose anything that was just saved.
+                OfferRestartAfterLanguageChange();
             }
             catch (Exception ex)
             {
                 LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.Settings, $"Error saving options: {ex.Message}");
-                MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Error: {ex.Message}", "Save Error");
+                MessageBoxesManager.ShowOKOnlyMessageBoxForm(Strings.Get("MsgGenericError", ex.Message), Strings.DlgSaveError);
             }
         }
 
@@ -1096,10 +1317,10 @@ namespace Desktop_Frames
             Grid.SetRow(f, 2);
             StackPanel sp = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
 
-            Button c = new Button { Content = "Cancel", Width = 100, Height = 34, FontWeight = FontWeights.Bold, Background = Brushes.White, BorderBrush = new SolidColorBrush(Color.FromRgb(218, 220, 224)), BorderThickness = new Thickness(1), Margin = new Thickness(0, 0, 10, 0), Cursor = Cursors.Hand };
+            Button c = new Button { Content = Strings.BtnCancel, Width = 100, Height = 34, FontWeight = FontWeights.Bold, Background = Brushes.White, BorderBrush = new SolidColorBrush(Color.FromRgb(218, 220, 224)), BorderThickness = new Thickness(1), Margin = new Thickness(0, 0, 10, 0), Cursor = Cursors.Hand };
             c.Click += (s, e) => _optionsWindow.Close();
 
-            Button sv = new Button { Content = "Save", Width = 100, Height = 34, FontWeight = FontWeights.Bold, Background = new SolidColorBrush(_userAccentColor), Foreground = Brushes.White, BorderThickness = new Thickness(0), Cursor = Cursors.Hand };
+            Button sv = new Button { Content = Strings.BtnSave, Width = 100, Height = 34, FontWeight = FontWeights.Bold, Background = new SolidColorBrush(_userAccentColor), Foreground = Brushes.White, BorderThickness = new Thickness(0), Cursor = Cursors.Hand };
             sv.Click += (s, e) => SaveOptions();
 
             sp.Children.Add(c); sp.Children.Add(sv); f.Child = sp; mainGrid.Children.Add(f);
@@ -1110,8 +1331,8 @@ namespace Desktop_Frames
             Border d = new Border { Background = new SolidColorBrush(Color.FromRgb(255, 248, 225)), BorderBrush = new SolidColorBrush(Color.FromRgb(255, 193, 7)), BorderThickness = new Thickness(0, 1, 0, 0), Padding = new Thickness(20) };
             Grid.SetRow(d, 3);
             StackPanel sp = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
-            sp.Children.Add(new TextBlock { Text = "Support the Maintenance and Enhancement of This Project by Donating", FontSize = 13, Foreground = new SolidColorBrush(Color.FromRgb(102, 77, 3)), VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 15, 0) });
-            Button b = new Button { Content = "♥ Donate via PayPal", FontSize = 14, Background = new SolidColorBrush(Color.FromRgb(255, 193, 7)), Foreground = Brushes.White, BorderThickness = new Thickness(0), Padding = new Thickness(15, 6, 15, 6), Cursor = Cursors.Hand };
+            sp.Children.Add(new TextBlock { Text = Strings.LblDonate, FontSize = 13, Foreground = new SolidColorBrush(Color.FromRgb(102, 77, 3)), VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 15, 0) });
+            Button b = new Button { Content = Strings.BtnDonate, FontSize = 14, Background = new SolidColorBrush(Color.FromRgb(255, 193, 7)), Foreground = Brushes.White, BorderThickness = new Thickness(0), Padding = new Thickness(15, 6, 15, 6), Cursor = Cursors.Hand };
             b.Click += (s, e) => { try { Process.Start(new ProcessStartInfo { FileName = "https://www.paypal.com/donate/?hosted_button_id=PPLWC66UC8Q42", UseShellExecute = true }); } catch { } };
             sp.Children.Add(b); d.Child = sp; mainGrid.Children.Add(d);
         }
@@ -1136,7 +1357,7 @@ namespace Desktop_Frames
             }
             catch (Exception ex)
             {
-                MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Restore failed: {ex.Message}", "Error");
+                MessageBoxesManager.ShowOKOnlyMessageBoxForm(Strings.Get("MsgRestoreFailed", ex.Message), Strings.DlgError);
             }
         }
         private static void OpenBackupsFolder()
@@ -1151,14 +1372,14 @@ namespace Desktop_Frames
             {
                 string p = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "Desktop_Frames.log");
                 if (System.IO.File.Exists(p)) Process.Start(new ProcessStartInfo { FileName = p, UseShellExecute = true });
-                else MessageBoxesManager.ShowOKOnlyMessageBoxForm("Log file not found.", "Information");
+                else MessageBoxesManager.ShowOKOnlyMessageBoxForm(Strings.MsgLogFileNotFound, Strings.DlgInformation);
             }
             catch { }
         }
 
         private static void PerformFullFactoryReset()
         {
-            if (MessageBoxesManager.ShowCustomYesNoMessageBox("WARNING: This will delete ALL frames, shortcuts, and settings for the CURRENT PROFILE!\n\nAre you sure you want to proceed?", "Factory Reset"))
+            if (MessageBoxesManager.ShowCustomYesNoMessageBox(Strings.MsgConfirmFactoryReset, Strings.DlgFactoryReset))
             {
                 // KISS: Hijack cursor to show processing
                 System.Windows.Application.Current?.Dispatcher.Invoke(() => System.Windows.Input.Mouse.OverrideCursor = System.Windows.Input.Cursors.Wait);
@@ -1192,7 +1413,7 @@ namespace Desktop_Frames
                     System.IO.File.WriteAllText(oj, "{}");
 
                     // 4. Force a clean OS-level restart (Guarantees all UI clears properly)
-                    MessageBoxesManager.ShowOKOnlyMessageBoxForm("Factory Reset complete.\nThe application will now restart.", "Reset Successful");
+                    MessageBoxesManager.ShowOKOnlyMessageBoxForm(Strings.MsgFactoryResetDone, Strings.DlgResetSuccessful);
 
                     string appPath = System.Diagnostics.Process.GetCurrentProcess().MainModule.FileName;
                     System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
@@ -1210,7 +1431,7 @@ namespace Desktop_Frames
                 catch (Exception ex)
                 {
                     LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.Error, $"Factory reset failed: {ex.Message}");
-                    MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Reset failed: {ex.Message}", "Error");
+                    MessageBoxesManager.ShowOKOnlyMessageBoxForm(Strings.Get("MsgResetFailed", ex.Message), Strings.DlgError);
                 }
                 finally
                 {

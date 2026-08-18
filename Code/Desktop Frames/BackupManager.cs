@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using Desktop_Frames.Localization;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
@@ -98,7 +99,7 @@ namespace Desktop_Frames
                 if (!_isRestoreAvailable || string.IsNullOrEmpty(_lastDeletedFolderPath) || _lastDeletedFrame == null)
                 {
                     LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.ImportExport, "No frame available to restore");
-                    MessageBoxesManager.ShowOKOnlyMessageBoxForm("No frame to restore", "Restore");
+                    MessageBoxesManager.ShowOKOnlyMessageBoxForm(Strings.MsgNoFrameToRestore, Strings.DlgRestore);
                     return;
                 }
 
@@ -146,7 +147,7 @@ namespace Desktop_Frames
 			catch (Exception ex)
 			{
 				LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.ImportExport, $"Error restoring last deleted frame: {ex.Message}");
-				MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Error restoring frame: {ex.Message}", "Restore Error");
+				MessageBoxesManager.ShowOKOnlyMessageBoxForm(Strings.Get("MsgRestoreFrameFailed", ex.Message), Strings.DlgRestoreError);
 			}
 		}
         #endregion
@@ -259,12 +260,12 @@ namespace Desktop_Frames
                 Directory.Delete(exportFolder, true);
 
 				LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.ImportExport, $"Frame exported successfully: {framePath}");
-				MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Frame exported to:\n{framePath}", "Export Successful");
+				MessageBoxesManager.ShowOKOnlyMessageBoxForm(Strings.Get("MsgFrameExportedTo", framePath), Strings.DlgExportSuccessful);
 			}
             catch (Exception ex)
             {
                 LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.ImportExport, $"Export failed: {ex.Message}");
-                MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Export failed: {ex.Message}", "Error");
+                MessageBoxesManager.ShowOKOnlyMessageBoxForm(Strings.Get("MsgExportFailed", ex.Message), Strings.DlgError);
             }
             finally
             {
@@ -287,7 +288,7 @@ namespace Desktop_Frames
                     Filter = "Frame Files|*.frame;*.fence", // SUPPORT BOTH EXTENSIONS
                     DefaultExt = ".frame", // DEFAULT TO NEW
                     InitialDirectory = Directory.Exists(exportsDir) ? exportsDir : exeDir,
-                    Title = "Select Frame Export File"
+                    Title = Strings.BackupSelectExportFile
                 };
 
                 if (openDialog.ShowDialog() != true) return;
@@ -389,7 +390,7 @@ namespace Desktop_Frames
                     Framemanager.CreateFrame(importedFrame, new TargetChecker(1000));
                     FrameDataManager.SaveFrameData();
 
-                    MessageBoxesManager.ShowOKOnlyMessageBoxForm("Frame imported successfully!", "Import Complete");
+                    MessageBoxesManager.ShowOKOnlyMessageBoxForm(Strings.MsgFrameImported, Strings.DlgImportComplete);
                 }
                 finally
                 {
@@ -399,7 +400,7 @@ namespace Desktop_Frames
             catch (Exception ex)
             {
                 LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.ImportExport, $"Import failed: {ex.Message}");
-                MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Failed to import frame: {ex.Message}", "Import Error");
+                MessageBoxesManager.ShowOKOnlyMessageBoxForm(Strings.Get("MsgImportFrameFailed", ex.Message), Strings.DlgImportError);
             }
             finally
             {
@@ -656,7 +657,7 @@ namespace Desktop_Frames
 
                 if (!silent)
                 {
-                    MessageBoxesManager.ShowOKOnlyMessageBoxForm("Backup completed successfully.", "Backup");
+                    MessageBoxesManager.ShowOKOnlyMessageBoxForm(Strings.MsgBackupDone, Strings.DlgBackup);
                     LogManager.Log(LogManager.LogLevel.Info, LogManager.LogCategory.ImportExport, $"Manual backup finished: {backupFolderPath}");
                 }
             }
@@ -665,7 +666,7 @@ namespace Desktop_Frames
                 LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.ImportExport, $"CreateBackup error: {ex.Message}");
                 if (!silent)
                 {
-                    MessageBoxesManager.ShowOKOnlyMessageBoxForm($"An error occurred during backup: {ex.Message}", "Error");
+                    MessageBoxesManager.ShowOKOnlyMessageBoxForm(Strings.Get("MsgBackupFailed", ex.Message), Strings.DlgError);
                 }
             }
             finally
@@ -703,9 +704,8 @@ namespace Desktop_Frames
                 if (File.Exists(backupOptionsPath))
                 {
                     bool restoreSettings = MessageBoxesManager.ShowCustomYesNoMessageBox(
-                        "This backup contains configuration settings (options.json).\n\n" +
-                        "Do you want to restore your global settings as well?",
-                        "Restore Settings");
+                        Strings.MsgConfirmRestoreSettings,
+                        Strings.DlgRestoreSettings);
 
                     if (restoreSettings)
                     {
@@ -751,8 +751,8 @@ namespace Desktop_Frames
                 if (restartRequired)
                 {
                     MessageBoxesManager.ShowOKOnlyMessageBoxForm(
-                        "Global settings have been restored.\nThe application will now restart to apply changes.",
-                        "Restart Required");
+                        Strings.MsgGlobalSettingsRestored,
+                        Strings.DlgRestartRequired);
 
                     string appPath = Process.GetCurrentProcess().MainModule.FileName;
 
@@ -773,13 +773,13 @@ namespace Desktop_Frames
                 }
                 else
                 {
-                    MessageBoxesManager.ShowOKOnlyMessageBoxForm("Restore completed successfully.", "Restore");
+                    MessageBoxesManager.ShowOKOnlyMessageBoxForm(Strings.MsgRestoreDone, Strings.DlgRestore);
                 }
             }
             catch (Exception ex)
             {
                 LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.ImportExport, $"Restore failed: {ex.Message}");
-                MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Restore failed: {ex.Message}", "Error");
+                MessageBoxesManager.ShowOKOnlyMessageBoxForm(Strings.Get("MsgRestoreFailed", ex.Message), Strings.DlgError);
             }
             finally
             {

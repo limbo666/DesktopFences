@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Desktop_Frames.Localization;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
@@ -42,7 +43,7 @@ namespace Desktop_Frames
 
         private void InitializeModernComponent()
         {
-            Title = "Focus Frame";
+            Title = Strings.FocusFrameTitle;
             Width = 450;
             Height = 550;
             WindowStartupLocation = WindowStartupLocation.CenterScreen;
@@ -118,7 +119,7 @@ namespace Desktop_Frames
 
             TextBlock titleText = new TextBlock
             {
-                Text = "Focus Frame",
+                Text = Strings.FocusFrameTitle,
                 FontSize = 14,
                 FontWeight = FontWeights.Bold,
                 Foreground = Brushes.White,
@@ -181,7 +182,7 @@ namespace Desktop_Frames
 
             TextBlock searchLabel = new TextBlock
             {
-                Text = "Search active frames:",
+                Text = Strings.FocusSearchActive,
                 FontSize = 12,
                 FontWeight = FontWeights.Medium,
                 Foreground = new SolidColorBrush(Color.FromRgb(95, 99, 104)),
@@ -250,7 +251,7 @@ namespace Desktop_Frames
 
             Button cancelButton = new Button
             {
-                Content = "Cancel",
+                Content = Strings.BtnCancel,
                 Height = 36,
                 MinWidth = 80,
                 FontSize = 13,
@@ -267,7 +268,7 @@ namespace Desktop_Frames
 
             Button focusButton = new Button
             {
-                Content = "Focus Frame",
+                Content = Strings.FocusFrameTitle,
                 Height = 36,
                 MinWidth = 80,
                 FontSize = 13,

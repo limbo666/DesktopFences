@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Desktop_Frames.Localization;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
@@ -95,7 +96,7 @@ namespace Desktop_Frames
                 _userAccentColor = Utility.GetColorFromName(selectedColorName);
 
                 // Modern WPF window setup with DPI awareness (same as customize form)
-                this.Title = "Text Format";
+                this.Title = Strings.TextFormatTitle;
                 this.Width = 400;
                 this.Height = 400;
                 this.WindowStartupLocation = WindowStartupLocation.Manual;
@@ -158,7 +159,7 @@ namespace Desktop_Frames
             catch (Exception ex)
             {
                 LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI, $"Error initializing TextFormatForm: {ex.Message}");
-                MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Error initializing form: {ex.Message}", "Form Error");
+                MessageBoxesManager.ShowOKOnlyMessageBoxForm(Strings.Get("MsgFormInitFailed", ex.Message), Strings.DlgFormError);
             }
         }
 
@@ -199,7 +200,7 @@ namespace Desktop_Frames
             // Title label (same style as customize form)
             TextBlock titleBlock = new TextBlock
             {
-                Text = "Text Format",
+                Text = Strings.TextFormatTitle,
                 FontFamily = new FontFamily("Segoe UI"),
                 FontSize = 18,
                 FontWeight = FontWeights.Bold,
@@ -283,7 +284,7 @@ namespace Desktop_Frames
             // Apply button with green color (same as Default button in customize form)
             Button applyButton = new Button
             {
-                Content = "Apply",
+                Content = Strings.BtnApply,
                 Width = 100,
                 Height = 34,
                 FontFamily = new FontFamily("Segoe UI"),
@@ -300,7 +301,7 @@ namespace Desktop_Frames
             // Cancel button (same style as customize form)
             Button cancelButton = new Button
             {
-                Content = "Cancel",
+                Content = Strings.BtnCancel,
                 Width = 100,
                 Height = 33,
                 FontFamily = new FontFamily("Segoe UI"),
@@ -318,7 +319,7 @@ namespace Desktop_Frames
             // Save button with accent color (same as customize form)
             Button saveButton = new Button
             {
-                Content = "Save",
+                Content = Strings.BtnSave,
                 Width = 100,
                 Height = 34,
                 FontFamily = new FontFamily("Segoe UI"),
@@ -344,7 +345,7 @@ namespace Desktop_Frames
             // GroupBox with same style as customize form
             GroupBox textAppearanceGroupBox = new GroupBox
             {
-                Header = "Text Appearance",
+                Header = Strings.TextAppearance,
                 FontFamily = new FontFamily("Segoe UI"),
                 FontSize = 14,
                 FontWeight = FontWeights.Bold,
@@ -355,9 +356,9 @@ namespace Desktop_Frames
 
             StackPanel textAppearanceStack = new StackPanel { Orientation = Orientation.Vertical };
 
-            CreateDropdownField(textAppearanceStack, "Font Size:", _validFontSizes, out _cmbFontSize);
-            CreateDropdownField(textAppearanceStack, "Font Family:", _validFontFamilies, out _cmbFontFamily);
-            CreateDropdownField(textAppearanceStack, "Text Color:", _validTextColors, out _cmbTextColor);
+            CreateDropdownField(textAppearanceStack, Strings.LblFontSize, _validFontSizes, out _cmbFontSize);
+            CreateDropdownField(textAppearanceStack, Strings.LblFontFamily, _validFontFamilies, out _cmbFontFamily);
+            CreateDropdownField(textAppearanceStack, Strings.LblTextColor, _validTextColors, out _cmbTextColor);
 
             textAppearanceGroupBox.Content = textAppearanceStack;
             parent.Children.Add(textAppearanceGroupBox);
@@ -368,7 +369,7 @@ namespace Desktop_Frames
             // GroupBox with same style as customize form
             GroupBox textBehaviorGroupBox = new GroupBox
             {
-                Header = "Text Behavior",
+                Header = Strings.TextBehavior,
                 FontFamily = new FontFamily("Segoe UI"),
                 FontSize = 14,
                 FontWeight = FontWeights.Bold,
@@ -379,8 +380,8 @@ namespace Desktop_Frames
 
             StackPanel textBehaviorStack = new StackPanel { Orientation = Orientation.Vertical };
 
-            CreateCheckboxField(textBehaviorStack, "Word Wrap", out _chkWordWrap);
-            CreateCheckboxField(textBehaviorStack, "Spell Check", out _chkSpellCheck);
+            CreateCheckboxField(textBehaviorStack, Strings.LblWordWrap, out _chkWordWrap);
+            CreateCheckboxField(textBehaviorStack, Strings.LblSpellCheck, out _chkSpellCheck);
 
             textBehaviorGroupBox.Content = textBehaviorStack;
             parent.Children.Add(textBehaviorGroupBox);
@@ -698,7 +699,7 @@ namespace Desktop_Frames
             {
                 LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI,
                     $"Error applying changes: {ex.Message}");
-                MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Error applying changes: {ex.Message}", "Apply Error");
+                MessageBoxesManager.ShowOKOnlyMessageBoxForm(Strings.Get("MsgApplyChangesFailed", ex.Message), Strings.DlgApplyError);
             }
         }
 
@@ -718,7 +719,7 @@ namespace Desktop_Frames
             {
                 LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI,
                     $"Error saving changes: {ex.Message}");
-                MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Error saving changes: {ex.Message}", "Save Error");
+                MessageBoxesManager.ShowOKOnlyMessageBoxForm(Strings.Get("MsgSaveChangesFailed", ex.Message), Strings.DlgSaveError);
             }
         }
 

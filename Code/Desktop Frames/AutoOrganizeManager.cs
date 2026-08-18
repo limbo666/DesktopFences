@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using Newtonsoft.Json;
+using Desktop_Frames.Localization;
 using Microsoft.VisualBasic.FileIO; // Required for sending to Recycle Bin
 
 namespace Desktop_Frames
@@ -120,7 +121,7 @@ namespace Desktop_Frames
                 {
                     Application.Current.Dispatcher.Invoke(() =>
                     {
-                        MessageBoxesManager.ShowOKOnlyMessageBoxForm("Desktop organization complete!", "Success");
+                        MessageBoxesManager.ShowOKOnlyMessageBoxForm(Strings.MsgDesktopOrganized, Strings.DlgSuccess);
                     });
                 }
             });

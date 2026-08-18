@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json.Linq;
+﻿using Desktop_Frames.Localization;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -211,11 +212,11 @@ namespace Desktop_Frames
                     Style themedStyle = Framemanager.GetThemedContextMenuStyle(frame);
                     if (themedStyle != null) tabContextMenu.Style = themedStyle;
 
-                    MenuItem miAddTab = new MenuItem { Header = "Add New Tab" };
-                    MenuItem miRenameTab = new MenuItem { Header = "Rename Tab" };
-                    MenuItem miDeleteTab = new MenuItem { Header = "Delete Tab" };
-                    MenuItem miMoveLeft = new MenuItem { Header = "Move Left" };
-                    MenuItem miMoveRight = new MenuItem { Header = "Move Right" };
+                    MenuItem miAddTab = new MenuItem { Header = Strings.TabAddNew };
+                    MenuItem miRenameTab = new MenuItem { Header = Strings.TabRename };
+                    MenuItem miDeleteTab = new MenuItem { Header = Strings.DeleteTabTitle };
+                    MenuItem miMoveLeft = new MenuItem { Header = Strings.TabMoveLeft };
+                    MenuItem miMoveRight = new MenuItem { Header = Strings.TabMoveRight };
 
                     tabContextMenu.Items.Add(miAddTab);
                     tabContextMenu.Items.Add(new Separator());
@@ -262,7 +263,7 @@ namespace Desktop_Frames
                     FontFamily = new System.Windows.Media.FontFamily("Segoe UI"),
                     BorderThickness = new Thickness(1),
                     Cursor = Cursors.Hand,
-                    ToolTip = "Add new tab (Ctrl+Click to Import)", // Updated Tooltip
+                    ToolTip = Strings.TabAddNewHint, // Updated Tooltip
                     Focusable = false
                 };
 
@@ -633,7 +634,7 @@ namespace Desktop_Frames
                 // 2. Validation: Don't allow deleting the last tab
                 if (tabs.Count <= 1)
                 {
-                    MessageBoxesManager.ShowOKOnlyMessageBoxForm("Cannot delete the last remaining tab.", "Delete Tab");
+                    MessageBoxesManager.ShowOKOnlyMessageBoxForm(Strings.MsgCannotDeleteLastTab, Strings.DlgDeleteTab);
                     return;
                 }
 

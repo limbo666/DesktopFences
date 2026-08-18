@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json.Linq;
+﻿using Desktop_Frames.Localization;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -84,7 +85,7 @@ namespace Desktop_Frames
                 _userAccentColor = mediaColor;
 
                 // Modern WPF window setup with DPI awareness
-                this.Title = "Customize Frame";
+                this.Title = Strings.CustomizeTitle;
                 this.Width = 500;
                 this.Height = 675;
                 this.WindowStartupLocation = WindowStartupLocation.Manual;
@@ -153,7 +154,7 @@ namespace Desktop_Frames
             catch (Exception ex)
             {
                 LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI, $"Error initializing CustomizeFrameFormWPF: {ex.Message}");
-                MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Error initializing form: {ex.Message}", "Form Error");
+                MessageBoxesManager.ShowOKOnlyMessageBoxForm(Strings.Get("MsgFormInitFailed", ex.Message), Strings.DlgFormError);
             }
         }
 
@@ -188,18 +189,18 @@ namespace Desktop_Frames
 
             if (_isCtrlPressed)
             {
-                _btnApply.Content = "Apply to all";
+                _btnApply.Content = Strings.BtnApplyToAll;
                 _btnApply.Background = new SolidColorBrush(Color.FromRgb(204, 85, 0)); // Warning Orange
 
-                _btnSave.Content = "Save to all";
+                _btnSave.Content = Strings.BtnSaveToAll;
                 _btnSave.Background = new SolidColorBrush(Color.FromRgb(204, 0, 0)); // Warning Red
             }
             else
             {
-                _btnApply.Content = "Apply";
+                _btnApply.Content = Strings.BtnApply;
                 _btnApply.Background = new SolidColorBrush(Color.FromRgb(34, 139, 34)); // Standard Green
 
-                _btnSave.Content = "Save";
+                _btnSave.Content = Strings.BtnSave;
                 _btnSave.Background = new SolidColorBrush(_userAccentColor); // Standard Accent
             }
         }
@@ -244,7 +245,7 @@ namespace Desktop_Frames
             // Title label
             TextBlock titleBlock = new TextBlock
             {
-                Text = "Customize Frame",
+                Text = Strings.CustomizeTitle,
                 FontFamily = new FontFamily("Segoe UI"),
                 FontSize = 18,
                 FontWeight = FontWeights.Bold,
@@ -342,8 +343,11 @@ namespace Desktop_Frames
             // 1. Default Button (Moved Left & Restyled to Dark Gray)
             Button defaultButton = new Button
             {
-                Content = "Default",
-                Width = 80, // Slightly smaller to fit 4 buttons
+                Content = Strings.BtnDefault,
+                // Minimum instead of fixed: these four labels change with the
+                // language, and "Apply to all" is far shorter than most.
+                MinWidth = 80,
+                Padding = new Thickness(10, 0, 10, 0),
                 Height = 34,
                 FontFamily = new FontFamily("Segoe UI"),
                 FontSize = 12,
@@ -359,8 +363,9 @@ namespace Desktop_Frames
             // 2. Apply Button (Now tracking class-level for Global Override)
             _btnApply = new Button
             {
-                Content = "Apply",
-                Width = 100,
+                Content = Strings.BtnApply,
+                MinWidth = 100,
+                Padding = new Thickness(10, 0, 10, 0),
                 Height = 34,
                 FontFamily = new FontFamily("Segoe UI"),
                 FontSize = 12,
@@ -376,8 +381,9 @@ namespace Desktop_Frames
             // 3. Cancel Button
             Button cancelButton = new Button
             {
-                Content = "Cancel",
-                Width = 100,
+                Content = Strings.BtnCancel,
+                MinWidth = 100,
+                Padding = new Thickness(10, 0, 10, 0),
                 Height = 33,
                 FontFamily = new FontFamily("Segoe UI"),
                 FontSize = 12,
@@ -394,8 +400,9 @@ namespace Desktop_Frames
             // 4. Save Button (Now tracking class-level for Global Override)
             _btnSave = new Button
             {
-                Content = "Save",
-                Width = 100,
+                Content = Strings.BtnSave,
+                MinWidth = 100,
+                Padding = new Thickness(10, 0, 10, 0),
                 Height = 34,
                 FontFamily = new FontFamily("Segoe UI"),
                 FontSize = 12,
@@ -421,7 +428,7 @@ namespace Desktop_Frames
         {
             GroupBox frameGroupBox = new GroupBox
             {
-                Header = "Frame",
+                Header = Strings.TabFrame,
                 FontFamily = new FontFamily("Segoe UI"),
                 FontSize = 14,
                 FontWeight = FontWeights.Bold,
@@ -432,10 +439,10 @@ namespace Desktop_Frames
 
             StackPanel frameStack = new StackPanel { Orientation = Orientation.Vertical };
 
-            CreateDropdownField(frameStack, "Custom Color:", _validColors, out _cmbCustomColor);
-            CreateDropdownField(frameStack, "Custom Launch Effect:", _validEffects, out _cmbCustomLaunchEffect);
-            CreateDropdownField(frameStack, "Frame Border Color:", _validColors, out _cmbframeBorderColor);
-            CreateNumericField(frameStack, "Frame Border Thickness:", 0, 5, out _nudframeBorderThickness);
+            CreateDropdownField(frameStack, Strings.LblCustomColor, _validColors, out _cmbCustomColor);
+            CreateDropdownField(frameStack, Strings.LblCustomLaunchEffect, _validEffects, out _cmbCustomLaunchEffect);
+            CreateDropdownField(frameStack, Strings.LblFrameBorderColor, _validColors, out _cmbframeBorderColor);
+            CreateNumericField(frameStack, Strings.LblFrameBorderThickness, 0, 5, out _nudframeBorderThickness);
 
 			frameGroupBox.Content = frameStack;
             parent.Children.Add(frameGroupBox);
@@ -445,7 +452,7 @@ namespace Desktop_Frames
         {
             GroupBox titleGroupBox = new GroupBox
             {
-                Header = "Title",
+                Header = Strings.TabTitle,
                 FontFamily = new FontFamily("Segoe UI"),
                 FontSize = 14,
                 FontWeight = FontWeights.Bold,
@@ -456,9 +463,9 @@ namespace Desktop_Frames
 
             StackPanel titleStack = new StackPanel { Orientation = Orientation.Vertical };
 
-            CreateDropdownField(titleStack, "Title Text Color:", _validColors, out _cmbTitleTextColor);
-            CreateDropdownField(titleStack, "Title Text Size:", _validTextSizes, out _cmbTitleTextSize);
-            CreateCheckboxField(titleStack, "Bold Title Text", out _chkBoldTitleText);
+            CreateDropdownField(titleStack, Strings.LblTitleTextColor, _validColors, out _cmbTitleTextColor);
+            CreateDropdownField(titleStack, Strings.LblTitleTextSize, _validTextSizes, out _cmbTitleTextSize);
+            CreateCheckboxField(titleStack, Strings.LblBoldTitleText, out _chkBoldTitleText);
 
             titleGroupBox.Content = titleStack;
             parent.Children.Add(titleGroupBox);
@@ -468,7 +475,7 @@ namespace Desktop_Frames
         {
             GroupBox iconsGroupBox = new GroupBox
             {
-                Header = "Icons",
+                Header = Strings.TabIcons,
                 FontFamily = new FontFamily("Segoe UI"),
                 FontSize = 14,
                 FontWeight = FontWeights.Bold,
@@ -480,7 +487,7 @@ namespace Desktop_Frames
             StackPanel iconsStack = new StackPanel { Orientation = Orientation.Vertical };
 
             // --- NEW: Portal View Dropdown (Visible strictly for Portal Frames) ---
-            CreateDropdownField(iconsStack, "Portal View:", new[] { "Icons", "Details" }, out _cmbPortalView);
+            CreateDropdownField(iconsStack, Strings.LblPortalView, new[] { "Icons", "Details" }, out _cmbPortalView);
             bool isPortal = _frame.ItemsType?.ToString() == "Portal";
             if (_cmbPortalView.Parent is FrameworkElement pvRow)
             {
@@ -488,11 +495,11 @@ namespace Desktop_Frames
             }
             // ----------------------------------------------------------------------
 
-            CreateDropdownField(iconsStack, "Icon Size:", _validIconSizes, out _cmbIconSize);
-            CreateNumericField(iconsStack, "Icon Spacing:", 0, 20, out _nudIconSpacing);
-            CreateDropdownField(iconsStack, "Text Color:", _validColors, out _cmbTextColor);
-            CreateCheckboxField(iconsStack, "Disable Text Shadow", out _chkDisableTextShadow);
-            CreateCheckboxField(iconsStack, "Grayscale Icons", out _chkGrayscaleIcons);
+            CreateDropdownField(iconsStack, Strings.LblIconSize, _validIconSizes, out _cmbIconSize);
+            CreateNumericField(iconsStack, Strings.LblIconSpacing, 0, 20, out _nudIconSpacing);
+            CreateDropdownField(iconsStack, Strings.LblTextColor, _validColors, out _cmbTextColor);
+            CreateCheckboxField(iconsStack, Strings.LblDisableTextShadow, out _chkDisableTextShadow);
+            CreateCheckboxField(iconsStack, Strings.LblGrayscaleIcons, out _chkGrayscaleIcons);
 
             iconsGroupBox.Content = iconsStack;
             parent.Children.Add(iconsGroupBox);
@@ -530,10 +537,11 @@ namespace Desktop_Frames
                 VerticalAlignment = VerticalAlignment.Center
             };
 
-            comboBox.Items.Add("Default");
+            // Content is read by the user, Tag is written to frames.json.
+            comboBox.Items.Add(new ComboBoxItem { Content = Strings.Item("Default"), Tag = "Default" });
             foreach (var item in items)
             {
-                comboBox.Items.Add(item);
+                comboBox.Items.Add(new ComboBoxItem { Content = Strings.Item(item), Tag = item });
             }
             comboBox.SelectedIndex = 0;
 
@@ -644,7 +652,7 @@ namespace Desktop_Frames
             catch (Exception ex)
             {
                 LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI, $"Error resetting controls to defaults: {ex.Message}");
-              MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Error resetting to defaults: {ex.Message}", "Default Error");
+              MessageBoxesManager.ShowOKOnlyMessageBoxForm(Strings.Get("MsgResetDefaultsFailed", ex.Message), Strings.DlgDefaultError);
             }
         }
 
@@ -667,7 +675,7 @@ namespace Desktop_Frames
             catch (Exception ex)
             {
                 LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI, $"Error saving settings: {ex.Message}");
-                MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Error saving settings: {ex.Message}", "Save Error");
+                MessageBoxesManager.ShowOKOnlyMessageBoxForm(Strings.Get("MsgSaveSettingsFailed", ex.Message), Strings.DlgSaveError);
             }
         }
 
@@ -691,7 +699,7 @@ namespace Desktop_Frames
             catch (Exception ex)
             {
                 LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI, $"Error applying settings: {ex.Message}");
-                MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Error applying settings: {ex.Message}", "Apply Error");
+                MessageBoxesManager.ShowOKOnlyMessageBoxForm(Strings.Get("MsgApplySettingsFailed", ex.Message), Strings.DlgApplyError);
             }
         }
 
@@ -1004,7 +1012,7 @@ namespace Desktop_Frames
             catch (Exception ex)
             {
                 LogManager.Log(LogManager.LogLevel.Error, LogManager.LogCategory.UI, $"Error loading current values: {ex.Message}");
-                MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Error loading frame properties: {ex.Message}", "Load Error");
+                MessageBoxesManager.ShowOKOnlyMessageBoxForm(Strings.Get("MsgLoadFramePropertiesFailed", ex.Message), Strings.DlgLoadError);
             }
         }
 
@@ -1096,7 +1104,7 @@ namespace Desktop_Frames
                 {
                     for (int i = 0; i < comboBox.Items.Count; i++)
                     {
-                        if (comboBox.Items[i].ToString().Equals(currentValue, StringComparison.OrdinalIgnoreCase))
+                        if (string.Equals((comboBox.Items[i] as ComboBoxItem)?.Tag as string, currentValue, StringComparison.OrdinalIgnoreCase))
                         {
                             comboBox.SelectedIndex = i;
                             LogManager.Log(LogManager.LogLevel.Debug, LogManager.LogCategory.UI, $"Set {propertyName} to '{currentValue}'");
@@ -1678,11 +1686,12 @@ namespace Desktop_Frames
         {
             try
             {
-                if (comboBox.SelectedIndex <= 0 || comboBox.SelectedItem?.ToString() == "Default")
+                string tag = (comboBox.SelectedItem as ComboBoxItem)?.Tag as string;
+                if (comboBox.SelectedIndex <= 0 || tag == null || tag == "Default")
                 {
                     return null; // Return null for "Default" to match existing JSON structure
                 }
-                return comboBox.SelectedItem?.ToString();
+                return tag;
             }
             catch (Exception ex)
             {

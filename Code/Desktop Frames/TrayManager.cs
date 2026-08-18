@@ -1,4 +1,5 @@
-﻿using Microsoft.Win32;
+﻿using Desktop_Frames.Localization;
+using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -139,8 +140,8 @@ namespace Desktop_Frames
                     if (success)
                     {
                         // Show notification that export was successful
-                        _trayIcon.BalloonTipTitle = "Desktop Frames Plus";
-                        _trayIcon.BalloonTipText = "Registry values exported successfully to program folder.";
+                        _trayIcon.BalloonTipTitle = Strings.TrayExportDoneTitle;
+                        _trayIcon.BalloonTipText = Strings.TrayExportDoneText;
                         _trayIcon.BalloonTipIcon = ToolTipIcon.Info;
                         _trayIcon.ShowBalloonTip(3000); // Show for 3 seconds
 
@@ -150,8 +151,8 @@ namespace Desktop_Frames
                     else
                     {
                         // Show error notification
-                        _trayIcon.BalloonTipTitle = "Desktop Frames Plus - Error";
-                        _trayIcon.BalloonTipText = "Failed to export registry values. Check log for details.";
+                        _trayIcon.BalloonTipTitle = Strings.TrayExportFailedTitle;
+                        _trayIcon.BalloonTipText = Strings.TrayExportFailedText;
                         _trayIcon.BalloonTipIcon = ToolTipIcon.Error;
                         _trayIcon.ShowBalloonTip(3000);
 
@@ -240,16 +241,16 @@ namespace Desktop_Frames
             }
 
             var trayMenu = new ContextMenuStrip();
-            trayMenu.Items.Add("About...", null, (s, e) => AboutFormManager.ShowAboutForm());
-            trayMenu.Items.Add("Options...", null, (s, e) => OptionsFormManager.ShowOptionsForm());
+            trayMenu.Items.Add(Strings.MenuAbout, null, (s, e) => AboutFormManager.ShowAboutForm());
+            trayMenu.Items.Add(Strings.MenuOptions, null, (s, e) => OptionsFormManager.ShowOptionsForm());
             trayMenu.Items.Add(new ToolStripSeparator());
 
             // Profiles Submenu
-            _profilesMenuItem = new ToolStripMenuItem("Profiles");
+            _profilesMenuItem = new ToolStripMenuItem(Strings.TrayProfiles);
             trayMenu.Items.Add(_profilesMenuItem);
 
             // Standalone Automation Toggle with explicit Save
-            _automationMenuItem = new ToolStripMenuItem("Enable Profile Automation") { CheckOnClick = true };
+            _automationMenuItem = new ToolStripMenuItem(Strings.LblEnableProfileAutomation) { CheckOnClick = true };
             _automationMenuItem.Checked = SettingsManager.EnableProfileAutomation;
             _automationMenuItem.Click += (s, e) => {
                 SettingsManager.EnableProfileAutomation = _automationMenuItem.Checked;
@@ -261,7 +262,7 @@ namespace Desktop_Frames
             trayMenu.Items.Add(new ToolStripSeparator());
 
             // --- SMART DESKTOP OPTIONS ---
-            trayMenu.Items.Add("Smart Desktop Rules...", null, (s, e) =>
+            trayMenu.Items.Add(Strings.BtnSmartDesktopRules, null, (s, e) =>
             {
                 System.Windows.Application.Current?.Dispatcher.BeginInvoke(new Action(() =>
                 {
@@ -269,7 +270,7 @@ namespace Desktop_Frames
                 }));
             });
 
-            _autoOrganizeMenuItem = new ToolStripMenuItem("Enable Auto-Organize") { CheckOnClick = true };
+            _autoOrganizeMenuItem = new ToolStripMenuItem(Strings.OptAutoOrganize) { CheckOnClick = true };
             _autoOrganizeMenuItem.Checked = SettingsManager.EnableAutoOrganize;
             _autoOrganizeMenuItem.Click += (s, e) =>
             {
@@ -286,15 +287,15 @@ namespace Desktop_Frames
             trayMenu.Items.Add(new ToolStripSeparator());
             // --- END SMART DESKTOP OPTIONS ---
 
-            trayMenu.Items.Add("Reload All Frames", null, async (s, e) => { await reloadallFrames(); });
+            trayMenu.Items.Add(Strings.TrayReloadAllFrames, null, async (s, e) => { await reloadallFrames(); });
 
             trayMenu.Items.Add(new ToolStripSeparator());
 
-            _showHiddenFramesItem = new ToolStripMenuItem("Show Hidden Frames") { Enabled = false };
+            _showHiddenFramesItem = new ToolStripMenuItem(Strings.TrayShowHiddenFrames) { Enabled = false };
             trayMenu.Items.Add(_showHiddenFramesItem);
 
             string focusHotkeyStr = GetFocusFrameHotkeyString();
-            trayMenu.Items.Add($"Focus Frame... ({focusHotkeyStr})", null, (s, e) =>
+            trayMenu.Items.Add(Strings.Get("TrayFocusFrame", focusHotkeyStr), null, (s, e) =>
             {
                 System.Windows.Application.Current?.Dispatcher.BeginInvoke(new Action(() =>
                 {
@@ -304,7 +305,7 @@ namespace Desktop_Frames
             });
 
             trayMenu.Items.Add(new ToolStripSeparator());
-            trayMenu.Items.Add("Exit", null, (s, e) => System.Windows.Application.Current.Shutdown());
+            trayMenu.Items.Add(Strings.MenuExit, null, (s, e) => System.Windows.Application.Current.Shutdown());
 
             _trayIcon.ContextMenuStrip = trayMenu;
 
@@ -413,7 +414,7 @@ namespace Desktop_Frames
 
             var waitText = new System.Windows.Controls.TextBlock
             {
-                Text = "Reloading all frames, please wait...",
+                Text = Strings.TrayReloadingFrames,
                 FontFamily = new System.Windows.Media.FontFamily("Segoe UI"),
                 FontSize = 12,
                 Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(95, 99, 104)),
@@ -455,7 +456,7 @@ namespace Desktop_Frames
             }
             catch (Exception ex)
             {
-                MessageBoxesManager.ShowOKOnlyMessageBoxFormStatic($"An error occurred while reloading frames: {ex.Message}", "Error");
+                MessageBoxesManager.ShowOKOnlyMessageBoxFormStatic(Strings.Get("MsgReloadFramesFailed", ex.Message), Strings.DlgError);
             }
             finally
             {
@@ -570,7 +571,7 @@ namespace Desktop_Frames
             _profilesMenuItem.DropDownItems.Add(new ToolStripSeparator());
 
             // 2. Quick Action: Create New Profile (Keep this for speed)
-            var createItem = new ToolStripMenuItem("Create New Profile...");
+            var createItem = new ToolStripMenuItem(Strings.TrayCreateNewProfile);
             createItem.Click += (s, e) =>
             {
                 string newName = Microsoft.VisualBasic.Interaction.InputBox("Enter name for new profile:", "New Profile");
@@ -580,18 +581,18 @@ namespace Desktop_Frames
                     if (ProfileManager.CreateProfile(newName))
                     {
                         UpdateProfilesMenu();
-                        MessageBoxesManager.ShowOKOnlyMessageBoxForm($"Profile '{newName}' created successfully.", "Success");
+                        MessageBoxesManager.ShowOKOnlyMessageBoxForm(Strings.Get("MsgProfileCreated", newName), Strings.DlgSuccess);
                     }
                     else
                     {
-                        MessageBoxesManager.ShowOKOnlyMessageBoxForm("Failed to create profile. Name invalid or already exists.", "Error");
+                        MessageBoxesManager.ShowOKOnlyMessageBoxForm(Strings.MsgCreateProfileFailed, Strings.DlgError);
                     }
                 }
             };
             _profilesMenuItem.DropDownItems.Add(createItem);
 
             // 3. Full UI: Manage Profiles (The new form)
-            var manageItem = new ToolStripMenuItem("Manage Profiles...");
+            var manageItem = new ToolStripMenuItem(Strings.TrayManageProfiles);
             manageItem.Click += (s, e) =>
             {
                 // Open the new Manager Window
