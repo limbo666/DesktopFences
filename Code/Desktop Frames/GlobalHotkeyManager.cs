@@ -263,13 +263,18 @@ namespace Desktop_Frames
                         int triggerKey = SettingsManager.SpotSearchKey;
                         if (vkCode == triggerKey)
                         {
-                            string mod = SettingsManager.SpotSearchModifier?.ToLower();
-                            bool isModPressed = false;
-
-                            if (mod == "control") isModPressed = (GetAsyncKeyState(VK_CONTROL) & 0x8000) != 0;
-                            else if (mod == "alt") isModPressed = (GetAsyncKeyState(VK_MENU) & 0x8000) != 0;
-                            else if (mod == "shift") isModPressed = (GetAsyncKeyState(VK_SHIFT) & 0x8000) != 0;
-                            else if (mod == "none") isModPressed = true;
+                            // Checked the same strict way as every other hotkey below: the
+                            // modifiers held must be exactly the ones configured, no more.
+                            //
+                            // Testing only for Control let AltGr through, because Windows
+                            // reports AltGr as Control plus Alt. On an Italian keyboard the
+                            // at sign is AltGr and the key this hotkey defaults to, so typing
+                            // an email address opened the search window and swallowed the
+                            // character - the hook returns 1 and the keystroke never arrives.
+                            string mod = SettingsManager.SpotSearchModifier;
+                            bool isModPressed = string.Equals(mod, "none", StringComparison.OrdinalIgnoreCase)
+                                ? true
+                                : CheckModifiersStrict(mod);
 
                             if (isKeyDown && isModPressed)
                             {
