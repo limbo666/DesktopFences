@@ -749,8 +749,8 @@ namespace Desktop_Frames
         {
             try
             {
-                if (MessageBox.Show("Are you sure you want to clear all text from this note?",
-                    "Clear Note", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
+                if (MessageBox.Show(Strings.MsgClearNoteConfirm,
+                    Strings.DlgClearNote, MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
                 {
                     noteTextBox.Text = "";
                     SaveNoteContent(frame, "");

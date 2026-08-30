@@ -241,6 +241,9 @@ Dziś opiekuje się nim Nikos Georgousis, który je rozbudował oraz uczynił st
   <data name="BtnOrganizeNow" xml:space="preserve">
     <value>Uporządkuj teraz</value>
   </data>
+  <data name="BtnReadMore" xml:space="preserve">
+    <value>Czytaj więcej...</value>
+  </data>
   <data name="BtnReset" xml:space="preserve">
     <value>Resetuj</value>
   </data>
@@ -261,6 +264,9 @@ Dziś opiekuje się nim Nikos Georgousis, który je rozbudował oraz uczynił st
   </data>
   <data name="BtnSmartDesktopRules" xml:space="preserve">
     <value>Reguły inteligentnego pulpitu…</value>
+  </data>
+  <data name="BtnUpdateNow" xml:space="preserve">
+    <value>Aktualizuj teraz</value>
   </data>
   <data name="ButtonNo" xml:space="preserve">
     <value>Nie</value>
@@ -432,6 +438,9 @@ Dziś opiekuje się nim Nikos Georgousis, który je rozbudował oraz uczynił st
   </data>
   <data name="DlgBrowseError" xml:space="preserve">
     <value>Błąd przeglądania</value>
+  </data>
+  <data name="DlgClearNote" xml:space="preserve">
+    <value>Wyczyść notatkę</value>
   </data>
   <data name="DlgConfirmImport" xml:space="preserve">
     <value>Potwierdź import</value>
@@ -1075,6 +1084,9 @@ Dziś opiekuje się nim Nikos Georgousis, który je rozbudował oraz uczynił st
   <data name="MsgCannotDeleteLastTab" xml:space="preserve">
     <value>Nie można usunąć ostatniej karty.</value>
   </data>
+  <data name="MsgClearNoteConfirm" xml:space="preserve">
+    <value>Czy na pewno wyczyścić cały tekst tej notatki?</value>
+  </data>
   <data name="MsgConfirmDeleteProfile" xml:space="preserve">
     <value>Czy na pewno usunąć profil '{0}'?
 Tej operacji nie można cofnąć.</value>
@@ -1349,6 +1361,9 @@ Uruchomić ponownie teraz?</value>
   </data>
   <data name="NetUnreachable" xml:space="preserve">
     <value>Nieosiągalny</value>
+  </data>
+  <data name="NewFrameDefaultTitle" xml:space="preserve">
+    <value>Nowa ramka - Upuść tutaj swoje skróty</value>
   </data>
   <data name="NoteAutoOrganize" xml:space="preserve">
     <value>Uwaga: automatyczne porządkowanie obserwuje pulpit w poszukiwaniu nowych plików. Gdy plik spełnia warunki włączonej reguły, zostaje naprawdę przeniesiony do wskazanej ramki Portal lub folderu. Dzięki temu pulpit pozostaje czysty, a pobrane pliki same trafiają na swoje miejsce.</value>

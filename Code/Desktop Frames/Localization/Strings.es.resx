@@ -241,6 +241,9 @@ Hoy la mantiene Nikos Georgousis, que la ha ampliado y la ha hecho más estable 
   <data name="BtnOrganizeNow" xml:space="preserve">
     <value>Organizar ahora</value>
   </data>
+  <data name="BtnReadMore" xml:space="preserve">
+    <value>Leer más...</value>
+  </data>
   <data name="BtnReset" xml:space="preserve">
     <value>Restablecer</value>
   </data>
@@ -261,6 +264,9 @@ Hoy la mantiene Nikos Georgousis, que la ha ampliado y la ha hecho más estable 
   </data>
   <data name="BtnSmartDesktopRules" xml:space="preserve">
     <value>Reglas del escritorio inteligente…</value>
+  </data>
+  <data name="BtnUpdateNow" xml:space="preserve">
+    <value>Actualizar ahora</value>
   </data>
   <data name="ButtonNo" xml:space="preserve">
     <value>No</value>
@@ -432,6 +438,9 @@ Hoy la mantiene Nikos Georgousis, que la ha ampliado y la ha hecho más estable 
   </data>
   <data name="DlgBrowseError" xml:space="preserve">
     <value>Error al examinar</value>
+  </data>
+  <data name="DlgClearNote" xml:space="preserve">
+    <value>Borrar nota</value>
   </data>
   <data name="DlgConfirmImport" xml:space="preserve">
     <value>Confirmar importación</value>
@@ -1075,6 +1084,9 @@ Hoy la mantiene Nikos Georgousis, que la ha ampliado y la ha hecho más estable 
   <data name="MsgCannotDeleteLastTab" xml:space="preserve">
     <value>No puedes eliminar la única pestaña que queda.</value>
   </data>
+  <data name="MsgClearNoteConfirm" xml:space="preserve">
+    <value>¿Seguro que quieres borrar todo el texto de esta nota?</value>
+  </data>
   <data name="MsgConfirmDeleteProfile" xml:space="preserve">
     <value>¿Seguro que quieres eliminar el perfil '{0}'?
 Esta acción no se puede deshacer.</value>
@@ -1349,6 +1361,9 @@ Cada ventana lee sus textos mientras se construye, así que el cambio se ve al r
   </data>
   <data name="NetUnreachable" xml:space="preserve">
     <value>Inalcanzable</value>
+  </data>
+  <data name="NewFrameDefaultTitle" xml:space="preserve">
+    <value>Nuevo marco - Suelta aquí tus accesos directos</value>
   </data>
   <data name="NoteAutoOrganize" xml:space="preserve">
     <value>Nota: la organización automática vigila el escritorio en busca de archivos nuevos. Cuando un archivo cumple las condiciones de una regla activa, se mueve de verdad al marco Portal o a la carpeta indicada. Sirve para mantener el escritorio limpio y encaminar las descargas solas.</value>

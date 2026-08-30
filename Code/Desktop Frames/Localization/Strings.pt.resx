@@ -241,6 +241,9 @@ Hoje é mantido por Nikos Georgousis, que o alargou e o tornou mais estável e a
   <data name="BtnOrganizeNow" xml:space="preserve">
     <value>Organizar agora</value>
   </data>
+  <data name="BtnReadMore" xml:space="preserve">
+    <value>Saber mais...</value>
+  </data>
   <data name="BtnReset" xml:space="preserve">
     <value>Repor</value>
   </data>
@@ -261,6 +264,9 @@ Hoje é mantido por Nikos Georgousis, que o alargou e o tornou mais estável e a
   </data>
   <data name="BtnSmartDesktopRules" xml:space="preserve">
     <value>Regras do ambiente de trabalho inteligente…</value>
+  </data>
+  <data name="BtnUpdateNow" xml:space="preserve">
+    <value>Atualizar agora</value>
   </data>
   <data name="ButtonNo" xml:space="preserve">
     <value>Não</value>
@@ -432,6 +438,9 @@ Hoje é mantido por Nikos Georgousis, que o alargou e o tornou mais estável e a
   </data>
   <data name="DlgBrowseError" xml:space="preserve">
     <value>Erro ao procurar</value>
+  </data>
+  <data name="DlgClearNote" xml:space="preserve">
+    <value>Apagar nota</value>
   </data>
   <data name="DlgConfirmImport" xml:space="preserve">
     <value>Confirmar importação</value>
@@ -1075,6 +1084,9 @@ Hoje é mantido por Nikos Georgousis, que o alargou e o tornou mais estável e a
   <data name="MsgCannotDeleteLastTab" xml:space="preserve">
     <value>Não é possível eliminar o último separador.</value>
   </data>
+  <data name="MsgClearNoteConfirm" xml:space="preserve">
+    <value>Quer mesmo apagar todo o texto desta nota?</value>
+  </data>
   <data name="MsgConfirmDeleteProfile" xml:space="preserve">
     <value>Tem a certeza de que quer eliminar o perfil '{0}'?
 Esta ação não pode ser anulada.</value>
@@ -1349,6 +1361,9 @@ Reiniciar agora?</value>
   </data>
   <data name="NetUnreachable" xml:space="preserve">
     <value>Inacessível</value>
+  </data>
+  <data name="NewFrameDefaultTitle" xml:space="preserve">
+    <value>Nova moldura - Largue aqui os seus atalhos</value>
   </data>
   <data name="NoteAutoOrganize" xml:space="preserve">
     <value>Nota: a organização automática vigia o ambiente de trabalho à procura de ficheiros novos. Quando um ficheiro cumpre as condições de uma regra ativa, é mesmo movido para a moldura Portal ou pasta indicada. Serve para manter o ambiente de trabalho limpo e encaminhar as transferências sozinho.</value>

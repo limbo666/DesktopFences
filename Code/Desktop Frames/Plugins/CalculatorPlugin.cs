@@ -985,7 +985,7 @@ namespace Desktop_Frames.Plugins
             contentPanel.Children.Add(fadeSp);
 
             Button btnClearMem = new Button { Content = Strings.CalcClearMemory, Padding = new Thickness(5), Margin = new Thickness(0, 10, 0, 0) };
-            btnClearMem.Click += (s, e) => { _memoryValue = 0; _historyTape.Clear(); SaveState(); UpdateDisplay(); MessageBox.Show("Cleared.", "Calculator", MessageBoxButton.OK, MessageBoxImage.Information); };
+            btnClearMem.Click += (s, e) => { _memoryValue = 0; _historyTape.Clear(); SaveState(); UpdateDisplay(); MessageBox.Show(Strings.CalcCleared, Strings.PluginCalculator, MessageBoxButton.OK, MessageBoxImage.Information); };
             contentPanel.Children.Add(btnClearMem);
 
             contentBorder.Child = contentPanel;

@@ -241,6 +241,9 @@ Il est aujourd'hui maintenu par Nikos Georgousis, qui l'a enrichi et rendu plus 
   <data name="BtnOrganizeNow" xml:space="preserve">
     <value>Organiser maintenant</value>
   </data>
+  <data name="BtnReadMore" xml:space="preserve">
+    <value>En savoir plus...</value>
+  </data>
   <data name="BtnReset" xml:space="preserve">
     <value>Réinitialiser</value>
   </data>
@@ -261,6 +264,9 @@ Il est aujourd'hui maintenu par Nikos Georgousis, qui l'a enrichi et rendu plus 
   </data>
   <data name="BtnSmartDesktopRules" xml:space="preserve">
     <value>Règles du bureau intelligent…</value>
+  </data>
+  <data name="BtnUpdateNow" xml:space="preserve">
+    <value>Mettre à jour</value>
   </data>
   <data name="ButtonNo" xml:space="preserve">
     <value>Non</value>
@@ -432,6 +438,9 @@ Il est aujourd'hui maintenu par Nikos Georgousis, qui l'a enrichi et rendu plus 
   </data>
   <data name="DlgBrowseError" xml:space="preserve">
     <value>Erreur de parcours</value>
+  </data>
+  <data name="DlgClearNote" xml:space="preserve">
+    <value>Effacer la note</value>
   </data>
   <data name="DlgConfirmImport" xml:space="preserve">
     <value>Confirmer l'importation</value>
@@ -1075,6 +1084,9 @@ Il est aujourd'hui maintenu par Nikos Georgousis, qui l'a enrichi et rendu plus 
   <data name="MsgCannotDeleteLastTab" xml:space="preserve">
     <value>Impossible de supprimer le dernier onglet.</value>
   </data>
+  <data name="MsgClearNoteConfirm" xml:space="preserve">
+    <value>Voulez-vous vraiment effacer tout le texte de cette note ?</value>
+  </data>
   <data name="MsgConfirmDeleteProfile" xml:space="preserve">
     <value>Voulez-vous vraiment supprimer le profil '{0}' ?
 Cette action est irréversible.</value>
@@ -1349,6 +1361,9 @@ Redémarrer maintenant ?</value>
   </data>
   <data name="NetUnreachable" xml:space="preserve">
     <value>Injoignable</value>
+  </data>
+  <data name="NewFrameDefaultTitle" xml:space="preserve">
+    <value>Nouveau cadre - Déposez vos raccourcis ici</value>
   </data>
   <data name="NoteAutoOrganize" xml:space="preserve">
     <value>Remarque : l'organisation automatique surveille le bureau à la recherche de nouveaux fichiers. Quand un fichier remplit les conditions d'une règle active, il est réellement déplacé vers le cadre Portail ou le dossier indiqué. De quoi garder le bureau propre et router les téléchargements tout seuls.</value>

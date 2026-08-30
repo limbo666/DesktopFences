@@ -220,6 +220,7 @@ namespace Desktop_Frames.Localization
         public static string BtnOpenBackupsFolder => Get("BtnOpenBackupsFolder");
         public static string BtnOpenLog => Get("BtnOpenLog");
         public static string BtnOrganizeNow => Get("BtnOrganizeNow");
+        public static string BtnReadMore => Get("BtnReadMore");
         public static string BtnReset => Get("BtnReset");
         public static string BtnResetStyles => Get("BtnResetStyles");
         public static string BtnRestore => Get("BtnRestore");
@@ -227,6 +228,7 @@ namespace Desktop_Frames.Localization
         public static string BtnSaveToAll => Get("BtnSaveToAll");
         public static string BtnScreenBoundFrames => Get("BtnScreenBoundFrames");
         public static string BtnSmartDesktopRules => Get("BtnSmartDesktopRules");
+        public static string BtnUpdateNow => Get("BtnUpdateNow");
         public static string ButtonNo => Get("ButtonNo");
         public static string ButtonOk => Get("ButtonOk");
         public static string ButtonYes => Get("ButtonYes");
@@ -350,6 +352,7 @@ namespace Desktop_Frames.Localization
         public static string DlgApplyError => Get("DlgApplyError");
         public static string DlgBackup => Get("DlgBackup");
         public static string DlgBrowseError => Get("DlgBrowseError");
+        public static string DlgClearNote => Get("DlgClearNote");
         public static string DlgConfirmImport => Get("DlgConfirmImport");
         public static string DlgCopyError => Get("DlgCopyError");
         public static string DlgCopyItem => Get("DlgCopyItem");
@@ -390,6 +393,7 @@ namespace Desktop_Frames.Localization
         public static string MsgBackupDone => Get("MsgBackupDone");
         public static string MsgBackupFailed => Get("MsgBackupFailed");
         public static string MsgCannotDeleteLastTab => Get("MsgCannotDeleteLastTab");
+        public static string MsgClearNoteConfirm => Get("MsgClearNoteConfirm");
         public static string MsgConfirmDeleteProfile => Get("MsgConfirmDeleteProfile");
         public static string MsgConfirmDisableCtrlAltHotkeys => Get("MsgConfirmDisableCtrlAltHotkeys");
         public static string MsgConfirmFactoryReset => Get("MsgConfirmFactoryReset");
@@ -753,6 +757,7 @@ namespace Desktop_Frames.Localization
         public static string VuSignalGain => Get("VuSignalGain");
 
         // ── Generated frame names ──────────────────────────────────────────
+        public static string NewFrameDefaultTitle => Get("NewFrameDefaultTitle");
         public static string RandomNameAdjectives => Get("RandomNameAdjectives");
         public static string RandomNamePlaces => Get("RandomNamePlaces");
     }

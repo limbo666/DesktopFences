@@ -234,6 +234,9 @@ Desktop Frames + is maintained by Nikos Georgousis, has been enhanced and optimi
   <data name="BtnOrganizeNow" xml:space="preserve">
     <value>Organize Now (Run)</value>
   </data>
+  <data name="BtnReadMore" xml:space="preserve">
+    <value>Read More...</value>
+  </data>
   <data name="BtnReset" xml:space="preserve">
     <value>Reset</value>
   </data>
@@ -254,6 +257,9 @@ Desktop Frames + is maintained by Nikos Georgousis, has been enhanced and optimi
   </data>
   <data name="BtnSmartDesktopRules" xml:space="preserve">
     <value>Smart Desktop Rules...</value>
+  </data>
+  <data name="BtnUpdateNow" xml:space="preserve">
+    <value>Update Now</value>
   </data>
   <data name="ButtonNo" xml:space="preserve">
     <value>No</value>
@@ -401,6 +407,9 @@ Desktop Frames + is maintained by Nikos Georgousis, has been enhanced and optimi
   </data>
   <data name="DlgBrowseError" xml:space="preserve">
     <value>Browse Error</value>
+  </data>
+  <data name="DlgClearNote" xml:space="preserve">
+    <value>Clear Note</value>
   </data>
   <data name="DlgConfirmImport" xml:space="preserve">
     <value>Confirm Import</value>
@@ -1023,6 +1032,9 @@ Desktop Frames + is maintained by Nikos Georgousis, has been enhanced and optimi
   <data name="MsgCannotDeleteLastTab" xml:space="preserve">
     <value>Cannot delete the last remaining tab.</value>
   </data>
+  <data name="MsgClearNoteConfirm" xml:space="preserve">
+    <value>Are you sure you want to clear all text from this note?</value>
+  </data>
   <data name="MsgConfirmDeleteProfile" xml:space="preserve">
     <value>Are you sure you want to delete profile '{0}'?
 This cannot be undone.</value>
@@ -1297,6 +1309,9 @@ Restart now?</value>
   </data>
   <data name="NetUnreachable" xml:space="preserve">
     <value>Unreachable</value>
+  </data>
+  <data name="NewFrameDefaultTitle" xml:space="preserve">
+    <value>New Frame - Drop your shortcuts here</value>
   </data>
   <data name="NoteAutoOrganize" xml:space="preserve">
     <value>Note: Auto-Organize continuously monitors your Desktop for new files. When a file matches an enabled rule's conditions, it is automatically and physically moved to your target Portal Frame or Folder. Use this to keep your Desktop permanently clean and automatically route downloads to their proper locations.</value>
