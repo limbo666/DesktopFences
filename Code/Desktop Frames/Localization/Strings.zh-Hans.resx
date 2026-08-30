@@ -293,6 +293,9 @@
   <data name="BtnOrganizeNow" xml:space="preserve">
     <value>立即整理</value>
   </data>
+  <data name="BtnReadMore" xml:space="preserve">
+    <value>了解更多...</value>
+  </data>
   <data name="BtnReset" xml:space="preserve">
     <value>重置</value>
   </data>
@@ -313,6 +316,9 @@
   </data>
   <data name="BtnSmartDesktopRules" xml:space="preserve">
     <value>智能桌面规则…</value>
+  </data>
+  <data name="BtnUpdateNow" xml:space="preserve">
+    <value>立即更新</value>
   </data>
   <data name="ButtonNo" xml:space="preserve">
     <value>否</value>
@@ -460,6 +466,9 @@
   </data>
   <data name="DlgBrowseError" xml:space="preserve">
     <value>浏览失败</value>
+  </data>
+  <data name="DlgClearNote" xml:space="preserve">
+    <value>清除便签</value>
   </data>
   <data name="DlgConfirmImport" xml:space="preserve">
     <value>确认导入</value>
@@ -1082,6 +1091,9 @@
   <data name="MsgCannotDeleteLastTab" xml:space="preserve">
     <value>无法删除最后一个标签页。</value>
   </data>
+  <data name="MsgClearNoteConfirm" xml:space="preserve">
+    <value>确定要清除这个便签的全部文字吗？</value>
+  </data>
   <data name="MsgConfirmDeleteProfile" xml:space="preserve">
     <value>确定要删除工作区“{0}”吗？
 此操作无法撤销。</value>
@@ -1356,6 +1368,9 @@
   </data>
   <data name="NetUnreachable" xml:space="preserve">
     <value>无法访问</value>
+  </data>
+  <data name="NewFrameDefaultTitle" xml:space="preserve">
+    <value>新建面板 - 将快捷方式拖到这里</value>
   </data>
   <data name="NoteAutoOrganize" xml:space="preserve">
     <value>提示：自动整理会持续监视桌面上的新文件。符合已启用规则的文件会被实际移动到指定的文件夹面板或目标文件夹，可用于长期保持桌面整洁，并让下载文件自动归位。</value>

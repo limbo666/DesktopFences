@@ -145,7 +145,7 @@ namespace Desktop_Frames
             {
                 Button btnLink = new Button
                 {
-                    Content = _msg.Type == "Info" ? "Read More..." : "Update Now",
+                    Content = _msg.Type == "Info" ? Strings.BtnReadMore : Strings.BtnUpdateNow,
                     HorizontalAlignment = HorizontalAlignment.Right,
                     Padding = new Thickness(10, 5, 10, 5),
                     Margin = new Thickness(0, 0, 0, 10),

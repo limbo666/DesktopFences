@@ -234,6 +234,9 @@ Oggi lo cura Nikos Georgousis, che lo ha ampliato e reso più stabile e piacevol
   <data name="BtnOrganizeNow" xml:space="preserve">
     <value>Organizza adesso</value>
   </data>
+  <data name="BtnReadMore" xml:space="preserve">
+    <value>Leggi di più...</value>
+  </data>
   <data name="BtnReset" xml:space="preserve">
     <value>Reimposta</value>
   </data>
@@ -254,6 +257,9 @@ Oggi lo cura Nikos Georgousis, che lo ha ampliato e reso più stabile e piacevol
   </data>
   <data name="BtnSmartDesktopRules" xml:space="preserve">
     <value>Regole del desktop intelligente...</value>
+  </data>
+  <data name="BtnUpdateNow" xml:space="preserve">
+    <value>Aggiorna ora</value>
   </data>
   <data name="ButtonNo" xml:space="preserve">
     <value>No</value>
@@ -401,6 +407,9 @@ Oggi lo cura Nikos Georgousis, che lo ha ampliato e reso più stabile e piacevol
   </data>
   <data name="DlgBrowseError" xml:space="preserve">
     <value>Errore di sfoglia</value>
+  </data>
+  <data name="DlgClearNote" xml:space="preserve">
+    <value>Cancella nota</value>
   </data>
   <data name="DlgConfirmImport" xml:space="preserve">
     <value>Conferma importazione</value>
@@ -1023,6 +1032,9 @@ Oggi lo cura Nikos Georgousis, che lo ha ampliato e reso più stabile e piacevol
   <data name="MsgCannotDeleteLastTab" xml:space="preserve">
     <value>Non puoi eliminare l'ultima scheda rimasta.</value>
   </data>
+  <data name="MsgClearNoteConfirm" xml:space="preserve">
+    <value>Vuoi davvero cancellare tutto il testo di questa nota?</value>
+  </data>
   <data name="MsgConfirmDeleteProfile" xml:space="preserve">
     <value>Vuoi davvero eliminare il profilo '{0}'?
 L'operazione non si può annullare.</value>
@@ -1297,6 +1309,9 @@ Vuoi riavviare adesso?</value>
   </data>
   <data name="NetUnreachable" xml:space="preserve">
     <value>Irraggiungibile</value>
+  </data>
+  <data name="NewFrameDefaultTitle" xml:space="preserve">
+    <value>Nuova frame - Trascina qui i tuoi collegamenti</value>
   </data>
   <data name="NoteAutoOrganize" xml:space="preserve">
     <value>Nota: l'organizzazione automatica sorveglia il desktop in cerca di file nuovi. Quando un file soddisfa le condizioni di una regola attiva, viene spostato davvero nella frame Portal o nella cartella indicata. Serve a tenere il desktop sempre pulito e a smistare i download da soli.</value>

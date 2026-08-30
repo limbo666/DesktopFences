@@ -241,6 +241,9 @@
   <data name="BtnOrganizeNow" xml:space="preserve">
     <value>Разобрать сейчас</value>
   </data>
+  <data name="BtnReadMore" xml:space="preserve">
+    <value>Подробнее...</value>
+  </data>
   <data name="BtnReset" xml:space="preserve">
     <value>Сбросить</value>
   </data>
@@ -261,6 +264,9 @@
   </data>
   <data name="BtnSmartDesktopRules" xml:space="preserve">
     <value>Правила умного рабочего стола…</value>
+  </data>
+  <data name="BtnUpdateNow" xml:space="preserve">
+    <value>Обновить</value>
   </data>
   <data name="ButtonNo" xml:space="preserve">
     <value>Нет</value>
@@ -432,6 +438,9 @@
   </data>
   <data name="DlgBrowseError" xml:space="preserve">
     <value>Ошибка обзора</value>
+  </data>
+  <data name="DlgClearNote" xml:space="preserve">
+    <value>Очистить заметку</value>
   </data>
   <data name="DlgConfirmImport" xml:space="preserve">
     <value>Подтверждение импорта</value>
@@ -1075,6 +1084,9 @@
   <data name="MsgCannotDeleteLastTab" xml:space="preserve">
     <value>Нельзя удалить последнюю оставшуюся вкладку.</value>
   </data>
+  <data name="MsgClearNoteConfirm" xml:space="preserve">
+    <value>Действительно очистить весь текст этой заметки?</value>
+  </data>
   <data name="MsgConfirmDeleteProfile" xml:space="preserve">
     <value>Удалить профиль «{0}»?
 Это действие нельзя отменить.</value>
@@ -1349,6 +1361,9 @@
   </data>
   <data name="NetUnreachable" xml:space="preserve">
     <value>Недоступно</value>
+  </data>
+  <data name="NewFrameDefaultTitle" xml:space="preserve">
+    <value>Новая рамка - перетащите сюда ярлыки</value>
   </data>
   <data name="NoteAutoOrganize" xml:space="preserve">
     <value>Примечание: автоматическая разборка следит за появлением новых файлов на рабочем столе. Когда файл подходит под условия включённого правила, он действительно переносится в указанную рамку-портал или папку. Так рабочий стол остаётся чистым, а загрузки сами попадают куда нужно.</value>

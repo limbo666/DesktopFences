@@ -3595,7 +3595,7 @@ namespace Desktop_Frames
                 var dataFrame = new
                 {
                     Id = Guid.NewGuid().ToString(),
-                    Title = "New Frame - Drop your shortcuts here",
+                    Title = Localization.Strings.NewFrameDefaultTitle,
                     X = 20.0,
                     Y = 20.0,
                     Width = 360.0,

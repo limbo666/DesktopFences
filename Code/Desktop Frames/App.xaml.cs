@@ -34,6 +34,9 @@ namespace Desktop_Frames
             }
             catch (Exception ex)
             {
+                // English on purpose, and it has to stay that way: this runs when the
+                // block above failed, and that block is what loads the settings and the
+                // language. Strings would have nothing to read.
                 MessageBox.Show($"Profile Initialization Error: {ex.Message}", "Startup Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 Shutdown();
                 return;

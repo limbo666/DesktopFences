@@ -241,6 +241,9 @@ Heute wird es von Nikos Georgousis gepflegt, der es erweitert und stabiler sowie
   <data name="BtnOrganizeNow" xml:space="preserve">
     <value>Jetzt aufräumen</value>
   </data>
+  <data name="BtnReadMore" xml:space="preserve">
+    <value>Mehr erfahren...</value>
+  </data>
   <data name="BtnReset" xml:space="preserve">
     <value>Zurücksetzen</value>
   </data>
@@ -261,6 +264,9 @@ Heute wird es von Nikos Georgousis gepflegt, der es erweitert und stabiler sowie
   </data>
   <data name="BtnSmartDesktopRules" xml:space="preserve">
     <value>Regeln für den intelligenten Desktop…</value>
+  </data>
+  <data name="BtnUpdateNow" xml:space="preserve">
+    <value>Jetzt aktualisieren</value>
   </data>
   <data name="ButtonNo" xml:space="preserve">
     <value>Nein</value>
@@ -432,6 +438,9 @@ Heute wird es von Nikos Georgousis gepflegt, der es erweitert und stabiler sowie
   </data>
   <data name="DlgBrowseError" xml:space="preserve">
     <value>Fehler beim Durchsuchen</value>
+  </data>
+  <data name="DlgClearNote" xml:space="preserve">
+    <value>Notiz löschen</value>
   </data>
   <data name="DlgConfirmImport" xml:space="preserve">
     <value>Import bestätigen</value>
@@ -1075,6 +1084,9 @@ Heute wird es von Nikos Georgousis gepflegt, der es erweitert und stabiler sowie
   <data name="MsgCannotDeleteLastTab" xml:space="preserve">
     <value>Die letzte verbleibende Registerkarte kann nicht gelöscht werden.</value>
   </data>
+  <data name="MsgClearNoteConfirm" xml:space="preserve">
+    <value>Wirklich den gesamten Text dieser Notiz löschen?</value>
+  </data>
   <data name="MsgConfirmDeleteProfile" xml:space="preserve">
     <value>Soll das Profil '{0}' wirklich gelöscht werden?
 Das lässt sich nicht rückgängig machen.</value>
@@ -1349,6 +1361,9 @@ Jetzt neu starten?</value>
   </data>
   <data name="NetUnreachable" xml:space="preserve">
     <value>Nicht erreichbar</value>
+  </data>
+  <data name="NewFrameDefaultTitle" xml:space="preserve">
+    <value>Neuer Rahmen - Verknüpfungen hier ablegen</value>
   </data>
   <data name="NoteAutoOrganize" xml:space="preserve">
     <value>Hinweis: Das automatische Aufräumen beobachtet den Desktop auf neue Dateien. Erfüllt eine Datei die Bedingungen einer aktiven Regel, wird sie tatsächlich in den angegebenen Portal-Rahmen oder Ordner verschoben. So bleibt der Desktop dauerhaft aufgeräumt und Downloads landen von selbst am richtigen Ort.</value>
