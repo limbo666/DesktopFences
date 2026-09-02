@@ -129,9 +129,7 @@ _See (https://github.com/limbo666/DesktopFramesPlus/issues/51)_
 
 
 ---
-## Stargazers over time
-[![Stargazers over time](https://starchart.cc/limbo666/DesktopFramesPlus.svg?background=%23535050&axis=%23f172cb&line=%239c34f7)](https://starchart.cc/limbo666/DesktopFramesPlus)
----
+
 
 ##  License
 
