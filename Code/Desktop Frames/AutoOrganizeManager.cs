@@ -151,17 +151,52 @@ namespace Desktop_Frames
             }
         }
 
+        /// <summary>
+        /// True when the file matches one of the patterns in a rule's extension list.
+        ///
+        /// The asterisk has to behave like a wildcard here. The presets rely on it:
+        /// "Documents" is "*.doc*; *.pdf; *.txt; *.rtf; *.xls*; *.ppt*", where the
+        /// trailing asterisk is what is meant to cover .docx and .xlsx alongside the
+        /// older .doc and .xls.
+        ///
+        /// The previous version removed every asterisk and compared the result to the
+        /// file extension for equality, so "*.doc*" became ".doc" and matched .doc but
+        /// not .docx — the preset quietly ignored every modern Office file.
+        ///
+        /// That exact comparison is kept as a first check, so any list that worked
+        /// before still works, including entries someone typed without a wildcard.
+        /// </summary>
+        private static bool MatchesAnyExtensionPattern(string fileName, string patterns)
+        {
+            string name = Path.GetFileName(fileName).ToLowerInvariant();
+            string ext = Path.GetExtension(fileName).ToLowerInvariant();
+
+            foreach (string raw in patterns.Split(new[] { ';', ',', ' ' }, StringSplitOptions.RemoveEmptyEntries))
+            {
+                string pattern = raw.Trim().ToLowerInvariant();
+                if (pattern.Length == 0) continue;
+
+                // Old behaviour, preserved: "*.pdf" stripped of asterisks is ".pdf".
+                if (pattern.Replace("*", "") == ext) return true;
+
+                // New: the asterisk now stands for anything, on the whole file name.
+                if (pattern.IndexOf('*') >= 0)
+                {
+                    string expression = "^" + System.Text.RegularExpressions.Regex.Escape(pattern).Replace("\\*", ".*") + "$";
+                    if (System.Text.RegularExpressions.Regex.IsMatch(name, expression)) return true;
+                }
+            }
+
+            return false;
+        }
+
         private static bool DoesFileMatchRule(string fileName, OrganizeRule rule)
         {
             // 1. Check Extensions
             if (!string.IsNullOrWhiteSpace(rule.Extensions) && !rule.Extensions.Contains("*.*") && rule.Extensions.Trim() != "*")
             {
-                string fileExt = Path.GetExtension(fileName).ToLower();
-                var allowedExts = rule.Extensions.Split(new[] { ';', ',', ' ' }, StringSplitOptions.RemoveEmptyEntries)
-                                                 .Select(e => e.Trim().Replace("*", "").ToLower());
-
-                // If the file extension is NOT in the allowed list, reject it
-                if (!allowedExts.Contains(fileExt)) return false;
+                // If the file matches none of the patterns, reject it
+                if (!MatchesAnyExtensionPattern(fileName, rule.Extensions)) return false;
             }
 
             // 2. Check Name Contains (AND condition)
